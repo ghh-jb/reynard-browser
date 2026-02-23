@@ -1,12 +1,10 @@
 # Reynard Browser
 
-Reynard is a simple, bare-bones **Gecko-based** web browser for iOS 15+.
+Reynard is a simple **Gecko-based** web browser for iOS 15+.
 
 I still use devices that can’t be updated beyond iOS 15. On these versions, a lot of modern websites simply don’t work in Safari.
 
-The core issue is **WebKit**, the browser engine behind Safari. It’s bundled with the OS, so getting a newer engine usually means updating the entire system. If your device is stuck on an older iOS version, you’re stuck with an outdated browser too.
-
-It doesn’t help that although Apple now allows custom browser engines through the [BrowserEngineKit](https://developer.apple.com/documentation/browserenginekit) framework, this only applies to **iOS 17.4+** and only for users in the **EU**, thanks to the Digital Markets Act. There’s also the [CyberKit](https://github.com/CyberKitGroup/CyberKit) project, which attempts to backport WebKit, but its current releases are far from usable.
+The core issue is **WebKit**, the browser engine behind Safari. It’s bundled with the OS, so if your device is stuck on an older iOS version, you’re stuck with an outdated browser. Although Apple now allows custom browser engines through the [BrowserEngineKit](https://developer.apple.com/documentation/browserenginekit) framework, this only applies to **iOS 17.4+** and only for users in the **EU** and **Japan**. There’s also the [CyberKit](https://github.com/CyberKitGroup/CyberKit) project, which attempts to backport WebKit, but its current releases are far from usable.
 
 With Reynard, my goal is to build a Gecko-based browser that does not depend on BrowserEngineKit, allowing it to run on older iOS and iPadOS versions.
 
@@ -27,9 +25,19 @@ This repository contains the source code for the Reynard Browser itself. If you�
   </tr>
 </table>
 
-As of Feb 4th 2026, the browser uses a single-process architecture, which is the simplest way I found to get Gecko up and running. It's slow and laggy in terms of performance. Most webpages render correctly, but fonts fall back to the system default, and the browser can crash on sites with popup or redirect ads.
+## Issues
+- The JIT backend for child processes [is disabled](https://github.com/minh-ton/truefox/blob/0114137767f2cb2390dc4c8a5f224d574350c2b9/toolkit/xre/IOSBootstrap.mm#L121), which means that the JS interpreter, JIT compiler, and WebAssembly are currently not available.
+- Some POST request responses like dynamically loaded scripts and video streams are not fully delivered, which can cause Google reCAPTCHA to fail during loading or lead to stalled playback on YouTube. A workaround would be to [set the user-agent string to a generic Firefox on Android one](https://github.com/minh-ton/truefox/commit/bb958f92635283ff75dd6fc994aef902555cf726). I observed this behavior through debug logs and never fully understood it.
 
-## Building the Project
+## Changes
+As of February 23, the browser uses a multi-process architecture, spawning child-processes (WebContent, Rendering, and Networking) through NSExtension. Most modern websites render correctly, including proper font and emoji support, and general browsing feels much smoother. While performance still does not match Safari, the browser is now reliable enough for everyday use.
+
+<details>
+<summary>Changes on February 4, 2026</summary>
+As of Feb 4th 2026, the browser uses a single-process architecture, which is the simplest way I found to get Gecko up and running. It's slow and laggy in terms of performance. Most webpages render correctly, but fonts fall back to the system default, and the browser can crash on sites with popup or redirect ads.
+</details>
+
+## Build
 
 Clone the repository along with the `truefox` submodule.
 
@@ -45,7 +53,6 @@ ac_add_options --enable-application=mobile/ios
 ac_add_options --target=aarch64-apple-ios
 ac_add_options --enable-ios-target=15.0
 ac_add_options --enable-optimize
-ac_add_options --with-ccache=sccache
 ```
 
 Build Gecko as usual.

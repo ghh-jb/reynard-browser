@@ -57,11 +57,7 @@ private final class ProcessBootstrap {
     }
 }
 
-open class BaseProcessExtension: NSObject, GeckoProcessExtension, NSExtensionRequestHandling {
-    open class var processKind: String {
-        fatalError("Subclasses must override processKind")
-    }
-
+open class BrowserHelper: NSObject, GeckoProcessExtension, NSExtensionRequestHandling {
     public required override init() {
         super.init()
     }
@@ -77,16 +73,4 @@ open class BaseProcessExtension: NSObject, GeckoProcessExtension, NSExtensionReq
     }
 
     open func lockdownSandbox(_ revision: String!) {}
-}
-
-open class WebContentProcessExtension: BaseProcessExtension {
-    public override class var processKind: String { "WebContent" }
-}
-
-open class NetworkingProcessExtension: BaseProcessExtension {
-    public override class var processKind: String { "Networking" }
-}
-
-open class RenderingProcessExtension: BaseProcessExtension {
-    public override class var processKind: String { "Rendering" }
 }

@@ -5,8 +5,8 @@
 //  Created by Minh Ton on 20/2/26.
 //
 
-#ifndef ReynardExtensionBridge_h
-#define ReynardExtensionBridge_h
+#ifndef ExtensionBridge_h
+#define ExtensionBridge_h
 
 #import <Foundation/Foundation.h>
 #import <xpc/xpc.h>
@@ -22,4 +22,4 @@ xpc_connection_t _Nullable XPCConnectionFromNSXPC(
 }
 #endif
 
-#endif /* ReynardExtensionBridge_h */
+#endif /* ExtensionBridge_h */

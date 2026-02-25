@@ -1,5 +1,5 @@
 CURRENT_VERSION = 0.0.1
-CURRENT_BUILD = 2026FEB21
+CURRENT_BUILD = 2026FEB25
 
 IPHONEOS_DEPLOYMENT_TARGET = 15.0
 ARCHS = arm64
@@ -17,11 +17,9 @@ LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks @loader_path/
 
 OTHER_LDFLAGS = $(inherited) $(GECKO_DIST)/bin/XUL -lmozglue -lnss3 -lfreebl3 -lsoftokn3 -llgpllibs -lmozavcodec -lmozavutil -lgkcodecs
 
-SWIFT_OBJC_BRIDGING_HEADER = $(SRCROOT)/Reynard/Reynard-Bridging-Header.h
+SWIFT_OBJC_BRIDGING_HEADER = $(SRCROOT)/Reynard/Bridging/Reynard-Bridging-Header.h
 
 CODE_SIGN_IDENTITY = Apple Development
-CODE_SIGN_IDENTITY[sdk=iphonesimulator*] = Apple Development
-CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Development
 CODE_SIGNING_ALLOWED = NO
 CODE_SIGNING_REQUIRED = NO
 CODE_SIGN_STYLE = Manual

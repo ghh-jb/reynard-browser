@@ -2,27 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDisplayName</key>
-	<string>NetworkingProcess</string>
-	<key>CFBundleName</key>
-	<string>NetworkingProcess</string>
 	<key>NSExtension</key>
 	<dict>
-		<key>NSExtensionContextClass</key>
-		<string>NSExtensionContext</string>
-		<key>NSExtensionContextHostClass</key>
-		<string>NSExtensionContext</string>
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>NSExtensionActivationRule</key>
 			<string>FALSEPREDICATE</string>
-			<key>ReynardProcessKind</key>
-			<string>Networking</string>
 		</dict>
+		<key>NSExtensionContextClass</key>
+		<string>NSExtensionContext</string>
+		<key>NSExtensionContextHostClass</key>
+		<string>NSExtensionContext</string>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.ar.viewer</string>
 		<key>NSExtensionPrincipalClass</key>
-		<string>NetworkingProcessMain</string>
+		<string>ReynardHelperMain</string>
 	</dict>
 	<key>XPCService</key>
 	<dict>

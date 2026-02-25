@@ -8,31 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		0111EC262F48431600490C82 /* GeckoWrapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */; };
-		0111EC2B2F48431D00490C82 /* GeckoWrapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */; };
-		0111EC302F48432200490C82 /* GeckoWrapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */; };
 		01GECKO0012F2F289C001F0001 /* GeckoWrapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */; };
 		01GECKO0022F2F289C001F0001 /* GeckoWrapper.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		02NNPBF12F3000000000001 /* Networking.appex in Embed Process Extensions */ = {isa = PBXBuildFile; fileRef = 02NNPAPP2F3000000000001 /* Networking.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		02RNPBF12F3000000000001 /* Rendering.appex in Embed Process Extensions */ = {isa = PBXBuildFile; fileRef = 02RNPAPP2F3000000000001 /* Rendering.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		02WCPBF12F3000000000001 /* WebContent.appex in Embed Process Extensions */ = {isa = PBXBuildFile; fileRef = 02WCPAPP2F3000000000001 /* WebContent.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		02WCPBF12F3000000000001 /* Reynard Helper.appex in Embed Process Extensions */ = {isa = PBXBuildFile; fileRef = 02WCPAPP2F3000000000001 /* Reynard Helper.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		0111EC282F48431600490C82 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 018C67962F2F289C001F0BBB /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 01GECKO0012F2F289C001F0002;
-			remoteInfo = GeckoWrapper;
-		};
-		0111EC2D2F48431D00490C82 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 018C67962F2F289C001F0BBB /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 01GECKO0012F2F289C001F0002;
-			remoteInfo = GeckoWrapper;
-		};
-		0111EC322F48432200490C82 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 018C67962F2F289C001F0BBB /* Project object */;
 			proxyType = 1;
@@ -45,20 +27,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 01GECKO0012F2F289C001F0002;
 			remoteInfo = GeckoWrapper;
-		};
-		02NNPPRX2F3000000000001 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 018C67962F2F289C001F0BBB /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 02NNPTGT2F3000000000001;
-			remoteInfo = NetworkingProcess;
-		};
-		02RNPPRX2F3000000000001 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 018C67962F2F289C001F0BBB /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 02RNPTGT2F3000000000001;
-			remoteInfo = RenderingProcess;
 		};
 		02WCPPRX2F3000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -87,9 +55,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				02WCPBF12F3000000000001 /* WebContent.appex in Embed Process Extensions */,
-				02RNPBF12F3000000000001 /* Rendering.appex in Embed Process Extensions */,
-				02NNPBF12F3000000000001 /* Networking.appex in Embed Process Extensions */,
+				02WCPBF12F3000000000001 /* Reynard Helper.appex in Embed Process Extensions */,
 			);
 			name = "Embed Process Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -97,12 +63,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		015D21782F4ECEC00018C6E7 /* Rendering.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Rendering.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		015D21792F4ECEC00018C6E7 /* Networking.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Networking.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		018C679E2F2F289C001F0BBB /* Reynard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Reynard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GeckoWrapper.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Reynard.xcconfig; sourceTree = "<group>"; };
-		02NNPAPP2F3000000000001 /* Networking.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Networking.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		02RNPAPP2F3000000000001 /* Rendering.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Rendering.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		02WCPAPP2F3000000000001 /* WebContent.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WebContent.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		02WCPAPP2F3000000000001 /* Reynard Helper.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Reynard Helper.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		11A1A1A12F50000000000001 /* Processes/NetworkingProcess/main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Processes/NetworkingProcess/main.m; sourceTree = "<group>"; };
 		11A1A1A22F50000000000001 /* Processes/NetworkingProcess/NetworkingProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Processes/NetworkingProcess/NetworkingProcess.swift; sourceTree = "<group>"; };
 		11A1A1A32F50000000000001 /* Processes/RenderingProcess/main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Processes/RenderingProcess/main.m; sourceTree = "<group>"; };
@@ -112,44 +78,22 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		0111ED022F4A19FD00490C82 /* Exceptions for "Processes" folder in "GeckoWrapper" target */ = {
+		0111ED022F4A19FD00490C82 /* Exceptions for "Helper" folder in "GeckoWrapper" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Networking/Info.plist,
-				Networking/main.m,
-				Networking/Networking.swift,
-				Rendering/Info.plist,
-				Rendering/main.m,
-				Rendering/Rendering.swift,
-				WebContent/Info.plist,
-				WebContent/main.m,
-				WebContent/WebContent.swift,
+				Helper.swift,
+				Info.plist,
+				main.m,
 			);
 			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
 		};
-		0111ED052F4A1A5900490C82 /* Exceptions for "Processes" folder in "WebContent" target */ = {
+		0111ED052F4A1A5900490C82 /* Exceptions for "Helper" folder in "Reynard Helper" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				WebContent/main.m,
-				WebContent/WebContent.swift,
+				Helper.swift,
+				main.m,
 			);
-			target = 02WCPTGT2F3000000000001 /* WebContent */;
-		};
-		0111ED082F4A1A6000490C82 /* Exceptions for "Processes" folder in "Rendering" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Rendering/main.m,
-				Rendering/Rendering.swift,
-			);
-			target = 02RNPTGT2F3000000000001 /* Rendering */;
-		};
-		0111ED0B2F4A1A6900490C82 /* Exceptions for "Processes" folder in "Networking" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Networking/main.m,
-				Networking/Networking.swift,
-			);
-			target = 02NNPTGT2F3000000000001 /* Networking */;
+			target = 02WCPTGT2F3000000000001 /* Reynard Helper */;
 		};
 		018C67B02F2F289E001F0BBB /* Exceptions for "Reynard" folder in "Reynard" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -175,15 +119,13 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		0111EABD2F48369400490C82 /* Processes */ = {
+		0111EABD2F48369400490C82 /* Helper */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				0111ED022F4A19FD00490C82 /* Exceptions for "Processes" folder in "GeckoWrapper" target */,
-				0111ED052F4A1A5900490C82 /* Exceptions for "Processes" folder in "WebContent" target */,
-				0111ED082F4A1A6000490C82 /* Exceptions for "Processes" folder in "Rendering" target */,
-				0111ED0B2F4A1A6900490C82 /* Exceptions for "Processes" folder in "Networking" target */,
+				0111ED022F4A19FD00490C82 /* Exceptions for "Helper" folder in "GeckoWrapper" target */,
+				0111ED052F4A1A5900490C82 /* Exceptions for "Helper" folder in "Reynard Helper" target */,
 			);
-			path = Processes;
+			path = Helper;
 			sourceTree = "<group>";
 		};
 		018C67A02F2F289C001F0BBB /* Reynard */ = {
@@ -228,22 +170,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		02NNPFRM2F3000000000001 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				0111EC302F48432200490C82 /* GeckoWrapper.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		02RNPFRM2F3000000000001 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				0111EC2B2F48431D00490C82 /* GeckoWrapper.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		02WCPFRM2F3000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -267,7 +193,7 @@
 			children = (
 				01E7AF522F2F9C42002DEC89 /* Configuration */,
 				01GECKO0082F2F289C001F0001 /* GeckoWrapper */,
-				0111EABD2F48369400490C82 /* Processes */,
+				0111EABD2F48369400490C82 /* Helper */,
 				018C67A02F2F289C001F0BBB /* Reynard */,
 				018C679F2F2F289C001F0BBB /* Products */,
 				01E7AF712F2FA7FC002DEC89 /* Recovered References */,
@@ -280,9 +206,9 @@
 			children = (
 				018C679E2F2F289C001F0BBB /* Reynard.app */,
 				01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */,
-				02WCPAPP2F3000000000001 /* WebContent.appex */,
-				02RNPAPP2F3000000000001 /* Rendering.appex */,
-				02NNPAPP2F3000000000001 /* Networking.appex */,
+				02WCPAPP2F3000000000001 /* Reynard Helper.appex */,
+				015D21782F4ECEC00018C6E7 /* Rendering.appex */,
+				015D21792F4ECEC00018C6E7 /* Networking.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -330,8 +256,6 @@
 			dependencies = (
 				01GECKO00B2F2F289C001F0001 /* PBXTargetDependency */,
 				02WCPDEP2F3000000000001 /* PBXTargetDependency */,
-				02RNPDEP2F3000000000001 /* PBXTargetDependency */,
-				02NNPDEP2F3000000000001 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				018C67A02F2F289C001F0BBB /* Reynard */,
@@ -357,7 +281,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				0111EABD2F48369400490C82 /* Processes */,
+				0111EABD2F48369400490C82 /* Helper */,
 				01E7AF522F2F9C42002DEC89 /* Configuration */,
 				01GECKO0082F2F289C001F0001 /* GeckoWrapper */,
 			);
@@ -366,49 +290,9 @@
 			productReference = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		02NNPTGT2F3000000000001 /* Networking */ = {
+		02WCPTGT2F3000000000001 /* Reynard Helper */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 02NNPCFG2F3000000000001 /* Build configuration list for PBXNativeTarget "Networking" */;
-			buildPhases = (
-				02NNPSRC2F3000000000001 /* Sources */,
-				02NNPFRM2F3000000000001 /* Frameworks */,
-				02NNPRES2F3000000000001 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				0111EC332F48432200490C82 /* PBXTargetDependency */,
-			);
-			name = Networking;
-			packageProductDependencies = (
-			);
-			productName = NetworkingProcess;
-			productReference = 02NNPAPP2F3000000000001 /* Networking.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
-		02RNPTGT2F3000000000001 /* Rendering */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 02RNPCFG2F3000000000001 /* Build configuration list for PBXNativeTarget "Rendering" */;
-			buildPhases = (
-				02RNPSRC2F3000000000001 /* Sources */,
-				02RNPFRM2F3000000000001 /* Frameworks */,
-				02RNPRES2F3000000000001 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				0111EC2E2F48431D00490C82 /* PBXTargetDependency */,
-			);
-			name = Rendering;
-			packageProductDependencies = (
-			);
-			productName = RenderingProcess;
-			productReference = 02RNPAPP2F3000000000001 /* Rendering.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
-		02WCPTGT2F3000000000001 /* WebContent */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 02WCPCFG2F3000000000001 /* Build configuration list for PBXNativeTarget "WebContent" */;
+			buildConfigurationList = 02WCPCFG2F3000000000001 /* Build configuration list for PBXNativeTarget "Reynard Helper" */;
 			buildPhases = (
 				02WCPSRC2F3000000000001 /* Sources */,
 				02WCPFRM2F3000000000001 /* Frameworks */,
@@ -419,11 +303,11 @@
 			dependencies = (
 				0111EC292F48431600490C82 /* PBXTargetDependency */,
 			);
-			name = WebContent;
+			name = "Reynard Helper";
 			packageProductDependencies = (
 			);
 			productName = WebContentProcess;
-			productReference = 02WCPAPP2F3000000000001 /* WebContent.appex */;
+			productReference = 02WCPAPP2F3000000000001 /* Reynard Helper.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -440,12 +324,6 @@
 						CreatedOnToolsVersion = 26.2;
 					};
 					01GECKO0012F2F289C001F0002 = {
-						CreatedOnToolsVersion = 26.2;
-					};
-					02NNPTGT2F3000000000001 = {
-						CreatedOnToolsVersion = 26.2;
-					};
-					02RNPTGT2F3000000000001 = {
 						CreatedOnToolsVersion = 26.2;
 					};
 					02WCPTGT2F3000000000001 = {
@@ -469,9 +347,7 @@
 			targets = (
 				018C679D2F2F289C001F0BBB /* Reynard */,
 				01GECKO0012F2F289C001F0002 /* GeckoWrapper */,
-				02WCPTGT2F3000000000001 /* WebContent */,
-				02RNPTGT2F3000000000001 /* Rendering */,
-				02NNPTGT2F3000000000001 /* Networking */,
+				02WCPTGT2F3000000000001 /* Reynard Helper */,
 			);
 		};
 /* End PBXProject section */
@@ -485,20 +361,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		01GECKO00E2F2F289C001F0001 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		02NNPRES2F3000000000001 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		02RNPRES2F3000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -547,20 +409,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		02NNPSRC2F3000000000001 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		02RNPSRC2F3000000000001 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		02WCPSRC2F3000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -576,34 +424,14 @@
 			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
 			targetProxy = 0111EC282F48431600490C82 /* PBXContainerItemProxy */;
 		};
-		0111EC2E2F48431D00490C82 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
-			targetProxy = 0111EC2D2F48431D00490C82 /* PBXContainerItemProxy */;
-		};
-		0111EC332F48432200490C82 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
-			targetProxy = 0111EC322F48432200490C82 /* PBXContainerItemProxy */;
-		};
 		01GECKO00B2F2F289C001F0001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
 			targetProxy = 01GECKO0032F2F289C001F0001 /* PBXContainerItemProxy */;
 		};
-		02NNPDEP2F3000000000001 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 02NNPTGT2F3000000000001 /* Networking */;
-			targetProxy = 02NNPPRX2F3000000000001 /* PBXContainerItemProxy */;
-		};
-		02RNPDEP2F3000000000001 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 02RNPTGT2F3000000000001 /* Rendering */;
-			targetProxy = 02RNPPRX2F3000000000001 /* PBXContainerItemProxy */;
-		};
 		02WCPDEP2F3000000000001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 02WCPTGT2F3000000000001 /* WebContent */;
+			target = 02WCPTGT2F3000000000001 /* Reynard Helper */;
 			targetProxy = 02WCPPRX2F3000000000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -900,152 +728,6 @@
 			};
 			name = Release;
 		};
-		02NNPDBG2F3000000000001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "$(CURRENT_BUILD)";
-				DEVELOPMENT_TEAM = NAR5D6HWAD;
-				ENABLE_DEBUG_DYLIB = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Processes/Networking/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-					"@executable_path/../../Frameworks/GeckoView.framework",
-					"@loader_path/../../Frameworks/GeckoView.framework",
-				);
-				MARKETING_VERSION = "$(CURRENT_VERSION)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-Wl,-u,_NSExtensionMain",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard.Networking";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/Reynard/Bridging/Reynard-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		02NNPREL2F3000000000001 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "$(CURRENT_BUILD)";
-				DEVELOPMENT_TEAM = NAR5D6HWAD;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Processes/Networking/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-					"@executable_path/../../Frameworks/GeckoView.framework",
-					"@loader_path/../../Frameworks/GeckoView.framework",
-				);
-				MARKETING_VERSION = "$(CURRENT_VERSION)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-Wl,-u,_NSExtensionMain",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard.Networking";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/Reynard/Bridging/Reynard-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		02RNPDBG2F3000000000001 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "$(CURRENT_BUILD)";
-				DEVELOPMENT_TEAM = NAR5D6HWAD;
-				ENABLE_DEBUG_DYLIB = NO;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Processes/Rendering/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-					"@executable_path/../../Frameworks/GeckoView.framework",
-					"@loader_path/../../Frameworks/GeckoView.framework",
-				);
-				MARKETING_VERSION = "$(CURRENT_VERSION)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-Wl,-u,_NSExtensionMain",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard.Rendering";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/Reynard/Bridging/Reynard-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		02RNPREL2F3000000000001 /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = "$(CURRENT_BUILD)";
-				DEVELOPMENT_TEAM = NAR5D6HWAD;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Processes/Rendering/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-					"@executable_path/../../Frameworks/GeckoView.framework",
-					"@loader_path/../../Frameworks/GeckoView.framework",
-				);
-				MARKETING_VERSION = "$(CURRENT_VERSION)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-Wl,-u,_NSExtensionMain",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard.Rendering";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/Reynard/Bridging/Reynard-Bridging-Header.h";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		02WCPDBG2F3000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */;
@@ -1056,7 +738,8 @@
 				DEVELOPMENT_TEAM = NAR5D6HWAD;
 				ENABLE_DEBUG_DYLIB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Processes/WebContent/Info.plist;
+				INFOPLIST_FILE = Helper/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Reynard Helper";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1070,7 +753,7 @@
 					"$(inherited)",
 					"-Wl,-u,_NSExtensionMain",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard.WebContent";
+				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard.Helper";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1092,7 +775,8 @@
 				CURRENT_PROJECT_VERSION = "$(CURRENT_BUILD)";
 				DEVELOPMENT_TEAM = NAR5D6HWAD;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Processes/WebContent/Info.plist;
+				INFOPLIST_FILE = Helper/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Reynard Helper";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1106,7 +790,7 @@
 					"$(inherited)",
 					"-Wl,-u,_NSExtensionMain",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard.WebContent";
+				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard.Helper";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1149,25 +833,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		02NNPCFG2F3000000000001 /* Build configuration list for PBXNativeTarget "Networking" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				02NNPDBG2F3000000000001 /* Debug */,
-				02NNPREL2F3000000000001 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		02RNPCFG2F3000000000001 /* Build configuration list for PBXNativeTarget "Rendering" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				02RNPDBG2F3000000000001 /* Debug */,
-				02RNPREL2F3000000000001 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		02WCPCFG2F3000000000001 /* Build configuration list for PBXNativeTarget "WebContent" */ = {
+		02WCPCFG2F3000000000001 /* Build configuration list for PBXNativeTarget "Reynard Helper" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				02WCPDBG2F3000000000001 /* Debug */,

@@ -15,6 +15,8 @@ import Foundation
 @MainActor
 private final class ProcessBootstrap {
 	private static var retainedConnections: [NSXPCConnection] = []
+	private static var retainedContexts: [NSExtensionContext] = []
+	private static var retainedProcesses: [any GeckoProcessExtension] = []
 
 	static func start(
 		context: NSExtensionContext,
@@ -34,17 +36,9 @@ private final class ProcessBootstrap {
 
 		let connection = NSXPCConnection(listenerEndpoint: endpoint)
 		connection.remoteObjectInterface = NSXPCInterface(with: BootstrapPing.self)
-		connection.interruptionHandler = {
-			exit(0)
-		}
-		connection.invalidationHandler = {
-			exit(0)
-		}
+		connection.interruptionHandler = {}
+		connection.invalidationHandler = {}
 		connection.resume()
-
-		(connection.remoteObjectProxyWithErrorHandler({ _ in }) as? BootstrapPing)?.ping()
-
-		retainedConnections.append(connection)
 
 		guard let xpcConnection = XPCConnectionFromNSXPC(connection) else {
 			throw NSError(
@@ -54,7 +48,13 @@ private final class ProcessBootstrap {
 			)
 		}
 
+		retainedContexts.append(context)
+		retainedProcesses.append(process)
+		retainedConnections.append(connection)
+
 		GeckoRuntime.childMain(xpcConnection: xpcConnection, process: process)
+
+		(connection.remoteObjectProxyWithErrorHandler({ _ in }) as? BootstrapPing)?.ping()
 	}
 }
 

@@ -11,3 +11,6 @@ xcuserdata/
 
 # AI agent stuff
 AGENTS.md
+
+# Build artifacts
+dist/

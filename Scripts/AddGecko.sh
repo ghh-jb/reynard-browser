@@ -7,7 +7,7 @@ APP_BUNDLE="${TARGET_BUILD_DIR}/${WRAPPER_NAME}"
 FRAMEWORKS_DIR="${APP_BUNDLE}/Frameworks"
 GECKOVIEW_FW="${FRAMEWORKS_DIR}/GeckoView.framework"
 GECKOVIEW_FW_FRAMEWORKS="${GECKOVIEW_FW}/Frameworks"
-SIGN_IDENTITY="${EXPANDED_CODE_SIGN_IDENTITY_NAME:-Apple Development}"
+SIGN_IDENTITY="${EXPANDED_CODE_SIGN_IDENTITY:-${EXPANDED_CODE_SIGN_IDENTITY_NAME:-Apple Development}}"
 DEFAULT_THEME_SRC="${SRCROOT}/truefox/toolkit/mozapps/extensions/default-theme"
 
 mkdir -p "${FRAMEWORKS_DIR}"
@@ -42,15 +42,3 @@ cp -RfL "${DEFAULT_THEME_SRC}/" "${GECKOVIEW_FW_FRAMEWORKS}/default-theme/"
 echo "resource default-theme file:default-theme/" >> "${GECKOVIEW_FW_FRAMEWORKS}/chrome.manifest"
 
 codesign --force --sign "${SIGN_IDENTITY}" "${GECKOVIEW_FW}"
-
-PLUGINS_DIR="${APP_BUNDLE}/PlugIns"
-if [ -d "${PLUGINS_DIR}" ]; then
-	for appex in "${PLUGINS_DIR}"/*.appex; do
-		if [ -d "${appex}" ]; then
-			codesign --force --deep --sign "${SIGN_IDENTITY}" "${appex}"
-		fi
-	done
-fi
-
-codesign --force --deep --sign "${SIGN_IDENTITY}" "${APP_BUNDLE}"
-

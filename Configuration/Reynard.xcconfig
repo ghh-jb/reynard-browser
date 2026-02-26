@@ -18,8 +18,3 @@ LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks @loader_path/
 OTHER_LDFLAGS = $(inherited) $(GECKO_DIST)/bin/XUL -lmozglue -lnss3 -lfreebl3 -lsoftokn3 -llgpllibs -lmozavcodec -lmozavutil -lgkcodecs
 
 SWIFT_OBJC_BRIDGING_HEADER = $(SRCROOT)/Reynard/Bridging/Reynard-Bridging-Header.h
-
-CODE_SIGN_IDENTITY = Apple Development
-CODE_SIGNING_ALLOWED = NO
-CODE_SIGNING_REQUIRED = NO
-CODE_SIGN_STYLE = Manual

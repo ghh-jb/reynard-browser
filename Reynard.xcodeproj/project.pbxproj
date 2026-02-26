@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0111EC262F48431600490C82 /* GeckoWrapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */; };
-		01GECKO0012F2F289C001F0001 /* GeckoWrapper.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */; };
-		01GECKO0022F2F289C001F0001 /* GeckoWrapper.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		0111EC262F48431600490C82 /* GeckoView.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoView.framework */; };
+		01GECKO0012F2F289C001F0001 /* GeckoView.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoView.framework */; };
+		01GECKO0022F2F289C001F0001 /* GeckoView.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 01GECKO0002F2F289C001F0001 /* GeckoView.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		02WCPBF12F3000000000001 /* Reynard Helper.appex in Embed Process Extensions */ = {isa = PBXBuildFile; fileRef = 02WCPAPP2F3000000000001 /* Reynard Helper.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -19,14 +19,14 @@
 			containerPortal = 018C67962F2F289C001F0BBB /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 01GECKO0012F2F289C001F0002;
-			remoteInfo = GeckoWrapper;
+			remoteInfo = GeckoView;
 		};
 		01GECKO0032F2F289C001F0001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 018C67962F2F289C001F0BBB /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 01GECKO0012F2F289C001F0002;
-			remoteInfo = GeckoWrapper;
+			remoteInfo = GeckoView;
 		};
 		02WCPPRX2F3000000000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -44,7 +44,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				01GECKO0022F2F289C001F0001 /* GeckoWrapper.framework in Embed Frameworks */,
+				01GECKO0022F2F289C001F0001 /* GeckoView.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -66,7 +66,7 @@
 		015D21782F4ECEC00018C6E7 /* Rendering.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Rendering.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		015D21792F4ECEC00018C6E7 /* Networking.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Networking.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		018C679E2F2F289C001F0BBB /* Reynard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Reynard.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GeckoWrapper.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		01GECKO0002F2F289C001F0001 /* GeckoView.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GeckoView.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Reynard.xcconfig; sourceTree = "<group>"; };
 		02WCPAPP2F3000000000001 /* Reynard Helper.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Reynard Helper.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		11A1A1A12F50000000000001 /* Processes/NetworkingProcess/main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Processes/NetworkingProcess/main.m; sourceTree = "<group>"; };
@@ -78,14 +78,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		0111ED022F4A19FD00490C82 /* Exceptions for "Helper" folder in "GeckoWrapper" target */ = {
+		0111ED022F4A19FD00490C82 /* Exceptions for "Helper" folder in "GeckoView" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Helper.swift,
 				Info.plist,
 				main.m,
 			);
-			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
+			target = 01GECKO0012F2F289C001F0002 /* GeckoView */;
 		};
 		0111ED052F4A1A5900490C82 /* Exceptions for "Helper" folder in "Reynard Helper" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -102,19 +102,19 @@
 			);
 			target = 018C679D2F2F289C001F0BBB /* Reynard */;
 		};
-		01E7AF532F2F9C42002DEC89 /* Exceptions for "Configuration" folder in "GeckoWrapper" target */ = {
+		01E7AF532F2F9C42002DEC89 /* Exceptions for "Configuration" folder in "GeckoView" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Reynard.xcconfig,
 			);
-			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
+			target = 01GECKO0012F2F289C001F0002 /* GeckoView */;
 		};
-		01GECKO0072F2F289C001F0001 /* Exceptions for "GeckoWrapper" folder in "GeckoWrapper" target */ = {
+		01GECKO0072F2F289C001F0001 /* Exceptions for "GeckoView" folder in "GeckoView" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
+			target = 01GECKO0012F2F289C001F0002 /* GeckoView */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -122,7 +122,7 @@
 		0111EABD2F48369400490C82 /* Helper */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				0111ED022F4A19FD00490C82 /* Exceptions for "Helper" folder in "GeckoWrapper" target */,
+				0111ED022F4A19FD00490C82 /* Exceptions for "Helper" folder in "GeckoView" target */,
 				0111ED052F4A1A5900490C82 /* Exceptions for "Helper" folder in "Reynard Helper" target */,
 			);
 			path = Helper;
@@ -139,17 +139,17 @@
 		01E7AF522F2F9C42002DEC89 /* Configuration */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				01E7AF532F2F9C42002DEC89 /* Exceptions for "Configuration" folder in "GeckoWrapper" target */,
+				01E7AF532F2F9C42002DEC89 /* Exceptions for "Configuration" folder in "GeckoView" target */,
 			);
 			path = Configuration;
 			sourceTree = "<group>";
 		};
-		01GECKO0082F2F289C001F0001 /* GeckoWrapper */ = {
+		01GECKO0082F2F289C001F0001 /* GeckoView */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				01GECKO0072F2F289C001F0001 /* Exceptions for "GeckoWrapper" folder in "GeckoWrapper" target */,
+				01GECKO0072F2F289C001F0001 /* Exceptions for "GeckoView" folder in "GeckoView" target */,
 			);
-			path = GeckoWrapper;
+			path = GeckoView;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -159,7 +159,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				01GECKO0012F2F289C001F0001 /* GeckoWrapper.framework in Frameworks */,
+				01GECKO0012F2F289C001F0001 /* GeckoView.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -174,7 +174,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0111EC262F48431600490C82 /* GeckoWrapper.framework in Frameworks */,
+				0111EC262F48431600490C82 /* GeckoView.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -192,7 +192,7 @@
 			isa = PBXGroup;
 			children = (
 				01E7AF522F2F9C42002DEC89 /* Configuration */,
-				01GECKO0082F2F289C001F0001 /* GeckoWrapper */,
+				01GECKO0082F2F289C001F0001 /* GeckoView */,
 				0111EABD2F48369400490C82 /* Helper */,
 				018C67A02F2F289C001F0BBB /* Reynard */,
 				018C679F2F2F289C001F0BBB /* Products */,
@@ -205,7 +205,7 @@
 			isa = PBXGroup;
 			children = (
 				018C679E2F2F289C001F0BBB /* Reynard.app */,
-				01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */,
+				01GECKO0002F2F289C001F0001 /* GeckoView.framework */,
 				02WCPAPP2F3000000000001 /* Reynard Helper.appex */,
 				015D21782F4ECEC00018C6E7 /* Rendering.appex */,
 				015D21792F4ECEC00018C6E7 /* Networking.appex */,
@@ -267,9 +267,9 @@
 			productReference = 018C679E2F2F289C001F0BBB /* Reynard.app */;
 			productType = "com.apple.product-type.application";
 		};
-		01GECKO0012F2F289C001F0002 /* GeckoWrapper */ = {
+		01GECKO0012F2F289C001F0002 /* GeckoView */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 01GECKO00C2F2F289C001F0001 /* Build configuration list for PBXNativeTarget "GeckoWrapper" */;
+			buildConfigurationList = 01GECKO00C2F2F289C001F0001 /* Build configuration list for PBXNativeTarget "GeckoView" */;
 			buildPhases = (
 				01GECKO00A2F2F289C001F0001 /* Headers */,
 				01GECKO00D2F2F289C001F0001 /* Sources */,
@@ -283,11 +283,11 @@
 			fileSystemSynchronizedGroups = (
 				0111EABD2F48369400490C82 /* Helper */,
 				01E7AF522F2F9C42002DEC89 /* Configuration */,
-				01GECKO0082F2F289C001F0001 /* GeckoWrapper */,
+				01GECKO0082F2F289C001F0001 /* GeckoView */,
 			);
-			name = GeckoWrapper;
-			productName = GeckoWrapper;
-			productReference = 01GECKO0002F2F289C001F0001 /* GeckoWrapper.framework */;
+			name = GeckoView;
+			productName = GeckoView;
+			productReference = 01GECKO0002F2F289C001F0001 /* GeckoView.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		02WCPTGT2F3000000000001 /* Reynard Helper */ = {
@@ -346,7 +346,7 @@
 			projectRoot = "";
 			targets = (
 				018C679D2F2F289C001F0BBB /* Reynard */,
-				01GECKO0012F2F289C001F0002 /* GeckoWrapper */,
+				01GECKO0012F2F289C001F0002 /* GeckoView */,
 				02WCPTGT2F3000000000001 /* Reynard Helper */,
 			);
 		};
@@ -390,7 +390,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "GECKO_DIST_BIN=\"${GECKO_DIST}/bin\"\n\n# App's Frameworks folder\nFRAMEWORKS_DIR=\"${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nmkdir -p \"${FRAMEWORKS_DIR}\"\n\n# Copy dylibs to app's Frameworks/\ncp -fL \"${GECKO_DIST_BIN}/\"*.dylib \"${FRAMEWORKS_DIR}/\"\n\n# Copy child process binary to app's Frameworks/\ncp -fL \"${GECKO_DIST_BIN}/plugin-container\" \"${FRAMEWORKS_DIR}/\"\n\n# Sign all libs in Frameworks/\nfor lib in \"${FRAMEWORKS_DIR}/XUL\" \"${FRAMEWORKS_DIR}/plugin-container\" \"${FRAMEWORKS_DIR}/\"*.dylib; do\n    if [ -f \"$lib\" ]; then\n        codesign --force --sign \"Apple Development\" \"$lib\"\n    fi\ndone\n\n# Create GeckoView.framework structure for Gecko resource lookup\nGECKOVIEW_FW=\"${FRAMEWORKS_DIR}/GeckoView.framework\"\nmkdir -p \"${GECKOVIEW_FW}/Frameworks\"\n\n# Create Info.plist for the framework\ncat > \"${GECKOVIEW_FW}/Info.plist\" << 'EOF'\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n  <key>CFBundleDevelopmentRegion</key>\n  <string>en</string>\n  <key>CFBundleExecutable</key>\n  <string>XUL</string>\n  <key>CFBundleIdentifier</key>\n  <string>org.mozilla.GeckoView</string>\n  <key>CFBundleInfoDictionaryVersion</key>\n  <string>6.0</string>\n  <key>CFBundleName</key>\n  <string>GeckoView</string>\n  <key>CFBundlePackageType</key>\n  <string>FMWK</string>\n  <key>CFBundleShortVersionString</key>\n  <string>1.0</string>\n  <key>CFBundleVersion</key>\n  <string>1</string>\n  <key>MinimumOSVersion</key>\n  <string>15.0</string>\n</dict>\n</plist>\nEOF\n\n# Copy XUL to framework root as bundle executable\ncp -fL \"${GECKO_DIST_BIN}/XUL\" \"${GECKOVIEW_FW}/XUL\"\ncodesign --force --sign \"Apple Development\" \"${GECKOVIEW_FW}/XUL\"\n\n# Copy child process binary to GeckoView.framework/Frameworks/\ncp -fL \"${GECKO_DIST_BIN}/plugin-container\" \"${GECKOVIEW_FW}/Frameworks/\"\ncodesign --force --sign \"Apple Development\" \"${GECKOVIEW_FW}/Frameworks/plugin-container\"\n\n# Copy Gecko resources to GeckoView.framework/Frameworks/\ncp -fL \"${GECKO_DIST_BIN}/greprefs.js\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -fL \"${GECKO_DIST_BIN}/application.ini\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -fL \"${GECKO_DIST_BIN}/platform.ini\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -fL \"${GECKO_DIST_BIN}/chrome.manifest\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -fL \"${GECKO_DIST_BIN}/dependentlibs.list\" \"${GECKOVIEW_FW}/Frameworks/\"\n\n# Copy resource directories (use -L to dereference all symlinks)\ncp -RfL \"${GECKO_DIST_BIN}/chrome\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -RfL \"${GECKO_DIST_BIN}/defaults\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -RfL \"${GECKO_DIST_BIN}/res\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -RfL \"${GECKO_DIST_BIN}/components\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -RfL \"${GECKO_DIST_BIN}/modules\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -RfL \"${GECKO_DIST_BIN}/actors\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -RfL \"${GECKO_DIST_BIN}/localization\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -RfL \"${GECKO_DIST_BIN}/contentaccessible\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -RfL \"${GECKO_DIST_BIN}/hyphenation\" \"${GECKOVIEW_FW}/Frameworks/\"\ncp -RfL \"${GECKO_DIST_BIN}/dictionaries\" \"${GECKOVIEW_FW}/Frameworks/\"\n\n# Fix for \"resource://default-theme/ does not contain a valid manifest\"\n# Copy default-theme from source since it's excluded in GeckoView builds but required by XPIProvider\nDEFAULT_THEME_SRC=\"${SRCROOT}/truefox/toolkit/mozapps/extensions/default-theme\"\nif [ -d \"${DEFAULT_THEME_SRC}\" ]; then\n    mkdir -p \"${GECKOVIEW_FW}/Frameworks/default-theme\"\n    cp -RfL \"${DEFAULT_THEME_SRC}/\" \"${GECKOVIEW_FW}/Frameworks/default-theme/\"\n    # Register resource://default-theme/ in chrome.manifest\n    echo \"resource default-theme file:default-theme/\" >> \"${GECKOVIEW_FW}/Frameworks/chrome.manifest\"\n    echo \"Manually patched default-theme resource\"\nelse\n    echo \"WARNING: default-theme source not found at ${DEFAULT_THEME_SRC}\"\nfi\n\n# Sign the framework itself\ncodesign --force --sign \"Apple Development\" \"${GECKOVIEW_FW}\"\n\n# Resign embedded extensions and final app bundle\nAPP_BUNDLE=\"${BUILT_PRODUCTS_DIR}/${WRAPPER_NAME}\"\nPLUGINS_DIR=\"${APP_BUNDLE}/PlugIns\"\nif [ -d \"${PLUGINS_DIR}\" ]; then\n    for appex in \"${PLUGINS_DIR}\"/*.appex; do\n        if [ -d \"$appex\" ]; then\n            codesign --force --deep --sign \"Apple Development\" \"$appex\"\n        fi\n    done\nfi\n\ncodesign --force --deep --sign \"Apple Development\" \"${APP_BUNDLE}\"\n";
+			shellScript = "sh \"${SRCROOT}/Scripts/AddGecko.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -421,12 +421,12 @@
 /* Begin PBXTargetDependency section */
 		0111EC292F48431600490C82 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
+			target = 01GECKO0012F2F289C001F0002 /* GeckoView */;
 			targetProxy = 0111EC282F48431600490C82 /* PBXContainerItemProxy */;
 		};
 		01GECKO00B2F2F289C001F0001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 01GECKO0012F2F289C001F0002 /* GeckoWrapper */;
+			target = 01GECKO0012F2F289C001F0002 /* GeckoView */;
 			targetProxy = 01GECKO0032F2F289C001F0001 /* PBXContainerItemProxy */;
 		};
 		02WCPDEP2F3000000000001 /* PBXTargetDependency */ = {
@@ -657,7 +657,7 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = GeckoWrapper/Info.plist;
+				INFOPLIST_FILE = GeckoView/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -668,7 +668,7 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.GeckoWrapper";
+				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.GeckoView";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
@@ -699,7 +699,7 @@
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = GeckoWrapper/Info.plist;
+				INFOPLIST_FILE = GeckoView/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -710,7 +710,7 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.GeckoWrapper";
+				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.GeckoView";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
@@ -824,7 +824,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		01GECKO00C2F2F289C001F0001 /* Build configuration list for PBXNativeTarget "GeckoWrapper" */ = {
+		01GECKO00C2F2F289C001F0001 /* Build configuration list for PBXNativeTarget "GeckoView" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				01GECKO00F2F2F289C001F0001 /* Debug */,

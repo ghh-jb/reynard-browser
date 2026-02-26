@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import GeckoWrapper
+import GeckoView
 import UIKit
 
 GeckoRuntime.main(argc: CommandLine.argc, argv: CommandLine.unsafeArgv)

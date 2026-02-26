@@ -5,7 +5,7 @@
 //  Created by Minh Ton on 22/2/26.
 //
 
-import GeckoWrapper
+import GeckoView
 import UIKit
 
 final class RootViewController: UIViewController {

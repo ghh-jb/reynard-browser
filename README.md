@@ -28,6 +28,7 @@ This repository contains the source code for the Reynard Browser itself. If youâ
 ## Issues
 - The JIT backend for child processes [is disabled](https://github.com/minh-ton/truefox/blob/0114137767f2cb2390dc4c8a5f224d574350c2b9/toolkit/xre/IOSBootstrap.mm#L121), which means that the JS interpreter, JIT compiler, and WebAssembly are currently not available.
 - Some POST request responses like dynamically loaded scripts and video streams are not fully delivered, which can cause Google reCAPTCHA to fail during loading or lead to stalled playback on YouTube. A workaround would be to [set the user-agent string to a generic Firefox on Android one](https://github.com/minh-ton/truefox/commit/bb958f92635283ff75dd6fc994aef902555cf726). I observed this behavior through debug logs and never fully understood it.
+- On some websites that use `-apple-system`, `-system-ui`, or `BlinkMacSystemFont`, the rendered text falls back to an overly thin SF UI variant.
 
 ## Changes
 As of February 23, the browser uses a multi-process architecture, spawning child-processes (WebContent, Rendering, and Networking) through NSExtension. Most modern websites render correctly, including proper font and emoji support, and general browsing feels much smoother. While performance still does not match Safari, the browser is now reliable enough for everyday use.

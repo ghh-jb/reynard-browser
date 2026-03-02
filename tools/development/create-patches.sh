@@ -43,7 +43,7 @@ fi
 
 mkdir -p "$PATCH_DIR"
 echo "Cleaning old patches..."
-find "$PATCH_DIR" -mindepth 1 -not -name 'LICENSE.md' -exec rm -rf {} +
+find "$PATCH_DIR" -mindepth 1 -not -name 'LICENSE' -exec rm -rf {} +
 
 files="$(git -C "$SUBMODULE_PATH" diff --name-only "$RELEASE_TAG")"
 

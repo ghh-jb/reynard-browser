@@ -1,5 +1,5 @@
 diff --git a/gfx/thebes/gfxTextRun.cpp b/gfx/thebes/gfxTextRun.cpp
-index dea967e3b823..9128e25fd5fe 100644
+index dea967e3b823..810fa95487c1 100644
 --- a/gfx/thebes/gfxTextRun.cpp
 +++ b/gfx/thebes/gfxTextRun.cpp
 @@ -3156,6 +3156,11 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
@@ -32,14 +32,11 @@ index dea967e3b823..9128e25fd5fe 100644
    if (!isJoinControl && !wasJoinCauser && !isVarSelector &&
        !nextIsVarSelector && presentation == FontPresentation::Any) {
      RefPtr<gfxFont> firstFont = GetFontAt(0, aCh, &loading);
-@@ -3293,7 +3309,16 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
+@@ -3293,7 +3309,13 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
      // if previous character was a join-causer (ZWJ),
      // use the same font as the previous range if we can
      if (wasJoinCauser) {
 -      if (aPrevMatchedFont->HasCharacter(aCh)) {
-+      /*       if (aPrevMatchedFont->HasCharacter(aCh)) {
-+              return do_AddRef(aPrevMatchedFont);
-+            } */
 +      // REYNARD: for iOS system emoji fonts, cmap coverage checks can be
 +      // incomplete; preserve emoji ZWJ ligature runs by also accepting
 +      // color-glyph support as a continuation signal.
@@ -50,17 +47,11 @@ index dea967e3b823..9128e25fd5fe 100644
          return do_AddRef(aPrevMatchedFont);
        }
      }
-@@ -3639,7 +3664,16 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
+@@ -3639,7 +3661,10 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
                !gfxFontUtils::IsJoinControl(ch) &&
                !gfxFontUtils::IsJoinCauser(prevCh) &&
                !gfxFontUtils::IsVarSelector(ch) &&
 -              (GetEmojiPresentation(ch) == TextOnly ||
-+              /* (GetEmojiPresentation(ch) == TextOnly ||
-+               (!(IsEmojiPresentationSelector(nextCh) ||
-+                  IsEmojiSkinToneModifier(nextCh) ||
-+                  gfxFontUtils::IsEmojiFlagAndTag(ch, nextCh)) &&
-+                mFontVariantEmoji == StyleFontVariantEmoji::Normal &&
-+                mFonts[0].Generic() == StyleGenericFontFamily::None)) */
 +              ((GetEmojiPresentation(ch) == TextOnly &&
 +                !IsEmojiPresentationSelector(nextCh) &&
 +                !IsEmojiSkinToneModifier(nextCh) &&

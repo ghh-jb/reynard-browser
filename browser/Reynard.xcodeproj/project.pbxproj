@@ -69,12 +69,6 @@
 		01GECKO0002F2F289C001F0001 /* GeckoView.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GeckoView.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Reynard.xcconfig; sourceTree = "<group>"; };
 		02WCPAPP2F3000000000001 /* Reynard Helper.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Reynard Helper.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
-		11A1A1A12F50000000000001 /* Processes/NetworkingProcess/main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Processes/NetworkingProcess/main.m; sourceTree = "<group>"; };
-		11A1A1A22F50000000000001 /* Processes/NetworkingProcess/NetworkingProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Processes/NetworkingProcess/NetworkingProcess.swift; sourceTree = "<group>"; };
-		11A1A1A32F50000000000001 /* Processes/RenderingProcess/main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Processes/RenderingProcess/main.m; sourceTree = "<group>"; };
-		11A1A1A42F50000000000001 /* Processes/RenderingProcess/RenderingProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Processes/RenderingProcess/RenderingProcess.swift; sourceTree = "<group>"; };
-		11A1A1A52F50000000000001 /* Processes/WebContentProcess/main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Processes/WebContentProcess/main.m; sourceTree = "<group>"; };
-		11A1A1A62F50000000000001 /* Processes/WebContentProcess/WebContentProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Processes/WebContentProcess/WebContentProcess.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -217,12 +211,6 @@
 			isa = PBXGroup;
 			children = (
 				01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */,
-				11A1A1A52F50000000000001 /* Processes/WebContentProcess/main.m */,
-				11A1A1A62F50000000000001 /* Processes/WebContentProcess/WebContentProcess.swift */,
-				11A1A1A32F50000000000001 /* Processes/RenderingProcess/main.m */,
-				11A1A1A42F50000000000001 /* Processes/RenderingProcess/RenderingProcess.swift */,
-				11A1A1A12F50000000000001 /* Processes/NetworkingProcess/main.m */,
-				11A1A1A22F50000000000001 /* Processes/NetworkingProcess/NetworkingProcess.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";

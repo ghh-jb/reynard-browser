@@ -1,0 +1,24 @@
+diff --git a/mobile/shared/chrome/geckoview/geckoview.js b/mobile/shared/chrome/geckoview/geckoview.js
+index 1ff643d420f1..7541622874d0 100644
+--- a/mobile/shared/chrome/geckoview/geckoview.js
++++ b/mobile/shared/chrome/geckoview/geckoview.js
+@@ -553,6 +553,7 @@ function createBrowser() {
+   browser.setAttribute("type", "content");
+   browser.setAttribute("primary", "true");
+   browser.setAttribute("flex", "1");
++
+   browser.setAttribute("maychangeremoteness", "true");
+   browser.setAttribute("remote", "true");
+   browser.setAttribute("remoteType", E10SUtils.DEFAULT_REMOTE_TYPE);
+@@ -574,6 +575,11 @@ function InitLater(fn, object, name) {
+ function startup() {
+   GeckoViewUtils.initLogging("XUL", window);
+ 
++  // REYNARD: Added this to resolve some module "already initialized"
++  // errors first, but somehow this makes positioning problems with 
++  // the GeckoView subview disappear as well
++  if (window.moduleManager) return;
++
+   const browser = createBrowser();
+   ModuleManager.init(browser, [
+     {

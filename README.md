@@ -8,8 +8,6 @@ The core issue is **WebKit**, the browser engine behind Safari. It’s bundled w
 
 With Reynard, my goal is to build a Gecko-based browser that does not depend on BrowserEngineKit, allowing it to run on older iOS and iPadOS versions.
 
-This repository contains the source code for the Reynard Browser itself. If you’re looking for the Gecko port, see my [truefox](https://github.com/minh-ton/truefox) repository.
-
 ## Preview
 
 <table>
@@ -26,9 +24,9 @@ This repository contains the source code for the Reynard Browser itself. If you�
 </table>
 
 ## Issues
-- The JIT backend for child processes [is disabled](https://github.com/minh-ton/truefox/blob/0114137767f2cb2390dc4c8a5f224d574350c2b9/toolkit/xre/IOSBootstrap.mm#L121), which means that the JS interpreter, JIT compiler, and WebAssembly are currently not available.
-- Some POST request responses like dynamically loaded scripts and video streams are not fully delivered, which can cause Google reCAPTCHA to fail during loading or lead to stalled playback on YouTube. A workaround would be to [set the user-agent string to a generic Firefox on Android one](https://github.com/minh-ton/truefox/commit/bb958f92635283ff75dd6fc994aef902555cf726). I observed this behavior through debug logs and never fully understood it.
-- On some websites that use `-apple-system`, `-system-ui`, or `BlinkMacSystemFont`, the rendered text falls back to an overly thin SF UI variant.
+- The JIT backend for child processes is disabled, which means that the JS interpreter, JIT compiler, and WebAssembly are currently not available.
+- Some POST request responses like dynamically loaded scripts and video streams are not fully delivered, which can cause Google reCAPTCHA to fail during loading or lead to stalled playback on YouTube. A workaround would be to set the user-agent string to a generic Firefox on Android one. I observed this behavior through debug logs and never fully understood it.
+- On some websites that use `-apple-system`, `system-ui`, or `BlinkMacSystemFont`, the rendered text falls back to an overly thin SF UI variant.
 
 ## Changes
 As of February 23, the browser uses a multi-process architecture, spawning child-processes (WebContent, Rendering, and Networking) through NSExtension. Most modern websites render correctly, including proper font and emoji support, and general browsing feels much smoother. While performance still does not match Safari, the browser is now reliable enough for everyday use.
@@ -40,27 +38,24 @@ As of Feb 4th 2026, the browser uses a single-process architecture, which is the
 
 ## Build
 
-Clone the repository along with the `truefox` submodule.
+Clone the repository.
 
 ```bash
 git clone --recursive https://github.com/minh-ton/reynard-browser
 cd reynard-browser
 ```
 
-Inside the `truefox` folder, create a file named `.mozconfig` with the following contents. These are the build configuration.
-
-```
-ac_add_options --enable-application=mobile/ios
-ac_add_options --target=aarch64-apple-ios
-ac_add_options --enable-ios-target=15.0
-ac_add_options --enable-optimize
-```
-
-Build Gecko as usual.
+Download Gecko and apply patches.
 
 ```bash
-cd truefox
-./mach build
+./tools/development/update_gecko.sh
+./tools/development/apply-patches.sh
+```
+
+Build the Gecko engine.
+
+```bash
+./tools/development/build-gecko.sh
 ```
 
 To run Reynard, open `Reynard.xcodeproj` in Xcode and build/run it from there.
@@ -71,4 +66,4 @@ If you’ve come across this repository and find it interesting, I’d love to g
 
 ## License
 
-This project is licensed under the MIT License. The included [truefox](https://github.com/minh-ton/truefox) engine is licensed separately under MPL-2.0.
+This project is licensed under the MIT License, except for the `patches` directory containing the modifications to the Firefox Gecko engine and therefore is licensed under the Mozilla Public License 2.0.

@@ -1,0 +1,269 @@
+diff --git a/widget/uikit/nsWindow.mm b/widget/uikit/nsWindow.mm
+index 46b22cfe21c4..120cc50c56bc 100644
+--- a/widget/uikit/nsWindow.mm
++++ b/widget/uikit/nsWindow.mm
+@@ -45,9 +45,18 @@
+ #include "mozilla/ProfilerLabels.h"
+ #include "mozilla/TouchEvents.h"
+ #include "mozilla/dom/MouseEventBinding.h"
++#include "mozilla/dom/BrowsingContext.h"
++#include "mozilla/dom/WindowContext.h"
+ #include "mozilla/gfx/Logging.h"
++#include "mozilla/gfx/GPUProcessManager.h"
++#include "mozilla/Monitor.h"
+ #include "mozilla/widget/GeckoViewSupport.h"
++#include "mozilla/widget/UIKitCompositorWidget.h"
+ #include "mozilla/layers/NativeLayerCA.h"
++#include "mozilla/layers/CompositorThread.h"
++#include "mozilla/layers/NativeLayerRootRemoteMacParent.h"
++#include "mozilla/layers/PNativeLayerRemote.h"
++#include "mozilla/widget/PlatformWidgetTypes.h"
+ #ifdef ACCESSIBILITY
+ #  include "mozilla/a11y/MUIRootAccessibleProtocol.h"
+ #endif
+@@ -59,10 +68,6 @@
+ using mozilla::dom::Touch;
+ using mozilla::widget::UIKitUtils;
+ 
+-#define ALOG(args...)    \
+-  fprintf(stderr, args); \
+-  fprintf(stderr, "\n")
+-
+ static LayoutDeviceIntPoint UIKitPointsToDevPixels(CGPoint aPoint,
+                                                    CGFloat aBackingScale) {
+   return LayoutDeviceIntPoint(NSToIntRound(aPoint.x * aBackingScale),
+@@ -169,8 +174,6 @@ - (id)initWithFrame:(CGRect)inFrame geckoChild:(nsWindow*)inChild {
+     mRootCALayer.contentsGravity = kCAGravityTopLeft;
+     [[self layer] addSublayer:mRootCALayer];
+   }
+-  ALOG("[ChildView[%p] initWithFrame:] (mGeckoChild = %p)", (void*)self,
+-       (void*)mGeckoChild);
+   self.opaque = YES;
+   self.alpha = 1.0;
+ 
+@@ -211,8 +214,6 @@ - (void)delayedTearDown {
+ }
+ 
+ - (void)activateWindow:(NSNotification*)notification {
+-  ALOG("[[ChildView[%p] activateWindow]", (void*)self);
+-
+   if (!mGeckoChild) {
+     return;
+   }
+@@ -223,8 +224,6 @@ - (void)activateWindow:(NSNotification*)notification {
+ }
+ 
+ - (void)deactivateWindow:(NSNotification*)notification {
+-  ALOG("[[ChildView[%p] deactivateWindow]", (void*)self);
+-
+   if (!mGeckoChild) {
+     return;
+   }
+@@ -252,7 +251,6 @@ - (void)sendMouseEvent:(EventMessage)aType
+ 
+ - (void)handleTap:(UITapGestureRecognizer*)sender {
+   if (sender.state == UIGestureRecognizerStateEnded) {
+-    ALOG("[ChildView[%p] handleTap]", self);
+     LayoutDeviceIntPoint lp = UIKitPointsToDevPixels(
+         [sender locationInView:self], [self contentScaleFactor]);
+     [self sendMouseEvent:eMouseMove point:lp widget:mGeckoChild];
+@@ -289,7 +287,6 @@ - (void)sendTouchEvent:(EventMessage)aType
+ }
+ 
+ - (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+-  ALOG("[ChildView[%p] touchesBegan", self);
+   if (!mGeckoChild) return;
+ 
+   for (UITouch* touch : touches) {
+@@ -302,7 +299,6 @@ - (void)touchesBegan:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+ }
+ 
+ - (void)touchesCancelled:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+-  ALOG("[ChildView[%p] touchesCancelled", self);
+   [self sendTouchEvent:eTouchCancel touches:touches widget:mGeckoChild];
+   for (UITouch* touch : touches) {
+     [mTouches removeObjectForKey:touch];
+@@ -313,7 +309,6 @@ - (void)touchesCancelled:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+ }
+ 
+ - (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+-  ALOG("[ChildView[%p] touchesEnded", self);
+   if (!mGeckoChild) return;
+ 
+   [self sendTouchEvent:eTouchEnd touches:touches widget:mGeckoChild];
+@@ -326,7 +321,6 @@ - (void)touchesEnded:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+ }
+ 
+ - (void)touchesMoved:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+-  ALOG("[ChildView[%p] touchesMoved", self);
+   if (!mGeckoChild) return;
+ 
+   [self sendTouchEvent:eTouchMove
+@@ -335,7 +329,6 @@ - (void)touchesMoved:(NSSet<UITouch*>*)touches withEvent:(UIEvent*)event {
+ }
+ 
+ - (void)layoutSubviews {
+-  ALOG("[ChildView[%p] layoutSubviews", self);
+   if (!mGeckoChild ||
+       mGeckoChild->GetWindowType() != nsIWidget::WindowType::TopLevel) {
+     return;
+@@ -406,7 +399,6 @@ - (BOOL)isUsingMainThreadOpenGL {
+ }
+ 
+ - (void)drawUsingOpenGL {
+-  ALOG("drawUsingOpenGL");
+   AUTO_PROFILER_LABEL("ChildView::drawUsingOpenGL", OTHER);
+ 
+   if (!mGeckoChild->IsVisible()) return;
+@@ -771,15 +763,9 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+ 
+ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
+                           const widget::InitData& aInitData) {
+-  ALOG("nsWindow[%p]::Create %p [%d %d %d %d]", (void*)this, (void*)aParent,
+-       aRect.x, aRect.y, aRect.width, aRect.height);
+   nsWindow* parent = (nsWindow*)aParent;
+-
+   mBounds = aRect;
+ 
+-  ALOG("nsWindow[%p]::Create bounds: %d %d %d %d", (void*)this, mBounds.x,
+-       mBounds.y, mBounds.width, mBounds.height);
+-
+   // Set defaults which can be overriden from aInitData in BaseCreate
+   mWindowType = WindowType::TopLevel;
+   mBorderStyle = BorderStyle::Default;
+@@ -852,7 +838,6 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+     mVisible = aState;
+   }
+ }
+-
+ void nsWindow::Move(const DesktopPoint& aPoint) {
+   if (!mNativeView || (mBounds.x == aPoint.x && mBounds.y == aPoint.y)) {
+     return;
+@@ -1051,6 +1036,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+   return mInputContext;
+ }
+ 
++void nsWindow::SetCompositorWidgetDelegate(
++    mozilla::widget::CompositorWidgetDelegate* aDelegate) {
++  if (aDelegate) {
++    mCompositorWidgetDelegate = aDelegate->AsPlatformSpecificDelegate();
++  } else {
++    mCompositorWidgetDelegate = nullptr;
++  }
++
++  if (mCompositorWidgetDelegate) {
++    auto clientSize = GetClientBounds().Size();
++    if (clientSize.IsEmpty()) {
++      clientSize = mBounds.Size();
++    }
++    if (!clientSize.IsEmpty()) {
++      mCompositorWidgetDelegate->NotifyClientSizeChanged(clientSize);
++    }
++  }
++}
++
+ widget::TextEventDispatcherListener*
+ nsWindow::GetNativeTextEventDispatcherListener() {
+   return mTextInputHandler;
+@@ -1122,6 +1126,93 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+   return mNativeLayerRoot;
+ }
+ 
++void nsWindow::GetCompositorWidgetInitData(
++    mozilla::widget::CompositorWidgetInitData* aInitData) {
++  if (RefPtr<NativeLayerRootRemoteMacParent> actor =
++          std::move(mNativeLayerRootRemoteMacParent)) {
++    MOZ_ASSERT(CompositorThread());
++    CompositorThread()->Dispatch(
++        NewRunnableMethod("NativeLayerRootRemoteMacParent::Close", actor,
++                          &NativeLayerRootRemoteMacParent::Close));
++  }
++
++  auto* pm = mozilla::gfx::GPUProcessManager::Get();
++  mozilla::ipc::EndpointProcInfo gpuProcessInfo =
++      pm ? pm->GPUEndpointProcInfo()
++         : mozilla::ipc::EndpointProcInfo::Invalid();
++
++  mozilla::ipc::EndpointProcInfo childProcessInfo =
++      gpuProcessInfo != mozilla::ipc::EndpointProcInfo::Invalid()
++          ? gpuProcessInfo
++          : mozilla::ipc::EndpointProcInfo::Current();
++
++  mozilla::ipc::Endpoint<PNativeLayerRemoteParent> parentEndpoint;
++  mozilla::ipc::Endpoint<PNativeLayerRemoteChild> childEndpoint;
++  auto rv = PNativeLayerRemote::CreateEndpoints(
++      mozilla::ipc::EndpointProcInfo::Current(), childProcessInfo,
++      &parentEndpoint, &childEndpoint);
++  MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
++  MOZ_RELEASE_ASSERT(parentEndpoint.IsValid());
++  MOZ_RELEASE_ASSERT(childEndpoint.IsValid());
++
++  RefPtr<NativeLayerRootRemoteMacParent> nativeLayerRemoteParent =
++      new NativeLayerRootRemoteMacParent(mNativeLayerRoot);
++
++  MOZ_ASSERT(CompositorThread());
++
++  Monitor monitor("nsWindow::GetCompositorWidgetInitData");
++  bool didBindParentEndpoint = false;
++
++  CompositorThread()->Dispatch(NS_NewRunnableFunction(
++      "nsWindow::GetCompositorWidgetInitData bind endpoint", [&]() {
++        MOZ_ALWAYS_TRUE(parentEndpoint.Bind(nativeLayerRemoteParent));
++        MonitorAutoLock lock(monitor);
++        didBindParentEndpoint = true;
++        lock.Notify();
++      }));
++
++  {
++    MonitorAutoLock lock(monitor);
++    while (!didBindParentEndpoint) {
++      lock.Wait();
++    }
++  }
++
++  auto clientSize = GetClientBounds().Size();
++  if (clientSize.IsEmpty()) {
++    clientSize = mBounds.Size();
++  }
++  if (clientSize.IsEmpty()) {
++    clientSize = LayoutDeviceIntSize(1, 1);
++  }
++  *aInitData = mozilla::widget::CocoaCompositorWidgetInitData(
++      clientSize, std::move(childEndpoint));
++
++  mNativeLayerRootRemoteMacParent = std::move(nativeLayerRemoteParent);
++}
++
++void nsWindow::DestroyCompositor() {
++  if (RefPtr<NativeLayerRootRemoteMacParent> actor =
++          std::move(mNativeLayerRootRemoteMacParent)) {
++    MOZ_ASSERT(CompositorThread());
++    CompositorThread()->Dispatch(
++        NewRunnableMethod("NativeLayerRootRemoteMacParent::Close", actor,
++                          &NativeLayerRootRemoteMacParent::Close));
++  }
++
++  nsIWidget::DestroyCompositor();
++}
++
++void nsWindow::NotifyCompositorSessionLost(
++    mozilla::layers::CompositorSession* aSession) {
++  const double kTriggerPaintDelayAfterCompositorSessionLoss = 0.4;
++  [mNativeView performSelector:@selector(markLayerForDisplay)
++                    withObject:nil
++                    afterDelay:kTriggerPaintDelayAfterCompositorSessionLoss];
++
++  nsIWidget::NotifyCompositorSessionLost(aSession);
++}
++
+ void nsWindow::HandleMainThreadCATransaction() {
+   // Trigger a synchronous OMTC composite. This will call NextSurface and
+   // NotifySurfaceReady on the compositor thread to update mNativeLayerRoot's
+@@ -1276,6 +1367,7 @@ - (void)close {
+ 
+   nsAutoCString url;
+   nsresult rv = Preferences::GetCString("toolkit.defaultChromeURI", url);
++
+   if (NS_FAILED(rv)) {
+     url = "chrome://geckoview/content/geckoview.xhtml"_ns;
+   }

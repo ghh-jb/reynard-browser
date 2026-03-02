@@ -1,0 +1,14 @@
+diff --git a/parser/expat/rlbox_expat_types.h b/parser/expat/rlbox_expat_types.h
+index 8596a213c70f..9cc75c62e520 100644
+--- a/parser/expat/rlbox_expat_types.h
++++ b/parser/expat/rlbox_expat_types.h
+@@ -9,7 +9,8 @@
+ #include <stddef.h>
+ #include "mozilla/rlbox/rlbox_types.hpp"
+ 
+-#ifdef MOZ_WASM_SANDBOXING_EXPAT
++// REYNARD: Use NOOP sandbox for iOS
++#if defined(MOZ_WASM_SANDBOXING_EXPAT) && !defined(XP_IOS)
+ RLBOX_DEFINE_BASE_TYPES_FOR(expat, wasm2c)
+ #else
+ RLBOX_DEFINE_BASE_TYPES_FOR(expat, noop)

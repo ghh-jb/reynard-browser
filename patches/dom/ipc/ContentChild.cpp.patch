@@ -1,0 +1,13 @@
+diff --git a/dom/ipc/ContentChild.cpp b/dom/ipc/ContentChild.cpp
+index 0980fb5feb38..38b303ca355d 100644
+--- a/dom/ipc/ContentChild.cpp
++++ b/dom/ipc/ContentChild.cpp
+@@ -1801,7 +1801,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
+   sandboxEnabled = (GetEffectiveContentSandboxLevel() >= 1);
+   DisconnectWindowServer(sandboxEnabled);
+ #  elif defined(XP_IOS)
+-  LockdownExtensionKitProcess(ExtensionKitSandboxRevision::Revision1);
++  LockdownNSExtensionProcess(NSExtensionSandboxRevision::Revision1);
+ #  endif
+ 
+   CrashReporter::RecordAnnotationBool(

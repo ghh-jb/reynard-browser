@@ -1,0 +1,450 @@
+diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
+index 33285cfefbe4..d0cc350f7449 100644
+--- a/modules/libpref/init/StaticPrefList.yaml
++++ b/modules/libpref/init/StaticPrefList.yaml
+@@ -1864,46 +1864,6 @@
+   value: true
+   mirror: always
+ 
+-# Global Cache
+-- name: browser.safebrowsing.globalCache.enabled
+-  type: bool
+-  value: false
+-  mirror: always
+-
+-# SafeBrowsing Real-Time Lookup
+-- name: browser.safebrowsing.realTime.enabled
+-  type: bool
+-  value: false
+-  mirror: always
+-
+-# SafeBrowsing Real-Time Request Simulation
+-- name: browser.safebrowsing.realTime.simulation.enabled
+-  type: bool
+-  value: false
+-  mirror: always
+-
+-# Hit probability for the simulation, expressed as parts per million.
+-# 1000000 = 100%, 1 = 0.0001%, 0 = never hit.
+-# Lower values = more simulated requests over time.
+-- name: browser.safebrowsing.realTime.simulation.hitProbability
+-  type: RelaxedAtomicUint32
+-  value: 100
+-  mirror: always
+-
+-# TTL for cached full hashes in the simulation cache (seconds)
+-# Default: 5 minutes (300 seconds)
+-- name: browser.safebrowsing.realTime.simulation.cacheTTLSec
+-  type: RelaxedAtomicUint32
+-  value: 300
+-  mirror: always
+-
+-# Number of noise entries to include in simulated requests.
+-# These are random hash prefixes added to mask the true URL being checked.
+-- name: browser.safebrowsing.realTime.simulation.noiseEntryCount
+-  type: RelaxedAtomicUint32
+-  value: 4
+-  mirror: always
+-
+ # Maximum size for an array to store the safebrowsing prefixset.
+ - name: browser.safebrowsing.prefixset_max_array_size
+   type: RelaxedAtomicUint32
+@@ -2641,7 +2601,11 @@
+ # https://whatpr.org/html/10168/interaction.html#closewatcher
+ - name: dom.closewatcher.enabled
+   type: bool
+-  value: true
++#if defined(ANDROID)
++  value: false
++#else
++  value: @IS_NIGHTLY_BUILD@
++#endif
+   mirror: always
+ 
+ # https://github.com/whatwg/html/pull/10737
+@@ -4383,7 +4347,7 @@
+ # Reporting API.
+ - name: dom.reporting.enabled
+   type: RelaxedAtomicBool
+-  value: true
++  value: false
+   mirror: always
+ 
+ - name: dom.reporting.testing.enabled
+@@ -4403,7 +4367,7 @@
+ 
+ - name: dom.reporting.header.enabled
+   type: RelaxedAtomicBool
+-  value: true
++  value: false
+   mirror: always
+ 
+ # In seconds. The timeout to remove not-active report-to endpoints.
+@@ -4420,7 +4384,7 @@
+ 
+ # How many times the delivering of a report should be tried.
+ - name: dom.reporting.delivering.maxFailures
+-  type: RelaxedAtomicUint32
++  type: uint32_t
+   value: 3
+   mirror: always
+ 
+@@ -4828,12 +4792,6 @@
+   value: true
+   mirror: always
+ 
+-- name: dom.select.customizable_select.enabled
+-  type: RelaxedAtomicBool
+-  value: false
+-  mirror: always
+-  rust: true
+-
+ - name: dom.send_after_paint_to_content
+   type: bool
+   value: false
+@@ -4844,6 +4802,11 @@
+   value: true
+   mirror: always
+ 
++- name: dom.arena_allocator.enabled
++  type: bool
++  value: true
++  mirror: once
++
+ - name: dom.serviceworkers.loadingCachedScriptOnWorkerThread.enabled
+   type: RelaxedAtomicBool
+   value: false
+@@ -5724,7 +5687,7 @@
+ # on a platform that supports the GPU process, else true.
+ - name: dom.webgpu.allow-in-parent
+   type: bool
+-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID)
++#if defined(XP_WIN) || defined(ANDROID)
+   value: false
+ #else
+   value: true
+@@ -6774,7 +6737,7 @@
+ # Use Windows Runtime Geolocator for location service.
+ - name: geo.provider.use_winrt
+   type: bool
+-  value: true
++  value: @IS_NIGHTLY_BUILD@
+   mirror: always
+ #endif
+ 
+@@ -6853,7 +6816,7 @@
+ 
+ - name: gfx.canvas.accelerated.allow-in-parent
+   type: bool
+-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID)
++#if defined(XP_WIN) || defined(ANDROID)
+   value: false
+ #else
+   value: true
+@@ -7106,8 +7069,6 @@
+ #if defined(XP_MACOSX) || defined(MOZ_WAYLAND)
+   value: true
+ #elif defined(XP_WIN)
+-# Change to true when shipping HDR video on Windows
+-# https://bugzilla.mozilla.org/show_bug.cgi?id=2012848
+   value: @IS_EARLY_BETA_OR_EARLIER@
+ #else
+   value: false
+@@ -7391,7 +7352,13 @@
+   # backend.
+ -   name: gfx.font_rendering.coretext.enabled
+     type: RelaxedAtomicBool
++#if defined(XP_IOS)
++  # REYNARD: iOS system fonts may restrict cmap/table access; CoreText
++  # shaping preserves correct system fallback behavior (including emoji).
++    value: true
++#else
+     value: false
++#endif
+     mirror: always
+ #endif
+ 
+@@ -8333,6 +8300,34 @@
+   value: true
+   mirror: once
+ 
++# Use a more precise method for sampling gradients when *not* using SWGL .
++- name: gfx.webrender.precise-radial-gradients
++  type: bool
++  rust: true
++  value: true
++  mirror: once
++
++# Use a more precise method for sampling gradients when using SWGL.
++- name: gfx.webrender.precise-radial-gradients-swgl
++  type: bool
++  rust: true
++  value: true
++  mirror: once
++
++# Use a more precise method for sampling gradients when *not* using SWGL .
++- name: gfx.webrender.precise-conic-gradients
++  type: bool
++  rust: true
++  value: true
++  mirror: once
++
++# Use a more precise method for sampling gradients when using SWGL.
++- name: gfx.webrender.precise-conic-gradients-swgl
++  type: bool
++  rust: true
++  value: true
++  mirror: once
++
+ # Use vsync events generated by hardware
+ - name: gfx.work-around-driver-bugs
+   type: bool
+@@ -8675,13 +8670,11 @@
+   value: false
+   mirror: once
+ 
+-#ifdef MOZ_JXL
+ # Whether we attempt to decode JXL images or not.
+ - name: image.jxl.enabled
+   type: RelaxedAtomicBool
+   value: false
+   mirror: always
+-#endif
+ 
+ #---------------------------------------------------------------------------
+ # Prefs starting with "intl."
+@@ -9115,6 +9108,16 @@
+   mirror: always
+   set_spidermonkey_pref: startup
+ 
++# ShadowRealms: https://github.com/tc39/proposal-shadowrealm
++- name: javascript.options.experimental.shadow_realms
++  # Atomic, as we assert the preference, and that assertion may happen
++  # in a worker.
++  type: RelaxedAtomicBool
++  value: false
++  mirror: always
++  # Non-startup pref because the WPT test harness sets prefs after startup.
++  set_spidermonkey_pref: always
++
+   # Experimental support for Atomics.pause in JavaScript.
+ - name: javascript.options.experimental.atomics_pause
+   type: bool
+@@ -9759,7 +9762,9 @@
+ 
+ - name: layers.gpu-process.enabled
+   type: bool
+-#if defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID) || defined(XP_MACOSX)
++# REYNARD: Enable GPU process by default on iOS so Rendering launches in a
++# dedicated NSExtension child process.
++#if defined(XP_WIN) || defined(MOZ_WIDGET_ANDROID) || defined(XP_MACOSX) || defined(XP_IOS)
+   value: true
+ #elif defined(MOZ_X11)
+   value: false  # we'd like this to be @IS_NIGHTLY_BUILD@, see Bug 1927058
+@@ -11172,8 +11177,6 @@
+ #if defined(XP_MACOSX) || defined(MOZ_WAYLAND)
+   value: true
+ #elif defined(XP_WIN)
+-# Change to true when shipping HDR video on Windows
+-# https://bugzilla.mozilla.org/show_bug.cgi?id=2012848
+   value: @IS_EARLY_BETA_OR_EARLIER@
+ #else
+   value: false
+@@ -11405,14 +11408,6 @@
+   mirror: always
+   rust: true
+ 
+-# Whether to disable legacy adjustment of default lspace/rspace when the
+-# scriptlevel (aka math-depth) is positive.
+-- name: mathml.adjust_default_lspace_rspace_for_positive_scriptlevel.disabled
+-  type: RelaxedAtomicBool
+-  value: true
+-  mirror: always
+-  rust: true
+-
+ #---------------------------------------------------------------------------
+ # Prefs starting with "media."
+ #---------------------------------------------------------------------------
+@@ -12171,11 +12166,9 @@
+     value: false
+     mirror: once
+ 
+-# Change to true when shipping HDR video on Windows
+-# https://bugzilla.mozilla.org/show_bug.cgi?id=2012848
+ -   name: media.wmf.force.allow-p010-format
+     type: RelaxedAtomicBool
+-    value: @IS_EARLY_BETA_OR_EARLIER@
++    value: false
+     mirror: always
+ 
+ -   name: media.wmf.use-sync-texture
+@@ -12434,7 +12427,7 @@
+ # This pref enables the HTMLMediaElement API captureStream.
+ - name: media.captureStream.enabled
+   type: RelaxedAtomicBool
+-  value: true
++  value: @IS_NIGHTLY_BUILD@
+   mirror: always
+ 
+ # This pref disables the reception of RTCP. It is used for testing.
+@@ -14441,7 +14434,10 @@
+ - name: network.process.enabled
+   type: RelaxedAtomicBool
+   mirror: always
+-#if defined(ANDROID) || defined(MOZ_THUNDERBIRD) || defined(XP_IOS)
++# REYNARD: Enable socket process networking on iOS.
++#if defined(XP_IOS)
++  value: true
++#elif defined(ANDROID) || defined(MOZ_THUNDERBIRD)
+   value: false # see bug 1641427
+ #else
+   value: true
+@@ -14490,7 +14486,13 @@
+ - name: network.http.network_access_on_socket_process.enabled
+   type: RelaxedAtomicBool
+   mirror: always
++  #  value: false
++# REYNARD: Enable socket process networking on iOS.
++#if defined(XP_IOS)
++  value: true
++#else
+   value: false
++#endif
+ 
+ # Telemetry of traffic categories. Whether or not to enable HttpTrafficAnalyzer.
+ - name: network.traffic_analyzer.enabled
+@@ -14701,12 +14703,6 @@
+   value: true
+   mirror: always
+ 
+-# When true, the OnLookupComplete will be dispatched with increased priority
+-- name: network.dns.high_priority_dispatch
+-  type: RelaxedAtomicBool
+-  value: true
+-  mirror: always
+-
+ # This preference specifies a comma seperated list of URL/IPAddress:Port that will be treated as public IPAddressSpace.
+ - name: network.lna.address_space.public.override
+   type: String
+@@ -14939,7 +14935,7 @@
+ # How many records we store per entry
+ - name: network.ssl_tokens_cache_records_per_entry
+   type: RelaxedAtomicUint32
+-  value: 10
++  value: 2
+   mirror: always
+ 
+ # The maximum allowed length for a URL - 1MB default.
+@@ -15220,20 +15216,6 @@
+ #endif
+   mirror: always
+ 
+-# When true, TRR/DoH requests and responses will be issues from and parsed
+-# on the socket thread. When false, a dedicated "TRR Background" is used.
+-- name: network.trr.parse_on_socket_thread
+-  type: RelaxedAtomicBool
+-  value: true
+-  mirror: always
+-
+-# When true, the TRR transaction gets marked and runnables
+-# dispatched for it get increased priority.
+-- name: network.trr.high_priority_events
+-  type: RelaxedAtomicBool
+-  value: true
+-  mirror: always
+-
+ # Allow the network changed event to get sent when a network topology or setup
+ # change is noticed while running.
+ - name: network.notify.changed
+@@ -15533,14 +15515,6 @@
+   value: true
+   mirror: always
+ 
+-# Maximum time (ms) a session can remain in ZERORTT state before being
+-# considered stuck. If a Http3Session doesn't transition to CONNECTED within
+-# this timeout, it will be closed.
+-- name: network.http.http3.0rtt_timeout
+-  type: RelaxedAtomicUint32
+-  value: 5000
+-  mirror: always
+-
+ # When a h3 transaction is inserted in the pending queue, the time (ms) we wait
+ # to create a TCP backup connection.
+ - name: network.http.http3.backup_timer_delay
+@@ -16076,13 +16050,6 @@
+   value: false
+   mirror: always
+ 
+-# When true, the socket transport service will have an additional queue for
+-# runnables with increased priority.
+-- name: network.socket.prioritize_runnables
+-  type: RelaxedAtomicBool
+-  value: true
+-  mirror: always
+-
+ # Whether to redirect a failing request to an essential domain
+ # to a fallback domain that hosts the same content.
+ - name: network.essential_domains_fallback
+@@ -16634,40 +16601,6 @@
+   value: true
+   mirror: always
+ 
+-# Enable content classifier service protection (blocking).
+-- name: privacy.trackingprotection.content.protection.enabled
+-  type: bool
+-  value: false
+-  mirror: always
+-
+-# Specify `|` delimited urls to use to fetch lists that will
+-# be used to block requests if the feature is enabled.
+-# Warning: this should not be enabled by the build.
+-- name: privacy.trackingprotection.content.protection.test_list_urls
+-  type: String
+-  value: ""
+-  mirror: never
+-
+-# Enable content classifier service annotation.
+-- name: privacy.trackingprotection.content.annotation.enabled
+-  type: bool
+-  value: false
+-  mirror: always
+-
+-# Specify `|` delimited urls to use to fetch lists that will
+-# be used to annotate requests if the feature is enabled.
+-# Warning: this should not be enabled by the build.
+-- name: privacy.trackingprotection.content.annotation.test_list_urls
+-  type: String
+-  value: ""
+-  mirror: never
+-
+-# When true, fire an observer notification when filter lists finish loading.
+-- name: privacy.trackingprotection.content.testing
+-  type: bool
+-  value: false
+-  mirror: always
+-
+ # Enable the "baseline" allow-list for fixing severe site breakage (e.g. blank
+ # page).
+ - name: privacy.trackingprotection.allow_list.baseline.enabled
+@@ -19346,21 +19279,6 @@
+   value: 2
+   mirror: always
+ 
+-- name: widget.macos.native-anchored-menus
+-  type: bool
+-  value: true
+-  mirror: always
+-
+-- name: widget.macos.native-anchored-menulists
+-  type: bool
+-  value: false
+-  mirror: always
+-
+-- name: widget.macos.native-anchored-select
+-  type: bool
+-  value: false
+-  mirror: always
+-
+ - name: widget.macos.native-context-menus
+   type: RelaxedAtomicBool
+   value: true

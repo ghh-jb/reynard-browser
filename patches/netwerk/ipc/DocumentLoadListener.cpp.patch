@@ -1,0 +1,52 @@
+diff --git a/netwerk/ipc/DocumentLoadListener.cpp b/netwerk/ipc/DocumentLoadListener.cpp
+index 9dc9706d3660..2e0f3c6a7686 100644
+--- a/netwerk/ipc/DocumentLoadListener.cpp
++++ b/netwerk/ipc/DocumentLoadListener.cpp
+@@ -188,15 +188,8 @@ static auto CreateDocumentLoadInfo(CanonicalBrowsingContext* aBrowsingContext,
+       classificationFlags.thirdPartyFlags);
+   loadInfo->SetHasValidUserGestureActivation(
+       aLoadState->HasValidUserGestureActivation());
+-  // External loads (e.g. links opened from other apps) are always
+-  // user-initiated, so text fragment directives are allowed to scroll.
+-  // XXX: This is inconsistent to the other code path that sets user activation
+-  // based on the EXTERNAL load flag (nsDocShell::DoURILoad), which also sets
+-  // the "normal" user activation if the flag is present. We should figure out
+-  // if we should do this here as well.
+   loadInfo->SetTextDirectiveUserActivation(
+-      aLoadState->GetTextDirectiveUserActivation() ||
+-      aLoadState->HasLoadFlags(nsIWebNavigation::LOAD_FLAGS_FROM_EXTERNAL));
++      aLoadState->GetTextDirectiveUserActivation());
+   loadInfo->SetIsMetaRefresh(aLoadState->IsMetaRefresh());
+ 
+   return loadInfo.forget();
+@@ -979,12 +972,12 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
+             bool handled = aValue.ResolveValue();
+             if (handled) {
+               self->DisconnectListeners(NS_ERROR_ABORT, NS_ERROR_ABORT);
+-              self->mParentChannelListener = nullptr;
++              mParentChannelListener = nullptr;
+             } else {
+-              nsresult rv = self->mChannel->AsyncOpen(openInfo);
++              nsresult rv = mChannel->AsyncOpen(openInfo);
+               if (NS_FAILED(rv)) {
+                 self->DisconnectListeners(rv, rv);
+-                self->mParentChannelListener = nullptr;
++                mParentChannelListener = nullptr;
+               }
+             }
+           }
+@@ -1985,6 +1978,14 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
+            this, GetChannelCreationURI()->GetSpecOrDefault().get(),
+            GetLoadingBrowsingContext()->Top()->BrowserId()));
+ 
++  // FIXME: REYNARD - Override remote tabs
++  if (!mozilla::BrowserTabsRemoteAutostart()) {
++    MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
++            ("Process Switch Abort: remote tabs disabled"));
++    *aWillSwitchToRemote = false;
++    return false;
++  }
++
+   // Check if we should handle this load in a different tab or window.
+   int32_t where = GetWhereToOpen(mChannel, mIsDocumentLoad);
+   bool switchToNewTab = where != nsIBrowserDOMWindow::OPEN_CURRENTWINDOW;

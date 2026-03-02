@@ -1,0 +1,14 @@
+diff --git a/modules/woff2/moz.build b/modules/woff2/moz.build
+index 3af9c00923c0..e9991359698e 100644
+--- a/modules/woff2/moz.build
++++ b/modules/woff2/moz.build
+@@ -9,7 +9,8 @@ include("sources.mozbuild")
+ with Files('**'):
+     BUG_COMPONENT = ('Core', 'Graphics: Text')
+ 
+-if not CONFIG["MOZ_WASM_SANDBOXING_WOFF2"]:
++if not CONFIG["MOZ_WASM_SANDBOXING_WOFF2"] or \
++    CONFIG["MOZ_WIDGET_TOOLKIT"] == "uikit":
+     UNIFIED_SOURCES += woff2_sources
+ 
+ EXPORTS.woff2 += [

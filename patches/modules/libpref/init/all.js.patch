@@ -1,0 +1,118 @@
+diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
+index d0c4fc9575e9..35e3b9be836f 100644
+--- a/modules/libpref/init/all.js
++++ b/modules/libpref/init/all.js
+@@ -67,6 +67,16 @@ pref("security.crash_tracking.js_load_1.maxCrashes", 1);
+ 
+ pref("general.useragent.compatMode.firefox", false);
+ 
++// REYNARD: Set UA to Firefox on Android to fix some weird problems (through
++// the debug log HTTP/3 streams just error out when reading the responses with
++// the default UA) making Google captcha unusable and YouTube player stalls.
++// TODO: Make this into a pref configurable from the browser frontend.
++pref("general.useragent.override", "Mozilla/5.0 (Android 14; Mobile; rv:149.0) Gecko/149.0 Firefox/149.0");
++
++// REYNARD: Reduce GeckoView logging noise because the default "Debug" level
++// just makes debugging near to impossible.
++pref("geckoview.logging", "Warn");
++
+ pref("general.config.obscure_value", 13); // for MCD .cfg files
+ 
+ // Whether middle button click with a modifier key starts to autoscroll or
+@@ -313,7 +323,12 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
+   pref("media.peerconnection.ice.trickle_grace_period", 5000);
+   pref("media.peerconnection.ice.no_host", false);
+   pref("media.peerconnection.ice.default_address_only", false);
+-  pref("media.peerconnection.ice.obfuscate_host_addresses", true);
++  // See Bug 1581947 for Android hostname obfuscation
++  #if defined(MOZ_WIDGET_ANDROID) && !defined(NIGHTLY_BUILD)
++    pref("media.peerconnection.ice.obfuscate_host_addresses", false);
++  #else
++    pref("media.peerconnection.ice.obfuscate_host_addresses", true);
++  #endif
+   pref("media.peerconnection.ice.obfuscate_host_addresses.blocklist", "");
+   pref("media.peerconnection.ice.proxy_only_if_behind_proxy", false);
+   pref("media.peerconnection.ice.proxy_only", false);
+@@ -716,8 +731,6 @@ pref("nglayout.enable_drag_images", true);
+ // URI fixup prefs
+ pref("browser.fixup.alternate.prefix", "www.");
+ pref("browser.fixup.alternate.protocol", "https");
+-// The suffix is localized, and should be read using
+-// Services.locale.urlFixupSuffix.
+ pref("browser.fixup.alternate.suffix", ".com");
+ pref("browser.fixup.fallback-to-https", true);
+ 
+@@ -2542,6 +2555,11 @@ pref("font.size.monospace.x-math", 13);
+   // For non-Latin/Greek/Cyrillic scripts, there may not be any serif/sans-serif
+   // distinction available, so both generics resolve to the same font.
+ 
++  // REYNARD: default to sans-serif on iOS so generic resolution uses
++  // -apple-system first for SF-based text rendering.
++  pref("font.default.x-unicode", "sans-serif");
++  pref("font.default.x-western", "sans-serif");
++
+   pref("font.name-list.emoji", "Apple Color Emoji");
+ 
+   pref("font.name-list.serif.ar", "Al Nile");
+@@ -2640,11 +2658,11 @@ pref("font.size.monospace.x-math", 13);
+   pref("font.name-list.monospace.x-tibt", "Menlo, Kailasa");
+ 
+   pref("font.name-list.serif.x-unicode", "Times New Roman");
+-  pref("font.name-list.sans-serif.x-unicode", "Arial");
++  pref("font.name-list.sans-serif.x-unicode", "-apple-system, Arial");
+   pref("font.name-list.monospace.x-unicode", "Menlo");
+ 
+   pref("font.name-list.serif.x-western", "Times New Roman");
+-  pref("font.name-list.sans-serif.x-western", "Arial");
++  pref("font.name-list.sans-serif.x-western", "-apple-system, Arial");
+   pref("font.name-list.monospace.x-western", "Menlo");
+ 
+   // XXX Is there an alternative that would be better for 'serif'?
+@@ -3289,7 +3307,7 @@ pref("network.trr.builtin-excluded-domains", "localhost,local");
+ 
+ // This preference controls if LNA blocking should be tied to ETP strict modes.
+ // Used for progressive rollout of LNA for ETP strict users
+-pref("network.lna.etp.enabled", true);
++pref("network.lna.etp.enabled", false);
+ 
+ pref("captivedetect.canonicalURL", "http://detectportal.firefox.com/canonical.html");
+ pref("captivedetect.canonicalContent", "<meta http-equiv=\"refresh\" content=\"0;url=https://support.mozilla.org/kb/captive-portal\"/>");
+@@ -3320,8 +3338,8 @@ pref("urlclassifier.trackingAnnotationWhitelistTable", "moztest-trackwhite-simpl
+ pref("urlclassifier.trackingTable", "moztest-track-simple,ads-track-digest256,social-track-digest256,analytics-track-digest256");
+ pref("urlclassifier.trackingWhitelistTable", "moztest-trackwhite-simple,mozstd-trackwhite-digest256,google-trackwhite-digest256");
+ 
+-pref("urlclassifier.features.harmfuladdon.blocklistTables", "harmful-addon-block-digest256");
+-pref("urlclassifier.features.harmfuladdon.entitylistTables", "");
++pref("urlclassifier.features.harmfuladdonV2.blocklistTables", "harmfuladdon-block-digest256");
++pref("urlclassifier.features.harmfuladdonV2.entitylistTables", "harmfuladdon-entitylist-digest256");
+ pref("urlclassifier.features.fingerprinting.blacklistTables", "base-fingerprinting-track-digest256");
+ pref("urlclassifier.features.fingerprinting.whitelistTables", "mozstd-trackwhite-digest256,google-trackwhite-digest256");
+ pref("urlclassifier.features.fingerprinting.annotate.blacklistTables", "base-fingerprinting-track-digest256");
+@@ -3344,7 +3362,7 @@ pref("urlclassifier.features.antifraud.annotate.blocklistTables", "anti-fraud-tr
+ pref("urlclassifier.features.antifraud.annotate.allowlistTables", "mozstd-trackwhite-digest256");
+ 
+ // These tables will never trigger a gethash call.
+-pref("urlclassifier.disallow_completions", "goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,ads-track-digest256,social-track-digest256,analytics-track-digest256,base-fingerprinting-track-digest256,content-fingerprinting-track-digest256,base-cryptomining-track-digest256,content-cryptomining-track-digest256,fanboyannoyance-ads-digest256,fanboysocial-ads-digest256,easylist-ads-digest256,easyprivacy-ads-digest256,adguard-ads-digest256,social-tracking-protection-digest256,social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256,base-email-track-digest256,content-email-track-digest256,consent-manager-track-digest256,anti-fraud-track-digest256,harmful-addon-block-digest256");
++pref("urlclassifier.disallow_completions", "goog-downloadwhite-digest256,base-track-digest256,mozstd-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,ads-track-digest256,social-track-digest256,analytics-track-digest256,base-fingerprinting-track-digest256,content-fingerprinting-track-digest256,base-cryptomining-track-digest256,content-cryptomining-track-digest256,fanboyannoyance-ads-digest256,fanboysocial-ads-digest256,easylist-ads-digest256,easyprivacy-ads-digest256,adguard-ads-digest256,social-tracking-protection-digest256,social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256,base-email-track-digest256,content-email-track-digest256,consent-manager-track-digest256,anti-fraud-track-digest256");
+ 
+ // Workaround for Google Recaptcha
+ pref("urlclassifier.trackingAnnotationSkipURLs", "");
+@@ -3395,6 +3413,9 @@ pref("browser.safebrowsing.downloads.remote.block_dangerous_host",       true);
+ pref("browser.safebrowsing.downloads.remote.block_potentially_unwanted", true);
+ pref("browser.safebrowsing.downloads.remote.block_uncommon",             true);
+ 
++// Global Cache
++pref("browser.safebrowsing.globalCache.enabled", false);
++
+ // Android SafeBrowsing's configuration is in ContentBlocking.java, keep in sync.
+ #ifndef MOZ_WIDGET_ANDROID
+ 
+@@ -3439,7 +3460,7 @@ pref("browser.safebrowsing.reportPhishURL", "https://%LOCALE%.phish-report.mozil
+ 
+ // Mozilla Safe Browsing provider (for tracking protection and plugin blocking)
+ pref("browser.safebrowsing.provider.mozilla.pver", "2.2");
+-pref("browser.safebrowsing.provider.mozilla.lists", "base-track-digest256,mozstd-trackwhite-digest256,google-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,ads-track-digest256,social-track-digest256,analytics-track-digest256,base-fingerprinting-track-digest256,content-fingerprinting-track-digest256,base-cryptomining-track-digest256,content-cryptomining-track-digest256,fanboyannoyance-ads-digest256,fanboysocial-ads-digest256,easylist-ads-digest256,easyprivacy-ads-digest256,adguard-ads-digest256,social-tracking-protection-digest256,social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256,base-email-track-digest256,content-email-track-digest256,consent-manager-track-digest256,anti-fraud-track-digest256,harmful-addon-block-digest256,harmful-addon-entitylist-digest256");
++pref("browser.safebrowsing.provider.mozilla.lists", "base-track-digest256,mozstd-trackwhite-digest256,google-trackwhite-digest256,content-track-digest256,mozplugin-block-digest256,mozplugin2-block-digest256,ads-track-digest256,social-track-digest256,analytics-track-digest256,base-fingerprinting-track-digest256,content-fingerprinting-track-digest256,base-cryptomining-track-digest256,content-cryptomining-track-digest256,fanboyannoyance-ads-digest256,fanboysocial-ads-digest256,easylist-ads-digest256,easyprivacy-ads-digest256,adguard-ads-digest256,social-tracking-protection-digest256,social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256,base-email-track-digest256,content-email-track-digest256,consent-manager-track-digest256,anti-fraud-track-digest256,harmfuladdon-block-digest256,harmfuladdon-entitylist-digest256");
+ pref("browser.safebrowsing.provider.mozilla.updateURL", "moz-sbrs:://antitracking");
+ pref("browser.safebrowsing.provider.mozilla.gethashURL", "https://shavar.services.mozilla.com/gethash?client=SAFEBROWSING_ID&appver=%MAJOR_VERSION%&pver=2.2");
+ // Set to a date in the past to force immediate download in new profiles.

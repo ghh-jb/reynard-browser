@@ -1,0 +1,44 @@
+#!/bin/sh
+
+set -euo pipefail
+
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)"
+FIREFOX_DIR="$ROOT_DIR/engine/firefox"
+
+TARGET="aarch64-apple-ios"
+
+if [ "${1-}" = "--simulator" ]; then
+	TARGET="aarch64-apple-ios-sim"
+	shift
+fi
+
+if [ "$#" -ne 0 ]; then
+	echo "Usage: $0 [--simulator]"
+	exit 1
+fi
+
+cd "$ROOT_DIR"
+
+if [ ! -d "$FIREFOX_DIR" ]; then
+	echo "Missing firefox source at $FIREFOX_DIR"
+	echo "Add the submodule, then run tools/development/update-gecko.sh."
+	exit 1
+fi
+
+rm -f "$FIREFOX_DIR/.mozconfig"
+
+{
+	echo "ac_add_options --enable-application=mobile/ios"
+	echo "ac_add_options --target=$TARGET"
+	echo "ac_add_options --enable-ios-target=15.0"
+	echo "ac_add_options --enable-optimize"
+	echo "ac_add_options --disable-debug"
+} > "$FIREFOX_DIR/.mozconfig"
+
+if ! rustup target list | grep -q "^$TARGET (installed)"; then
+	rustup target add "$TARGET"
+fi
+
+cd "$FIREFOX_DIR"
+./mach build

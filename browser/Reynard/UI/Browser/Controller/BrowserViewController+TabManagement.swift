@@ -9,6 +9,18 @@ import GeckoView
 import UIKit
 
 extension BrowserViewController {
+    func shareableURL(for tab: BrowserTab) -> URL? {
+        guard let value = tab.url?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.isEmpty,
+              value.lowercased() != "about:blank",
+              let url = URL(string: value),
+              let scheme = url.scheme,
+              !scheme.isEmpty else {
+            return nil
+        }
+        return url
+    }
+    
     func createInitialTab() {
         createTab(selecting: true)
     }
@@ -169,12 +181,17 @@ extension BrowserViewController {
         let tab = tabs[selectedTabIndex]
         browserUI.toolbarView.updateBackButton(canGoBack: tab.canGoBack)
         browserUI.toolbarView.updateForwardButton(canGoForward: tab.canGoForward)
+        let shareEnabled = shareableURL(for: tab) != nil
+        browserUI.toolbarView.updateShareButton(isEnabled: shareEnabled)
+        browserUI.padShareButton.isEnabled = shareEnabled
         browserUI.padBackButton.isEnabled = tab.canGoBack
         browserUI.padForwardButton.isEnabled = tab.canGoForward
     }
     
     func captureThumbnail(for index: Int) {
-        guard tabs.indices.contains(index), index == selectedTabIndex else {
+        guard tabs.indices.contains(index),
+              index == selectedTabIndex,
+              !browserUI.geckoView.isHidden else {
             return
         }
         

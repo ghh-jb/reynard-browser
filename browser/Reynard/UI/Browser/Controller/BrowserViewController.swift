@@ -31,6 +31,9 @@ final class BrowserViewController: UIViewController {
     var isSearchFocused = false
     var keyboardHeight: CGFloat = 0
     var currentOverviewProgress: CGFloat = 0
+    var tabOverviewDismissTargetIndex: Int?
+    var pendingTabSelectionFromOverview: Int?
+    var pendingOverviewPreviewImage: UIImage?
     
     var searchPanMode: SearchPanMode = .blocked
     
@@ -44,8 +47,6 @@ final class BrowserViewController: UIViewController {
         let pattern = "^\\s*(\\w+-+)*[\\w\\[]+(://[/]*|:|\\.)(\\w+-+)*[\\w\\[:]+([\\S&&[^\\w-]]\\S*)?\\s*$"
         return try! NSRegularExpression(pattern: pattern)
     }()
-    
-    var homepage = ""
     
     var isPadLayout: Bool {
         traitCollection.userInterfaceIdiom == .pad
@@ -91,10 +92,12 @@ final class BrowserViewController: UIViewController {
         applyChromeLayout(animated: false)
         browserUI.tabOverviewCollectionView.collectionViewLayout.invalidateLayout()
         browserUI.padTabStripCollectionView.collectionViewLayout.invalidateLayout()
+        refreshTabOverviewForCurrentOrientation()
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
+        
         coordinator.animate { _ in
             self.applyChromeLayout(animated: false)
             self.browserUI.tabOverviewCollectionView.collectionViewLayout.invalidateLayout()
@@ -103,6 +106,7 @@ final class BrowserViewController: UIViewController {
             self.browserUI.geckoView.transform = .identity
             self.cleanupHorizontalTransition()
             self.applyChromeLayout(animated: false)
+            self.refreshTabOverviewForCurrentOrientation()
             self.view.layoutIfNeeded()
         }
     }

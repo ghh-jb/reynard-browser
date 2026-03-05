@@ -131,6 +131,10 @@ extension BrowserViewController: NavigationDelegate {
             browserUI.phoneAddressBar.setText(url)
             browserUI.padAddressBar.setText(url)
         }
+        
+        if index == selectedTabIndex {
+            updateNavigationButtons()
+        }
     }
     
     func onCanGoBack(session: GeckoSession, canGoBack: Bool) {
@@ -227,7 +231,7 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
             }
             
             let tab = tabs[indexPath.item]
-            cell.configure(tab: tab, isSelected: indexPath.item == selectedTabIndex)
+            cell.configure(tab: tab)
             cell.onClose = { [weak self] in
                 self?.closeTab(at: indexPath.item)
             }
@@ -250,11 +254,30 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        selectTab(at: indexPath.item, animated: true)
-        
         if collectionView === browserUI.tabOverviewCollectionView {
+            // Defer actual session switch until overview dismissal completes
+            tabOverviewDismissTargetIndex = indexPath.item
+            pendingTabSelectionFromOverview = indexPath.item == selectedTabIndex ? nil : indexPath.item
+            if let cell = collectionView.cellForItem(at: indexPath) as? TabGridCell {
+                pendingOverviewPreviewImage = cell.currentPreviewImage
+            } else {
+                pendingOverviewPreviewImage = tabs[safe: indexPath.item]?.thumbnail
+            }
+            browserUI.tabOverviewCollectionView.reloadData()
             setTabOverviewVisible(false, animated: true)
+            return
         }
+        
+        selectTab(at: indexPath.item, animated: true)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        guard collectionView === browserUI.tabOverviewCollectionView,
+              let tabCell = cell as? TabGridCell else {
+            return
+        }
+        tabCell.setNeedsLayout()
+        tabCell.layoutIfNeeded()
     }
     
     func collectionView(
@@ -263,24 +286,7 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize {
         if collectionView === browserUI.tabOverviewCollectionView {
-            let horizontalInsets = collectionView.adjustedContentInset.left + collectionView.adjustedContentInset.right
-            let availableWidth = collectionView.bounds.width - horizontalInsets
-            let tabViewAspectRatio = max(0.4, browserUI.geckoView.bounds.height / max(browserUI.geckoView.bounds.width, 1))
-            
-            let targetWidth: CGFloat
-            if usesPadChromeLayout {
-                targetWidth = 250
-            } else {
-                targetWidth = 170
-            }
-            
-            let computedColumns = Int((availableWidth + overviewSpacing) / (targetWidth + overviewSpacing))
-            let columns = max(2, computedColumns)
-            
-            let totalSpacing = CGFloat(columns - 1) * overviewSpacing
-            let itemWidth = floor((availableWidth - totalSpacing) / CGFloat(columns))
-            let itemHeight = floor((itemWidth * tabViewAspectRatio) + 22)
-            return CGSize(width: itemWidth, height: itemHeight)
+            return tabOverviewItemSize(for: collectionView)
         }
         
         if collectionView === browserUI.padTabStripCollectionView {

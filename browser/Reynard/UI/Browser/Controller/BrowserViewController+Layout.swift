@@ -11,10 +11,9 @@ extension BrowserViewController {
     func configureLayout() {
         let ui = browserUI
         
-        view.addSubview(ui.geckoView)
-        view.addSubview(ui.keyboardBackdropView)
-        view.addSubview(ui.phoneChromeContainer)
         view.addSubview(ui.phoneBottomSafeAreaFillView)
+        view.addSubview(ui.geckoView)
+        view.addSubview(ui.phoneChromeContainer)
         view.addSubview(ui.padTopSafeAreaFillView)
         
         ui.phoneChromeContainer.addSubview(ui.phoneAddressBar)
@@ -64,10 +63,15 @@ extension BrowserViewController {
         
         ui.overviewPadTopBar.addSubview(overviewPadActionStack)
         
-        ui.phoneDismissKeyboardButton.backgroundColor = .quaternarySystemFill
+        ui.phoneDismissKeyboardButton.backgroundColor = .systemBackground
         ui.phoneDismissKeyboardButton.tintColor = .label
         ui.phoneDismissKeyboardButton.layer.cornerCurve = .continuous
         ui.phoneDismissKeyboardButton.layer.cornerRadius = 21
+        ui.phoneDismissKeyboardButton.layer.shadowColor = UIColor.black.cgColor
+        ui.phoneDismissKeyboardButton.layer.shadowOpacity = 0.2
+        ui.phoneDismissKeyboardButton.layer.shadowRadius = 12
+        ui.phoneDismissKeyboardButton.layer.shadowOffset = CGSize(width: 0, height: 4)
+        ui.phoneDismissKeyboardButton.layer.masksToBounds = false
         ui.phoneDismissKeyboardButton.setImage(UIImage(systemName: "keyboard.chevron.compact.down"), for: .normal)
         ui.phoneDismissKeyboardButton.setPreferredSymbolConfiguration(
             UIImage.SymbolConfiguration(pointSize: 17, weight: .regular),
@@ -79,6 +83,7 @@ extension BrowserViewController {
         ui.geckoTopPhoneConstraint = ui.geckoView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
         ui.geckoTopPadConstraint = ui.geckoView.topAnchor.constraint(equalTo: ui.padTabStripCollectionView.bottomAnchor)
         ui.geckoBottomPhoneConstraint = ui.geckoView.bottomAnchor.constraint(equalTo: ui.phoneChromeContainer.topAnchor)
+        ui.geckoBottomPhoneKeyboardOverlayConstraint = ui.geckoView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ui.geckoBottomPadConstraint = ui.geckoView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ui.geckoLeadingPhoneConstraint = ui.geckoView.leadingAnchor.constraint(equalTo: view.leadingAnchor)
         ui.geckoTrailingPhoneConstraint = ui.geckoView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
@@ -88,7 +93,6 @@ extension BrowserViewController {
         ui.phoneChromeBottomConstraint = ui.phoneChromeContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ui.phoneChromeHeightConstraint = ui.phoneChromeContainer.heightAnchor.constraint(equalToConstant: 94)
         ui.phoneToolbarHeightConstraint = ui.toolbarView.heightAnchor.constraint(equalToConstant: 30)
-        ui.keyboardBackdropBottomConstraint = ui.keyboardBackdropView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         
         ui.overviewCollectionTopPhoneConstraint = ui.tabOverviewCollectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
         ui.overviewCollectionBottomPhoneConstraint = ui.tabOverviewCollectionView.bottomAnchor.constraint(equalTo: ui.overviewPhoneBottomBar.topAnchor)
@@ -105,11 +109,6 @@ extension BrowserViewController {
             ui.geckoTopPhoneConstraint,
             ui.geckoBottomPhoneConstraint,
             
-            ui.keyboardBackdropView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            ui.keyboardBackdropView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            ui.keyboardBackdropView.topAnchor.constraint(equalTo: ui.phoneChromeContainer.topAnchor),
-            ui.keyboardBackdropBottomConstraint,
-            
             ui.phoneChromeContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             ui.phoneChromeContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             ui.phoneChromeBottomConstraint,
@@ -117,7 +116,7 @@ extension BrowserViewController {
             
             ui.phoneBottomSafeAreaFillView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             ui.phoneBottomSafeAreaFillView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            ui.phoneBottomSafeAreaFillView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            ui.phoneBottomSafeAreaFillView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -30),
             ui.phoneBottomSafeAreaFillView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
             ui.phoneAddressBar.leadingAnchor.constraint(equalTo: ui.phoneChromeContainer.leadingAnchor, constant: 12),
@@ -175,8 +174,8 @@ extension BrowserViewController {
             ui.tabOverviewBlurView.topAnchor.constraint(equalTo: ui.tabOverviewContainer.topAnchor),
             ui.tabOverviewBlurView.bottomAnchor.constraint(equalTo: ui.tabOverviewContainer.bottomAnchor),
             
-            ui.tabOverviewCollectionView.leadingAnchor.constraint(equalTo: ui.tabOverviewContainer.leadingAnchor),
-            ui.tabOverviewCollectionView.trailingAnchor.constraint(equalTo: ui.tabOverviewContainer.trailingAnchor),
+            ui.tabOverviewCollectionView.leadingAnchor.constraint(equalTo: ui.tabOverviewContainer.safeAreaLayoutGuide.leadingAnchor),
+            ui.tabOverviewCollectionView.trailingAnchor.constraint(equalTo: ui.tabOverviewContainer.safeAreaLayoutGuide.trailingAnchor),
             
             ui.overviewPhoneBottomBar.leadingAnchor.constraint(equalTo: ui.tabOverviewContainer.leadingAnchor),
             ui.overviewPhoneBottomBar.trailingAnchor.constraint(equalTo: ui.tabOverviewContainer.trailingAnchor),
@@ -215,6 +214,8 @@ extension BrowserViewController {
             ui.overviewPadDoneButton.widthAnchor.constraint(equalToConstant: 42),
             ui.overviewPadDoneButton.heightAnchor.constraint(equalTo: ui.overviewPadDoneButton.widthAnchor),
         ])
+        
+        view.sendSubviewToBack(ui.phoneBottomSafeAreaFillView)
     }
     
     func configureGestures() {
@@ -229,7 +230,6 @@ extension BrowserViewController {
         phoneSwipeUp.cancelsTouchesInView = false
         phoneSwipeUp.delegate = self
         
-        // REYNARD: Prioritize upward swipe recognition before horizontal pan so overview opening remains reliable.
         phonePan.require(toFail: phoneSwipeUp)
         
         browserUI.phoneAddressBar.addGestureRecognizer(phoneSwipeUp)
@@ -254,9 +254,11 @@ extension BrowserViewController {
     func applyChromeLayout(animated: Bool) {
         let ui = browserUI
         let pad = usesPadChromeLayout
+        let shouldShowGeckoBehindKeyboard = !pad && isSearchFocused && keyboardHeight > 0 && !isTabOverviewVisible
         
         ui.geckoTopPhoneConstraint.isActive = !pad
-        ui.geckoBottomPhoneConstraint.isActive = !pad
+        ui.geckoBottomPhoneConstraint.isActive = !pad && !shouldShowGeckoBehindKeyboard
+        ui.geckoBottomPhoneKeyboardOverlayConstraint.isActive = shouldShowGeckoBehindKeyboard
         ui.geckoLeadingPhoneConstraint.isActive = !pad
         ui.geckoTrailingPhoneConstraint.isActive = !pad
         ui.geckoTopPadConstraint.isActive = pad
@@ -277,8 +279,6 @@ extension BrowserViewController {
         
         ui.phoneChromeContainer.isHidden = pad || isTabOverviewVisible
         ui.phoneBottomSafeAreaFillView.isHidden = pad || isTabOverviewVisible
-        ui.keyboardBackdropView.isHidden = true
-        ui.keyboardBackdropView.alpha = 0
         
         ui.overviewPadTopBar.isHidden = !pad
         ui.overviewPhoneBottomBar.isHidden = pad
@@ -295,6 +295,7 @@ extension BrowserViewController {
         
         let layoutBlock = {
             self.view.layoutIfNeeded()
+            self.updatePhoneDismissKeyboardButtonShadowPath()
         }
         
         if animated {
@@ -329,6 +330,7 @@ extension BrowserViewController {
             ui.toolbarView.alpha = focused ? 0 : 1
             ui.phoneDismissKeyboardButton.alpha = dismissButtonTargetAlpha
             self.view.layoutIfNeeded()
+            self.updatePhoneDismissKeyboardButtonShadowPath()
         }
         
         let completion: (Bool) -> Void = { _ in
@@ -358,8 +360,9 @@ extension BrowserViewController {
         let safeBottom = view.safeAreaInsets.bottom
         keyboardHeight = max(0, overlap - safeBottom)
         
-        ui.phoneChromeBottomConstraint.constant = -keyboardHeight
-        ui.keyboardBackdropBottomConstraint.constant = -keyboardHeight
+        let shouldDockChromeToKeyboard = isSearchFocused && !isTabOverviewVisible && keyboardHeight > 0
+        ui.phoneChromeBottomConstraint.constant = shouldDockChromeToKeyboard ? -keyboardHeight : 0
+        applyChromeLayout(animated: false)
         
         let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0.25
         let curveRaw = info[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt ?? 7
@@ -367,6 +370,7 @@ extension BrowserViewController {
         
         UIView.animate(withDuration: duration, delay: 0, options: [curve]) {
             self.view.layoutIfNeeded()
+            self.updatePhoneDismissKeyboardButtonShadowPath()
         }
     }
     
@@ -379,11 +383,23 @@ extension BrowserViewController {
         
         keyboardHeight = 0
         ui.phoneChromeBottomConstraint.constant = 0
-        ui.keyboardBackdropBottomConstraint.constant = 0
+        applyChromeLayout(animated: false)
         
         let duration = (notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval) ?? 0.25
-        UIView.animate(withDuration: duration) {
+        let curveRaw = notification.userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt ?? 7
+        let curve = UIView.AnimationOptions(rawValue: curveRaw << 16)
+        UIView.animate(withDuration: duration, delay: 0, options: [curve]) {
             self.view.layoutIfNeeded()
+            self.updatePhoneDismissKeyboardButtonShadowPath()
         }
+    }
+    
+    func updatePhoneDismissKeyboardButtonShadowPath() {
+        let button = browserUI.phoneDismissKeyboardButton
+        guard button.bounds.width > 1, button.bounds.height > 1 else {
+            button.layer.shadowPath = nil
+            return
+        }
+        button.layer.shadowPath = UIBezierPath(roundedRect: button.bounds, cornerRadius: button.layer.cornerRadius).cgPath
     }
 }

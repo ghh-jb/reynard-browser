@@ -15,15 +15,6 @@ final class BrowserViewHierarchy {
         return view
     }()
     
-    let keyboardBackdropView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .clear
-        view.alpha = 0
-        view.isHidden = true
-        return view
-    }()
-    
     let phoneChromeContainer: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -182,6 +173,7 @@ final class BrowserViewHierarchy {
     var geckoTopPhoneConstraint: NSLayoutConstraint!
     var geckoTopPadConstraint: NSLayoutConstraint!
     var geckoBottomPhoneConstraint: NSLayoutConstraint!
+    var geckoBottomPhoneKeyboardOverlayConstraint: NSLayoutConstraint!
     var geckoBottomPadConstraint: NSLayoutConstraint!
     var geckoLeadingPhoneConstraint: NSLayoutConstraint!
     var geckoTrailingPhoneConstraint: NSLayoutConstraint!
@@ -191,7 +183,6 @@ final class BrowserViewHierarchy {
     var phoneChromeBottomConstraint: NSLayoutConstraint!
     var phoneChromeHeightConstraint: NSLayoutConstraint!
     var phoneToolbarHeightConstraint: NSLayoutConstraint!
-    var keyboardBackdropBottomConstraint: NSLayoutConstraint!
     var phoneAddressBarTrailingFullConstraint: NSLayoutConstraint!
     var phoneAddressBarTrailingFocusedConstraint: NSLayoutConstraint!
     var padTabStripHeightConstraint: NSLayoutConstraint!

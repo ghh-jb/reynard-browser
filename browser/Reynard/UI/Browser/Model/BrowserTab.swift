@@ -9,7 +9,6 @@ import GeckoView
 import UIKit
 
 final class BrowserTab {
-    let id = UUID()
     let session: GeckoSession
     var title: String
     var url: String?

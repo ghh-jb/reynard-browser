@@ -129,7 +129,7 @@ extension BrowserViewController {
         let shouldSwitch = horizontalTargetIndex != nil && (abs(translationX) > width * 0.28 || abs(velocityX) > 700)
         let shouldCreateNewTab = !usesPadChromeLayout
         && horizontalTargetIndex == nil
-        && tabs.count == 1
+        && selectedTabIndex == tabs.count - 1
         && horizontalDirection == 1
         && (abs(translationX) > width * 0.28 || velocityX < -700)
         

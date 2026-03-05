@@ -163,6 +163,17 @@ extension AddressBarView: UITextFieldDelegate {
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         delegate?.addressBarDidBeginEditing(self)
+        
+        guard let value = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            guard textField.isFirstResponder else {
+                return
+            }
+            textField.selectAll(nil)
+        }
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {

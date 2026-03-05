@@ -46,6 +46,7 @@ final class BrowserToolbarView: UIView {
         shareButton.setImage(UIImage(systemName: "square.and.arrow.up"), for: .normal)
         menuButton.setImage(UIImage(systemName: "ellipsis.circle"), for: .normal)
         tabsButton.setImage(UIImage(systemName: "square.on.square"), for: .normal)
+        shareButton.isEnabled = false
         
         backButton.addTarget(self, action: #selector(backButtonClicked), for: .touchUpInside)
         forwardButton.addTarget(self, action: #selector(forwardButtonClicked), for: .touchUpInside)
@@ -80,6 +81,10 @@ final class BrowserToolbarView: UIView {
     
     func updateForwardButton(canGoForward: Bool) {
         forwardButton.isEnabled = canGoForward
+    }
+    
+    func updateShareButton(isEnabled: Bool) {
+        shareButton.isEnabled = isEnabled
     }
     
     @objc func backButtonClicked() {

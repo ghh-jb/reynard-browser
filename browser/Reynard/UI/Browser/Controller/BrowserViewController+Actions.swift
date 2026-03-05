@@ -22,8 +22,7 @@ extension BrowserViewController {
     
     func presentShareSheet() {
         guard tabs.indices.contains(selectedTabIndex),
-              let value = tabs[selectedTabIndex].url,
-              let url = URL(string: value) else {
+              let url = shareableURL(for: tabs[selectedTabIndex]) else {
             return
         }
         

@@ -27,7 +27,7 @@ final class BrowserLayout {
         view.addSubview(ui.geckoView)
         view.addSubview(ui.chromeContainer.containerView)
         view.addSubview(ui.topBar.safeAreaFillView)
-        view.addSubview(ui.addressBar)
+        ui.chromeContainer.containerView.addSubview(ui.addressBar)
         
         ui.chromeContainer.containerView.addSubview(ui.keyboardDismissButton.button)
         ui.chromeContainer.containerView.addSubview(ui.toolbarView)
@@ -35,6 +35,8 @@ final class BrowserLayout {
         view.addSubview(ui.topBar.barView)
         ui.topBar.barView.addSubview(ui.padTopBarButtons.leftStack)
         ui.topBar.barView.addSubview(ui.padTopBarButtons.rightStack)
+        
+        setAddressBarHost(isPad: controller.usesPadChromeLayout)
         
         view.addSubview(ui.padTabBar.collectionView)
         
@@ -59,6 +61,7 @@ final class BrowserLayout {
         ui.phoneChromeBottomConstraint = ui.chromeContainer.containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ui.phoneChromeHeightConstraint = ui.chromeContainer.containerView.heightAnchor.constraint(equalToConstant: 94)
         ui.phoneToolbarHeightConstraint = ui.toolbarView.heightAnchor.constraint(equalToConstant: 30)
+        ui.phoneToolbarTopConstraint = ui.toolbarView.topAnchor.constraint(equalTo: ui.addressBar.bottomAnchor, constant: 7)
         
         ui.addressBarPhoneLeadingConstraint = ui.addressBar.leadingAnchor.constraint(equalTo: ui.chromeContainer.containerView.leadingAnchor, constant: 12)
         ui.addressBarPhoneTrailingFullConstraint = ui.addressBar.trailingAnchor.constraint(equalTo: ui.chromeContainer.containerView.trailingAnchor, constant: -12)
@@ -124,7 +127,7 @@ final class BrowserLayout {
             
             ui.toolbarView.leadingAnchor.constraint(equalTo: ui.chromeContainer.containerView.leadingAnchor, constant: 24),
             ui.toolbarView.trailingAnchor.constraint(equalTo: ui.chromeContainer.containerView.trailingAnchor, constant: -24),
-            ui.toolbarView.topAnchor.constraint(equalTo: ui.addressBar.bottomAnchor, constant: 7),
+            ui.phoneToolbarTopConstraint,
             ui.phoneToolbarHeightConstraint,
             
             ui.topBar.barView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -211,6 +214,7 @@ final class BrowserLayout {
     func applyChromeLayout(animated: Bool) {
         let ui = controller.browserUI
         let pad = controller.usesPadChromeLayout
+        setAddressBarHost(isPad: pad)
         let shouldShowGeckoBehindKeyboard = !pad
         && controller.isSearchFocused
         && keyboardHeight > 0
@@ -256,6 +260,9 @@ final class BrowserLayout {
         ui.addressBarPadTrailingConstraint.isActive = pad
         ui.addressBarPadCenterYConstraint.isActive = pad
         ui.addressBarPadHeightConstraint.isActive = pad
+        
+        ui.phoneToolbarTopConstraint.isActive = !pad
+        ui.keyboardDismissButton.centerYConstraint.isActive = !pad
         
         ui.keyboardDismissButton.button.isHidden = !showDismissButton
         ui.addressBar.setShadowEnabled(!pad)
@@ -372,5 +379,16 @@ final class BrowserLayout {
             return
         }
         button.layer.shadowPath = UIBezierPath(roundedRect: button.bounds, cornerRadius: button.layer.cornerRadius).cgPath
+    }
+    
+    private func setAddressBarHost(isPad: Bool) {
+        let ui = controller.browserUI
+        let targetHost = isPad ? ui.topBar.barView : ui.chromeContainer.containerView
+        guard ui.addressBar.superview !== targetHost else {
+            return
+        }
+        
+        ui.addressBar.removeFromSuperview()
+        targetHost.addSubview(ui.addressBar)
     }
 }

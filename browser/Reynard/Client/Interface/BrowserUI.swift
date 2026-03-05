@@ -56,6 +56,7 @@ final class BrowserUI {
     var phoneChromeBottomConstraint: NSLayoutConstraint!
     var phoneChromeHeightConstraint: NSLayoutConstraint!
     var phoneToolbarHeightConstraint: NSLayoutConstraint!
+    var phoneToolbarTopConstraint: NSLayoutConstraint!
     var addressBarPhoneLeadingConstraint: NSLayoutConstraint!
     var addressBarPhoneTrailingFullConstraint: NSLayoutConstraint!
     var addressBarPhoneTrailingFocusedConstraint: NSLayoutConstraint!

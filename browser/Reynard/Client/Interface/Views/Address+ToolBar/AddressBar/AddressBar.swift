@@ -1,20 +1,20 @@
 //
-//  AddressBarView.swift
+//  AddressBar.swift
 //  Reynard
 //
-//  Created by Minh Ton on 4/3/26.
+//  Created by Minh Ton on 5/3/26.
 //
 
 import UIKit
 
-protocol AddressBarViewDelegate: AnyObject {
+protocol AddressBarDelegate: AnyObject {
     func addressBarDidSubmit(_ searchTerm: String)
-    func addressBarDidBeginEditing(_ addressBar: AddressBarView)
-    func addressBarDidEndEditing(_ addressBar: AddressBarView)
+    func addressBarDidBeginEditing(_ addressBar: AddressBar)
+    func addressBarDidEndEditing(_ addressBar: AddressBar)
 }
 
-final class AddressBarView: UIView {
-    private weak var delegate: AddressBarViewDelegate?
+final class AddressBar: UIView {
+    private weak var delegate: AddressBarDelegate?
     private var shadowEnabled = true
     
     private let backgroundFillView: UIView = {
@@ -76,7 +76,7 @@ final class AddressBarView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(delegate: AddressBarViewDelegate) {
+    func configure(delegate: AddressBarDelegate) {
         self.delegate = delegate
         urlField.delegate = self
     }
@@ -151,7 +151,7 @@ final class AddressBarView: UIView {
     }
 }
 
-extension AddressBarView: UITextFieldDelegate {
+extension AddressBar: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         guard let searchText = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !searchText.isEmpty else {
             return false

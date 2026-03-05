@@ -1,14 +1,14 @@
 //
-//  TabGridCell.swift
+//  TabOverviewCard.swift
 //  Reynard
 //
-//  Created by Minh Ton on 4/3/26.
+//  Created by Minh Ton on 5/3/26.
 //
 
 import UIKit
 
-final class TabGridCell: UICollectionViewCell {
-    static let reuseIdentifier = "TabGridCell"
+final class TabOverviewCard: UICollectionViewCell {
+    static let reuseIdentifier = "TabOverviewCard"
     
     var onClose: (() -> Void)?
     
@@ -137,7 +137,7 @@ final class TabGridCell: UICollectionViewCell {
         contentView.alpha = 1
     }
     
-    func configure(tab: BrowserTab) {
+    func configure(tab: Tab) {
         titleLabel.text = tab.title.isEmpty ? "Homepage" : tab.title
         previewImageView.image = tab.thumbnail
     }

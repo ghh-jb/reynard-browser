@@ -1,14 +1,14 @@
 //
-//  TabStripCell.swift
+//  PadTabCell.swift
 //  Reynard
 //
-//  Created by Minh Ton on 4/3/26.
+//  Created by Minh Ton on 5/3/26.
 //
 
 import UIKit
 
-final class TabStripCell: UICollectionViewCell {
-    static let reuseIdentifier = "TabStripCell"
+final class PadTabCell: UICollectionViewCell {
+    static let reuseIdentifier = "PadTabCell"
     
     var onClose: (() -> Void)?
     

@@ -1,14 +1,63 @@
 //
-//  BrowserViewController+Gestures.swift
+//  AddressBarGestures.swift
 //  Reynard
 //
-//  Created by Minh Ton on 4/3/26.
+//  Created by Minh Ton on 5/3/26.
 //
 
 import UIKit
 
-extension BrowserViewController {
-    func createAddressBarPreview(for tab: BrowserTab) -> UIView {
+final class AddressBarGestures: NSObject {
+    private enum SearchPanMode {
+        case undecided
+        case horizontalTabs
+        case blocked
+    }
+    
+    private unowned let controller: BrowserViewController
+    
+    private var searchPanMode: SearchPanMode = .blocked
+    private var horizontalDirection = 0
+    private var horizontalTargetIndex: Int?
+    private var horizontalTargetContentView: UIView?
+    private var horizontalTargetBarView: UIView?
+    
+    init(controller: BrowserViewController) {
+        self.controller = controller
+    }
+    
+    func configureGestures() {
+        let phonePan = UIPanGestureRecognizer(target: self, action: #selector(handleSearchPan(_:)))
+        phonePan.maximumNumberOfTouches = 1
+        phonePan.cancelsTouchesInView = false
+        phonePan.delegate = self
+        
+        let phoneSwipeUp = UISwipeGestureRecognizer(target: self, action: #selector(handleSearchSwipeUp(_:)))
+        phoneSwipeUp.direction = .up
+        phoneSwipeUp.numberOfTouchesRequired = 1
+        phoneSwipeUp.cancelsTouchesInView = false
+        phoneSwipeUp.delegate = self
+        
+        phonePan.require(toFail: phoneSwipeUp)
+        
+        controller.browserUI.addressBar.addGestureRecognizer(phoneSwipeUp)
+        controller.browserUI.addressBar.addGestureRecognizer(phonePan)
+    }
+    
+    func resetHorizontalTransition() {
+        controller.browserUI.geckoView.transform = .identity
+        controller.activeAddressBar.transform = .identity
+        
+        horizontalTargetContentView?.removeFromSuperview()
+        horizontalTargetBarView?.removeFromSuperview()
+        
+        horizontalTargetContentView = nil
+        horizontalTargetBarView = nil
+        horizontalTargetIndex = nil
+        horizontalDirection = 0
+    }
+    
+    private func createAddressBarPreview(for tab: Tab) -> UIView {
         let container = UIView()
         container.backgroundColor = .secondarySystemBackground
         container.layer.cornerRadius = 16
@@ -47,7 +96,7 @@ extension BrowserViewController {
         return container
     }
     
-    func createContentPreview(for tab: BrowserTab) -> UIView {
+    private func createContentPreview(for tab: Tab) -> UIView {
         let preview = UIView()
         preview.backgroundColor = .systemBackground
         
@@ -79,31 +128,31 @@ extension BrowserViewController {
         return preview
     }
     
-    func updateHorizontalTabInteraction(translationX: CGFloat) {
+    private func updateHorizontalTabInteraction(translationX: CGFloat) {
         let direction = translationX < 0 ? 1 : -1
         
         if horizontalDirection != direction {
-            cleanupHorizontalTransition()
+            resetHorizontalTransition()
             horizontalDirection = direction
         }
         
         if horizontalTargetIndex == nil {
-            let candidate = selectedTabIndex + direction
-            if tabs.indices.contains(candidate) {
+            let candidate = controller.tabManager.selectedTabIndex + direction
+            if controller.tabManager.tabs.indices.contains(candidate) {
                 horizontalTargetIndex = candidate
                 
-                let targetTab = tabs[candidate]
+                let targetTab = controller.tabManager.tabs[candidate]
                 
                 let targetContent = createContentPreview(for: targetTab)
-                targetContent.frame = browserUI.geckoView.frame.offsetBy(dx: CGFloat(direction) * browserUI.geckoView.bounds.width, dy: 0)
-                view.insertSubview(targetContent, belowSubview: browserUI.geckoView)
+                targetContent.frame = controller.browserUI.geckoView.frame.offsetBy(dx: CGFloat(direction) * controller.browserUI.geckoView.bounds.width, dy: 0)
+                controller.view.insertSubview(targetContent, belowSubview: controller.browserUI.geckoView)
                 horizontalTargetContentView = targetContent
                 
-                if let barHost = activeAddressBar.superview {
+                if let barHost = controller.activeAddressBar.superview {
                     let targetBar = createAddressBarPreview(for: targetTab)
                     let outsidePadding: CGFloat = 24
-                    let horizontalOffset = CGFloat(direction) * (activeAddressBar.bounds.width + outsidePadding)
-                    targetBar.frame = activeAddressBar.frame.offsetBy(dx: horizontalOffset, dy: 0)
+                    let horizontalOffset = CGFloat(direction) * (controller.activeAddressBar.bounds.width + outsidePadding)
+                    targetBar.frame = controller.activeAddressBar.frame.offsetBy(dx: horizontalOffset, dy: 0)
                     barHost.addSubview(targetBar)
                     horizontalTargetBarView = targetBar
                 }
@@ -112,24 +161,24 @@ extension BrowserViewController {
         
         if horizontalTargetIndex == nil {
             let damped = translationX * 0.18
-            browserUI.geckoView.transform = CGAffineTransform(translationX: damped, y: 0)
-            activeAddressBar.transform = CGAffineTransform(translationX: damped, y: 0)
+            controller.browserUI.geckoView.transform = CGAffineTransform(translationX: damped, y: 0)
+            controller.activeAddressBar.transform = CGAffineTransform(translationX: damped, y: 0)
             return
         }
         
         let transform = CGAffineTransform(translationX: translationX, y: 0)
-        browserUI.geckoView.transform = transform
-        activeAddressBar.transform = transform
+        controller.browserUI.geckoView.transform = transform
+        controller.activeAddressBar.transform = transform
         horizontalTargetContentView?.transform = transform
         horizontalTargetBarView?.transform = transform
     }
     
-    func finishHorizontalTabInteraction(translationX: CGFloat, velocityX: CGFloat) {
-        let width = browserUI.geckoView.bounds.width
+    private func finishHorizontalTabInteraction(translationX: CGFloat, velocityX: CGFloat) {
+        let width = controller.browserUI.geckoView.bounds.width
         let shouldSwitch = horizontalTargetIndex != nil && (abs(translationX) > width * 0.28 || abs(velocityX) > 700)
-        let shouldCreateNewTab = !usesPadChromeLayout
+        let shouldCreateNewTab = !controller.usesPadChromeLayout
         && horizontalTargetIndex == nil
-        && selectedTabIndex == tabs.count - 1
+        && controller.tabManager.selectedTabIndex == controller.tabManager.tabs.count - 1
         && horizontalDirection == 1
         && (abs(translationX) > width * 0.28 || velocityX < -700)
         
@@ -137,66 +186,53 @@ extension BrowserViewController {
             let finalTranslation = CGFloat(-horizontalDirection) * width
             UIView.animate(withDuration: 0.24, delay: 0, options: [.curveEaseOut]) {
                 let transform = CGAffineTransform(translationX: finalTranslation, y: 0)
-                self.browserUI.geckoView.transform = transform
-                self.activeAddressBar.transform = transform
+                self.controller.browserUI.geckoView.transform = transform
+                self.controller.activeAddressBar.transform = transform
                 self.horizontalTargetContentView?.transform = transform
                 self.horizontalTargetBarView?.transform = transform
             } completion: { _ in
-                self.cleanupHorizontalTransition()
-                self.selectTab(at: targetIndex, animated: true)
+                self.resetHorizontalTransition()
+                self.controller.selectTab(at: targetIndex, animated: true)
             }
         } else if shouldCreateNewTab {
             UIView.animate(withDuration: 0.2, delay: 0, options: [.curveEaseOut]) {
                 let transform = CGAffineTransform(translationX: -width * 0.34, y: 0)
-                self.browserUI.geckoView.transform = transform
-                self.activeAddressBar.transform = transform
+                self.controller.browserUI.geckoView.transform = transform
+                self.controller.activeAddressBar.transform = transform
             } completion: { _ in
-                self.cleanupHorizontalTransition()
-                self.createTab(selecting: true)
+                self.resetHorizontalTransition()
+                _ = self.controller.createTab(selecting: true)
             }
         } else {
             UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseOut]) {
-                self.browserUI.geckoView.transform = .identity
-                self.activeAddressBar.transform = .identity
+                self.controller.browserUI.geckoView.transform = .identity
+                self.controller.activeAddressBar.transform = .identity
                 self.horizontalTargetContentView?.transform = .identity
                 self.horizontalTargetBarView?.transform = .identity
             } completion: { _ in
-                self.cleanupHorizontalTransition()
+                self.resetHorizontalTransition()
             }
         }
     }
     
-    func cleanupHorizontalTransition() {
-        browserUI.geckoView.transform = .identity
-        activeAddressBar.transform = .identity
-        
-        horizontalTargetContentView?.removeFromSuperview()
-        horizontalTargetBarView?.removeFromSuperview()
-        
-        horizontalTargetContentView = nil
-        horizontalTargetBarView = nil
-        horizontalTargetIndex = nil
-        horizontalDirection = 0
-    }
-    
-    @objc func handleSearchPan(_ recognizer: UIPanGestureRecognizer) {
-        if usesPadChromeLayout {
-            cleanupHorizontalTransition()
+    @objc private func handleSearchPan(_ recognizer: UIPanGestureRecognizer) {
+        if controller.usesPadChromeLayout {
+            resetHorizontalTransition()
             searchPanMode = .blocked
             return
         }
         
-        if isSearchFocused && recognizer.state == .began {
+        if controller.isSearchFocused && recognizer.state == .began {
             return
         }
         
-        let translation = recognizer.translation(in: view)
-        let velocity = recognizer.velocity(in: view)
+        let translation = recognizer.translation(in: controller.view)
+        let velocity = recognizer.velocity(in: controller.view)
         
         switch recognizer.state {
         case .began:
             searchPanMode = .undecided
-            cleanupHorizontalTransition()
+            resetHorizontalTransition()
             
         case .changed:
             if searchPanMode == .undecided {
@@ -205,25 +241,21 @@ extension BrowserViewController {
                 }
                 
                 if abs(translation.x) > abs(translation.y) {
-                    searchPanMode = (!isTabOverviewVisible && !isSearchFocused) ? .horizontalTabs : .blocked
+                    searchPanMode = (!controller.tabOverviewPresentation.isVisible && !controller.isSearchFocused) ? .horizontalTabs : .blocked
                 } else {
                     searchPanMode = .blocked
                 }
             }
             
-            switch searchPanMode {
-            case .horizontalTabs:
+            if searchPanMode == .horizontalTabs {
                 updateHorizontalTabInteraction(translationX: translation.x)
-            default:
-                break
             }
             
         case .ended, .cancelled, .failed:
-            switch searchPanMode {
-            case .horizontalTabs:
+            if searchPanMode == .horizontalTabs {
                 finishHorizontalTabInteraction(translationX: translation.x, velocityX: velocity.x)
-            default:
-                cleanupHorizontalTransition()
+            } else {
+                resetHorizontalTransition()
             }
             searchPanMode = .blocked
             
@@ -232,24 +264,21 @@ extension BrowserViewController {
         }
     }
     
-    @objc func handleSearchSwipeUp(_ recognizer: UISwipeGestureRecognizer) {
+    @objc private func handleSearchSwipeUp(_ recognizer: UISwipeGestureRecognizer) {
         guard recognizer.state == .ended,
-              !usesPadChromeLayout,
-              !isSearchFocused,
-              !isTabOverviewVisible,
-              !isOverviewMorphTransitionRunning else {
+              !controller.usesPadChromeLayout,
+              !controller.isSearchFocused,
+              !controller.tabOverviewPresentation.isVisible,
+              !controller.tabOverviewPresentation.isTransitionRunning else {
             return
         }
         
-        setTabOverviewVisible(true, animated: true)
+        controller.setTabOverviewVisible(true, animated: true)
     }
 }
 
-extension BrowserViewController: UIGestureRecognizerDelegate {
+extension AddressBarGestures: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        if touch.view is UIButton {
-            return false
-        }
-        return true
+        !(touch.view is UIButton)
     }
 }

@@ -1,14 +1,14 @@
 //
-//  BrowserTab.swift
+//  Tab.swift
 //  Reynard
 //
-//  Created by Minh Ton on 4/3/26.
+//  Created by Minh Ton on 5/3/26.
 //
 
 import GeckoView
 import UIKit
 
-final class BrowserTab {
+final class Tab {
     let session: GeckoSession
     var title: String
     var url: String?

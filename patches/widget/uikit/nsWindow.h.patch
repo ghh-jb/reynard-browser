@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/nsWindow.h b/widget/uikit/nsWindow.h
-index 07abe22076e8..b3d0253e822a 100644
+index 07abe22076e8..a20921726564 100644
 --- a/widget/uikit/nsWindow.h
 +++ b/widget/uikit/nsWindow.h
 @@ -23,10 +23,12 @@ typedef struct objc_object ChildView;
@@ -37,7 +37,16 @@ index 07abe22076e8..b3d0253e822a 100644
  
    void HandleMainThreadCATransaction();
  
-@@ -159,8 +168,12 @@ class nsWindow final : public nsIWidget {
+@@ -148,6 +157,8 @@ class nsWindow final : public nsIWidget {
+   nsresult GetCurrentOffset(uint32_t& aOffset, uint32_t& aLength);
+   nsresult DeleteRange(int aOffset, int aLen);
+ 
++  void CloseNativeLayerRemoteParent(bool aWaitUntilClosed);
++  void DestroyNativeLayerRoot();
+   void TearDownView();
+ 
+   ChildView* mNativeView;
+@@ -159,8 +170,12 @@ class nsWindow final : public nsIWidget {
    mozilla::widget::InputContext mInputContext;
    RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
    RefPtr<mozilla::widget::IOSView> mIOSView;

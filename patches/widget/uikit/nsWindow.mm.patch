@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/nsWindow.mm b/widget/uikit/nsWindow.mm
-index 46b22cfe21c4..726c614cec0a 100644
+index 46b22cfe21c4..e1a9b7890cc9 100644
 --- a/widget/uikit/nsWindow.mm
 +++ b/widget/uikit/nsWindow.mm
 @@ -45,9 +45,18 @@
@@ -115,18 +115,73 @@ index 46b22cfe21c4..726c614cec0a 100644
    AUTO_PROFILER_LABEL("ChildView::drawUsingOpenGL", OTHER);
  
    if (!mGeckoChild->IsVisible()) return;
-@@ -746,6 +738,10 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -746,10 +738,65 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
        mParent(nullptr) {}
  
  nsWindow::~nsWindow() {
-+  if (mNativeLayerRoot) {
-+    mNativeLayerRoot->SetLayers({});
-+  }
++  CloseNativeLayerRemoteParent(true);
++  DestroyNativeLayerRoot();
 +
    [mNativeView widgetDestroyed];  // Safe if mNativeView is nil.
    TearDownView();                 // Safe if called twice.
  }
-@@ -771,15 +767,9 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+ 
++void nsWindow::CloseNativeLayerRemoteParent(bool aWaitUntilClosed) {
++  // REYNARD: Drop the remote actor's layer-root reference before we destroy
++  // the UIKit view so the CA root cannot outlive its backing layer tree.
++  RefPtr<NativeLayerRootRemoteMacParent> actor =
++      std::move(mNativeLayerRootRemoteMacParent);
++  if (!actor) {
++    return;
++  }
++
++  MOZ_ASSERT(CompositorThread());
++
++  if (!aWaitUntilClosed) {
++    CompositorThread()->Dispatch(NS_NewRunnableFunction(
++        "nsWindow::CloseNativeLayerRemoteParent",
++        [actor = std::move(actor)]() {
++          actor->Shutdown();
++          actor->Close();
++        }));
++    return;
++  }
++
++  Monitor monitor("nsWindow::CloseNativeLayerRemoteParent");
++  bool didClose = false;
++
++  CompositorThread()->Dispatch(NS_NewRunnableFunction(
++      "nsWindow::CloseNativeLayerRemoteParentAndWait",
++      [actor = std::move(actor), &monitor, &didClose]() {
++        actor->Shutdown();
++        actor->Close();
++        MonitorAutoLock lock(monitor);
++        didClose = true;
++        lock.Notify();
++      }));
++
++  MonitorAutoLock lock(monitor);
++  while (!didClose) {
++    lock.Wait();
++  }
++}
++
++void nsWindow::DestroyNativeLayerRoot() {
++  // REYNARD: Release the retained CA root while the ChildView still owns a
++  // valid backing layer, so the root destructor does not run after UIKit
++  // tears that layer tree down.
++  if (!mNativeLayerRoot) {
++    return;
++  }
++
++  mNativeLayerRoot->SetLayers({});
++  mNativeLayerRoot = nullptr;
++}
++
+ void nsWindow::TearDownView() {
+   if (!mNativeView) return;
+ 
+@@ -771,15 +818,9 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
  
  nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                            const widget::InitData& aInitData) {
@@ -142,18 +197,25 @@ index 46b22cfe21c4..726c614cec0a 100644
    // Set defaults which can be overriden from aInitData in BaseCreate
    mWindowType = WindowType::TopLevel;
    mBorderStyle = BorderStyle::Default;
-@@ -827,6 +817,10 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -827,6 +868,8 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
    }
    mTextInputHandler = nullptr;
  
-+  if (mNativeLayerRoot) {
-+    mNativeLayerRoot->SetLayers({});
-+  }
++  CloseNativeLayerRemoteParent(true);
 +
    [mNativeView widgetDestroyed];
  
    nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
-@@ -852,7 +846,6 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -835,6 +878,8 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+ 
+   // ReportDestroyEvent();
+ 
++  DestroyNativeLayerRoot();
++
+   TearDownView();
+ 
+   nsIWidget::OnDestroy();
+@@ -852,7 +897,6 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
      mVisible = aState;
    }
  }
@@ -161,7 +223,7 @@ index 46b22cfe21c4..726c614cec0a 100644
  void nsWindow::Move(const DesktopPoint& aPoint) {
    if (!mNativeView || (mBounds.x == aPoint.x && mBounds.y == aPoint.y)) {
      return;
-@@ -1051,6 +1044,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -1051,6 +1095,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
    return mInputContext;
  }
  
@@ -187,19 +249,13 @@ index 46b22cfe21c4..726c614cec0a 100644
  widget::TextEventDispatcherListener*
  nsWindow::GetNativeTextEventDispatcherListener() {
    return mTextInputHandler;
-@@ -1122,6 +1134,97 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -1122,6 +1185,85 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
    return mNativeLayerRoot;
  }
  
 +void nsWindow::GetCompositorWidgetInitData(
 +    mozilla::widget::CompositorWidgetInitData* aInitData) {
-+  if (RefPtr<NativeLayerRootRemoteMacParent> actor =
-+          std::move(mNativeLayerRootRemoteMacParent)) {
-+    MOZ_ASSERT(CompositorThread());
-+    CompositorThread()->Dispatch(
-+        NewRunnableMethod("NativeLayerRootRemoteMacParent::Close", actor,
-+                          &NativeLayerRootRemoteMacParent::Close));
-+  }
++  CloseNativeLayerRemoteParent(false);
 +
 +  auto* pm = mozilla::gfx::GPUProcessManager::Get();
 +  mozilla::ipc::EndpointProcInfo gpuProcessInfo =
@@ -261,13 +317,7 @@ index 46b22cfe21c4..726c614cec0a 100644
 +    mNativeLayerRoot->SetLayers({});
 +  }
 +
-+  if (RefPtr<NativeLayerRootRemoteMacParent> actor =
-+          std::move(mNativeLayerRootRemoteMacParent)) {
-+    MOZ_ASSERT(CompositorThread());
-+    CompositorThread()->Dispatch(
-+        NewRunnableMethod("NativeLayerRootRemoteMacParent::Close", actor,
-+                          &NativeLayerRootRemoteMacParent::Close));
-+  }
++  CloseNativeLayerRemoteParent(false);
 +
 +  nsIWidget::DestroyCompositor();
 +}
@@ -285,7 +335,7 @@ index 46b22cfe21c4..726c614cec0a 100644
  void nsWindow::HandleMainThreadCATransaction() {
    // Trigger a synchronous OMTC composite. This will call NextSurface and
    // NotifySurfaceReady on the compositor thread to update mNativeLayerRoot's
-@@ -1276,6 +1379,7 @@ - (void)close {
+@@ -1276,6 +1418,7 @@ - (void)close {
  
    nsAutoCString url;
    nsresult rv = Preferences::GetCString("toolkit.defaultChromeURI", url);

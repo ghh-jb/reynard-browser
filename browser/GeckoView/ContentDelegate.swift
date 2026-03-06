@@ -14,7 +14,7 @@ public struct ContextElement {
         case video
         case audio
     }
-
+    
     public let baseUri: String?
     public let linkUri: String?
     public let title: String?
@@ -97,15 +97,13 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler<ContentDe
         @MainActor session, delegate, event, message in
         switch event {
         case .contentCrash:
-            session.close()
             delegate?.onCrash(session: session)
             return nil
-
+            
         case .contentKill:
-            session.close()
             delegate?.onKill(session: session)
             return nil
-
+            
         case .contextMenu:
             func parseElementType(_ value: String) -> ContextElement.ElementType {
                 switch value {
@@ -119,7 +117,7 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler<ContentDe
                     return .none
                 }
             }
-
+            
             let contextElement = ContextElement(
                 baseUri: message?["baseUri"] as? String,
                 linkUri: message?["linkUri"] as? String,
@@ -129,7 +127,7 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler<ContentDe
                 srcUri: message?["elementSrc"] as? String,
                 textContent: message?["textContent"] as? String
             )
-
+            
             delegate?.onContextMenu(
                 session: session,
                 screenX: message?["screenX"] as? Int ?? 0,
@@ -137,69 +135,69 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler<ContentDe
                 element: contextElement
             )
             return nil
-
+            
         case .domMetaViewportFit:
             delegate?.onMetaViewportFitChange(
                 session: session,
                 viewportFit: message?["viewportfit"] as? String ?? ""
             )
             return nil
-
+            
         case .pageTitleChanged:
             delegate?.onTitleChange(session: session, title: message?["title"] as? String ?? "")
             return nil
-
+            
         case .domWindowClose:
             delegate?.onCloseRequest(session: session)
             return nil
-
+            
         case .externalResponse:
             throw GeckoHandlerError("GeckoView:ExternalResponse is unimplemented")
-
+            
         case .focusRequest:
             delegate?.onFocusRequest(session: session)
             return nil
-
+            
         case .fullscreenEnter:
             delegate?.onFullScreen(session: session, fullScreen: true)
             return nil
-
+            
         case .fullscreenExit:
             delegate?.onFullScreen(session: session, fullScreen: false)
             return nil
-
+            
         case .webAppManifest:
             if let manifest = message?["manifest"] {
                 delegate?.onWebAppManifest(session: session, manifest: manifest as Any)
             }
             return nil
-
+            
         case .firstContentfulPaint:
             delegate?.onFirstContentfulPaint(session: session)
             return nil
-
+            
         case .paintStatusReset:
             delegate?.onPaintStatusReset(session: session)
             return nil
-
+            
         case .previewImage:
             delegate?.onPreviewImage(
                 session: session,
                 previewImageUrl: message?["previewImageUrl"] as? String ?? ""
             )
             return nil
-
+            
         case .cookieBannerEventDetected:
             delegate?.onCookieBannerDetected(session: session)
             return nil
-
+            
         case .cookieBannerEventHandled:
             delegate?.onCookieBannerHandled(session: session)
             return nil
-
+            
         case .savePdf:
             throw GeckoHandlerError("GeckoView:SavePdf is unimplemented")
-
+            
         case .onProductUrl:
             delegate?.onProductUrl(session: session)
             return nil
@@ -224,12 +222,12 @@ func newProcessHangHandler(_ session: GeckoSession) -> GeckoSessionHandler<Conte
             } else {
                 reportId = 0
             }
-
+            
             let response = await delegate?.onSlowScript(
                 session: session,
                 scriptFileName: message?["scriptFileName"] as? String ?? ""
             )
-
+            
             switch response {
             case .resume:
                 session.dispatcher.dispatch(

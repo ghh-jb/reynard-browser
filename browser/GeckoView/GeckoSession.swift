@@ -17,7 +17,7 @@ public class GeckoSession {
     let dispatcher: GeckoEventDispatcherWrapper = GeckoEventDispatcherWrapper()
     var window: GeckoViewWindow?
     var id: String?
-
+    
     lazy var contentHandler = newContentHandler(self)
     lazy var processHangHandler = newProcessHangHandler(self)
     public var contentDelegate: ContentDelegate? {
@@ -27,26 +27,26 @@ public class GeckoSession {
             processHangHandler.delegate = newValue
         }
     }
-
+    
     lazy var navigationHandler = newNavigationHandler(self)
     public var navigationDelegate: NavigationDelegate? {
         get { navigationHandler.delegate }
         set { navigationHandler.delegate = newValue }
     }
-
+    
     lazy var progressHandler = newProgressHandler(self)
     public var progressDelegate: ProgressDelegate? {
         get { progressHandler.delegate }
         set { progressHandler.delegate = newValue }
     }
-
+    
     lazy var sessionHandlers: [GeckoSessionHandlerCommon] = [
         contentHandler,
         processHangHandler,
         navigationHandler,
         progressHandler,
     ]
-
+    
     public init() {
         for sessionHandler in sessionHandlers {
             for type in sessionHandler.events {
@@ -54,14 +54,14 @@ public class GeckoSession {
             }
         }
     }
-
+    
     public func open(windowId: String? = nil) {
         if isOpen() {
             fatalError("cannot open a GeckoSession twice")
         }
-
+        
         id = windowId ?? UUID().uuidString.replacingOccurrences(of: "-", with: "")
-
+        
         let settings: [String: Any?] = [
             "chromeUri": nil,
             "screenId": 0,
@@ -77,11 +77,11 @@ public class GeckoSession {
             "sessionContextId": nil,
             "unsafeSessionContextId": nil,
         ]
-
+        
         let modules = Dictionary(uniqueKeysWithValues: sessionHandlers.map {
             ($0.moduleName, $0.enabled)
         })
-
+        
         window = GeckoViewOpenWindow(
             id,
             dispatcher,
@@ -92,19 +92,27 @@ public class GeckoSession {
             false
         )
     }
-
+    
     public func isOpen() -> Bool { window != nil }
-
+    
     public func close() {
-        window?.close()
-        window = nil
+        guard let window else {
+            return
+        }
+        
+        contentDelegate = nil
+        navigationDelegate = nil
+        progressDelegate = nil
+        
+        window.close()
+        self.window = nil
         id = nil
     }
-
+    
     public func load(_ url: String) {
         dispatchLoad(url)
     }
-
+    
     private func dispatchLoad(_ url: String) {
         dispatcher.dispatch(
             type: "GeckoView:LoadUri",
@@ -114,7 +122,7 @@ public class GeckoSession {
                 "headerFilter": 1,
             ])
     }
-
+    
     public func reload() {
         dispatcher.dispatch(
             type: "GeckoView:Reload",
@@ -122,11 +130,11 @@ public class GeckoSession {
                 "flags": 0
             ])
     }
-
+    
     public func stop() {
         dispatcher.dispatch(type: "GeckoView:Stop")
     }
-
+    
     public func goBack(userInteraction: Bool = true) {
         dispatcher.dispatch(
             type: "GeckoView:GoBack",
@@ -134,7 +142,7 @@ public class GeckoSession {
                 "userInteraction": userInteraction
             ])
     }
-
+    
     public func goForward(userInteraction: Bool = true) {
         dispatcher.dispatch(
             type: "GeckoView:GoForward",
@@ -142,7 +150,7 @@ public class GeckoSession {
                 "userInteraction": userInteraction
             ])
     }
-
+    
     public func setActive(_ active: Bool) {
         dispatcher.dispatch(type: "GeckoView:SetActive", message: ["active": active])
     }

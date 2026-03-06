@@ -180,6 +180,14 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     func tabManagerDidChangeTabs(_ tabManager: TabManager) {
+        if let selectedTab = tabManager.selectedTab {
+            if browserUI.geckoView.session !== selectedTab.session {
+                browserUI.geckoView.session = selectedTab.session
+            }
+        } else {
+            browserUI.geckoView.session = nil
+        }
+        
         browserUI.tabOverviewCollection.collectionView.reloadData()
         browserUI.padTabBar.collectionView.reloadData()
         browserLayout.applyChromeLayout(animated: false)

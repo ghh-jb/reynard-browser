@@ -13,15 +13,19 @@ public class GeckoView: UIView {
             for view in subviews {
                 view.removeFromSuperview()
             }
-
-            guard let window = session?.window else {
-                NSLog("GeckoView: session has no window!")
+            
+            guard let session else {
+                return
+            }
+            
+            guard let window = session.window else {
+                NSLog("GeckoView: session window is unavailable during assignment")
                 return
             }
             
             guard let sessionView = window.view() else {
-                 NSLog("GeckoView: session window has no view!")
-                 return
+                NSLog("GeckoView: session window has no view!")
+                return
             }
             
             if sessionView.superview != nil {
@@ -30,7 +34,7 @@ public class GeckoView: UIView {
             
             sessionView.translatesAutoresizingMaskIntoConstraints = false
             addSubview(sessionView)
-
+            
             NSLayoutConstraint.activate([
                 sessionView.topAnchor.constraint(equalTo: topAnchor),
                 sessionView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -42,11 +46,11 @@ public class GeckoView: UIView {
             layoutIfNeeded()
         }
     }
-
+    
     public override init(frame: CGRect) {
         super.init(frame: frame)
     }
-
+    
     required init?(coder: NSCoder) {
         super.init(coder: coder)
     }

@@ -11,7 +11,7 @@ import UIKit
 
 final class TabManagerImplementation: NSObject, TabManager {
     private(set) var tabs: [Tab] = []
-    private(set) var selectedTabIndex = 0
+    private(set) var selectedTabIndex = -1
     
     var selectedTab: Tab? {
         tabs[safe: selectedTabIndex]
@@ -26,6 +26,13 @@ final class TabManagerImplementation: NSObject, TabManager {
     
     init(delegate: TabManagerDelegate?) {
         self.delegate = delegate
+    }
+    
+    private func closeSession(_ session: GeckoSession) {
+        if session.isOpen() {
+            session.setActive(false)
+        }
+        session.close()
     }
     
     func createInitialTab() {
@@ -71,16 +78,18 @@ final class TabManagerImplementation: NSObject, TabManager {
         
         let wasSelected = index == selectedTabIndex
         let removedTab = tabs.remove(at: index)
-        removedTab.session.close()
         
         if tabs.isEmpty {
-            selectedTabIndex = 0
+            selectedTabIndex = -1
             delegate?.tabManagerDidChangeTabs(self)
             addTab(selecting: true, windowId: nil)
+            closeSession(removedTab.session)
             return
         }
         
-        if index < selectedTabIndex {
+        if wasSelected {
+            selectedTabIndex = -1
+        } else if index < selectedTabIndex {
             selectedTabIndex -= 1
         }
         
@@ -90,6 +99,8 @@ final class TabManagerImplementation: NSObject, TabManager {
             let fallback = min(index, tabs.count - 1)
             selectTab(at: fallback)
         }
+        
+        closeSession(removedTab.session)
     }
     
     func removeAllTabs() {
@@ -97,11 +108,13 @@ final class TabManagerImplementation: NSObject, TabManager {
             return
         }
         
-        tabs.forEach { $0.session.close() }
+        let removedTabs = tabs
         tabs.removeAll(keepingCapacity: true)
-        selectedTabIndex = 0
+        selectedTabIndex = -1
         delegate?.tabManagerDidChangeTabs(self)
         addTab(selecting: true, windowId: nil)
+        
+        removedTabs.forEach { closeSession($0.session) }
     }
     
     func browse(to term: String) {

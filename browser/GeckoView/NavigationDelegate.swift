@@ -46,9 +46,17 @@ enum NavigationEvents: String, CaseIterable {
     case onLoadRequest = "GeckoView:OnLoadRequest"
 }
 
-func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler<NavigationDelegate, NavigationEvents> {
-    GeckoSessionHandler(moduleName: "GeckoViewNavigation", session: session) {
-        @MainActor session, delegate, event, message in
+func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler {
+    GeckoSessionHandler(
+        moduleName: "GeckoViewNavigation",
+        events: NavigationEvents.allCases.map(\.rawValue),
+        session: session
+    ) { @MainActor session, delegate, type, message in
+        guard let event = NavigationEvents(rawValue: type) else {
+            throw GeckoHandlerError("unknown message \(type)")
+        }
+        
+        let delegate = delegate as? NavigationDelegate
         switch event {
         case .locationChange:
             if message?["isTopLevel"] as? Bool == true {
@@ -59,14 +67,14 @@ func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler<Naviga
                     permissions: rawPermissions?.map(ContentPermission.fromDictionary) ?? []
                 )
             }
-
+            
             delegate?.onCanGoBack(session: session, canGoBack: message?["canGoBack"] as? Bool ?? false)
             delegate?.onCanGoForward(
                 session: session,
                 canGoForward: message?["canGoForward"] as? Bool ?? false
             )
             return nil
-
+            
         case .onNewSession:
             guard
                 let uri = message?["uri"] as? String,
@@ -74,7 +82,7 @@ func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler<Naviga
             else {
                 return false
             }
-
+            
             if let newSession = await delegate?.onNewSession(session: session, uri: uri) {
                 if !newSession.isOpen() {
                     newSession.open(windowId: newSessionId)
@@ -82,15 +90,15 @@ func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler<Naviga
                 return true
             }
             return false
-
+            
         case .onLoadError:
             return nil
-
+            
         case .onLoadRequest:
             guard let uri = message?["uri"] as? String else {
                 return true
             }
-
+            
             func convertTarget(_ value: Int32) -> LoadRequestTarget {
                 switch value {
                 case 0, 1:
@@ -99,7 +107,7 @@ func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler<Naviga
                     return .new
                 }
             }
-
+            
             let flags: Int
             if let intFlags = message?["flags"] as? Int {
                 flags = intFlags
@@ -108,7 +116,7 @@ func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler<Naviga
             } else {
                 flags = 0
             }
-
+            
             let targetValue: Int32
             if let int32Where = message?["where"] as? Int32 {
                 targetValue = int32Where
@@ -117,7 +125,7 @@ func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler<Naviga
             } else {
                 targetValue = 0
             }
-
+            
             let LOAD_REQUEST_IS_REDIRECT = 0x800000
             let request = LoadRequest(
                 uri: uri,
@@ -127,7 +135,7 @@ func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler<Naviga
                 hasUserGesture: message?["hasUserGesture"] as? Bool ?? false,
                 isDirectNavigation: true
             )
-
+            
             let isTopLevel = message?["isTopLevel"] as? Bool ?? true
             if isTopLevel {
                 return await delegate?.onLoadRequest(session: session, request: request) == .allow

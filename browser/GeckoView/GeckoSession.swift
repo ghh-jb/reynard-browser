@@ -21,23 +21,23 @@ public class GeckoSession {
     lazy var contentHandler = newContentHandler(self)
     lazy var processHangHandler = newProcessHangHandler(self)
     public var contentDelegate: ContentDelegate? {
-        get { contentHandler.delegate }
+        get { contentHandler.delegate(as: ContentDelegate.self) }
         set {
-            contentHandler.delegate = newValue
-            processHangHandler.delegate = newValue
+            contentHandler.setDelegate(newValue)
+            processHangHandler.setDelegate(newValue)
         }
     }
     
     lazy var navigationHandler = newNavigationHandler(self)
     public var navigationDelegate: NavigationDelegate? {
-        get { navigationHandler.delegate }
-        set { navigationHandler.delegate = newValue }
+        get { navigationHandler.delegate(as: NavigationDelegate.self) }
+        set { navigationHandler.setDelegate(newValue) }
     }
     
     lazy var progressHandler = newProgressHandler(self)
     public var progressDelegate: ProgressDelegate? {
-        get { progressHandler.delegate }
-        set { progressHandler.delegate = newValue }
+        get { progressHandler.delegate(as: ProgressDelegate.self) }
+        set { progressHandler.setDelegate(newValue) }
     }
     
     lazy var sessionHandlers: [GeckoSessionHandlerCommon] = [

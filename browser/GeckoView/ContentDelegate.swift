@@ -92,9 +92,17 @@ enum ContentEvents: String, CaseIterable {
     case onProductUrl = "GeckoView:OnProductUrl"
 }
 
-func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler<ContentDelegate, ContentEvents> {
-    GeckoSessionHandler(moduleName: "GeckoViewContent", session: session) {
-        @MainActor session, delegate, event, message in
+func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler {
+    GeckoSessionHandler(
+        moduleName: "GeckoViewContent",
+        events: ContentEvents.allCases.map(\.rawValue),
+        session: session
+    ) { @MainActor session, delegate, type, message in
+        guard let event = ContentEvents(rawValue: type) else {
+            throw GeckoHandlerError("unknown message \(type)")
+        }
+        
+        let delegate = delegate as? ContentDelegate
         switch event {
         case .contentCrash:
             delegate?.onCrash(session: session)
@@ -209,9 +217,17 @@ enum ProcessHangEvents: String, CaseIterable {
     case hangReport = "GeckoView:HangReport"
 }
 
-func newProcessHangHandler(_ session: GeckoSession) -> GeckoSessionHandler<ContentDelegate, ProcessHangEvents> {
-    GeckoSessionHandler(moduleName: "GeckoViewProcessHangMonitor", session: session) {
-        @MainActor session, delegate, event, message in
+func newProcessHangHandler(_ session: GeckoSession) -> GeckoSessionHandler {
+    GeckoSessionHandler(
+        moduleName: "GeckoViewProcessHangMonitor",
+        events: ProcessHangEvents.allCases.map(\.rawValue),
+        session: session
+    ) { @MainActor session, delegate, type, message in
+        guard let event = ProcessHangEvents(rawValue: type) else {
+            throw GeckoHandlerError("unknown message \(type)")
+        }
+        
+        let delegate = delegate as? ContentDelegate
         switch event {
         case .hangReport:
             let reportId: Int

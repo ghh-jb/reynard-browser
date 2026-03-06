@@ -27,9 +27,17 @@ enum ProgressEvents: String, CaseIterable {
     case stateUpdated = "GeckoView:StateUpdated"
 }
 
-func newProgressHandler(_ session: GeckoSession) -> GeckoSessionHandler<ProgressDelegate, ProgressEvents> {
-    GeckoSessionHandler(moduleName: "GeckoViewProgress", session: session) {
-        @MainActor session, delegate, event, message in
+func newProgressHandler(_ session: GeckoSession) -> GeckoSessionHandler {
+    GeckoSessionHandler(
+        moduleName: "GeckoViewProgress",
+        events: ProgressEvents.allCases.map(\.rawValue),
+        session: session
+    ) { @MainActor session, delegate, type, message in
+        guard let event = ProgressEvents(rawValue: type) else {
+            throw GeckoHandlerError("unknown message \(type)")
+        }
+        
+        let delegate = delegate as? ProgressDelegate
         switch event {
         case .pageStart:
             guard let url = message?["uri"] as? String else {

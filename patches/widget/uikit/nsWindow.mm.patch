@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/nsWindow.mm b/widget/uikit/nsWindow.mm
-index 46b22cfe21c4..aa6dfee92713 100644
+index 46b22cfe21c4..b1acb8d842d7 100644
 --- a/widget/uikit/nsWindow.mm
 +++ b/widget/uikit/nsWindow.mm
 @@ -45,9 +45,18 @@
@@ -234,7 +234,43 @@ index 46b22cfe21c4..aa6dfee92713 100644
    if (mWidgetListener) {
      mWidgetListener->WindowResized(this, innerBounds.Size());
    }
-@@ -1051,6 +1099,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -1021,6 +1069,7 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+ 
+   const bool changingEnabledState =
+       aContext.IsInputAttributeChanged(mInputContext);
++  const bool hadFirstResponder = [mNativeView isFirstResponder];
+ 
+   mInputContext = aContext;
+ 
+@@ -1029,9 +1078,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+     return;
+   }
+ 
+-  [mNativeView becomeFirstResponder];
++  // REYNARD: Only promote the UIKit host view to first responder for
++  // user-driven editable focus so page-load autofocus does not open the
++  // software keyboard automatically.
++  const bool focusFromPointerInput =
++      aAction.mCause == InputContextAction::CAUSE_MOUSE ||
++      aAction.mCause == InputContextAction::CAUSE_TOUCH ||
++      aAction.mCause ==
++          InputContextAction::CAUSE_UNKNOWN_DURING_NON_KEYBOARD_INPUT;
++  const bool shouldBecomeFirstResponder =
++      hadFirstResponder || aAction.UserMightRequestOpenVKB() ||
++      (aAction.mFocusChange == InputContextAction::GOT_FOCUS &&
++       focusFromPointerInput);
+ 
+-  if (aAction.UserMightRequestOpenVKB() || changingEnabledState) {
++  if (shouldBecomeFirstResponder) {
++    [mNativeView becomeFirstResponder];
++  }
++
++  if ((aAction.UserMightRequestOpenVKB() || changingEnabledState) &&
++      (hadFirstResponder || shouldBecomeFirstResponder)) {
+     // TODO(m_kato):
+     // It is unnecessary to call reloadInputViews with changingEnabledState if
+     // virtual keyboard is disappeared.
+@@ -1051,6 +1116,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
    return mInputContext;
  }
  
@@ -260,7 +296,7 @@ index 46b22cfe21c4..aa6dfee92713 100644
  widget::TextEventDispatcherListener*
  nsWindow::GetNativeTextEventDispatcherListener() {
    return mTextInputHandler;
-@@ -1122,6 +1189,85 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -1122,6 +1206,85 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
    return mNativeLayerRoot;
  }
  
@@ -346,7 +382,7 @@ index 46b22cfe21c4..aa6dfee92713 100644
  void nsWindow::HandleMainThreadCATransaction() {
    // Trigger a synchronous OMTC composite. This will call NextSurface and
    // NotifySurfaceReady on the compositor thread to update mNativeLayerRoot's
-@@ -1276,6 +1422,7 @@ - (void)close {
+@@ -1276,6 +1439,7 @@ - (void)close {
  
    nsAutoCString url;
    nsresult rv = Preferences::GetCString("toolkit.defaultChromeURI", url);

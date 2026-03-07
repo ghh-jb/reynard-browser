@@ -34,8 +34,9 @@ final class BrowserActions {
         
         let sheet = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         if let popover = sheet.popoverPresentationController {
-            popover.sourceView = controller.usesPadChromeLayout ? controller.browserUI.topBar.barView : controller.browserUI.toolbarView
-            popover.sourceRect = controller.usesPadChromeLayout ? controller.browserUI.topBar.barView.bounds : controller.browserUI.toolbarView.bounds
+            let sourceView = controller.usesCompactPadChromeMode ? controller.browserUI.toolbarView : (controller.usesPadChromeLayout ? controller.browserUI.topBar.barView : controller.browserUI.toolbarView)
+            popover.sourceView = sourceView
+            popover.sourceRect = sourceView.bounds
         }
         controller.present(sheet, animated: true)
     }

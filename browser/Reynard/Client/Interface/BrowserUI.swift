@@ -49,6 +49,7 @@ final class BrowserUI {
     var geckoBottomPhoneSearchPinnedConstraint: NSLayoutConstraint!
     var geckoBottomPhoneKeyboardOverlayConstraint: NSLayoutConstraint!
     var geckoBottomPadConstraint: NSLayoutConstraint!
+    var geckoBottomCompactPadConstraint: NSLayoutConstraint!
     var geckoLeadingPhoneConstraint: NSLayoutConstraint!
     var geckoTrailingPhoneConstraint: NSLayoutConstraint!
     var geckoLeadingPadConstraint: NSLayoutConstraint!
@@ -58,6 +59,7 @@ final class BrowserUI {
     var phoneChromeHeightConstraint: NSLayoutConstraint!
     var phoneToolbarHeightConstraint: NSLayoutConstraint!
     var phoneToolbarTopConstraint: NSLayoutConstraint!
+    var phoneToolbarCompactPadTopConstraint: NSLayoutConstraint!
     var addressBarPhoneLeadingConstraint: NSLayoutConstraint!
     var addressBarPhoneTrailingFullConstraint: NSLayoutConstraint!
     var addressBarPhoneTrailingFocusedConstraint: NSLayoutConstraint!
@@ -65,6 +67,8 @@ final class BrowserUI {
     var addressBarPhoneHeightConstraint: NSLayoutConstraint!
     var addressBarPadLeadingConstraint: NSLayoutConstraint!
     var addressBarPadTrailingConstraint: NSLayoutConstraint!
+    var addressBarCompactPadLeadingConstraint: NSLayoutConstraint!
+    var addressBarCompactPadTrailingConstraint: NSLayoutConstraint!
     var addressBarPadCenterYConstraint: NSLayoutConstraint!
     var addressBarPadHeightConstraint: NSLayoutConstraint!
     

@@ -33,6 +33,10 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     var isPadLayout: Bool {
         traitCollection.userInterfaceIdiom == .pad
     }
+
+    var usesCompactPadChromeMode: Bool {
+        isPadLayout && traitCollection.horizontalSizeClass == .compact
+    }
     
     var usesPadChromeLayout: Bool {
         if isPadLayout {

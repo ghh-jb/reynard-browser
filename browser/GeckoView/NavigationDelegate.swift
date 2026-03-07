@@ -27,7 +27,7 @@ public protocol NavigationDelegate {
     func onCanGoForward(session: GeckoSession, canGoForward: Bool)
     func onLoadRequest(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny
     func onSubframeLoadRequest(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny
-    func onNewSession(session: GeckoSession, uri: String) async -> GeckoSession?
+    func onNewSession(session: GeckoSession, uri: String, windowId: String) async -> GeckoSession?
 }
 
 extension NavigationDelegate {
@@ -36,7 +36,7 @@ extension NavigationDelegate {
     public func onCanGoForward(session: GeckoSession, canGoForward: Bool) {}
     public func onLoadRequest(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny { .allow }
     public func onSubframeLoadRequest(session: GeckoSession, request: LoadRequest) async -> AllowOrDeny { .allow }
-    public func onNewSession(session: GeckoSession, uri: String) async -> GeckoSession? { nil }
+    public func onNewSession(session: GeckoSession, uri: String, windowId: String) async -> GeckoSession? { nil }
 }
 
 enum NavigationEvents: String, CaseIterable {
@@ -83,7 +83,16 @@ func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler {
                 return false
             }
             
-            if let newSession = await delegate?.onNewSession(session: session, uri: uri) {
+            if let newSession = await delegate?.onNewSession(
+                session: session,
+                uri: uri,
+                windowId: newSessionId
+            ) {
+                if let windowId = newSession.id,
+                   windowId != newSessionId {
+                    assertionFailure("GeckoSession was opened with mismatched window id")
+                    return false
+                }
                 if !newSession.isOpen() {
                     newSession.open(windowId: newSessionId)
                 }
@@ -138,9 +147,11 @@ func newNavigationHandler(_ session: GeckoSession) -> GeckoSessionHandler {
             
             let isTopLevel = message?["isTopLevel"] as? Bool ?? true
             if isTopLevel {
-                return await delegate?.onLoadRequest(session: session, request: request) == .allow
+                // GeckoView expects this response to mean "handled by the app".
+                // Allow must therefore return false so Gecko continues the load itself.
+                return await delegate?.onLoadRequest(session: session, request: request) == .deny
             }
-            return await delegate?.onSubframeLoadRequest(session: session, request: request) == .allow
+            return await delegate?.onSubframeLoadRequest(session: session, request: request) == .deny
         }
     }
 }

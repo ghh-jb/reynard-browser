@@ -15,7 +15,7 @@ protocol TabManager: AnyObject {
     
     func createInitialTab()
     @discardableResult
-    func addTab(selecting: Bool, windowId: String?) -> Int
+    func addTab(selecting: Bool, windowId: String?, at index: Int?) -> Int
     func selectTab(at index: Int)
     func removeTab(at index: Int)
     func removeAllTabs()
@@ -37,4 +37,11 @@ protocol TabManagerDelegate: AnyObject {
     func tabManagerDidChangeTabs(_ tabManager: TabManager)
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?)
     func tabManager(_ tabManager: TabManager, didUpdateTabAt index: Int, reason: TabManagerUpdateReason)
+    func tabManager(_ tabManager: TabManager, animateNewTabSelectionAt index: Int, completion: @escaping () -> Void)
+}
+
+extension TabManagerDelegate {
+    func tabManager(_ tabManager: TabManager, animateNewTabSelectionAt index: Int, completion: @escaping () -> Void) {
+        completion()
+    }
 }

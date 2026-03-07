@@ -36,7 +36,7 @@ final class TabOverviewCard: UICollectionViewCell {
     private let previewContainerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .secondarySystemBackground
+        view.backgroundColor = .systemBackground
         view.layer.cornerRadius = 18
         view.layer.cornerCurve = .continuous
         view.layer.masksToBounds = true

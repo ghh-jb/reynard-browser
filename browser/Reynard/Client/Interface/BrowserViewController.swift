@@ -33,7 +33,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     var isPadLayout: Bool {
         traitCollection.userInterfaceIdiom == .pad
     }
-
+    
     var usesCompactPadChromeMode: Bool {
         isPadLayout && traitCollection.horizontalSizeClass == .compact
     }
@@ -98,8 +98,8 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     @discardableResult
-    func createTab(selecting: Bool, windowId: String? = nil) -> Int {
-        tabManager.addTab(selecting: selecting, windowId: windowId)
+    func createTab(selecting: Bool, windowId: String? = nil, at index: Int? = nil) -> Int {
+        tabManager.addTab(selecting: selecting, windowId: windowId, at: index)
     }
     
     func selectTab(at index: Int, animated: Bool) {
@@ -262,6 +262,15 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             }
             browserUI.tabOverviewCollection.collectionView.reloadData()
         }
+    }
+    
+    func tabManager(_ tabManager: TabManager, animateNewTabSelectionAt index: Int, completion: @escaping () -> Void) {
+        guard tabManager.tabs.indices.contains(index) else {
+            completion()
+            return
+        }
+        
+        addressBarGestures.animateAutomaticNewTabTransition(to: tabManager.tabs[index], completion: completion)
     }
     
     func backButtonClicked() {

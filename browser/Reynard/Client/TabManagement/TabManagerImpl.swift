@@ -36,15 +36,23 @@ final class TabManagerImplementation: NSObject, TabManager {
     }
     
     func createInitialTab() {
-        addTab(selecting: true, windowId: nil)
+        addTab(selecting: true, windowId: nil, at: nil)
     }
     
     @discardableResult
-    func addTab(selecting: Bool, windowId: String? = nil) -> Int {
+    func addTab(selecting: Bool, windowId: String? = nil, at insertionIndex: Int? = nil) -> Int {
         let tab = Tab(session: createSession(windowId: windowId))
-        tabs.append(tab)
+        let index = min(max(insertionIndex ?? tabs.count, 0), tabs.count)
         
-        let index = tabs.count - 1
+        if index == tabs.count {
+            tabs.append(tab)
+        } else {
+            tabs.insert(tab, at: index)
+            if selectedTabIndex >= index {
+                selectedTabIndex += 1
+            }
+        }
+        
         delegate?.tabManagerDidChangeTabs(self)
         
         if selecting {
@@ -82,7 +90,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         if tabs.isEmpty {
             selectedTabIndex = -1
             delegate?.tabManagerDidChangeTabs(self)
-            addTab(selecting: true, windowId: nil)
+            addTab(selecting: true, windowId: nil, at: nil)
             closeSession(removedTab.session)
             return
         }
@@ -280,12 +288,15 @@ extension TabManagerImplementation: NavigationDelegate {
         .allow
     }
     
-    func onNewSession(session: GeckoSession, uri: String) async -> GeckoSession? {
-        let index = addTab(selecting: true, windowId: nil)
+    func onNewSession(session: GeckoSession, uri: String, windowId: String) async -> GeckoSession? {
+        let insertionIndex = tabIndex(for: session).map { $0 + 1 }
+        let index = addTab(selecting: false, windowId: windowId, at: insertionIndex)
         let newTab = tabs[index]
         newTab.url = uri
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
-        browse(to: uri, in: newTab)
+        delegate?.tabManager(self, animateNewTabSelectionAt: index) { [weak self] in
+            self?.selectTab(at: index)
+        }
         return newTab.session
     }
 }

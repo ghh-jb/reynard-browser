@@ -154,4 +154,26 @@ public class GeckoSession {
     public func setActive(_ active: Bool) {
         dispatcher.dispatch(type: "GeckoView:SetActive", message: ["active": active])
     }
+    
+    public func focusedInputBottomRatio() async -> CGFloat? {
+        let response = try? await dispatcher.query(type: "GeckoView:GetFocusedInputMetrics")
+        guard let values = response as? [AnyHashable: Any],
+              let bottomRatioValue = values["bottomRatio"] else {
+            return nil
+        }
+        
+        if let number = bottomRatioValue as? NSNumber {
+            return CGFloat(truncating: number)
+        }
+        
+        if let value = bottomRatioValue as? Double {
+            return CGFloat(value)
+        }
+        
+        if let value = bottomRatioValue as? CGFloat {
+            return value
+        }
+        
+        return nil
+    }
 }

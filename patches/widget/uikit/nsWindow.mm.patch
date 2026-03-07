@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/nsWindow.mm b/widget/uikit/nsWindow.mm
-index 46b22cfe21c4..e1a9b7890cc9 100644
+index 46b22cfe21c4..aa6dfee92713 100644
 --- a/widget/uikit/nsWindow.mm
 +++ b/widget/uikit/nsWindow.mm
 @@ -45,9 +45,18 @@
@@ -223,7 +223,18 @@ index 46b22cfe21c4..e1a9b7890cc9 100644
  void nsWindow::Move(const DesktopPoint& aPoint) {
    if (!mNativeView || (mBounds.x == aPoint.x && mBounds.y == aPoint.y)) {
      return;
-@@ -1051,6 +1095,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -983,6 +1027,10 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+ void nsWindow::ReportSizeEvent() {
+   LayoutDeviceIntRect innerBounds = GetClientBounds();
+ 
++  if (mCompositorWidgetDelegate) {
++    mCompositorWidgetDelegate->NotifyClientSizeChanged(innerBounds.Size());
++  }
++
+   if (mWidgetListener) {
+     mWidgetListener->WindowResized(this, innerBounds.Size());
+   }
+@@ -1051,6 +1099,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
    return mInputContext;
  }
  
@@ -249,7 +260,7 @@ index 46b22cfe21c4..e1a9b7890cc9 100644
  widget::TextEventDispatcherListener*
  nsWindow::GetNativeTextEventDispatcherListener() {
    return mTextInputHandler;
-@@ -1122,6 +1185,85 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -1122,6 +1189,85 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
    return mNativeLayerRoot;
  }
  
@@ -335,7 +346,7 @@ index 46b22cfe21c4..e1a9b7890cc9 100644
  void nsWindow::HandleMainThreadCATransaction() {
    // Trigger a synchronous OMTC composite. This will call NextSurface and
    // NotifySurfaceReady on the compositor thread to update mNativeLayerRoot's
-@@ -1276,6 +1418,7 @@ - (void)close {
+@@ -1276,6 +1422,7 @@ - (void)close {
  
    nsAutoCString url;
    nsresult rv = Preferences::GetCString("toolkit.defaultChromeURI", url);

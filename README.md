@@ -20,10 +20,10 @@ These clips compare how several sites that are known to break in Safari on iOS 1
     <th colspan="2">chatgpt.com</th>
   </tr>
   <tr>
-    <td>Safari</td>
-    <td>Reynard</td>
-    <td>Safari</td>
-    <td>Reynard</td>
+    <td align="center">Safari</td>
+    <td align="center">Reynard</td>
+    <td align="center">Safari</td>
+    <td align="center">Reynard</td>
   </tr>
   <tr>
     <td>
@@ -48,8 +48,8 @@ These clips compare how several sites that are known to break in Safari on iOS 1
     <th colspan="2">github.com</th>
   </tr>
   <tr>
-    <td>Safari</td>
-    <td>Reynard</td>
+    <td align="center">Safari</td>
+    <td align="center">Reynard</td>
   </tr>
   <tr>
     <td>
@@ -77,11 +77,29 @@ And Reynard also works on iOS 26!
 </table>
 
 ## Issues
-- The JIT backend for child processes is disabled, which means that the JS interpreter, JIT compiler, and WebAssembly are currently not available.
+- The JIT backend for child processes is disabled, which means that the JS interpreter, JIT compiler, and WebAssembly are currently not available. As a result, performance will be slower on several sites and features requiring WebAssembly will not work.
 - Some POST request responses like dynamically loaded scripts and video streams are not fully delivered, which can cause Google reCAPTCHA to fail during loading or lead to stalled playback on YouTube. A workaround would be to set the user-agent string to a generic Firefox on Android one. I observed this behavior through debug logs and never fully understood it.
 - On some websites that use `-apple-system` or `BlinkMacSystemFont`, the rendered text falls back to an overly thin SF UI variant.
 - Video playback has no sound output.
 - Child processes responsible for WebContent and Rendering crashes due to "fault hit memory shortage" quite frequently on devices such as the iPad Air 2 on iOS 15.
+
+## Installation
+
+The latest experimental Reynard `.ipa` builds are available on the [Releases](https://github.com/minh-ton/reynard-browser/releases) page. Please note that this project is under active development and there is no formal release yet, so these experimental builds are updated frequently and may contain significant bugs.
+
+> [!IMPORTANT]
+> I would **highly** recommend that you sideload Reynard using **TrollStore**, **SideStore**, or **AltStore**. 
+> 
+> When sideloading through SideStore or AltStore, you **must** enable **Keep App Extensions** (for AltStore) or **Keep App Extensions (Register App ID for Each Extension)** (for SideStore). Reynard relies on an app extension to launch child processes and will not function properly without it. 
+> 
+> Please note that **LiveContainer is not supported**, as it does not currently support signing the app extension required for running Reynard.
+>
+> <table>
+>   <tr>
+>     <td><img src="https://github.com/user-attachments/assets/b8578358-8c0a-4148-a33b-4e8f8da5514b" width=250/></td>
+>     <td><img src="https://github.com/user-attachments/assets/94fc1862-dc82-4f96-bf31-f814afa9e838" width=250/></td>
+>   </tr>
+> </table>
 
 ## Changes
 As of February 23, the browser uses a multi-process architecture, spawning child-processes (WebContent, Rendering, and Networking) through NSExtension. Most modern websites render correctly, including proper font and emoji support, and general browsing feels much smoother. While performance still does not match Safari, the browser is now reliable enough for everyday use.
@@ -105,6 +123,9 @@ As of Feb 4th 2026, the browser uses a single-process architecture, which is the
 </details>
 
 ## Build
+
+> [!WARNING]
+> Build instructions are included below for reference. Please be aware that I **do not** provide support for issues or errors encountered during the build process.
 
 Clone the repository.
 

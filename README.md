@@ -10,15 +10,68 @@ With Reynard, my goal is to build a Gecko-based browser that does not depend on 
 
 ## Preview
 
+These clips compare how several sites that are known to break in Safari on iOS 14 & 15 load versus how they load in Reynard. The screen recordings were captured on an iPhone 6S Plus running iOS 14.1 and an iPhone 7 running iOS 15.8.6.
+
+### iOS 14
+
 <table>
   <tr>
-    <td align="left">
-      <img width=580 src="https://github.com/user-attachments/assets/03413002-be62-43ad-b648-4ef9367d3305"><br>
-      Here's Reynard running on iPadOS 15...
+    <th colspan="2">github.com</th>
+    <th colspan="2">chatgpt.com</th>
+  </tr>
+  <tr>
+    <td>Safari</td>
+    <td>Reynard</td>
+    <td>Safari</td>
+    <td>Reynard</td>
+  </tr>
+  <tr>
+    <td>
+      <img width=200 src="https://github.com/user-attachments/assets/9b1bb22c-d377-439c-818a-2f5d30a3e6e1"><br>
     </td>
-    <td align="left">
-      <img width=200 src="https://github.com/user-attachments/assets/6c2ddfd8-ba2f-492c-975d-37d545bee02f"><br>
-      …and on iOS 26
+    <td>
+      <img width=200 src="https://github.com/user-attachments/assets/c5ad77e1-a29c-4258-88b0-135c78f68798"><br>
+    </td>
+    <td>
+      <img width=200 src="https://github.com/user-attachments/assets/94b5ad3d-d8c5-4440-908d-3a1e174527de"><br>
+    </td>
+    <td>
+      <img width=200 src="https://github.com/user-attachments/assets/31749c9e-14a2-4451-8b28-4bce61d2b339"><br>
+    </td>
+  </tr>
+</table>
+
+### iOS 15
+
+<table>
+  <tr>
+    <th colspan="2">github.com</th>
+  </tr>
+  <tr>
+    <td>Safari</td>
+    <td>Reynard</td>
+  </tr>
+  <tr>
+    <td>
+      <img width=200 src="https://github.com/user-attachments/assets/5972c5ad-7293-4d78-93b3-49d118e22248"><br>
+    </td>
+    <td>
+      <img width=200 src="https://github.com/user-attachments/assets/eeaf53e2-f6cb-4c1d-aad9-2554e3d1065a"><br>
+    </td>
+  </tr>
+</table>
+
+### iOS 26
+
+And Reynard also works on iOS 26!
+
+<table>
+  <tr>
+    <th>apple.com</th>
+  </tr>
+  <tr>
+    <td>
+      <img width=200 src="https://github.com/user-attachments/assets/0785f6f7-8f5c-40d4-ab55-7934c1446ded"><br>
     </td>
   </tr>
 </table>
@@ -36,6 +89,19 @@ As of February 23, the browser uses a multi-process architecture, spawning child
 <details>
 <summary>Changes on February 4, 2026</summary>
 As of Feb 4th 2026, the browser uses a single-process architecture, which is the simplest way I found to get Gecko up and running. It's slow and laggy in terms of performance. Most webpages render correctly, but fonts fall back to the system default, and the browser can crash on sites with popup or redirect ads.
+
+<table>
+  <tr>
+    <td align="left">
+      <img width=580 src="https://github.com/user-attachments/assets/03413002-be62-43ad-b648-4ef9367d3305"><br>
+      Here's Reynard running on iPadOS 15...
+    </td>
+    <td align="left">
+      <img width=200 src="https://github.com/user-attachments/assets/6c2ddfd8-ba2f-492c-975d-37d545bee02f"><br>
+      …and on iOS 26
+    </td>
+  </tr>
+</table>
 </details>
 
 ## Build

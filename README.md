@@ -85,21 +85,21 @@ And Reynard also works on iOS 26!
 
 ## Installation
 
-The latest experimental Reynard `.ipa` builds are available on the [Releases](https://github.com/minh-ton/reynard-browser/releases) page. Please note that this project is under active development and there is no formal release yet, so these experimental builds are updated frequently and may contain significant bugs.
-
 > [!IMPORTANT]
 > I would **highly** recommend that you sideload Reynard using **TrollStore**, **SideStore**, or **AltStore**. 
 > 
-> When sideloading through SideStore or AltStore, you **must** enable **Keep App Extensions** (for AltStore) or **Keep App Extensions (Register App ID for Each Extension)** (for SideStore). Reynard relies on an app extension to launch child processes and will not function properly without it. 
+> When sideloading through SideStore or AltStore, you **must** enable **Keep App Extensions**. Reynard relies on an app extension to launch child processes and will not function properly without it. 
 > 
 > Please note that **LiveContainer is not supported**, as it does not currently support signing the app extension required for running Reynard.
 >
 > <table>
 >   <tr>
 >     <td><img src="https://github.com/user-attachments/assets/b8578358-8c0a-4148-a33b-4e8f8da5514b" width=250/></td>
->     <td><img src="https://github.com/user-attachments/assets/94fc1862-dc82-4f96-bf31-f814afa9e838" width=250/></td>
+>     <td><img src="https://github.com/user-attachments/assets/62d10f96-47d4-45bd-83f9-3a205fe9ff1f" width=250/></td>
 >   </tr>
 > </table>
+
+The latest experimental Reynard `.ipa` builds are available on the [Releases](https://github.com/minh-ton/reynard-browser/releases) page. Please note that this project is under active development and there is no formal release yet, so these experimental builds are updated frequently and may contain significant bugs.
 
 ## Changes
 As of February 23, the browser uses a multi-process architecture, spawning child-processes (WebContent, Rendering, and Networking) through NSExtension. Most modern websites render correctly, including proper font and emoji support, and general browsing feels much smoother. While performance still does not match Safari, the browser is now reliable enough for everyday use.

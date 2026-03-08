@@ -1,6 +1,6 @@
 # Reynard Browser
 
-Reynard is a simple **Gecko-based** web browser for iOS 15+.
+Reynard is a simple **Gecko-based** web browser for iOS 14+.
 
 I still use devices that can’t be updated beyond iOS 15. On these versions, a lot of modern websites simply don’t work in Safari.
 
@@ -28,7 +28,7 @@ With Reynard, my goal is to build a Gecko-based browser that does not depend on 
 - Some POST request responses like dynamically loaded scripts and video streams are not fully delivered, which can cause Google reCAPTCHA to fail during loading or lead to stalled playback on YouTube. A workaround would be to set the user-agent string to a generic Firefox on Android one. I observed this behavior through debug logs and never fully understood it.
 - On some websites that use `-apple-system` or `BlinkMacSystemFont`, the rendered text falls back to an overly thin SF UI variant.
 - Video playback has no sound output.
-- Child processes responsible for WebContent and Rendering crashes due to "fault hit memory shortage" quite frequently on low memory devices such as the iPad Air 2.
+- Child processes responsible for WebContent and Rendering crashes due to "fault hit memory shortage" quite frequently on devices such as the iPad Air 2 on iOS 15.
 
 ## Changes
 As of February 23, the browser uses a multi-process architecture, spawning child-processes (WebContent, Rendering, and Networking) through NSExtension. Most modern websites render correctly, including proper font and emoji support, and general browsing feels much smoother. While performance still does not match Safari, the browser is now reliable enough for everyday use.

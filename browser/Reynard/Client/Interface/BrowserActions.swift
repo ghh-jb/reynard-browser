@@ -19,9 +19,11 @@ final class BrowserActions {
         let vc = UIViewController()
         vc.view.backgroundColor = .systemBackground
         vc.modalPresentationStyle = .pageSheet
-        if let sheet = vc.sheetPresentationController {
-            sheet.prefersGrabberVisible = true
-            sheet.detents = [.medium(), .large()]
+        if #available(iOS 15.0, *) {
+            if let sheet = vc.sheetPresentationController {
+                sheet   .prefersGrabberVisible = true
+                sheet.detents = [.medium(), .large()]
+            }
         }
         controller.present(vc, animated: true)
     }

@@ -31,9 +31,10 @@ rm -f "$FIREFOX_DIR/.mozconfig"
 {
 	echo "ac_add_options --enable-application=mobile/ios"
 	echo "ac_add_options --target=$TARGET"
-	echo "ac_add_options --enable-ios-target=15.0"
+	echo "ac_add_options --enable-ios-target=14.0"
 	echo "ac_add_options --enable-optimize"
 	echo "ac_add_options --disable-debug"
+	echo "ac_add_options --disable-tests"
 } > "$FIREFOX_DIR/.mozconfig"
 
 if ! rustup target list | grep -q "^$TARGET (installed)"; then

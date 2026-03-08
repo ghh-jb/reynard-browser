@@ -1,8 +1,6 @@
 name: Build and Release
 
 on:
-  schedule:
-    - cron: '0 0 * * 0'
   workflow_dispatch:
     inputs:
       create_nightly:
@@ -28,6 +26,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          clean: true
           fetch-depth: 1
 
       - name: Checkout Firefox submodule
@@ -66,7 +65,7 @@ jobs:
         shell: bash
         run: |
           if [ -n "${GITHUB_WORKSPACE}" ]; then
-            rm -rf ${GITHUB_WORKSPACE}/*
+            find "${GITHUB_WORKSPACE}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
           fi
 
   release:
@@ -95,13 +94,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          clean: true
 
       - name: Get information for release
         id: version
         run: |
           CURRENT_VERSION=$(grep 'CURRENT_VERSION' ./browser/Configuration/Reynard.xcconfig | cut -d '=' -f2 | tr -d ' ')
           CURRENT_BUILD=$(date +%Y%b%d | tr '[:lower:]' '[:upper:]')
-          ENGINE_REVISION=$(cat ./engine/firefox/release.txt)
+          ENGINE_REVISION=$(cat ./engine/release.txt)
           echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "current_build=$CURRENT_BUILD" >> $GITHUB_OUTPUT
           echo "engine_revision=$ENGINE_REVISION" >> $GITHUB_OUTPUT
@@ -126,5 +126,5 @@ jobs:
         shell: bash
         run: |
           if [ -n "${GITHUB_WORKSPACE}" ]; then
-            rm -rf ${GITHUB_WORKSPACE}/*
+            find "${GITHUB_WORKSPACE}" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
           fi

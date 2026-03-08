@@ -84,17 +84,17 @@ jobs:
             current=$(dirname "${current}")
           done
 
-      - name: Download .ipa artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: Reynard.ipa
-          path: ./dist
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
           clean: true
+
+      - name: Download .ipa artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Reynard.ipa
+          path: ./dist
 
       - name: Get information for release
         id: version

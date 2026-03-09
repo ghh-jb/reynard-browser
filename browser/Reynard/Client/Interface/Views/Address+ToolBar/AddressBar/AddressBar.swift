@@ -20,7 +20,9 @@ final class AddressBar: UIView {
     private let backgroundFillView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark ? .tertiarySystemBackground : .systemBackground
+        }
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = 16
         view.layer.masksToBounds = true
@@ -64,7 +66,7 @@ final class AddressBar: UIView {
         backgroundColor = .clear
         layer.cornerCurve = .continuous
         layer.cornerRadius = 16
-        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowColor = traitCollection.userInterfaceStyle == .dark ? UIColor.white.withAlphaComponent(0.3).cgColor : UIColor.black.cgColor
         layer.shadowOpacity = 0.12
         layer.shadowRadius = 10
         layer.shadowOffset = CGSize(width: 0, height: 2)

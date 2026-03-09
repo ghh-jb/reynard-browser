@@ -18,8 +18,8 @@ final class TabOverviewCard: UICollectionViewCell {
         view.backgroundColor = .systemBackground
         view.layer.cornerRadius = 18
         view.layer.cornerCurve = .continuous
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = 0.18
+        view.layer.shadowColor = UITraitCollection.current.userInterfaceStyle == .dark ? UIColor.white.cgColor : UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.12
         view.layer.shadowRadius = 8
         view.layer.shadowOffset = CGSize(width: 0, height: 3)
         view.layer.masksToBounds = false
@@ -60,8 +60,8 @@ final class TabOverviewCard: UICollectionViewCell {
             UIImage.SymbolConfiguration(pointSize: 12, weight: .medium),
             forImageIn: .normal
         )
-        button.backgroundColor = .tertiarySystemFill
-        button.tintColor = .secondaryLabel
+        button.backgroundColor = .systemGray.withAlphaComponent(0.6)
+        button.tintColor = .white
         button.layer.cornerRadius = 12
         button.layer.cornerCurve = .continuous
         return button
@@ -99,10 +99,10 @@ final class TabOverviewCard: UICollectionViewCell {
             cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             
-            previewShadowView.topAnchor.constraint(equalTo: cardView.topAnchor),
-            previewShadowView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
-            previewShadowView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
-            previewShadowView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
+            previewShadowView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 1),
+            previewShadowView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 1),
+            previewShadowView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -1),
+            previewShadowView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -1),
             
             previewContainerView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 1),
             previewContainerView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 1),
@@ -135,6 +135,7 @@ final class TabOverviewCard: UICollectionViewCell {
         previewImageView.image = nil
         onClose = nil
         contentView.alpha = 1
+        previewShadowView.layer.shadowColor = UITraitCollection.current.userInterfaceStyle == .dark ? UIColor.white.cgColor : UIColor.black.cgColor
     }
     
     func configure(tab: Tab) {

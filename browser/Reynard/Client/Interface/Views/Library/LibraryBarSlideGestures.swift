@@ -14,6 +14,8 @@ final class LibraryBarSlideGestures: NSObject {
     private let selectSection: (LibrarySection) -> Void
     private var isTrackingActiveTab = false
     private var sectionsByView: [ObjectIdentifier: LibrarySection] = [:]
+    private var suppressedPanRecognizers: [UIGestureRecognizer] = []
+    private var directInteractionDepth = 0
     
     init(
         hostView: UIView,
@@ -32,10 +34,32 @@ final class LibraryBarSlideGestures: NSObject {
         sectionsByView[ObjectIdentifier(view)] = section
         
         let gesture = UILongPressGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
-        gesture.minimumPressDuration = 0.18
+        gesture.minimumPressDuration = 0.08
         gesture.allowableMovement = .greatestFiniteMagnitude
         gesture.cancelsTouchesInView = false
         view.addGestureRecognizer(gesture)
+    }
+    
+    func beginDirectInteraction() {
+        directInteractionDepth += 1
+        guard directInteractionDepth == 1 else {
+            return
+        }
+        
+        suppressAncestorPanGestures()
+    }
+    
+    func endDirectInteraction() {
+        guard directInteractionDepth > 0 else {
+            return
+        }
+        
+        directInteractionDepth -= 1
+        guard directInteractionDepth == 0 else {
+            return
+        }
+        
+        restoreAncestorPanGestures()
     }
     
     @objc private func handleGesture(_ gesture: UILongPressGestureRecognizer) {
@@ -70,5 +94,36 @@ final class LibraryBarSlideGestures: NSObject {
         default:
             break
         }
+    }
+    
+    private func suppressAncestorPanGestures() {
+        guard suppressedPanRecognizers.isEmpty,
+              let hostView else {
+            return
+        }
+        
+        var ancestor: UIView? = hostView.superview
+        while let view = ancestor {
+            for recognizer in view.gestureRecognizers ?? [] where recognizer is UIPanGestureRecognizer {
+                guard recognizer.isEnabled else {
+                    continue
+                }
+                
+                recognizer.isEnabled = false
+                suppressedPanRecognizers.append(recognizer)
+            }
+            ancestor = view.superview
+        }
+    }
+    
+    private func restoreAncestorPanGestures() {
+        guard !suppressedPanRecognizers.isEmpty else {
+            return
+        }
+        
+        for recognizer in suppressedPanRecognizers {
+            recognizer.isEnabled = true
+        }
+        suppressedPanRecognizers.removeAll()
     }
 }

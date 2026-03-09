@@ -22,6 +22,8 @@ final class BrowserActions {
             if let sheet = vc.sheetPresentationController {
                 sheet.prefersGrabberVisible = true
                 sheet.detents = [.medium(), .large()]
+                sheet.selectedDetentIdentifier = .medium
+                sheet.prefersScrollingExpandsWhenScrolledToEdge = false
             }
         }
         controller.present(vc, animated: true)

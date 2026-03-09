@@ -13,11 +13,13 @@ final class KeyboardDismissButton {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.alpha = 0
         button.isHidden = true
-        button.backgroundColor = .systemBackground
+        button.backgroundColor = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark ? .tertiarySystemBackground : .systemBackground
+        }
         button.tintColor = .label
         button.layer.cornerCurve = .continuous
         button.layer.cornerRadius = 21
-        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowColor = UITraitCollection.current.userInterfaceStyle == .dark ? UIColor.white.withAlphaComponent(0.3).cgColor : UIColor.black.cgColor
         button.layer.shadowOpacity = 0.2
         button.layer.shadowRadius = 12
         button.layer.shadowOffset = CGSize(width: 0, height: 4)

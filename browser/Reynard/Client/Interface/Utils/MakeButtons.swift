@@ -38,9 +38,9 @@ enum MakeButtons {
             forImageIn: .normal
         )
         button.tintColor = isFilled ? .systemBackground : .label
-        button.backgroundColor = isFilled ? .label : .systemBackground
+        button.backgroundColor = isFilled ? .label : .quaternarySystemFill
         button.layer.borderWidth = isFilled ? 0 : 1
-        button.layer.borderColor = isFilled ? UIColor.clear.cgColor : UIColor.systemGray3.cgColor
+        button.layer.borderColor = isFilled ? UIColor.clear.cgColor : UIColor.systemFill.cgColor
         button.layer.cornerCurve = .continuous
         button.layer.cornerRadius = 21
         button.addTarget(controller, action: action, for: .touchUpInside)

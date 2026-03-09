@@ -13,12 +13,7 @@ final class LibraryMenuViewController: UIViewController, LibraryBarDelegate {
     private let backgroundView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark
-            ? UIColor(red: 0.14, green: 0.14, blue: 0.16, alpha: 1)
-            : UIColor(red: 0.92, green: 0.92, blue: 0.94, alpha: 1)
-        }
-        view.isOpaque = true
+        view.backgroundColor = .systemGray6.withAlphaComponent(0.8)
         return view
     }()
     private let bookmarksView = BookmarksManagerView()
@@ -53,8 +48,9 @@ final class LibraryMenuViewController: UIViewController, LibraryBarDelegate {
         contentContainer.backgroundColor = .clear
         
         view.addSubview(backgroundView)
-        view.addSubview(libraryBar)
         view.addSubview(contentContainer)
+        view.addSubview(libraryBar)
+        view.bringSubviewToFront(libraryBar)
         
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -64,14 +60,14 @@ final class LibraryMenuViewController: UIViewController, LibraryBarDelegate {
         ])
         
         NSLayoutConstraint.activate([
-            libraryBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 26),
+            libraryBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 10),
             libraryBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 18),
             libraryBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -18),
             libraryBar.heightAnchor.constraint(equalToConstant: 66),
-            contentContainer.topAnchor.constraint(equalTo: libraryBar.bottomAnchor, constant: 14),
+            contentContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             contentContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 18),
             contentContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -18),
-            contentContainer.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            contentContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
         
         for section in LibrarySection.allCases {

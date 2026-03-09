@@ -44,6 +44,36 @@ protocol LibraryBarDelegate: AnyObject {
     func libraryBar(_ libraryBar: LibraryBar, didSelect section: LibrarySection)
 }
 
+private final class LibraryBarInteractionButton: UIControl {
+    var onPressBegan: (() -> Void)?
+    var onPressEnded: (() -> Void)?
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        translatesAutoresizingMaskIntoConstraints = false
+        backgroundColor = .clear
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        onPressBegan?()
+        return super.beginTracking(touch, with: event)
+    }
+    
+    override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
+        super.endTracking(touch, with: event)
+        onPressEnded?()
+    }
+    
+    override func cancelTracking(with event: UIEvent?) {
+        super.cancelTracking(with: event)
+        onPressEnded?()
+    }
+}
+
 private final class LibraryBarButton: UIControl {
     private let iconView: UIImageView = {
         let imageView = UIImageView()
@@ -129,7 +159,7 @@ final class LibraryBar: UIView {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark ? .secondarySystemBackground : UIColor(white: 0.95, alpha: 1)
+            traitCollection.userInterfaceStyle == .dark ? .secondarySystemBackground : .tertiarySystemFill
         }
         view.layer.cornerRadius = 28
         view.layer.cornerCurve = .continuous
@@ -140,7 +170,9 @@ final class LibraryBar: UIView {
     private let selectionView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark ? .tertiarySystemFill : .secondarySystemBackground
+        }
         view.isUserInteractionEnabled = false
         return view
     }()
@@ -166,7 +198,7 @@ final class LibraryBar: UIView {
     }()
     
     private var buttons: [LibrarySection: LibraryBarButton] = [:]
-    private var interactionButtons: [LibrarySection: UIView] = [:]
+    private var interactionButtons: [LibrarySection: LibraryBarInteractionButton] = [:]
     private(set) var selectedSection: LibrarySection = .bookmarks
     private var selectionLeadingConstraint: NSLayoutConstraint?
     private var selectionWidthConstraint: NSLayoutConstraint?
@@ -214,13 +246,15 @@ final class LibraryBar: UIView {
             buttons[section] = button
             stackView.addArrangedSubview(button)
             
-            let interactionButton = UIView()
-            interactionButton.translatesAutoresizingMaskIntoConstraints = false
-            interactionButton.backgroundColor = .clear
+            let interactionButton = LibraryBarInteractionButton()
             interactionButton.tag = index
-            interactionButton.isUserInteractionEnabled = true
-            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(interactionTapped(_:)))
-            interactionButton.addGestureRecognizer(tapGesture)
+            interactionButton.onPressBegan = { [weak self] in
+                self?.slideGestureCoordinator?.beginDirectInteraction()
+            }
+            interactionButton.onPressEnded = { [weak self] in
+                self?.slideGestureCoordinator?.endDirectInteraction()
+            }
+            interactionButton.addTarget(self, action: #selector(interactionButtonTapped(_:)), for: .touchUpInside)
             interactionButtons[section] = interactionButton
             interactionStackView.addArrangedSubview(interactionButton)
         }
@@ -370,9 +404,8 @@ final class LibraryBar: UIView {
         }
     }
     
-    @objc private func interactionTapped(_ sender: UITapGestureRecognizer) {
-        guard let view = sender.view,
-              let section = LibrarySection.allCases.first(where: { interactionButtons[$0] === view }) else {
+    @objc private func interactionButtonTapped(_ sender: UIControl) {
+        guard let section = LibrarySection.allCases.first(where: { interactionButtons[$0] === sender }) else {
             return
         }
         

@@ -29,13 +29,26 @@ enum LibrarySection: CaseIterable {
     var symbolName: String {
         switch self {
         case .bookmarks:
-            return "heart"
+            return "bookmark"
         case .history:
             return "clock"
         case .downloads:
             return "arrow.down.circle"
         case .settings:
             return "gearshape"
+        }
+    }
+    
+    var selectedSymbolName: String {
+        switch self {
+        case .bookmarks:
+            return "bookmark.fill"
+        case .history:
+            return "clock.fill"
+        case .downloads:
+            return "arrow.down.circle.fill"
+        case .settings:
+            return "gearshape.fill"
         }
     }
 }
@@ -46,7 +59,12 @@ protocol LibraryBarDelegate: AnyObject {
 
 private final class LibraryBarInteractionButton: UIControl {
     var onPressBegan: (() -> Void)?
+    var onPressMoved: ((CGPoint) -> Void)?
     var onPressEnded: (() -> Void)?
+    var onTap: (() -> Void)?
+    
+    private var initialTouchPoint: CGPoint = .zero
+    private var hasDragged = false
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -59,22 +77,57 @@ private final class LibraryBarInteractionButton: UIControl {
     }
     
     override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        initialTouchPoint = touch.location(in: self)
+        hasDragged = false
         onPressBegan?()
         return super.beginTracking(touch, with: event)
     }
     
+    override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        let currentPoint = touch.location(in: self)
+        let deltaX = currentPoint.x - initialTouchPoint.x
+        let deltaY = currentPoint.y - initialTouchPoint.y
+        
+        if !hasDragged {
+            hasDragged = hypot(deltaX, deltaY) >= 6
+        }
+        
+        onPressMoved?(currentPoint)
+        return super.continueTracking(touch, with: event)
+    }
+    
     override func endTracking(_ touch: UITouch?, with event: UIEvent?) {
         super.endTracking(touch, with: event)
+        
+        if let touch, !hasDragged, bounds.contains(touch.location(in: self)) {
+            onTap?()
+        }
+        
+        hasDragged = false
         onPressEnded?()
     }
     
     override func cancelTracking(with event: UIEvent?) {
         super.cancelTracking(with: event)
+        
+        hasDragged = false
         onPressEnded?()
     }
 }
 
+private enum LibraryBarLayoutMetrics {
+    static let insetIconSize: CGFloat = 26
+    static let dockedIconSize: CGFloat = 26
+    static let insetTopPadding: CGFloat = 10
+    static let dockedTopPadding: CGFloat = 4
+    static let insetBottomPadding: CGFloat = 8
+    static let dockedBottomPadding: CGFloat = 3
+    static let insetMinimumHeight: CGFloat = 60
+    static let dockedMinimumHeight: CGFloat = 50
+}
+
 private final class LibraryBarButton: UIControl {
+    private let section: LibrarySection
     private let iconView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -86,11 +139,17 @@ private final class LibraryBarButton: UIControl {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 11, weight: .regular)
+        label.font = .systemFont(ofSize: 10, weight: .regular)
         label.textAlignment = .center
         label.numberOfLines = 1
         return label
     }()
+    
+    private var stackTopConstraint: NSLayoutConstraint?
+    private var stackBottomConstraint: NSLayoutConstraint?
+    private var iconHeightConstraint: NSLayoutConstraint?
+    private var iconWidthConstraint: NSLayoutConstraint?
+    private var minimumHeightConstraint: NSLayoutConstraint?
     
     override var isSelected: Bool {
         didSet {
@@ -105,6 +164,7 @@ private final class LibraryBarButton: UIControl {
     }
     
     init(section: LibrarySection) {
+        self.section = section
         super.init(frame: .zero)
         
         translatesAutoresizingMaskIntoConstraints = false
@@ -121,15 +181,21 @@ private final class LibraryBarButton: UIControl {
         
         addSubview(stack)
         
+        stackTopConstraint = stack.topAnchor.constraint(equalTo: topAnchor, constant: LibraryBarLayoutMetrics.insetTopPadding)
+        stackBottomConstraint = stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -LibraryBarLayoutMetrics.insetBottomPadding)
+        iconHeightConstraint = iconView.heightAnchor.constraint(equalToConstant: LibraryBarLayoutMetrics.insetIconSize)
+        iconWidthConstraint = iconView.widthAnchor.constraint(equalToConstant: LibraryBarLayoutMetrics.insetIconSize)
+        minimumHeightConstraint = heightAnchor.constraint(greaterThanOrEqualToConstant: LibraryBarLayoutMetrics.insetMinimumHeight)
+        
         NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: topAnchor, constant: 10),
+            stackTopConstraint,
             stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
             stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
-            iconView.heightAnchor.constraint(equalToConstant: 24),
-            iconView.widthAnchor.constraint(equalToConstant: 24),
-            heightAnchor.constraint(greaterThanOrEqualToConstant: 66),
-        ])
+            stackBottomConstraint,
+            iconHeightConstraint,
+            iconWidthConstraint,
+            minimumHeightConstraint,
+        ].compactMap { $0 })
         
         accessibilityLabel = section.title
         updateAppearance()
@@ -141,6 +207,7 @@ private final class LibraryBarButton: UIControl {
     
     private func updateAppearance() {
         backgroundColor = .clear
+        iconView.image = UIImage(systemName: isSelected ? section.selectedSymbolName : section.symbolName)
         iconView.tintColor = isSelected ? .label : .secondaryLabel
         titleLabel.textColor = isSelected ? .label : .secondaryLabel
         
@@ -150,10 +217,20 @@ private final class LibraryBarButton: UIControl {
         }
         accessibilityTraits = traits
     }
+    
+    func setUsesInsetLayout(_ usesInsetLayout: Bool) {
+        stackTopConstraint?.constant = usesInsetLayout ? LibraryBarLayoutMetrics.insetTopPadding : LibraryBarLayoutMetrics.dockedTopPadding
+        stackBottomConstraint?.constant = -(usesInsetLayout ? LibraryBarLayoutMetrics.insetBottomPadding : LibraryBarLayoutMetrics.dockedBottomPadding)
+        iconHeightConstraint?.constant = usesInsetLayout ? LibraryBarLayoutMetrics.insetIconSize : LibraryBarLayoutMetrics.dockedIconSize
+        iconWidthConstraint?.constant = usesInsetLayout ? LibraryBarLayoutMetrics.insetIconSize : LibraryBarLayoutMetrics.dockedIconSize
+        minimumHeightConstraint?.constant = usesInsetLayout ? LibraryBarLayoutMetrics.insetMinimumHeight : LibraryBarLayoutMetrics.dockedMinimumHeight
+    }
 }
 
 final class LibraryBar: UIView {
     weak var delegate: LibraryBarDelegate?
+    private let displayCornerRadius = (UIScreen.main.value(forKey: "_displayCornerRadius") as? NSNumber).map { CGFloat(truncating: $0) } ?? 0
+    private var usesInsetLayout = true
     
     private let containerView: UIView = {
         let view = UIView()
@@ -161,7 +238,6 @@ final class LibraryBar: UIView {
         view.backgroundColor = UIColor { traitCollection in
             traitCollection.userInterfaceStyle == .dark ? .secondarySystemBackground : .tertiarySystemFill
         }
-        view.layer.cornerRadius = (UIScreen.main.value(forKey: "_displayCornerRadius") as? CGFloat ?? 39.0) - 18
         view.layer.cornerCurve = .continuous
         view.clipsToBounds = true
         return view
@@ -170,9 +246,7 @@ final class LibraryBar: UIView {
     private let selectionView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark ? .tertiarySystemFill : .secondarySystemBackground
-        }
+        view.backgroundColor = .clear
         view.isUserInteractionEnabled = false
         return view
     }()
@@ -249,12 +323,22 @@ final class LibraryBar: UIView {
             let interactionButton = LibraryBarInteractionButton()
             interactionButton.tag = index
             interactionButton.onPressBegan = { [weak self] in
-                self?.slideGestureCoordinator?.beginDirectInteraction()
+                self?.slideGestureCoordinator?.beginDirectInteraction(from: section)
+            }
+            interactionButton.onPressMoved = { [weak self, weak interactionButton] point in
+                guard let self, let interactionButton else {
+                    return
+                }
+                
+                let pointInContainer = self.containerView.convert(point, from: interactionButton)
+                self.slideGestureCoordinator?.updateDirectInteraction(at: pointInContainer)
             }
             interactionButton.onPressEnded = { [weak self] in
                 self?.slideGestureCoordinator?.endDirectInteraction()
             }
-            interactionButton.addTarget(self, action: #selector(interactionButtonTapped(_:)), for: .touchUpInside)
+            interactionButton.onTap = { [weak self] in
+                self?.select(section)
+            }
             interactionButtons[section] = interactionButton
             interactionStackView.addArrangedSubview(interactionButton)
         }
@@ -272,11 +356,7 @@ final class LibraryBar: UIView {
             }
         )
         
-        for section in LibrarySection.allCases {
-            if let button = interactionButtons[section] {
-                slideGestureCoordinator?.registerGestureView(button, section: section)
-            }
-        }
+        updateLayoutMetrics()
         
         select(.bookmarks, notify: false)
     }
@@ -312,6 +392,15 @@ final class LibraryBar: UIView {
         if notify {
             delegate?.libraryBar(self, didSelect: section)
         }
+    }
+    
+    func setUsesInsetLayout(_ usesInsetLayout: Bool) {
+        guard self.usesInsetLayout != usesInsetLayout else {
+            return
+        }
+        
+        self.usesInsetLayout = usesInsetLayout
+        updateLayoutMetrics()
     }
     
     private func updateSelectionShape() {
@@ -411,11 +500,15 @@ final class LibraryBar: UIView {
         }
     }
     
-    @objc private func interactionButtonTapped(_ sender: UIControl) {
-        guard let section = LibrarySection.allCases.first(where: { interactionButtons[$0] === sender }) else {
-            return
+    private func updateLayoutMetrics() {
+        containerView.layer.cornerRadius = usesInsetLayout ? max(0, displayCornerRadius - 18) : displayCornerRadius
+        selectionView.backgroundColor = usesInsetLayout ? UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark ? .tertiarySystemFill : .secondarySystemBackground
+        } : .clear
+        for button in buttons.values {
+            button.setUsesInsetLayout(usesInsetLayout)
         }
-        
-        select(section)
+        setNeedsLayout()
     }
+    
 }

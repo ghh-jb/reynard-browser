@@ -13,7 +13,6 @@ final class LibraryBarSlideGestures: NSObject {
     private let sectionAtPoint: (CGPoint) -> LibrarySection?
     private let selectSection: (LibrarySection) -> Void
     private var isTrackingActiveTab = false
-    private var sectionsByView: [ObjectIdentifier: LibrarySection] = [:]
     private var suppressedPanRecognizers: [UIGestureRecognizer] = []
     private var directInteractionDepth = 0
     
@@ -30,23 +29,25 @@ final class LibraryBarSlideGestures: NSObject {
         super.init()
     }
     
-    func registerGestureView(_ view: UIView, section: LibrarySection) {
-        sectionsByView[ObjectIdentifier(view)] = section
-        
-        let gesture = UILongPressGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
-        gesture.minimumPressDuration = 0.08
-        gesture.allowableMovement = .greatestFiniteMagnitude
-        gesture.cancelsTouchesInView = false
-        view.addGestureRecognizer(gesture)
-    }
-    
-    func beginDirectInteraction() {
+    func beginDirectInteraction(from section: LibrarySection) {
         directInteractionDepth += 1
         guard directInteractionDepth == 1 else {
             return
         }
         
+        isTrackingActiveTab = section == currentSection()
+        
         suppressAncestorPanGestures()
+    }
+    
+    func updateDirectInteraction(at point: CGPoint) {
+        guard isTrackingActiveTab,
+              let section = sectionAtPoint(point),
+              section != currentSection() else {
+            return
+        }
+        
+        selectSection(section)
     }
     
     func endDirectInteraction() {
@@ -59,41 +60,9 @@ final class LibraryBarSlideGestures: NSObject {
             return
         }
         
+        isTrackingActiveTab = false
+        
         restoreAncestorPanGestures()
-    }
-    
-    @objc private func handleGesture(_ gesture: UILongPressGestureRecognizer) {
-        guard let hostView else {
-            return
-        }
-        
-        let point = gesture.location(in: hostView)
-        
-        switch gesture.state {
-        case .began:
-            guard let gestureView = gesture.view,
-                  let section = sectionsByView[ObjectIdentifier(gestureView)],
-                  section == currentSection() else {
-                isTrackingActiveTab = false
-                return
-            }
-            isTrackingActiveTab = true
-            
-        case .changed:
-            guard isTrackingActiveTab, let section = sectionAtPoint(point) else {
-                return
-            }
-            
-            if section != currentSection() {
-                selectSection(section)
-            }
-            
-        case .ended, .cancelled, .failed:
-            isTrackingActiveTab = false
-            
-        default:
-            break
-        }
     }
     
     private func suppressAncestorPanGestures() {

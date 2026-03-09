@@ -8,12 +8,21 @@
 import UIKit
 
 final class LibraryMenuViewController: UIViewController, LibraryBarDelegate {
+    private enum Layout {
+        static let insetBarHeight: CGFloat = 66
+        static let dockedBarHeight: CGFloat = 50
+    }
+    
     private let libraryBar = LibraryBar()
     private let contentContainer = UIView()
+    private var libraryBarBottomConstraint: NSLayoutConstraint?
+    private var libraryBarLeadingConstraint: NSLayoutConstraint?
+    private var libraryBarTrailingConstraint: NSLayoutConstraint?
+    private var libraryBarHeightConstraint: NSLayoutConstraint?
     private let backgroundView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .systemGray6.withAlphaComponent(0.8)
+        view.backgroundColor = .systemGray6
         return view
     }()
     private let bookmarksView = BookmarksManagerView()
@@ -30,12 +39,16 @@ final class LibraryMenuViewController: UIViewController, LibraryBarDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         view.backgroundColor = backgroundView.backgroundColor
         view.isOpaque = true
         setupViews()
         libraryBar.select(.bookmarks, notify: false)
         setVisibleSection(.bookmarks)
+    }
+    
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        updateLibraryBarLayout()
     }
     
     func libraryBar(_ libraryBar: LibraryBar, didSelect section: LibrarySection) {
@@ -46,6 +59,11 @@ final class LibraryMenuViewController: UIViewController, LibraryBarDelegate {
         libraryBar.delegate = self
         contentContainer.translatesAutoresizingMaskIntoConstraints = false
         contentContainer.backgroundColor = .clear
+        
+        libraryBarBottomConstraint = libraryBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 18)
+        libraryBarLeadingConstraint = libraryBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 18)
+        libraryBarTrailingConstraint = libraryBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -18)
+        libraryBarHeightConstraint = libraryBar.heightAnchor.constraint(equalToConstant: Layout.insetBarHeight)
         
         view.addSubview(backgroundView)
         view.addSubview(contentContainer)
@@ -60,15 +78,15 @@ final class LibraryMenuViewController: UIViewController, LibraryBarDelegate {
         ])
         
         NSLayoutConstraint.activate([
-            libraryBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 18),
-            libraryBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 18),
-            libraryBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -18),
-            libraryBar.heightAnchor.constraint(equalToConstant: 66),
+            libraryBarBottomConstraint,
+            libraryBarLeadingConstraint,
+            libraryBarTrailingConstraint,
+            libraryBarHeightConstraint,
             contentContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             contentContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 18),
             contentContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -18),
             contentContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-        ])
+        ].compactMap { $0 })
         
         for section in LibrarySection.allCases {
             guard let sectionView = sectionViews[section] else {
@@ -86,6 +104,17 @@ final class LibraryMenuViewController: UIViewController, LibraryBarDelegate {
                 sectionView.heightAnchor.constraint(greaterThanOrEqualToConstant: 180),
             ])
         }
+        
+        updateLibraryBarLayout()
+    }
+    
+    private func updateLibraryBarLayout() {
+        let usesInsetLibraryBarLayout = view.safeAreaInsets.bottom > 0
+        libraryBarBottomConstraint?.constant = usesInsetLibraryBarLayout ? 18 : 0
+        libraryBarLeadingConstraint?.constant = usesInsetLibraryBarLayout ? 18 : 0
+        libraryBarTrailingConstraint?.constant = usesInsetLibraryBarLayout ? -18 : 0
+        libraryBarHeightConstraint?.constant = usesInsetLibraryBarLayout ? Layout.insetBarHeight : Layout.dockedBarHeight
+        libraryBar.setUsesInsetLayout(usesInsetLibraryBarLayout)
     }
     
     private func setVisibleSection(_ section: LibrarySection) {

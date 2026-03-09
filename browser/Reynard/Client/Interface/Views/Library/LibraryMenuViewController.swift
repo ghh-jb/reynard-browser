@@ -60,7 +60,7 @@ final class LibraryMenuViewController: UIViewController, LibraryBarDelegate {
         ])
         
         NSLayoutConstraint.activate([
-            libraryBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 10),
+            libraryBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 18),
             libraryBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 18),
             libraryBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -18),
             libraryBar.heightAnchor.constraint(equalToConstant: 66),

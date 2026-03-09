@@ -161,7 +161,7 @@ final class LibraryBar: UIView {
         view.backgroundColor = UIColor { traitCollection in
             traitCollection.userInterfaceStyle == .dark ? .secondarySystemBackground : .tertiarySystemFill
         }
-        view.layer.cornerRadius = 28
+        view.layer.cornerRadius = (UIScreen.main.value(forKey: "_displayCornerRadius") as? CGFloat ?? 39.0) - 18
         view.layer.cornerCurve = .continuous
         view.clipsToBounds = true
         return view
@@ -344,7 +344,14 @@ final class LibraryBar: UIView {
     }
     
     private func makeSelectionPath(in rect: CGRect) -> UIBezierPath {
-        roundedPath(in: rect, topLeft: 24, topRight: 24, bottomRight: 24, bottomLeft: 24)
+        let selectionCornerRadius = max(containerView.layer.cornerRadius - 4, 0)
+        return roundedPath(
+            in: rect,
+            topLeft: selectionCornerRadius,
+            topRight: selectionCornerRadius,
+            bottomRight: selectionCornerRadius,
+            bottomLeft: selectionCornerRadius
+        )
     }
     
     private func roundedPath(in rect: CGRect, topLeft: CGFloat, topRight: CGFloat, bottomRight: CGFloat, bottomLeft: CGFloat) -> UIBezierPath {

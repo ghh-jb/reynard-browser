@@ -16,12 +16,11 @@ final class BrowserActions {
     }
     
     func presentMenuSheet() {
-        let vc = UIViewController()
-        vc.view.backgroundColor = .systemBackground
+        let vc = LibraryMenuViewController()
         vc.modalPresentationStyle = .pageSheet
         if #available(iOS 15.0, *) {
             if let sheet = vc.sheetPresentationController {
-                sheet   .prefersGrabberVisible = true
+                sheet.prefersGrabberVisible = true
                 sheet.detents = [.medium(), .large()]
             }
         }

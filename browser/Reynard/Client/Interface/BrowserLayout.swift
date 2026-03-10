@@ -91,10 +91,11 @@ final class BrowserLayout {
         ui.keyboardDismissButton.heightConstraint = ui.keyboardDismissButton.button.heightAnchor.constraint(equalToConstant: 42)
         
         ui.topBar.heightConstraint = ui.topBar.barView.heightAnchor.constraint(equalToConstant: 52)
+        ui.topBar.topConstraint = ui.topBar.barView.topAnchor.constraint(equalTo: view.topAnchor)
         
         ui.padTopBarButtons.leftLeadingConstraint = ui.padTopBarButtons.leftStack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 12)
         ui.padTopBarButtons.rightTrailingConstraint = ui.padTopBarButtons.rightStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -12)
-        ui.padTopBarButtons.leftWidthConstraint = ui.padTopBarButtons.leftStack.widthAnchor.constraint(equalToConstant: 80)
+        ui.padTopBarButtons.leftWidthConstraint = ui.padTopBarButtons.leftStack.widthAnchor.constraint(equalToConstant: 126)
         ui.padTopBarButtons.rightWidthConstraint = ui.padTopBarButtons.rightStack.widthAnchor.constraint(equalToConstant: 126)
         ui.padTopBarButtons.leftHeightConstraint = ui.padTopBarButtons.leftStack.heightAnchor.constraint(equalToConstant: 30)
         ui.padTopBarButtons.rightHeightConstraint = ui.padTopBarButtons.rightStack.heightAnchor.constraint(equalToConstant: 30)
@@ -143,13 +144,13 @@ final class BrowserLayout {
             
             ui.topBar.barView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             ui.topBar.barView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            ui.topBar.barView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            ui.topBar.topConstraint,
             ui.topBar.heightConstraint,
             
             ui.topBar.safeAreaFillView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             ui.topBar.safeAreaFillView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             ui.topBar.safeAreaFillView.topAnchor.constraint(equalTo: view.topAnchor),
-            ui.topBar.safeAreaFillView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            ui.topBar.safeAreaFillView.bottomAnchor.constraint(equalTo: ui.topBar.barView.topAnchor),
             
             ui.padTopBarButtons.leftLeadingConstraint,
             ui.padTopBarButtons.leftStack.centerYAnchor.constraint(equalTo: ui.topBar.barView.centerYAnchor),
@@ -246,6 +247,7 @@ final class BrowserLayout {
         let pad = controller.usesPadChromeLayout
         let compactPad = controller.usesCompactPadChromeMode
         setAddressBarHost(isPad: pad)
+        ui.topBar.topConstraint.constant = resolvedPadTopInset()
         let shouldShowGeckoBehindKeyboard = !pad
         && controller.isSearchFocused
         && keyboardHeight > 0
@@ -297,9 +299,10 @@ final class BrowserLayout {
         ui.tabOverviewBottomBar.barView.isHidden = pad
         ui.tabOverviewBottomBar.safeAreaFillView.isHidden = true
         ui.tabOverviewBarButtons.attach(to: pad ? ui.tabOverviewTopBar.barView : ui.tabOverviewBottomBar.barView)
+        ui.padTopBarButtons.updateLayout(isPadLayout: controller.isPadLayout, showsCompactPadChrome: compactPad, sidebarVisible: controller.isLibrarySidebarVisible)
         ui.padTopBarButtons.leftStack.isHidden = compactPad
         ui.padTopBarButtons.rightStack.isHidden = compactPad
-        ui.padTopBarButtons.leftWidthConstraint.constant = compactPad ? 0 : 80
+        ui.padTopBarButtons.leftWidthConstraint.constant = compactPad ? 0 : resolvedPadTopBarLeftWidth(isPadLayout: controller.isPadLayout, sidebarVisible: controller.isLibrarySidebarVisible)
         ui.padTopBarButtons.rightWidthConstraint.constant = compactPad ? 0 : 126
         
         let showDismissButton = !pad && controller.isSearchFocused
@@ -324,6 +327,28 @@ final class BrowserLayout {
         ui.addressBar.setShadowEnabled(!pad)
         
         controller.updateNavigationButtons()
+    }
+    
+    private func resolvedPadTopInset() -> CGFloat {
+        guard controller.isPadLayout,
+              controller.splitViewController is BrowserSplitViewController else {
+            return controller.view.safeAreaInsets.top
+        }
+        
+        if let statusBarHeight = controller.view.window?.windowScene?.statusBarManager?.statusBarFrame.height,
+           statusBarHeight > 0 {
+            return statusBarHeight
+        }
+        
+        return 24
+    }
+    
+    private func resolvedPadTopBarLeftWidth(isPadLayout: Bool, sidebarVisible: Bool) -> CGFloat {
+        guard isPadLayout else {
+            return 126
+        }
+        
+        return sidebarVisible ? 80 : 126
     }
     
     func setSearchFocused(_ focused: Bool, animated: Bool) {

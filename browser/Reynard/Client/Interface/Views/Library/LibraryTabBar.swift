@@ -1,5 +1,5 @@
 //
-//  LibraryBar.swift
+//  LibraryTabBar.swift
 //  Reynard
 //
 //  Created by Minh Ton on 9/3/26.

@@ -23,4 +23,5 @@ final class PadTopBar {
     }()
     
     var heightConstraint: NSLayoutConstraint!
+    var topConstraint: NSLayoutConstraint!
 }

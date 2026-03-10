@@ -1,5 +1,5 @@
 //
-//  LibraryMenuViewController.swift
+//  LibraryViewController.swift
 //  Reynard
 //
 //  Created by Minh Ton on 9/3/26.
@@ -7,7 +7,18 @@
 
 import UIKit
 
-final class LibraryMenuViewController: UITabBarController, UITabBarControllerDelegate {
+final class LibraryViewController: UITabBarController, UITabBarControllerDelegate {
+    private let onClose: (() -> Void)?
+    
+    init(onClose: (() -> Void)? = nil) {
+        self.onClose = onClose
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemGroupedBackground
@@ -15,21 +26,30 @@ final class LibraryMenuViewController: UITabBarController, UITabBarControllerDel
         setViewControllers(makeSectionViewControllers(), animated: false)
         selectedIndex = LibrarySection.bookmarks.rawValue
         LibraryTabBarStyle.apply(to: tabBar)
-        if #available(iOS 26.0, *) {
-            navigationItem.rightBarButtonItem = UIBarButtonItem(
-                barButtonSystemItem: .close,
-                target: self,
-                action: #selector(dismissLibraryMenu)
-            )
-            navigationItem.rightBarButtonItem?.tintColor = .label
-        } else {
-            navigationItem.rightBarButtonItem = UIBarButtonItem(
-                barButtonSystemItem: .done,
-                target: self,
-                action: #selector(dismissLibraryMenu)
-            )
+        if onClose != nil {
+            if #available(iOS 26.0, *) {
+                navigationItem.rightBarButtonItem = UIBarButtonItem(
+                    barButtonSystemItem: .close,
+                    target: self,
+                    action: #selector(dismissLibraryMenu)
+                )
+                navigationItem.rightBarButtonItem?.tintColor = .label
+            } else {
+                navigationItem.rightBarButtonItem = UIBarButtonItem(
+                    barButtonSystemItem: .done,
+                    target: self,
+                    action: #selector(dismissLibraryMenu)
+                )
+            }
         }
         updateNavigationTitle()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationItem.leftItemsSupplementBackButton = false
+        navigationItem.leftBarButtonItems = []
+        navigationItem.leftBarButtonItem = nil
     }
     
     private func makeSectionViewControllers() -> [UIViewController] {
@@ -60,7 +80,7 @@ final class LibraryMenuViewController: UITabBarController, UITabBarControllerDel
     }
     
     @objc private func dismissLibraryMenu() {
-        dismiss(animated: true)
+        onClose?()
     }
 }
 

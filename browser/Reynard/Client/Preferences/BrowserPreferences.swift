@@ -2,7 +2,7 @@
 //  BrowserPreferences.swift
 //  Reynard
 //
-//  Created by GitHub Copilot on 10/3/26.
+//  Created by Minh Ton on 10/3/26.
 //
 
 import Foundation

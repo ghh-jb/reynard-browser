@@ -16,8 +16,10 @@ final class BrowserActions {
     }
     
     func presentMenuSheet() {
-        let vc = LibraryMenuViewController()
-        let navigationController = UINavigationController(rootViewController: vc)
+        let viewController = LibraryMenuViewController { [weak controller] in
+            controller?.dismiss(animated: true)
+        }
+        let navigationController = UINavigationController(rootViewController: viewController)
         navigationController.modalPresentationStyle = .pageSheet
         controller.present(navigationController, animated: true)
     }

@@ -47,13 +47,6 @@ class SettingsTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .close,
-            target: self,
-            action: #selector(dismissLibrarySheet)
-        )
-        navigationItem.rightBarButtonItem?.tintColor = .label
-        
         tableView.alwaysBounceVertical = true
         tableView.keyboardDismissMode = .interactive
         
@@ -76,10 +69,6 @@ class SettingsTableViewController: UITableViewController {
         let bottomInset = view.safeAreaInsets.bottom + SettingsLayout.bottomContentInset
         tableView.contentInset.bottom = bottomInset
         tableView.verticalScrollIndicatorInsets.bottom = bottomInset
-    }
-    
-    @objc private func dismissLibrarySheet() {
-        dismissLibrarySheetFromHierarchy()
     }
 }
 
@@ -439,19 +428,6 @@ extension UIViewController {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
-    }
-    
-    func dismissLibrarySheetFromHierarchy() {
-        var candidate: UIViewController? = self
-        
-        while let current = candidate {
-            if current.presentingViewController != nil {
-                current.dismiss(animated: true)
-                return
-            }
-            
-            candidate = current.parent
-        }
     }
 }
 

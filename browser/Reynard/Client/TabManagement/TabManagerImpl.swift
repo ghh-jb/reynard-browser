@@ -148,8 +148,7 @@ final class TabManagerImplementation: NSObject, TabManager {
             return
         }
         
-        let encodedValue = trimmedValue.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        tab.session.load("https://www.google.com/search?q=\(encodedValue)")
+        tab.session.load(BrowserPreferences.shared.searchURL(for: trimmedValue))
     }
     
     func tabIndex(for session: GeckoSession) -> Int? {
@@ -170,6 +169,7 @@ final class TabManagerImplementation: NSObject, TabManager {
     
     private func createSession(windowId: String?) -> GeckoSession {
         let session = GeckoSession()
+        session.userAgentOverride = BrowserPreferences.shared.androidUserAgentOverride
         session.contentDelegate = self
         session.progressDelegate = self
         session.navigationDelegate = self

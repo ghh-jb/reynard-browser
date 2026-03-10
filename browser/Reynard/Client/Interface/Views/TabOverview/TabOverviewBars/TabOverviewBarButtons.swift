@@ -20,6 +20,18 @@ final class TabOverviewBarButtons {
         MakeButtons.makeTabOverviewBarButton(controller: controller, imageName: "checkmark", isFilled: true, action: #selector(BrowserViewController.doneTapped))
     }()
     
+    lazy var clearBarButtonItem: UIBarButtonItem = {
+        MakeButtons.makeTabOverviewBarButtonItem(controller: controller, systemItem: .trash, action: #selector(BrowserViewController.clearAllTabsTapped))
+    }()
+    
+    lazy var addBarButtonItem: UIBarButtonItem = {
+        MakeButtons.makeTabOverviewBarButtonItem(controller: controller, systemItem: .add, action: #selector(BrowserViewController.newTabTapped))
+    }()
+    
+    lazy var doneBarButtonItem: UIBarButtonItem = {
+        MakeButtons.makeTabOverviewBarButtonItem(controller: controller, systemItem: .done, action: #selector(BrowserViewController.doneTapped))
+    }()
+    
     lazy var actionStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [clearButton, addButton, doneButton])
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -27,6 +39,19 @@ final class TabOverviewBarButtons {
         stack.alignment = .center
         stack.distribution = .equalSpacing
         return stack
+    }()
+    
+    lazy var actionToolbar: UIToolbar = {
+        let toolbar = UIToolbar()
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.items = [
+            clearBarButtonItem,
+            UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
+            addBarButtonItem,
+            UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
+            doneBarButtonItem,
+        ]
+        return toolbar
     }()
     
     private var leadingConstraint: NSLayoutConstraint?
@@ -49,19 +74,30 @@ final class TabOverviewBarButtons {
     }
     
     func attach(to hostView: UIView) {
-        if actionStack.superview !== hostView {
-            actionStack.removeFromSuperview()
-            hostView.addSubview(actionStack)
-            
-            leadingConstraint = actionStack.leadingAnchor.constraint(equalTo: hostView.leadingAnchor, constant: 32)
-            trailingConstraint = actionStack.trailingAnchor.constraint(equalTo: hostView.trailingAnchor, constant: -32)
-            centerYConstraint = actionStack.centerYAnchor.constraint(equalTo: hostView.centerYAnchor)
-            
-            NSLayoutConstraint.activate([
-                leadingConstraint,
-                trailingConstraint,
-                centerYConstraint,
-            ].compactMap { $0 })
+        let controlsView = MakeButtons.hasLiquidGlass ? actionToolbar : actionStack
+        
+        guard controlsView.superview !== hostView else {
+            return
         }
+        
+        actionStack.removeFromSuperview()
+        actionToolbar.removeFromSuperview()
+        NSLayoutConstraint.deactivate([
+            leadingConstraint,
+            trailingConstraint,
+            centerYConstraint,
+        ].compactMap { $0 })
+        
+        hostView.addSubview(controlsView)
+        
+        leadingConstraint = controlsView.leadingAnchor.constraint(equalTo: hostView.leadingAnchor, constant: 32)
+        trailingConstraint = controlsView.trailingAnchor.constraint(equalTo: hostView.trailingAnchor, constant: -32)
+        centerYConstraint = controlsView.centerYAnchor.constraint(equalTo: hostView.centerYAnchor)
+        
+        NSLayoutConstraint.activate([
+            leadingConstraint,
+            trailingConstraint,
+            centerYConstraint,
+        ].compactMap { $0 })
     }
 }

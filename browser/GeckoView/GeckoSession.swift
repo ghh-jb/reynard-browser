@@ -17,6 +17,7 @@ public class GeckoSession {
     let dispatcher: GeckoEventDispatcherWrapper = GeckoEventDispatcherWrapper()
     var window: GeckoViewWindow?
     var id: String?
+    public var userAgentOverride: String?
     
     lazy var contentHandler = newContentHandler(self)
     lazy var processHangHandler = newProcessHangHandler(self)
@@ -67,7 +68,7 @@ public class GeckoSession {
             "screenId": 0,
             "useTrackingProtection": false,
             "userAgentMode": 0,
-            "userAgentOverride": nil,
+            "userAgentOverride": userAgentOverride,
             "viewportMode": 0,
             "displayMode": 0,
             "suspendMediaWhenInactive": false,

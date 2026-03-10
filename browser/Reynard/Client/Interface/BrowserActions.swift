@@ -17,16 +17,9 @@ final class BrowserActions {
     
     func presentMenuSheet() {
         let vc = LibraryMenuViewController()
-        vc.modalPresentationStyle = .pageSheet
-        if #available(iOS 15.0, *) {
-            if let sheet = vc.sheetPresentationController {
-                sheet.prefersGrabberVisible = true
-                sheet.detents = [.medium(), .large()]
-                sheet.selectedDetentIdentifier = .medium
-                sheet.prefersScrollingExpandsWhenScrolledToEdge = false
-            }
-        }
-        controller.present(vc, animated: true)
+        let navigationController = UINavigationController(rootViewController: vc)
+        navigationController.modalPresentationStyle = .pageSheet
+        controller.present(navigationController, animated: true)
     }
     
     func presentShareSheet() {

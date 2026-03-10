@@ -6,8 +6,11 @@
 //
 
 import UIKit
+import Darwin
 
 enum MakeButtons {
+    static let hasLiquidGlass = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "_UISolariumEnabled") != nil && _UISolariumEnabled()
+    
     static func makeToolbarButton(target: AnyObject, imageName: String, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
@@ -45,5 +48,11 @@ enum MakeButtons {
         button.layer.cornerRadius = 21
         button.addTarget(controller, action: action, for: .touchUpInside)
         return button
+    }
+    
+    static func makeTabOverviewBarButtonItem(controller: BrowserViewController, systemItem: UIBarButtonItem.SystemItem, action: Selector) -> UIBarButtonItem {
+        let item = UIBarButtonItem(barButtonSystemItem: systemItem, target: controller, action: action)
+        item.tintColor = .label
+        return item
     }
 }

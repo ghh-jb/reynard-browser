@@ -16,7 +16,7 @@ final class BrowserActions {
     }
     
     func presentMenuSheet() {
-        let viewController = LibraryMenuViewController { [weak controller] in
+        let viewController = LibraryViewController { [weak controller] in
             controller?.dismiss(animated: true)
         }
         let navigationController = UINavigationController(rootViewController: viewController)

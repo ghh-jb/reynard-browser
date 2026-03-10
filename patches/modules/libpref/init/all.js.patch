@@ -1,17 +1,11 @@
 diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
-index d0c4fc9575e9..7258d889d32c 100644
+index d0c4fc9575e9..be620b73ff34 100644
 --- a/modules/libpref/init/all.js
 +++ b/modules/libpref/init/all.js
-@@ -67,6 +67,16 @@ pref("security.crash_tracking.js_load_1.maxCrashes", 1);
+@@ -67,6 +67,10 @@ pref("security.crash_tracking.js_load_1.maxCrashes", 1);
  
  pref("general.useragent.compatMode.firefox", false);
  
-+// REYNARD: Set UA to Firefox on Android to fix some weird problems (through
-+// the debug log HTTP/3 streams just error out when reading the responses with
-+// the default UA) making Google captcha unusable and YouTube player stalls.
-+// TODO: Make this into a pref configurable from the browser frontend.
-+pref("general.useragent.override", "Mozilla/5.0 (Android 14; Mobile; rv:149.0) Gecko/149.0 Firefox/149.0");
-+
 +// REYNARD: Reduce GeckoView logging noise because the default "Debug" level
 +// just makes debugging near to impossible.
 +pref("geckoview.logging", "Warn");
@@ -19,7 +13,7 @@ index d0c4fc9575e9..7258d889d32c 100644
  pref("general.config.obscure_value", 13); // for MCD .cfg files
  
  // Whether middle button click with a modifier key starts to autoscroll or
-@@ -2542,6 +2552,11 @@ pref("font.size.monospace.x-math", 13);
+@@ -2542,6 +2546,11 @@ pref("font.size.monospace.x-math", 13);
    // For non-Latin/Greek/Cyrillic scripts, there may not be any serif/sans-serif
    // distinction available, so both generics resolve to the same font.
  
@@ -31,7 +25,7 @@ index d0c4fc9575e9..7258d889d32c 100644
    pref("font.name-list.emoji", "Apple Color Emoji");
  
    pref("font.name-list.serif.ar", "Al Nile");
-@@ -2640,11 +2655,11 @@ pref("font.size.monospace.x-math", 13);
+@@ -2640,11 +2649,11 @@ pref("font.size.monospace.x-math", 13);
    pref("font.name-list.monospace.x-tibt", "Menlo, Kailasa");
  
    pref("font.name-list.serif.x-unicode", "Times New Roman");

@@ -85,12 +85,21 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         }
         
         browserLayout.configureLayout()
+        syncBrowserNavigationChrome(animated: false)
         syncPadSidebarButtonItem()
         addressBarGestures.configureGestures()
         browserLayout.observeKeyboard()
         
         tabManager.createInitialTab()
         browserLayout.applyChromeLayout(animated: false)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        guard !usesEmbeddedSplitRoot else {
+            return
+        }
+        syncBrowserNavigationChrome(animated: animated)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -106,6 +115,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         guard !usesEmbeddedSplitRoot else {
             return
         }
+        syncBrowserNavigationChrome(animated: false)
         syncPadSidebarButtonItem()
         browserLayout.applyChromeLayout(animated: false)
     }
@@ -116,6 +126,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             embeddedSplitController?.refreshSidebarVisibility()
             return
         }
+        syncBrowserNavigationChrome(animated: false)
         syncPadSidebarButtonItem()
         browserLayout.applyChromeLayout(animated: false)
         browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
@@ -130,11 +141,13 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         }
         
         coordinator.animate { _ in
+            self.syncBrowserNavigationChrome(animated: false)
             self.syncPadSidebarButtonItem()
             self.browserLayout.applyChromeLayout(animated: false)
             self.browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
             self.browserUI.padTabBar.collectionView.collectionViewLayout.invalidateLayout()
         } completion: { _ in
+            self.syncBrowserNavigationChrome(animated: false)
             self.syncPadSidebarButtonItem()
             self.browserUI.geckoView.transform = .identity
             self.addressBarGestures.resetHorizontalTransition()
@@ -203,6 +216,14 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     
     private func syncPadSidebarButtonItem() {
         browserUI.padTopBarButtons.syncSidebarButton(splitViewController: splitViewController)
+    }
+    
+    private func syncBrowserNavigationChrome(animated: Bool) {
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+        navigationItem.leftItemsSupplementBackButton = false
+        navigationItem.hidesBackButton = true
+        navigationItem.leftBarButtonItems = []
+        navigationItem.leftBarButtonItem = nil
     }
     
     private func configureEmbeddedSplitRoot() {

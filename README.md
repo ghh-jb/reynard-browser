@@ -141,9 +141,10 @@ Download Gecko and apply patches.
 ./tools/development/apply-patches.sh
 ```
 
-Build the Gecko engine.
+Build dependencies and the Gecko engine.
 
 ```bash
+./tools/development/build-idevice.sh
 ./tools/development/build-gecko.sh
 ```
 

@@ -1,0 +1,19 @@
+diff --git a/js/src/jit/arm64/MacroAssembler-arm64.cpp b/js/src/jit/arm64/MacroAssembler-arm64.cpp
+index 02b9a57cbf26..e6f00979dff1 100644
+--- a/js/src/jit/arm64/MacroAssembler-arm64.cpp
++++ b/js/src/jit/arm64/MacroAssembler-arm64.cpp
+@@ -3326,10 +3326,11 @@ void MacroAssembler::patchNearAddressMove(CodeLocationLabel loc,
+   ptrdiff_t off = target - loc;
+   MOZ_RELEASE_ASSERT(vixl::IsInt21(off));
+ 
+-  Instruction* cur = reinterpret_cast<Instruction*>(loc.raw());
+-  MOZ_ASSERT(cur->IsADR());
++  Instruction* executable = reinterpret_cast<Instruction*>(loc.raw());
++  Instruction* cur = WritableJitAllocationFromExecutable(executable);
++  MOZ_ASSERT(executable->IsADR());
+ 
+-  vixl::Register rd = vixl::XRegister(cur->Rd());
++  vixl::Register rd = vixl::XRegister(executable->Rd());
+   adr(cur, rd, off);
+ }
+ 

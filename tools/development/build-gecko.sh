@@ -8,16 +8,6 @@ FIREFOX_DIR="$ROOT_DIR/engine/firefox"
 
 TARGET="aarch64-apple-ios"
 
-if [ "${1-}" = "--simulator" ]; then
-	TARGET="aarch64-apple-ios-sim"
-	shift
-fi
-
-if [ "$#" -ne 0 ]; then
-	echo "Usage: $0 [--simulator]"
-	exit 1
-fi
-
 cd "$ROOT_DIR"
 
 if [ ! -d "$FIREFOX_DIR" ]; then

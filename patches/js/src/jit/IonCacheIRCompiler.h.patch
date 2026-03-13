@@ -1,0 +1,12 @@
+diff --git a/js/src/jit/IonCacheIRCompiler.h b/js/src/jit/IonCacheIRCompiler.h
+index 34a1a75995fb..4f75b69053aa 100644
+--- a/js/src/jit/IonCacheIRCompiler.h
++++ b/js/src/jit/IonCacheIRCompiler.h
+@@ -59,6 +59,7 @@ class MOZ_RAII IonCacheIRCompiler : public CacheIRCompiler {
+   const CacheIRWriter& writer_;
+   IonIC* ic_;
+   IonScript* ionScript_;
++  IonICStub* currentStub_;
+ 
+   Vector<CodeOffset, 4, SystemAllocPolicy> nextCodeOffsets_;
+   mozilla::Maybe<LiveRegisterSet> liveRegs_;

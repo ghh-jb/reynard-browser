@@ -63,8 +63,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		015D21782F4ECEC00018C6E7 /* Rendering.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Rendering.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		015D21792F4ECEC00018C6E7 /* Networking.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Networking.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		018C679E2F2F289C001F0BBB /* Reynard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Reynard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		01GECKO0002F2F289C001F0001 /* GeckoView.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GeckoView.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Configuration/Reynard.xcconfig; sourceTree = "<group>"; };
@@ -201,8 +199,6 @@
 				018C679E2F2F289C001F0BBB /* Reynard.app */,
 				01GECKO0002F2F289C001F0001 /* GeckoView.framework */,
 				02WCPAPP2F3000000000001 /* Reynard Helper.appex */,
-				015D21782F4ECEC00018C6E7 /* Rendering.appex */,
-				015D21792F4ECEC00018C6E7 /* Networking.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -449,7 +445,16 @@
 					"@executable_path/Frameworks",
 					"@executable_path/Frameworks/GeckoView.framework",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Reynard/JIT",
+					"$(PROJECT_DIR)/Reynard/JIT",
+				);
 				MARKETING_VERSION = "$(CURRENT_VERSION)";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lidevice_ffi",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -492,7 +497,16 @@
 					"@executable_path/Frameworks",
 					"@executable_path/Frameworks/GeckoView.framework",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/Reynard/JIT",
+					"$(PROJECT_DIR)/Reynard/JIT",
+				);
 				MARKETING_VERSION = "$(CURRENT_VERSION)";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lidevice_ffi",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "me.minh-ton.Reynard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -721,6 +735,7 @@
 			baseConfigurationReference = 01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Helper/Entitlements/Reynard-Helper.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_BUILD)";
 				DEVELOPMENT_TEAM = NAR5D6HWAD;
@@ -759,6 +774,7 @@
 			baseConfigurationReference = 01GECKO0052F2F289C001F0001 /* Configuration/Reynard.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = "$(SRCROOT)/Helper/Entitlements/Reynard-Helper.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(CURRENT_BUILD)";
 				DEVELOPMENT_TEAM = NAR5D6HWAD;

@@ -1,0 +1,100 @@
+//
+//  IdeviceFFI.h
+//  Reynard
+//
+//  Created by Minh Ton on 11/3/26.
+//
+
+#ifndef IdeviceFFI_h
+#define IdeviceFFI_h
+
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+
+typedef struct AdapterHandle AdapterHandle;
+typedef struct DebugProxyHandle DebugProxyHandle;
+typedef struct DebugserverCommandHandle DebugserverCommandHandle;
+typedef struct HeartbeatClientHandle HeartbeatClientHandle;
+typedef struct IdevicePairingFile IdevicePairingFile;
+typedef struct IdeviceProviderHandle IdeviceProviderHandle;
+typedef struct ProcessControlHandle ProcessControlHandle;
+typedef struct ReadWriteOpaque ReadWriteOpaque;
+typedef struct RemoteServerHandle RemoteServerHandle;
+typedef struct RsdHandshakeHandle RsdHandshakeHandle;
+typedef struct CoreDeviceProxyHandle CoreDeviceProxyHandle;
+
+typedef struct IdeviceFfiError {
+    int32_t code;
+    const char *message;
+} IdeviceFfiError;
+
+IdeviceFfiError *idevice_pairing_file_read(const char *path,
+                                           IdevicePairingFile **pairing_file);
+void idevice_pairing_file_free(IdevicePairingFile *pairing_file);
+
+IdeviceFfiError *idevice_tcp_provider_new(const struct sockaddr *ip,
+                                          IdevicePairingFile *pairing_file,
+                                          const char *label,
+                                          IdeviceProviderHandle **provider);
+void idevice_provider_free(IdeviceProviderHandle *provider);
+
+IdeviceFfiError *heartbeat_connect(IdeviceProviderHandle *provider,
+                                   HeartbeatClientHandle **client);
+IdeviceFfiError *heartbeat_get_marco(HeartbeatClientHandle *client,
+                                     uint64_t interval,
+                                     uint64_t *new_interval);
+IdeviceFfiError *heartbeat_send_polo(HeartbeatClientHandle *client);
+void heartbeat_client_free(HeartbeatClientHandle *handle);
+
+IdeviceFfiError *core_device_proxy_connect(IdeviceProviderHandle *provider,
+                                           CoreDeviceProxyHandle **client);
+IdeviceFfiError *core_device_proxy_get_server_rsd_port(
+                                                       CoreDeviceProxyHandle *handle, uint16_t *port);
+IdeviceFfiError *core_device_proxy_create_tcp_adapter(
+                                                      CoreDeviceProxyHandle *handle, AdapterHandle **adapter);
+void core_device_proxy_free(CoreDeviceProxyHandle *handle);
+
+IdeviceFfiError *adapter_connect(AdapterHandle *adapter_handle, uint16_t port,
+                                 ReadWriteOpaque **stream_handle);
+void adapter_free(AdapterHandle *handle);
+
+IdeviceFfiError *rsd_handshake_new(ReadWriteOpaque *socket,
+                                   RsdHandshakeHandle **handle);
+void rsd_handshake_free(RsdHandshakeHandle *handle);
+
+IdeviceFfiError *remote_server_connect_rsd(AdapterHandle *provider,
+                                           RsdHandshakeHandle *handshake,
+                                           RemoteServerHandle **handle);
+void remote_server_free(RemoteServerHandle *handle);
+
+IdeviceFfiError *process_control_new(RemoteServerHandle *server,
+                                     ProcessControlHandle **handle);
+void process_control_free(ProcessControlHandle *handle);
+IdeviceFfiError *process_control_disable_memory_limit(
+                                                      ProcessControlHandle *handle, uint64_t pid);
+
+IdeviceFfiError *debug_proxy_connect_rsd(AdapterHandle *provider,
+                                         RsdHandshakeHandle *handshake,
+                                         DebugProxyHandle **handle);
+void debug_proxy_free(DebugProxyHandle *handle);
+IdeviceFfiError *debug_proxy_send_command(DebugProxyHandle *handle,
+                                          DebugserverCommandHandle *command,
+                                          char **response);
+IdeviceFfiError *debug_proxy_read_response(DebugProxyHandle *handle,
+                                           char **response);
+IdeviceFfiError *debug_proxy_send_raw(DebugProxyHandle *handle,
+                                      const uint8_t *data, uintptr_t len);
+IdeviceFfiError *debug_proxy_send_ack(DebugProxyHandle *handle);
+void debug_proxy_set_ack_mode(DebugProxyHandle *handle, int enabled);
+
+DebugserverCommandHandle *debugserver_command_new(const char *name,
+                                                  const char *const *argv,
+                                                  uintptr_t argv_count);
+void debugserver_command_free(DebugserverCommandHandle *command);
+
+void idevice_error_free(IdeviceFfiError *err);
+void idevice_string_free(char *string);
+
+#endif /* IdeviceFFI_h */

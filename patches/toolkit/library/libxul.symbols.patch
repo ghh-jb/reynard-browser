@@ -1,0 +1,12 @@
+diff --git a/toolkit/library/libxul.symbols b/toolkit/library/libxul.symbols
+index e63e3e74426b..8886604f0c16 100644
+--- a/toolkit/library/libxul.symbols
++++ b/toolkit/library/libxul.symbols
+@@ -3,6 +3,7 @@ uprofiler_get
+ #ifdef XP_IOS
+ MainProcessInit
+ ChildProcessInit
++ReportChildProcessJITEnabled
+ GeckoViewOpenWindow
+ #endif
+ #ifdef ANDROID

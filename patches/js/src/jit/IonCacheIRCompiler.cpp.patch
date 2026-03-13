@@ -1,0 +1,29 @@
+diff --git a/js/src/jit/IonCacheIRCompiler.cpp b/js/src/jit/IonCacheIRCompiler.cpp
+index 00b51dcfc57d..32f5da41469f 100644
+--- a/js/src/jit/IonCacheIRCompiler.cpp
++++ b/js/src/jit/IonCacheIRCompiler.cpp
+@@ -53,6 +53,7 @@ IonCacheIRCompiler::IonCacheIRCompiler(JSContext* cx, TempAllocator& alloc,
+       writer_(writer),
+       ic_(ic),
+       ionScript_(ionScript),
++      currentStub_(nullptr),
+       savedLiveRegs_(false),
+       localTracingSlots_(0),
+       perfSpewer_(ic->script(), ic->pc()) {
+@@ -79,6 +80,8 @@ void IonCacheIRCompiler::callVM(MacroAssembler& masm) {
+ }
+ 
+ void IonCacheIRCompiler::pushStubCodePointer() {
++  MOZ_ASSERT(currentStub_);
++  masm.Push(ImmPtr(currentStub_));
+   stubJitCodeOffset_.emplace(masm.PushWithPatch(ImmPtr((void*)-1)));
+ }
+ 
+@@ -584,6 +587,7 @@ bool IonCacheIRCompiler::init() {
+ 
+ JitCode* IonCacheIRCompiler::compile(IonICStub* stub) {
+   AutoCreatedBy acb(masm, "IonCacheIRCompiler::compile");
++  currentStub_ = stub;
+ 
+   masm.setFramePushed(ionScript_->frameSize());
+   if (cx_->runtime()->geckoProfiler().enabled()) {

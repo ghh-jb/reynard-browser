@@ -1,0 +1,148 @@
+diff --git a/js/src/wasm/WasmFeatures.cpp b/js/src/wasm/WasmFeatures.cpp
+index 991e895380de..4c34059e193c 100644
+--- a/js/src/wasm/WasmFeatures.cpp
++++ b/js/src/wasm/WasmFeatures.cpp
+@@ -30,10 +30,40 @@
+ #include "wasm/WasmIonCompile.h"
+ #include "wasm/WasmSignalHandlers.h"
+ 
++#ifdef XP_IOS
++#  include <unistd.h>
++#endif
++
+ using namespace js;
+ using namespace js::wasm;
+ using namespace js::jit;
+ 
++#ifdef XP_IOS
++static void WasmSupportFailureDebug(const char* aReason) {
++  fprintf(stderr, "REYNARD_DEBUG: wasm support disabled: pid=%d, %s\n",
++          getpid(), aReason);
++}
++
++static void WasmAvailabilityDebug(JSContext* cx,
++                                           const char* aCallsite,
++                                           bool baselineAvailable,
++                                           bool ionAvailable,
++                                           bool anyCompilerAvailable) {
++  static mozilla::Atomic<bool, mozilla::Relaxed> sLogged(false);
++  if (sLogged.exchange(true)) {
++    return;
++  }
++
++  fprintf(stderr,
++          "REYNARD_DEBUG: wasm availability snapshot: pid=%d, callsite=%s, hasJitBackend=%d, wasmPref=%d, wasmBaselinePref=%d, wasmIonPref=%d, baselinePlatform=%d, ionPlatform=%d, baselineAvailable=%d, ionAvailable=%d, anyCompilerAvailable=%d\n",
++          getpid(), aCallsite, HasJitBackend(), cx->options().wasm(),
++          cx->options().wasmBaseline(), cx->options().wasmIon(),
++          BaselinePlatformSupport(), IonPlatformSupport(), baselineAvailable,
++          ionAvailable, anyCompilerAvailable);
++  fflush(stderr);
++}
++#endif
++
+ // About the fuzzer intercession points: If fuzzing has been selected and only a
+ // single compiler has been selected then we will disable features that are not
+ // supported by that single compiler.  This is strictly a concession to the
+@@ -212,7 +242,14 @@ bool wasm::IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
+ }
+ 
+ bool wasm::AnyCompilerAvailable(JSContext* cx) {
+-  return wasm::BaselineAvailable(cx) || wasm::IonAvailable(cx);
++  bool baselineAvailable = wasm::BaselineAvailable(cx);
++  bool ionAvailable = wasm::IonAvailable(cx);
++  bool anyCompilerAvailable = baselineAvailable || ionAvailable;
++#ifdef XP_IOS
++  WasmAvailabilityDebug(cx, "AnyCompilerAvailable", baselineAvailable,
++                                 ionAvailable, anyCompilerAvailable);
++#endif
++  return anyCompilerAvailable;
+ }
+ 
+ // Feature predicates.  These must be kept in sync with the predicates in the
+@@ -245,33 +282,58 @@ bool wasm::ThreadsAvailable(JSContext* cx) {
+ 
+ bool wasm::HasPlatformSupport() {
+ #if !MOZ_LITTLE_ENDIAN()
++#  ifdef XP_IOS
++  WasmSupportFailureDebug("platform is not little-endian");
++#  endif
+   return false;
+ #else
+ 
+   if (!HasJitBackend()) {
++#  ifdef XP_IOS
++    WasmSupportFailureDebug("JIT backend disabled");
++#  endif
+     return false;
+   }
+ 
+   if (gc::SystemPageSize() > wasm::StandardPageSizeBytes) {
++#  ifdef XP_IOS
++    WasmSupportFailureDebug("system page size exceeds wasm standard page size");
++#  endif
+     return false;
+   }
+ 
+   if (!JitOptions.supportsUnalignedAccesses) {
++#  ifdef XP_IOS
++    WasmSupportFailureDebug("unaligned accesses unsupported");
++#  endif
+     return false;
+   }
+ 
+   if (!jit::JitSupportsAtomics()) {
++#  ifdef XP_IOS
++    WasmSupportFailureDebug("atomics unsupported");
++#  endif
+     return false;
+   }
+ 
+   // Wasm threads require 8-byte lock-free atomics.
+   if (!jit::AtomicOperations::isLockfree8()) {
++#  ifdef XP_IOS
++    WasmSupportFailureDebug("8-byte lock-free atomics unsupported");
++#  endif
+     return false;
+   }
+ 
+   // Test only whether the compilers are supported on the hardware, not whether
+   // they are enabled.
+-  return BaselinePlatformSupport() || IonPlatformSupport();
++  if (!(BaselinePlatformSupport() || IonPlatformSupport())) {
++#  ifdef XP_IOS
++    WasmSupportFailureDebug("no wasm compiler backend available");
++#  endif
++    return false;
++  }
++
++  return true;
+ #endif
+ }
+ 
+@@ -286,7 +348,25 @@ bool wasm::HasSupport(JSContext* cx) {
+   }
+   // Do not check for compiler availability, as that may be run-time variant.
+   // For HasSupport() we want a stable answer depending only on prefs.
+-  return prefEnabled && HasPlatformSupport() && EnsureFullSignalHandlers(cx);
++  if (!prefEnabled) {
++#ifdef XP_IOS
++    WasmSupportFailureDebug("javascript.options.wasm disabled by prefs");
++#endif
++    return false;
++  }
++
++  if (!HasPlatformSupport()) {
++    return false;
++  }
++
++  if (!EnsureFullSignalHandlers(cx)) {
++#ifdef XP_IOS
++    WasmSupportFailureDebug("full signal handler installation failed");
++#endif
++    return false;
++  }
++
++  return true;
+ }
+ 
+ bool wasm::StreamingCompilationAvailable(JSContext* cx) {

@@ -12,5 +12,6 @@
 #import <GeckoView/GeckoViewSwiftSupport.h>
 #import "UIKit+Private.h"
 #import "ExtensionBridge.h"
+#import "JITEnabler.h"
 
 #endif /* Reynard_Bridging_Header_h */

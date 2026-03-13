@@ -1,27 +1,369 @@
 diff --git a/toolkit/xre/IOSBootstrap.mm b/toolkit/xre/IOSBootstrap.mm
-index 1b7353a06393..03b1e5344a0c 100644
+index 1b7353a06393..d952e2c89e3f 100644
 --- a/toolkit/xre/IOSBootstrap.mm
 +++ b/toolkit/xre/IOSBootstrap.mm
-@@ -16,6 +16,7 @@
+@@ -12,10 +12,25 @@
+ #include "mozilla/Bootstrap.h"
+ #include "mozilla/DarwinObjectPtr.h"
+ #include "mozilla/GeckoArgs.h"
++#include "mozilla/widget/GeckoViewRuntimeSupport.h"
+ #include "mozilla/widget/GeckoViewSupport.h"
  #include "nsDebug.h"
  #include "nsPrintfCString.h"
  #include "XREChildData.h"
 +#include "js/Initialization.h"
++
++#include <errno.h>
++#include <libkern/OSCacheControl.h>
++#include <mach/mach.h>
++#include <poll.h>
++#if __has_include(<ptrauth.h>)
++#  include <ptrauth.h>
++#endif
++#include <setjmp.h>
++#include <signal.h>
++#include <stdio.h>
++#include <sys/mman.h>
++#include <unistd.h>
  
  #include "application.ini.h"
  
-@@ -115,6 +116,10 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
+@@ -26,11 +41,271 @@
+ }
+ 
+ static id<GeckoProcessExtension> gCurrentProcessExtension;
++static int gExecutableJITReadyFd = -1;
++static sigjmp_buf gExecutableProbeSignalJump;
++static volatile sig_atomic_t gExecutableProbeSignal = 0;
++static volatile sig_atomic_t gExecutableProbeSignalCode = 0;
++static volatile uintptr_t gExecutableProbeFaultAddress = 0;
++
++static void ExecutableProbeSignalHandler(int signalNumber, siginfo_t* info,
++                                         void* context) {
++  (void)context;
++  gExecutableProbeSignal = signalNumber;
++  gExecutableProbeSignalCode = info ? info->si_code : 0;
++  gExecutableProbeFaultAddress =
++      info ? reinterpret_cast<uintptr_t>(info->si_addr) : 0;
++  siglongjmp(gExecutableProbeSignalJump, 1);
++}
+ 
+ id<GeckoProcessExtension> mozilla::widget::GetCurrentProcessExtension() {
+   return gCurrentProcessExtension;
+ }
+ 
++// REYNARD: Request an RX JIT region from the debugger-backed iOS allocation
++// path and return the resulting executable address through x0.
++#if defined(__aarch64__)
++__attribute__((noinline, optnone, naked)) static void*
++DebuggerAllocateExecutableRegionTrap(void* aAddress, size_t aSize) {
++  asm volatile("mov x16, #1\n"
++               "brk #0xf00d\n"
++               "ret\n");
++}
++#endif
++
++static void* RequestDebuggerAllocateExecutableRegion(size_t aSize) {
++#if defined(__aarch64__)
++  return DebuggerAllocateExecutableRegionTrap(nullptr, aSize);
++#else
++  (void)aSize;
++  return nullptr;
++#endif
++}
++
++static bool CanAllocateExecutableJitPage(int* aErrno) {
++  const size_t pageSize = static_cast<size_t>(getpagesize());
++  void* reservation = RequestDebuggerAllocateExecutableRegion(pageSize);
++  if (!reservation) {
++    if (aErrno) {
++      *aErrno = ENOMEM;
++    }
++    return false;
++  }
++
++  vm_address_t writableAlias = 0;
++  vm_prot_t currentProtection = VM_PROT_READ | VM_PROT_WRITE;
++  vm_prot_t maxProtection = VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE;
++  kern_return_t remapResult = vm_remap(
++      mach_task_self(), &writableAlias, pageSize, 0, VM_FLAGS_ANYWHERE,
++      mach_task_self(), reinterpret_cast<vm_address_t>(reservation), false,
++      &currentProtection, &maxProtection, VM_INHERIT_SHARE);
++  if (remapResult != KERN_SUCCESS) {
++    vm_deallocate(mach_task_self(), reinterpret_cast<vm_address_t>(reservation),
++                  pageSize);
++    if (aErrno) {
++      *aErrno = int(remapResult);
++    }
++    return false;
++  }
++
++  if (vm_protect(mach_task_self(), writableAlias, pageSize, false,
++                 VM_PROT_READ | VM_PROT_WRITE) != KERN_SUCCESS) {
++    vm_deallocate(mach_task_self(), writableAlias, pageSize);
++    vm_deallocate(mach_task_self(), reinterpret_cast<vm_address_t>(reservation),
++                  pageSize);
++    if (aErrno) {
++      *aErrno = EPERM;
++    }
++    return false;
++  }
++
++  uint32_t* code = reinterpret_cast<uint32_t*>(writableAlias);
++  code[0] = 0xD503245F;  // bti c
++  code[1] = 0x52800540;  // mov w0, #42
++  code[2] = 0xD65F03C0;  // ret
++
++  if (vm_protect(mach_task_self(), writableAlias, pageSize, false,
++                 VM_PROT_READ) != KERN_SUCCESS) {
++    vm_deallocate(mach_task_self(), writableAlias, pageSize);
++    vm_deallocate(mach_task_self(), reinterpret_cast<vm_address_t>(reservation),
++                  pageSize);
++    if (aErrno) {
++      *aErrno = EPERM;
++    }
++    return false;
++  }
++
++  // REYNARD: Flush the writable alias back to the executable view before the
++  // child branches into freshly generated code.
++    sys_cache_control(kCacheFunctionPrepareForExecution, reservation,
++          sizeof(uint32_t) * 3);
++
++  vm_address_t writableAliasToFree = writableAlias;
++  writableAlias = 0;
++  if (vm_deallocate(mach_task_self(), writableAliasToFree, pageSize) !=
++      KERN_SUCCESS) {
++    vm_deallocate(mach_task_self(), reinterpret_cast<vm_address_t>(reservation),
++                  pageSize);
++    if (aErrno) {
++      *aErrno = EPERM;
++    }
++    return false;
++  }
++
++  using ProbeFunction = int (*)();
++  ProbeFunction probe = reinterpret_cast<ProbeFunction>(reservation);
++#if __has_feature(ptrauth_calls)
++  probe = reinterpret_cast<ProbeFunction>(
++      ptrauth_sign_unauthenticated(reinterpret_cast<void*>(reservation),
++                                   ptrauth_key_function_pointer, 0));
++#endif
++  const int handledSignals[] = {SIGBUS, SIGSEGV, SIGILL, SIGTRAP};
++  struct sigaction newAction;
++  memset(&newAction, 0, sizeof(newAction));
++  sigemptyset(&newAction.sa_mask);
++  newAction.sa_sigaction = ExecutableProbeSignalHandler;
++  newAction.sa_flags = SA_SIGINFO;
++  struct sigaction oldActions[std::size(handledSignals)];
++  for (size_t index = 0; index < std::size(handledSignals); index++) {
++    sigaction(handledSignals[index], &newAction, &oldActions[index]);
++  }
++
++  gExecutableProbeSignal = 0;
++  gExecutableProbeSignalCode = 0;
++  gExecutableProbeFaultAddress = 0;
++  int result = 0;
++  bool handledSignal = false;
++  if (sigsetjmp(gExecutableProbeSignalJump, 1) == 0) {
++    result = probe();
++  } else {
++    handledSignal = true;
++  }
++  for (size_t index = 0; index < std::size(handledSignals); index++) {
++    sigaction(handledSignals[index], &oldActions[index], nullptr);
++  }
++
++  if (handledSignal) {
++    fprintf(stderr,
++            "REYNARD_DEBUG: Child executable probe signal, pid=%d, signal=%d, code=%d, addr=0x%llx\n",
++            getpid(), gExecutableProbeSignal, gExecutableProbeSignalCode,
++            static_cast<unsigned long long>(gExecutableProbeFaultAddress));
++    fflush(stderr);
++    vm_deallocate(mach_task_self(), reinterpret_cast<vm_address_t>(reservation),
++                  pageSize);
++    if (aErrno) {
++      *aErrno = EFAULT;
++    }
++    return false;
++  }
++  vm_deallocate(mach_task_self(), reinterpret_cast<vm_address_t>(reservation),
++                pageSize);
++
++  if (result != 42) {
++    if (aErrno) {
++      *aErrno = EIO;
++    }
++    return false;
++  }
++
++  if (aErrno) {
++    *aErrno = 0;
++  }
++  return true;
++}
++
++// REYNARD: Wait for the parent process to finish the per-pid JIT attach path
++// before allowing the content child to keep SpiderMonkey JIT enabled.
++static bool WaitForParentExecutableJITReady(int* aErrno) {
++  if (gExecutableJITReadyFd == -1) {
++    if (aErrno) {
++      *aErrno = ENOENT;
++    }
++    return false;
++  }
++
++  pollfd descriptor = {
++      .fd = gExecutableJITReadyFd,
++      .events = POLLIN,
++      .revents = 0,
++  };
++
++  const int pollResult = poll(&descriptor, 1, 5000);
++  if (pollResult <= 0) {
++    const int resultErrno = pollResult == 0 ? ETIMEDOUT : errno;
++    close(gExecutableJITReadyFd);
++    gExecutableJITReadyFd = -1;
++    if (aErrno) {
++      *aErrno = resultErrno;
++    }
++    return false;
++  }
++
++  uint8_t status = 0;
++  const ssize_t bytesRead = read(gExecutableJITReadyFd, &status, sizeof(status));
++  const int readErrno = bytesRead == sizeof(status) ? 0 : errno;
++  close(gExecutableJITReadyFd);
++  gExecutableJITReadyFd = -1;
++
++  if (bytesRead != sizeof(status)) {
++    if (aErrno) {
++      *aErrno = readErrno;
++    }
++    return false;
++  }
++
++  if (!status) {
++    if (aErrno) {
++      *aErrno = EPERM;
++    }
++    return false;
++  }
++
++  if (aErrno) {
++    *aErrno = 0;
++  }
++  return true;
++}
++
++static bool WaitForExecutableJITReady(int* aErrno) {
++  if (!WaitForParentExecutableJITReady(aErrno)) {
++    return false;
++  }
++
++  constexpr unsigned kMaxAttempts = 100;
++  constexpr useconds_t kRetryDelayUs = 100000;
++
++  for (unsigned attempt = 0; attempt < kMaxAttempts; ++attempt) {
++    if (CanAllocateExecutableJitPage(aErrno)) {
++      return true;
++    }
++    usleep(kRetryDelayUs);
++  }
++
++  return false;
++}
++
++void mozilla::widget::NotifyChildProcessStarted(int32_t aPid,
++                                                const char* aProcessType) {
++  // REYNARD: Forward child process launch notifications to the Swift host so
++  // it can attach the JIT debugger path as soon as the pid is
++  // known in the parent process, while still letting the app distinguish the
++  // Gecko child process type.
++  if (!gRuntime) {
++    return;
++  }
++
++  NSString* processType = @"invalid";
++  if (aProcessType) {
++    processType = [NSString stringWithUTF8String:aProcessType];
++    if (!processType) {
++      processType = @"invalid";
++    }
++  }
++
++  if ([gRuntime respondsToSelector:@selector(childProcessDidStartWithPID:processType:)]) {
++    [gRuntime childProcessDidStartWithPID:aPid processType:processType];
++  }
++}
++
+ int MainProcessInit(int aArgc, char** aArgv,
+                     id<SwiftGeckoViewRuntime> aRuntime) {
+   auto bootstrap = mozilla::GetBootstrap();
+@@ -89,6 +364,11 @@ void ChildProcessInit(xpc_connection_t aXpcConnection,
+   xpc_connection_activate(aXpcConnection);
+ }
+ 
++MOZ_EXPORT __attribute__((used)) void ReportChildProcessJITEnabled(
++    int32_t aPid, bool aEnabled) {
++  mozilla::widget::ReportChildProcessJITEnabled(aPid, aEnabled);
++}
++
+ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
+   auto bootstrap = mozilla::GetBootstrap();
+   if (bootstrap.isErr()) {
+@@ -115,6 +395,38 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
        /* aRandomizeSmall */ !XRE_IsContentProcess());
  #endif
  
-+  // REYNARD: Disable JIT backend in iOS extension child processes because
-+  // executable JIT allocations are not yet wired for this NSExtension path.
-+  JS::DisableJitBackend();
++  // REYNARD: Probe the child process directly for writable-to-executable page
++  // transitions before SpiderMonkey initializes executable memory. This keeps
++  // JIT gating independent from the NSExtension bootstrap path.
++  const bool isContentProcess = XRE_IsContentProcess();
++  fprintf(stderr, "REYNARD_DEBUG: Child JIT gate pid=%d, content=%d\n",
++          getpid(), isContentProcess);
++  fflush(stderr);
++  if (isContentProcess) {
++    int jitErrno = 0;
++    if (WaitForExecutableJITReady(&jitErrno)) {
++      fprintf(stderr,
++              "REYNARD_DEBUG: Child executable JIT ready, pid=%d\n",
++              getpid());
++      fflush(stderr);
++    } else {
++      fprintf(stderr,
++              "REYNARD_DEBUG: JIT enablement verification failed, pid=%d, errno=%d\n",
++              getpid(), jitErrno);
++      fprintf(stderr,
++              "REYNARD_DEBUG: DisableJitBackend from IOSBootstrap executable JIT preflight failure, pid=%d\n",
++              getpid());
++      fflush(stderr);
++      JS::DisableJitBackend();
++    }
++  } else {
++    fprintf(stderr,
++            "REYNARD_DEBUG: DisableJitBackend from IOSBootstrap non-content child process, pid=%d\n",
++            getpid());
++    fflush(stderr);
++    JS::DisableJitBackend();
++  }
 +
    nsresult rv =
        bootstrap.inspect()->XRE_InitChildProcess(aArgc - 2, aArgv, &childData);
  
-@@ -202,6 +207,12 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+@@ -136,6 +448,11 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+     close(fd);
+   }
+ 
++  fd = xpc_dictionary_dup_fd(aEvent, "jit-ready-fd");
++  if (fd != -1) {
++    gExecutableJITReadyFd = fd;
++  }
++
+   // Immediately send a reply with our pid
+   auto reply = mozilla::AdoptDarwinObject(xpc_dictionary_create_reply(aEvent));
+   xpc_dictionary_set_int64(reply.get(), "pid", getpid());
+@@ -202,6 +519,12 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
    }
    argv[argc] = nullptr;
  

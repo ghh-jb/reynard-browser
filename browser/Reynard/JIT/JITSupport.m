@@ -17,6 +17,8 @@ static const char *providerLabel = "Reynard";
 static const uint16_t lockdownPort = 62078;
 struct DeviceProvider {
     IdeviceProviderHandle *handle;
+    HeartbeatClientHandle *heartbeatClient;
+    BOOL heartbeatRunning;
 };
 
 typedef struct {
@@ -64,6 +66,41 @@ static void DebugSessionFree(DebugSession *session) {
         adapter_free(session->adapter);
         session->adapter = NULL;
     }
+}
+
+static void startProviderHeartbeat(DeviceProvider *provider) {
+    if (!provider || !provider->heartbeatClient) {
+        return;
+    }
+    
+    dispatch_queue_t heartbeatQueue = dispatch_queue_create("me.minh-ton.jit.provider-heartbeat",
+                                                            DISPATCH_QUEUE_SERIAL);
+    provider->heartbeatRunning = YES;
+    
+    dispatch_async(heartbeatQueue, ^{
+        uint64_t currentInterval = 15;
+        while (provider->heartbeatRunning) {
+            uint64_t newInterval = 0;
+            IdeviceFfiError *ffiError = heartbeat_get_marco(provider->heartbeatClient,
+                                                            currentInterval,
+                                                            &newInterval);
+            if (!provider->heartbeatRunning) {
+                break;
+            }
+            if (ffiError) {
+                idevice_error_free(ffiError);
+                break;
+            }
+            
+            ffiError = heartbeat_send_polo(provider->heartbeatClient);
+            if (ffiError) {
+                idevice_error_free(ffiError);
+                break;
+            }
+            
+            currentInterval = (newInterval > 0) ? (newInterval + 5) : 15;
+        }
+    });
 }
 
 static BOOL sendDebugCommand(DebugProxyHandle *debugProxy,
@@ -388,10 +425,15 @@ static BOOL forwardSignalStop(DebugProxyHandle *debugProxy,
                               int32_t pid,
                               BOOL singleStep,
                               DeviceLogHandler logHandler,
+                              NSString **stopResponseOut,
                               NSError **error) {
     NSString *action = singleStep ? @"S" : @"C";
-    NSString *continueCommand = [NSString stringWithFormat:@"vCont;%@%@", action, signal];
-    if (!sendDebugCommand(debugProxy, continueCommand, NULL, error)) {
+    NSString *continueCommand = [NSString stringWithFormat:@"vCont;%@%@:%@",
+                                 action,
+                                 signal,
+                                 threadID];
+    NSString *stopResponse = nil;
+    if (!sendDebugCommand(debugProxy, continueCommand, &stopResponse, error)) {
         NSString *errorDescription = (error && *error) ? (*error).localizedDescription : @"signal continue failed";
         emitLog([NSString stringWithFormat:@"Failed to forward signal %@ for pid %d thread %@: %@",
                  signal,
@@ -401,23 +443,8 @@ static BOOL forwardSignalStop(DebugProxyHandle *debugProxy,
                 logHandler);
         return NO;
     }
-    return YES;
-}
-
-static BOOL resumeThread(DebugProxyHandle *debugProxy,
-                         NSString *threadID,
-                         int32_t pid,
-                         DeviceLogHandler logHandler,
-                         NSError **error) {
-    NSString *continueCommand = @"c";
-    if (!sendDebugCommand(debugProxy, continueCommand, NULL, error)) {
-        NSString *errorDescription = (error && *error) ? (*error).localizedDescription : @"thread continue failed";
-        emitLog([NSString stringWithFormat:@"Failed to continue pid %d thread %@: %@",
-                 pid,
-                 threadID,
-                 errorDescription],
-                logHandler);
-        return NO;
+    if (stopResponseOut) {
+        *stopResponseOut = stopResponse;
     }
     return YES;
 }
@@ -515,6 +542,7 @@ static void runIOS17DebugService(int32_t pid,
     BOOL targetExited = NO;
     
     NSError *commandError = nil;
+    NSString *queuedStopResponse = nil;
     NSString *lastMachFaultThreadID = nil;
     uint64_t lastMachFaultPC = 0;
     NSInteger lastMachFaultType = 0;
@@ -526,21 +554,26 @@ static void runIOS17DebugService(int32_t pid,
     while (YES) {
         NSString *stopResponse = nil;
         commandError = nil;
-        if (!sendDebugCommand(session->debugProxy, @"c", &stopResponse, &commandError)) {
-            NSString *description = commandError.localizedDescription ?: @"continue failed";
-            if ([description containsString:@"UnexpectedEof"]) {
-                targetExited = YES;
-                emitLog([NSString stringWithFormat:@"Debug service target exited for pid %d: %@",
-                         pid,
-                         description],
-                        logHandler);
-            } else {
-                emitLog([NSString stringWithFormat:@"Debug service ended for pid %d: %@",
-                         pid,
-                         description],
-                        logHandler);
+        if (queuedStopResponse.length > 0) {
+            stopResponse = queuedStopResponse;
+            queuedStopResponse = nil;
+        } else {
+            if (!sendDebugCommand(session->debugProxy, @"c", &stopResponse, &commandError)) {
+                NSString *description = commandError.localizedDescription ?: @"continue failed";
+                if ([description containsString:@"UnexpectedEof"]) {
+                    targetExited = YES;
+                    emitLog([NSString stringWithFormat:@"Debug service target exited for pid %d: %@",
+                             pid,
+                             description],
+                            logHandler);
+                } else {
+                    emitLog([NSString stringWithFormat:@"Debug service ended for pid %d: %@",
+                             pid,
+                             description],
+                            logHandler);
+                }
+                break;
             }
-            break;
         }
         
         if (stopResponse.length == 0 || [stopResponse isEqualToString:@"OK"]) {
@@ -593,7 +626,8 @@ static void runIOS17DebugService(int32_t pid,
                          stopResponse],
                         logHandler);
                 if (!forwardSignalStop(session->debugProxy, signal, threadID,
-                                       pid, YES, logHandler, &commandError)) {
+                                       pid, YES, logHandler,
+                                       &queuedStopResponse, &commandError)) {
                     break;
                 }
                 continue;
@@ -768,17 +802,11 @@ static void runIOS17DebugService(int32_t pid,
             
             if (repeatedMachFaultCount == 1 || repeatedMachFaultCount == 3 ||
                 (repeatedMachFaultCount % 64 == 0)) {
-                emitLog([NSString stringWithFormat:@"Resuming non-breakpoint Mach exception without signal injection pid=%d thread=%@ count=%lu",
+                emitLog([NSString stringWithFormat:@"Forwarding non-breakpoint Mach exception as signal to pid=%d thread=%@ count=%lu",
                          pid,
                          threadID,
                          (unsigned long)repeatedMachFaultCount],
                         logHandler);
-            }
-            if (resumeThread(session->debugProxy, threadID, pid, logHandler, &commandError)) {
-                continue;
-            }
-            if (connectionClosedError(commandError)) {
-                break;
             }
             
             NSString *signal = packetSignal(stopResponse);
@@ -800,7 +828,8 @@ static void runIOS17DebugService(int32_t pid,
                      forwardSignal],
                     logHandler);
             if (!forwardSignalStop(session->debugProxy, forwardSignal, threadID, pid,
-                                   YES, logHandler, &commandError)) {
+                                   YES, logHandler,
+                                   &queuedStopResponse, &commandError)) {
                 break;
             }
             continue;
@@ -828,14 +857,10 @@ static void runIOS17DebugService(int32_t pid,
                 break;
             }
             
-            if (!resumeThread(session->debugProxy, threadID, pid, logHandler, &commandError)) {
-                if (connectionClosedError(commandError)) {
-                    break;
-                }
-                if (!forwardSignalStop(session->debugProxy, signal, threadID, pid,
-                                       YES, logHandler, &commandError)) {
-                    break;
-                }
+            if (!forwardSignalStop(session->debugProxy, signal, threadID, pid,
+                                   YES, logHandler,
+                                   &queuedStopResponse, &commandError)) {
+                break;
             }
             
             continue;
@@ -989,7 +1014,8 @@ static void runIOS17DebugService(int32_t pid,
                     logHandler);
             
             if (!forwardSignalStop(session->debugProxy, signal, threadID, pid,
-                                   NO, logHandler, &commandError)) {
+                                   NO, logHandler,
+                                   &queuedStopResponse, &commandError)) {
                 break;
             }
             continue;
@@ -1112,7 +1138,6 @@ DeviceProvider *deviceProviderCreateVerified(NSString *pairingFilePath,
     if (!ffiError) {
         ffiError = heartbeat_send_polo(heartbeatClient);
     }
-    heartbeat_client_free(heartbeatClient);
     
     if (ffiError) {
         if (error) {
@@ -1120,6 +1145,7 @@ DeviceProvider *deviceProviderCreateVerified(NSString *pairingFilePath,
             *error = createError(ffiError->code, description);
         }
         idevice_error_free(ffiError);
+        heartbeat_client_free(heartbeatClient);
         idevice_provider_free(providerHandle);
         return NULL;
     }
@@ -1134,12 +1160,22 @@ DeviceProvider *deviceProviderCreateVerified(NSString *pairingFilePath,
     }
     
     provider->handle = providerHandle;
+    provider->heartbeatClient = heartbeatClient;
+    provider->heartbeatRunning = NO;
+    
+    startProviderHeartbeat(provider);
+    
     return provider;
 }
 
 void deviceProviderFree(DeviceProvider *provider) {
     if (!provider) {
         return;
+    }
+    provider->heartbeatRunning = NO;
+    if (provider->heartbeatClient) {
+        heartbeat_client_free(provider->heartbeatClient);
+        provider->heartbeatClient = NULL;
     }
     if (provider->handle) {
         idevice_provider_free(provider->handle);

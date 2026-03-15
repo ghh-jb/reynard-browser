@@ -13,8 +13,12 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
 
 @interface JITEnabler ()
 
+@property (nonatomic, assign) DeviceProvider *sharedProvider;
+@property (nonatomic, strong) dispatch_queue_t providerQueue;
+
 - (NSError *)errorWithCode:(NSInteger)code description:(NSString *)description;
 - (void)emitLog:(NSString *)message handler:(LogHandler)handler;
+- (DeviceProvider *)verifiedProvider:(NSError **)error;
 
 @end
 
@@ -29,6 +33,15 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
     return sharedEnabler;
 }
 
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _sharedProvider = NULL;
+        _providerQueue = dispatch_queue_create("me.minh-ton.jit.enabler.provider", DISPATCH_QUEUE_SERIAL);
+    }
+    return self;
+}
+
 - (BOOL)enableForProcessIdentifier:(int32_t)pid
                         logHandler:(LogHandler)logHandler
                              error:(NSError **)error {
@@ -41,9 +54,7 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
     
     [self emitLog:[NSString stringWithFormat:@"Preparing idevice provider for pid %d", pid]
           handler:logHandler];
-    DeviceProvider *provider = deviceProviderCreateVerified([self pairingFilePath],
-                                                            self.targetAddress,
-                                                            error);
+    DeviceProvider *provider = [self verifiedProvider:error];
     if (!provider) {
         return NO;
     }
@@ -58,8 +69,27 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         success = deviceEnableLegacy(pid, provider, logHandler, error);
     }
     
-    deviceProviderFree(provider);
     return success;
+}
+
+- (DeviceProvider *)verifiedProvider:(NSError **)error {
+    __block DeviceProvider *provider = NULL;
+    dispatch_sync(self.providerQueue, ^{
+        if (!self.sharedProvider) {
+            self.sharedProvider = deviceProviderCreateVerified([self pairingFilePath],
+                                                               self.targetAddress,
+                                                               error);
+        }
+        provider = self.sharedProvider;
+    });
+    return provider;
+}
+
+- (void)dealloc {
+    if (_sharedProvider) {
+        deviceProviderFree(_sharedProvider);
+        _sharedProvider = NULL;
+    }
 }
 
 - (NSError *)errorWithCode:(NSInteger)code description:(NSString *)description {

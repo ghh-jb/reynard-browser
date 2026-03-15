@@ -16,6 +16,7 @@ final class JITController {
     
     private let stateQueue = DispatchQueue(label: "me.minh-ton.jit.child-process.state", qos: .userInitiated)
     private let workQueue = DispatchQueue(label: "me.minh-ton.jit.child-process.work", qos: .userInitiated, attributes: .concurrent)
+    private let setupQueue = DispatchQueue(label: "me.minh-ton.jit.child-process.setup", qos: .userInitiated)
     private var attachedPIDs: Set<Int32> = []
     
     private init() {}
@@ -77,8 +78,10 @@ final class JITController {
         workQueue.asyncAfter(deadline: .now() + delay) {
             print("REYNARD_DEBUG: Starting JIT attach workflow for pid=\(pid), type=\(processType), attempt=\(attempt)")
             do {
-                try JITEnabler.shared.enable(forProcessIdentifier: pid) { message in
-                    print("REYNARD_DEBUG: \(message)")
+                try self.setupQueue.sync {
+                    try JITEnabler.shared.enable(forProcessIdentifier: pid) { message in
+                        print("REYNARD_DEBUG: \(message)")
+                    }
                 }
                 ReportChildProcessJITEnabled(pid, true)
             } catch {

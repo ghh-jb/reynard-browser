@@ -419,6 +419,24 @@ static NSString *normalizedSignalForMachException(NSString *signal,
     return signal;
 }
 
+static BOOL awaitStopPacket(DebugProxyHandle *debugProxy,
+                            NSString **stopResponse,
+                            NSError **error) {
+    NSString *response = stopResponse ? *stopResponse : nil;
+    while (response.length == 0 || [response isEqualToString:@"OK"]) {
+        if (!readDebugResponse(debugProxy, &response, error)) {
+            return NO;
+        }
+        if (response.length == 0) {
+            usleep(10000);
+        }
+    }
+    if (stopResponse) {
+        *stopResponse = response;
+    }
+    return YES;
+}
+
 static BOOL forwardSignalStop(DebugProxyHandle *debugProxy,
                               NSString *signal,
                               NSString *threadID,
@@ -437,6 +455,48 @@ static BOOL forwardSignalStop(DebugProxyHandle *debugProxy,
         NSString *errorDescription = (error && *error) ? (*error).localizedDescription : @"signal continue failed";
         emitLog([NSString stringWithFormat:@"Failed to forward signal %@ for pid %d thread %@: %@",
                  signal,
+                 pid,
+                 threadID,
+                 errorDescription],
+                logHandler);
+        return NO;
+    }
+    if (!awaitStopPacket(debugProxy, &stopResponse, error)) {
+        NSString *errorDescription = (error && *error) ? (*error).localizedDescription : @"stop packet read failed";
+        emitLog([NSString stringWithFormat:@"Failed to read stop packet after forwarding signal %@ for pid %d thread %@: %@",
+                 signal,
+                 pid,
+                 threadID,
+                 errorDescription],
+                logHandler);
+        return NO;
+    }
+    if (stopResponseOut) {
+        *stopResponseOut = stopResponse;
+    }
+    return YES;
+}
+
+static BOOL resumeThread(DebugProxyHandle *debugProxy,
+                         NSString *threadID,
+                         int32_t pid,
+                         DeviceLogHandler logHandler,
+                         NSString **stopResponseOut,
+                         NSError **error) {
+    NSString *continueCommand = [NSString stringWithFormat:@"vCont;c:%@", threadID];
+    NSString *stopResponse = nil;
+    if (!sendDebugCommand(debugProxy, continueCommand, &stopResponse, error)) {
+        NSString *errorDescription = (error && *error) ? (*error).localizedDescription : @"thread continue failed";
+        emitLog([NSString stringWithFormat:@"Failed to continue pid %d thread %@: %@",
+                 pid,
+                 threadID,
+                 errorDescription],
+                logHandler);
+        return NO;
+    }
+    if (!awaitStopPacket(debugProxy, &stopResponse, error)) {
+        NSString *errorDescription = (error && *error) ? (*error).localizedDescription : @"stop packet read failed";
+        emitLog([NSString stringWithFormat:@"Failed to read stop packet after continuing pid %d thread %@: %@",
                  pid,
                  threadID,
                  errorDescription],
@@ -605,6 +665,7 @@ static void runIOS17DebugService(int32_t pid,
         NSString *x0Field = packetField(stopResponse, @"00");
         NSString *x1Field = packetField(stopResponse, @"01");
         NSString *x2Field = packetField(stopResponse, @"02");
+        NSString *x3Field = packetField(stopResponse, @"03");
         NSString *x8Field = packetField(stopResponse, @"08");
         NSString *x9Field = packetField(stopResponse, @"09");
         NSString *x10Field = packetField(stopResponse, @"0a");
@@ -613,6 +674,7 @@ static void runIOS17DebugService(int32_t pid,
         NSString *x28Field = packetField(stopResponse, @"1c");
         NSString *x29Field = packetField(stopResponse, @"1d");
         NSString *x30Field = packetField(stopResponse, @"1e");
+        NSString *spField = packetField(stopResponse, @"1f");
         NSString *trapField = packetField(stopResponse, @"a2");
         BOOL hasMachExceptionType = NO;
         NSInteger machExceptionType = packetIntegerField(stopResponse, @"metype", &hasMachExceptionType);
@@ -666,6 +728,7 @@ static void runIOS17DebugService(int32_t pid,
         uint64_t x0 = x0Field ? parseLittleEndianHex64(x0Field) : 0;
         uint64_t x1 = x1Field ? parseLittleEndianHex64(x1Field) : 0;
         uint64_t x2 = x2Field ? parseLittleEndianHex64(x2Field) : 0;
+        uint64_t x3 = x3Field ? parseLittleEndianHex64(x3Field) : 0;
         uint64_t x8 = x8Field ? parseLittleEndianHex64(x8Field) : 0;
         uint64_t x9 = x9Field ? parseLittleEndianHex64(x9Field) : 0;
         uint64_t x10 = x10Field ? parseLittleEndianHex64(x10Field) : 0;
@@ -674,6 +737,7 @@ static void runIOS17DebugService(int32_t pid,
         uint64_t x16 = x16Field ? parseLittleEndianHex64(x16Field) : 0;
         uint64_t x17 = x17Field ? parseLittleEndianHex64(x17Field) : 0;
         uint64_t x30 = x30Field ? parseLittleEndianHex64(x30Field) : 0;
+        uint64_t sp = spField ? parseLittleEndianHex64(spField) : 0;
         NSArray<NSString *> *machExceptionData = packetFields(stopResponse, @"medata");
         
         if (hasMachExceptionType && machExceptionType != 6) {
@@ -738,12 +802,16 @@ static void runIOS17DebugService(int32_t pid,
             
             if (shouldLogFaultDetails) {
                 NSString *machDataSummary = machExceptionData.count > 0 ? [machExceptionData componentsJoinedByString:@","] : @"<none>";
-                emitLog([NSString stringWithFormat:@"Non-breakpoint Mach exception details pid=%d thread=%@ signal=%@ metype=%ld medata=%@ x8=0x%llx x9=0x%llx x10=0x%llx x16=0x%llx x17=0x%llx lr=0x%llx trap=%@",
+                emitLog([NSString stringWithFormat:@"Non-breakpoint Mach exception details pid=%d thread=%@ signal=%@ metype=%ld medata=%@ sp=0x%llx spAlign=%llu x2=0x%llx x3=0x%llx x8=0x%llx x9=0x%llx x10=0x%llx x16=0x%llx x17=0x%llx lr=0x%llx trap=%@",
                          pid,
                          threadID,
                          packetSignal(stopResponse) ?: @"<none>",
                          (long)machExceptionType,
                          machDataSummary,
+                         sp,
+                         (unsigned long long)(sp & 0xf),
+                         x2,
+                         x3,
                          x8,
                          x9,
                          x10,
@@ -753,21 +821,35 @@ static void runIOS17DebugService(int32_t pid,
                          trapField ?: @"<none>"],
                         logHandler);
                 if (x28 != 0 || x29 != 0) {
-                    emitLog([NSString stringWithFormat:@"Faulting frame registers pid=%d thread=%@ fp=0x%llx meta=0x%llx x0=0x%llx x1=0x%llx x8=0x%llx x9=0x%llx",
+                    emitLog([NSString stringWithFormat:@"Faulting frame registers pid=%d thread=%@ sp=0x%llx fp=0x%llx meta=0x%llx x0=0x%llx x1=0x%llx x2=0x%llx x3=0x%llx x8=0x%llx x9=0x%llx",
                              pid,
                              threadID,
+                             sp,
                              x29,
                              x28,
                              x0,
                              x1,
+                             x2,
+                             x3,
                              x8,
                              x9],
                             logHandler);
                 }
+                uint64_t pcSample = pc >= 32 ? pc - 32 : pc;
+                logMemorySample(session->debugProxy, pcSample, 128, @"Faulting PC context bytes", logHandler);
                 logMemorySample(session->debugProxy, pc, 16, @"Faulting PC bytes", logHandler);
                 logMemorySample(session->debugProxy, pageStart, 32, @"Faulting page start bytes", logHandler);
                 if (x0 != 0) {
                     logMemorySample(session->debugProxy, x0, 16, @"Faulting x0 target bytes", logHandler);
+                }
+                if (x1 != 0) {
+                    logMemorySample(session->debugProxy, x1, 32, @"Faulting x1 target bytes", logHandler);
+                }
+                if (x2 != 0) {
+                    logMemorySample(session->debugProxy, x2, 64, @"Faulting x2 target bytes", logHandler);
+                }
+                if (x3 != 0) {
+                    logMemorySample(session->debugProxy, x3, 64, @"Faulting x3 target bytes", logHandler);
                 }
                 if (x17 != 0) {
                     logMemorySample(session->debugProxy, x17, 64, @"Faulting x17 target bytes", logHandler);
@@ -802,7 +884,7 @@ static void runIOS17DebugService(int32_t pid,
             
             if (repeatedMachFaultCount == 1 || repeatedMachFaultCount == 3 ||
                 (repeatedMachFaultCount % 64 == 0)) {
-                emitLog([NSString stringWithFormat:@"Forwarding non-breakpoint Mach exception as signal to pid=%d thread=%@ count=%lu",
+                emitLog([NSString stringWithFormat:@"Forwarding non-breakpoint Mach exception signal for pid=%d thread=%@ count=%lu",
                          pid,
                          threadID,
                          (unsigned long)repeatedMachFaultCount],
@@ -820,15 +902,17 @@ static void runIOS17DebugService(int32_t pid,
             
             NSString *forwardSignal = normalizedSignalForMachException(signal,
                                                                        machExceptionType);
-            emitLog([NSString stringWithFormat:@"Falling back to signal forwarding for Mach exception pid=%d thread=%@ (metype=%ld, signal=%@ -> %@)",
-                     pid,
-                     threadID,
-                     (long)machExceptionType,
-                     signal,
-                     forwardSignal],
-                    logHandler);
+            if (repeatedMachFaultCount <= 8 || (repeatedMachFaultCount % 128) == 0) {
+                emitLog([NSString stringWithFormat:@"Falling back to signal forwarding for Mach exception pid=%d thread=%@ (metype=%ld, signal=%@ -> %@)",
+                         pid,
+                         threadID,
+                         (long)machExceptionType,
+                         signal,
+                         forwardSignal],
+                        logHandler);
+            }
             if (!forwardSignalStop(session->debugProxy, forwardSignal, threadID, pid,
-                                   YES, logHandler,
+                                   NO, logHandler,
                                    &queuedStopResponse, &commandError)) {
                 break;
             }
@@ -858,7 +942,7 @@ static void runIOS17DebugService(int32_t pid,
             }
             
             if (!forwardSignalStop(session->debugProxy, signal, threadID, pid,
-                                   YES, logHandler,
+                                   NO, logHandler,
                                    &queuedStopResponse, &commandError)) {
                 break;
             }
@@ -1326,6 +1410,25 @@ BOOL deviceEnableIOS17(int32_t pid,
     }
     emitLog([NSString stringWithFormat:@"Attached debug proxy to pid %d with response %@", pid, attachResponse],
             logHandler);
+    
+    NSString *passSignalsResponse = nil;
+    NSError *passSignalsError = nil;
+    if (sendDebugCommand(session.debugProxy,
+                         @"QPassSignals:91",
+                         &passSignalsResponse,
+                         &passSignalsError)) {
+        if (passSignalsResponse.length > 0) {
+            emitLog([NSString stringWithFormat:@"Configured debug proxy pass-through signals for pid %d: %@",
+                     pid,
+                     passSignalsResponse],
+                    logHandler);
+        }
+    } else {
+        emitLog([NSString stringWithFormat:@"QPassSignals setup skipped for pid %d: %@",
+                 pid,
+                 passSignalsError.localizedDescription ?: @"unknown error"],
+                logHandler);
+    }
     
     DebugSession *persistentSession = malloc(sizeof(*persistentSession));
     if (!persistentSession) {

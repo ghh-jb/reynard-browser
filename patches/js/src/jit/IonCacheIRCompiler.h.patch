@@ -1,5 +1,5 @@
 diff --git a/js/src/jit/IonCacheIRCompiler.h b/js/src/jit/IonCacheIRCompiler.h
-index 34a1a75995fb..4f75b69053aa 100644
+index 34a1a75995fb..55f4e317c473 100644
 --- a/js/src/jit/IonCacheIRCompiler.h
 +++ b/js/src/jit/IonCacheIRCompiler.h
 @@ -59,6 +59,7 @@ class MOZ_RAII IonCacheIRCompiler : public CacheIRCompiler {
@@ -10,3 +10,11 @@ index 34a1a75995fb..4f75b69053aa 100644
  
    Vector<CodeOffset, 4, SystemAllocPolicy> nextCodeOffsets_;
    mozilla::Maybe<LiveRegisterSet> liveRegs_;
+@@ -98,6 +99,7 @@ class MOZ_RAII IonCacheIRCompiler : public CacheIRCompiler {
+                                 StringCharOutOfBounds outOfBounds);
+ 
+   void pushStubCodePointer();
++  void pushStubAndStubCodePointer();
+ 
+   CACHE_IR_COMPILER_UNSHARED_GENERATED
+ };

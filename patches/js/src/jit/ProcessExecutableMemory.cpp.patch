@@ -1,5 +1,5 @@
 diff --git a/js/src/jit/ProcessExecutableMemory.cpp b/js/src/jit/ProcessExecutableMemory.cpp
-index 315958ac692b..0790689747fc 100644
+index 315958ac692b..d9f8ad518acd 100644
 --- a/js/src/jit/ProcessExecutableMemory.cpp
 +++ b/js/src/jit/ProcessExecutableMemory.cpp
 @@ -15,6 +15,13 @@
@@ -16,7 +16,7 @@ index 315958ac692b..0790689747fc 100644
  
  #include "jsfriendapi.h"
  
-@@ -49,6 +56,214 @@
+@@ -49,6 +56,210 @@
  using namespace js;
  using namespace js::jit;
  
@@ -176,10 +176,6 @@ index 315958ac692b..0790689747fc 100644
 +        return false;
 +      }
 +
-+      // REYNARD: Writable transitions mean code bytes can change; force the
-+      // next executable transition to re-run debugger-backed page prepare.
-+      InvalidateDebuggerPrepareCacheRange(executableAddress, bytes);
-+
 +      // REYNARD: On jailed iOS, removing EXEC from the executable alias and
 +      // then restoring it can fail for child-process JIT pages. Keep the
 +      // executable alias RX while writes go through the writable alias.
@@ -231,7 +227,7 @@ index 315958ac692b..0790689747fc 100644
  #ifdef XP_WIN
  #  if defined(HAVE_64BIT_BUILD)
  #    define NEED_JIT_UNWIND_HANDLING
-@@ -509,9 +724,12 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
+@@ -509,9 +720,12 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
    void* randomAddr = ComputeRandomAllocationAddress();
    unsigned protection = PROT_NONE;
    unsigned flags = MAP_NORESERVE | MAP_PRIVATE | MAP_ANON;
@@ -246,7 +242,7 @@ index 315958ac692b..0790689747fc 100644
    protection = PROT_READ | PROT_WRITE | PROT_EXEC;
  #    endif
  #  endif
-@@ -520,7 +738,7 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
+@@ -520,7 +734,7 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
    if (p == MAP_FAILED) {
      return nullptr;
    }
@@ -255,7 +251,7 @@ index 315958ac692b..0790689747fc 100644
    DecommitPages(p, bytes);
  #  endif
    return p;
-@@ -565,6 +783,18 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
+@@ -565,6 +779,18 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
                                        ProtectionSetting protection) {
    // See the comment in ReserveProcessExecutableMemory.
  #  if defined(XP_DARWIN)
@@ -274,7 +270,7 @@ index 315958ac692b..0790689747fc 100644
    int ret;
    do {
      ret = madvise(addr, bytes, MADV_FREE_REUSE);
-@@ -572,13 +802,14 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
+@@ -572,13 +798,14 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
    if (ret != 0) {
      return false;
    }
@@ -291,7 +287,7 @@ index 315958ac692b..0790689747fc 100644
  #  else
    unsigned flags = ProtectionSettingToFlags(protection);
    void* p = MozTaggedAnonymousMmap(addr, bytes, flags,
-@@ -596,14 +827,25 @@ static void DecommitPages(void* addr, size_t bytes) {
+@@ -596,14 +823,25 @@ static void DecommitPages(void* addr, size_t bytes) {
    // See the comment in ReserveProcessExecutableMemory.
  #  if defined(XP_DARWIN)
    int ret;
@@ -318,7 +314,7 @@ index 315958ac692b..0790689747fc 100644
  #  else
    // Use mmap with MAP_FIXED and PROT_NONE. Inspired by jemalloc's
    // pages_decommit.
-@@ -721,10 +963,42 @@ class ProcessExecutableMemory {
+@@ -721,10 +959,42 @@ class ProcessExecutableMemory {
  
      void* p = ReserveProcessExecutableMemory(MaxCodeBytesPerProcess);
      if (!p) {
@@ -362,7 +358,7 @@ index 315958ac692b..0790689747fc 100644
  
      mozilla::Array<uint64_t, 2> seed;
      GenerateXorShift128PlusSeed(seed);
-@@ -745,6 +1019,17 @@ class ProcessExecutableMemory {
+@@ -745,6 +1015,17 @@ class ProcessExecutableMemory {
      MOZ_ASSERT(initialized());
      MOZ_ASSERT(pages_.empty());
      MOZ_ASSERT(pagesAllocated_ == 0);
@@ -380,7 +376,7 @@ index 315958ac692b..0790689747fc 100644
      DeallocateProcessExecutableMemory(base_, MaxCodeBytesPerProcess);
      base_ = nullptr;
      rng_.reset();
-@@ -836,6 +1121,13 @@ void* ProcessExecutableMemory::allocate(size_t bytes,
+@@ -836,6 +1117,13 @@ void* ProcessExecutableMemory::allocate(size_t bytes,
  
    // Commit the pages after releasing the lock.
    if (!CommitPages(p, bytes, protection)) {
@@ -394,7 +390,7 @@ index 315958ac692b..0790689747fc 100644
      deallocate(p, bytes, /* decommit = */ false);
      return nullptr;
    }
-@@ -922,6 +1214,16 @@ bool js::jit::AddressIsInExecutableMemory(const void* p) {
+@@ -922,6 +1210,16 @@ bool js::jit::AddressIsInExecutableMemory(const void* p) {
    return execMemory.containsAddress(p);
  }
  
@@ -411,7 +407,7 @@ index 315958ac692b..0790689747fc 100644
  bool js::jit::ReprotectRegion(void* start, size_t size,
                                ProtectionSetting protection,
                                MustFlushICache flushICache) {
-@@ -971,7 +1273,26 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
+@@ -971,7 +1269,26 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
      return true;
    }
  

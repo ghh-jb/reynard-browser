@@ -10,13 +10,7 @@ import Foundation
 final class JITController {
     static let shared = JITController()
     
-    private static let initialAttachDelay: DispatchTimeInterval = .milliseconds(0)
-    private static let attachRetryDelay: DispatchTimeInterval = .milliseconds(500)
-    private static let maxAttachAttempts = 5
-    
-    private let stateQueue = DispatchQueue(label: "me.minh-ton.jit.child-process.state", qos: .userInitiated)
-    private let workQueue = DispatchQueue(label: "me.minh-ton.jit.child-process.work", qos: .userInitiated, attributes: .concurrent)
-    private let setupQueue = DispatchQueue(label: "me.minh-ton.jit.child-process.setup", qos: .userInitiated)
+    private let attachQueue = DispatchQueue(label: "me.minh-ton.jit.jit-attach-queue", qos: .userInitiated)
     private var attachedPIDs: Set<Int32> = []
     
     private init() {}
@@ -41,65 +35,33 @@ final class JITController {
         }
         
         let preferences = BrowserPreferences.shared
-        print("REYNARD_DEBUG: Child process JIT observer saw pid=\(pid), type=\(processType), enabled=\(preferences.isJITEnabled), pairing=\(preferences.hasPairingFile)")
+        print("REYNARD_DEBUG: Child process JIT observer saw pid=\(pid), type=\(processType)")
         guard preferences.isJITEnabled else {
             ReportChildProcessJITEnabled(pid, false)
             return
         }
         
         guard shouldAttach(to: processType) else {
-            print("REYNARD_DEBUG: Skipping JIT attach for pid=\(pid), type=\(processType)")
             ReportChildProcessJITEnabled(pid, false)
             return
         }
         
-        let shouldAttach = stateQueue.sync { () -> Bool in
-            if attachedPIDs.contains(pid) {
-                return false
+        attachQueue.async {
+            if self.attachedPIDs.contains(pid) {
+                return
             }
-            attachedPIDs.insert(pid)
-            return true
+            self.attachedPIDs.insert(pid)
+            self.attachToProcess(pid: pid)
         }
-        
-        guard shouldAttach else {
-            return
-        }
-        
-        scheduleAttach(pid: pid,
-                       processType: processType,
-                       attempt: 1,
-                       delay: Self.initialAttachDelay)
     }
     
-    private func scheduleAttach(pid: Int32,
-                                processType: String,
-                                attempt: Int,
-                                delay: DispatchTimeInterval) {
-        workQueue.asyncAfter(deadline: .now() + delay) {
-            print("REYNARD_DEBUG: Starting JIT attach workflow for pid=\(pid), type=\(processType), attempt=\(attempt)")
-            do {
-                try self.setupQueue.sync {
-                    try JITEnabler.shared.enable(forProcessIdentifier: pid) { message in
-                        print("REYNARD_DEBUG: \(message)")
-                    }
-                }
-                ReportChildProcessJITEnabled(pid, true)
-            } catch {
-                if attempt < Self.maxAttachAttempts {
-                    print("REYNARD_DEBUG: JIT enablement attempt \(attempt) failed for pid=\(pid), retrying: \(error)")
-                    self.scheduleAttach(pid: pid,
-                                        processType: processType,
-                                        attempt: attempt + 1,
-                                        delay: Self.attachRetryDelay)
-                    return
-                }
-                
-                self.stateQueue.async {
-                    self.attachedPIDs.remove(pid)
-                }
-                ReportChildProcessJITEnabled(pid, false)
-                print("REYNARD_DEBUG: JIT enablement verification failed for pid=\(pid), error=\(error)")
-            }
+    private func attachToProcess(pid: Int32) {
+        print("REYNARD_DEBUG: Starting JIT attach workflow for pid=\(pid)")
+        do {
+            try JITEnabler.shared.enableJIT(forPID: pid) { message in print("REYNARD_DEBUG: \(message)") }
+            ReportChildProcessJITEnabled(pid, true)
+        } catch {
+            print("REYNARD_DEBUG: JIT enablement failed for pid=\(pid), error=\(error)")
         }
     }
     

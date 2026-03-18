@@ -6,19 +6,17 @@
 //
 
 #import "JITEnabler.h"
-
 #import "JITSupport.h"
+#import "JITUtils.h"
 
 static NSString *const enablerErrorDomain = @"JITEnabler";
 
 @interface JITEnabler ()
 
-@property (nonatomic, assign) DeviceProvider *sharedProvider;
-@property (nonatomic, strong) dispatch_queue_t providerQueue;
+@property(nonatomic, assign) DeviceProvider *sharedProvider;
+@property(nonatomic, strong) dispatch_queue_t providerQueue;
 
-- (NSError *)errorWithCode:(NSInteger)code description:(NSString *)description;
-- (void)emitLog:(NSString *)message handler:(LogHandler)handler;
-- (DeviceProvider *)verifiedProvider:(NSError **)error;
+- (DeviceProvider *)getProvider:(NSError **)error;
 
 @end
 
@@ -42,75 +40,109 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
     return self;
 }
 
-- (BOOL)enableForProcessIdentifier:(int32_t)pid
-                        logHandler:(LogHandler)logHandler
-                             error:(NSError **)error {
-    if (pid <= 0) {
-        if (error) {
-            *error = [self errorWithCode:-1 description:@"Invalid child process identifier."];
-        }
-        return NO;
-    }
-    
-    [self emitLog:[NSString stringWithFormat:@"Preparing idevice provider for pid %d", pid]
-          handler:logHandler];
-    DeviceProvider *provider = [self verifiedProvider:error];
-    if (!provider) {
-        return NO;
-    }
-    
-    [self emitLog:[NSString stringWithFormat:@"Verified idevice provider for pid %d", pid]
-          handler:logHandler];
-    
-    BOOL success = NO;
+- (BOOL)enableJITForPID:(int32_t)pid logHandler:(LogHandler)logHandler error:(NSError **)error {
     if (@available(iOS 17, *)) {
-        success = deviceEnableIOS17(pid, provider, logHandler, error);
+        // For iOS 17 and later
+        // Thanks StikDebug!
+        // https://github.com/StephenDev0/StikDebug
+        
+        DeviceProvider *provider = [self getProvider:error];
+        if (!provider) return NO;
+        
+        DebugSession session = {0};
+        IdeviceFfiError *ffiError = NULL;
+        
+        if (!connectDebugSession(provider, &session, error)) return NO;
+        
+        ProcessControlHandle *processControl = NULL;
+        ffiError = process_control_new(session.remoteServer, &processControl);
+        if (ffiError) {
+            if (error) {
+                NSString *description = [NSString stringWithUTF8String: ffiError->message ?: "Failed to create process control client."];
+                *error = errorWithCode(ffiError->code, description);
+            }
+            idevice_error_free(ffiError);
+            freeDebugSession(&session);
+            return NO;
+        }
+        
+        ffiError = process_control_disable_memory_limit(processControl, (uint64_t)pid);
+        process_control_free(processControl);
+        if (ffiError) {
+            logger([NSString stringWithFormat:@"disable_memory_limit failed for pid %d: %s", pid, ffiError->message ?: "unknown error"], logHandler);
+            idevice_error_free(ffiError);
+        }
+        
+        NSError *commandError = nil;
+        NSString *noAckResponse = nil;
+        if (!configureNoAckMode(session.debugProxy, &noAckResponse,
+                                &commandError)) {
+            if (error) *error = commandError ?: errorWithCode(-9, @"Failed to configure no-ack debug mode.");
+            freeDebugSession(&session);
+            return NO;
+        }
+        
+        logger([NSString stringWithFormat:@"QStartNoAckMode result for pid %d: %@", pid, noAckResponse ?: @"<no response>"], logHandler);
+        
+        NSString *attachCommand = [NSString stringWithFormat:@"vAttach;%X", pid];
+        NSString *attachResponse = nil;
+        if (!sendDebugCommand(session.debugProxy, attachCommand, &attachResponse, &commandError)) {
+            if (error) *error = commandError ?: errorWithCode(-6, @"Failed to attach debug proxy.");
+            freeDebugSession(&session);
+            return NO;
+        }
+        
+        logger([NSString stringWithFormat:@"Attach response for pid %d: %@", pid, attachResponse.length > 0 ? @"<stop packet>" : @"<no response>"], logHandler);
+        
+        DebugSession *persistentSession = malloc(sizeof(*persistentSession));
+        if (!persistentSession) {
+            freeDebugSession(&session);
+            if (error) *error = errorWithCode(-8, @"Failed to allocate persistent debug session.");
+            return NO;
+        }
+        
+        *persistentSession = session;
+        session.adapter = NULL;
+        session.handshake = NULL;
+        session.remoteServer = NULL;
+        session.debugProxy = NULL;
+        
+        DeviceLogHandler copiedHandler = [logHandler copy];
+        dispatch_async(debugServiceQueue(), ^{
+            runDebugService(pid, persistentSession, copiedHandler);
+        });
+        
+        logger([NSString stringWithFormat:@"Debug session started for pid %d", pid], logHandler);
+        
+        return YES;
     } else {
-        success = deviceEnableLegacy(pid, provider, logHandler, error);
+        // To be implemented.
     }
     
-    return success;
+    return NO;
 }
 
-- (DeviceProvider *)verifiedProvider:(NSError **)error {
+- (DeviceProvider *)getProvider:(NSError **)error {
     __block DeviceProvider *provider = NULL;
+    __block NSError *providerError = nil;
     dispatch_sync(self.providerQueue, ^{
-        if (!self.sharedProvider) {
-            self.sharedProvider = deviceProviderCreateVerified([self pairingFilePath],
-                                                               self.targetAddress,
-                                                               error);
-        }
+        if (!self.sharedProvider) self.sharedProvider = createDeviceProvider([self pairingFilePath], @"10.7.0.1", &providerError);
         provider = self.sharedProvider;
     });
+    
+    if (!provider && error) *error = providerError;
     return provider;
 }
 
 - (void)dealloc {
     if (_sharedProvider) {
-        deviceProviderFree(_sharedProvider);
+        freeDeviceProvider(_sharedProvider);
         _sharedProvider = NULL;
     }
 }
 
-- (NSError *)errorWithCode:(NSInteger)code description:(NSString *)description {
-    return [NSError errorWithDomain:enablerErrorDomain
-                               code:code
-                           userInfo:@{NSLocalizedDescriptionKey: description}];
-}
-
-- (void)emitLog:(NSString *)message handler:(LogHandler)handler {
-    if (handler) {
-        handler(message);
-    }
-}
-
-- (NSString *)targetAddress {
-    return @"10.7.0.1";
-}
-
 - (NSString *)pairingFilePath {
-    NSURL *documentsDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
-                                                                       inDomains:NSUserDomainMask].firstObject;
+    NSURL *documentsDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
     return [[documentsDirectory URLByAppendingPathComponent:@"pairingFile.plist"] path];
 }
 

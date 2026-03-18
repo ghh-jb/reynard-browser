@@ -84,8 +84,6 @@ IdeviceFfiError *debug_proxy_send_command(DebugProxyHandle *handle,
                                           char **response);
 IdeviceFfiError *debug_proxy_read_response(DebugProxyHandle *handle,
                                            char **response);
-IdeviceFfiError *debug_proxy_send_raw(DebugProxyHandle *handle,
-                                      const uint8_t *data, uintptr_t len);
 IdeviceFfiError *debug_proxy_send_ack(DebugProxyHandle *handle);
 void debug_proxy_set_ack_mode(DebugProxyHandle *handle, int enabled);
 

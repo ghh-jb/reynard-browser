@@ -15,10 +15,9 @@ typedef void (^LogHandler)(NSString *message);
 
 @property (class, nonatomic, readonly) JITEnabler *shared;
 
-- (BOOL)enableForProcessIdentifier:(int32_t)pid
-                        logHandler:(nullable LogHandler)logHandler
-                             error:(NSError * _Nullable * _Nullable)error
-NS_SWIFT_NAME(enable(forProcessIdentifier:logHandler:));
+- (BOOL)enableJITForPID:(int32_t)pid logHandler:(nullable LogHandler)logHandler error:(NSError * _Nullable * _Nullable)error
+
+NS_SWIFT_NAME(enableJIT(forPID:logHandler:));
 
 @end
 

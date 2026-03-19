@@ -119,9 +119,7 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         if (!provider) return NO;
         
         uint16_t debugPort = 0;
-        BOOL usesSSL = NO;
-        const char *serviceName = "<unknown>";
-        if (!startLegacyDebugService(provider, &debugPort, &usesSSL, &serviceName, error)) return NO;
+        if (!startLegacyDebugService(provider, &debugPort, error)) return NO;
         
         LegacyDebugSession *legacySession = calloc(1, sizeof(*legacySession));
         if (!legacySession) {
@@ -131,14 +129,10 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         
         legacySession->connection.socketFD = -1;
         legacySession->connection.sslContext = NULL;
-        legacySession->connection.usesSSL = usesSSL;
-        legacySession->debugPort = debugPort;
-        legacySession->usesSSL = usesSSL;
-        legacySession->serviceName = serviceName;
         
-        if (!connectLegacyDebugSocket(@"10.7.0.1", debugPort, usesSSL, &legacySession->connection, error)) {
-            if (error && *error && usesSSL) {
-                NSString *description = [NSString stringWithFormat:@"%@ lockdownd requested SSL for service %s on port %u.", (*error).localizedDescription ?: @"Legacy debug connect failed.", serviceName, debugPort];
+        if (!connectLegacyDebugSocket(@"10.7.0.1", debugPort, &legacySession->connection, error)) {
+            if (error && *error) {
+                NSString *description = [NSString stringWithFormat:@"%@ (port=%u, tls=true)", (*error).localizedDescription ?: @"Legacy debug connect failed.", debugPort];
                 *error = errorWithCode((*error).code, description);
             }
             free(legacySession);
@@ -149,7 +143,7 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         NSString *attachCommand = [NSString stringWithFormat:@"vAttach;%08X", (uint32_t)pid];
         if (!sendLegacyDebugCommand(&legacySession->connection, attachCommand, &attachResponse, error)) {
             if (error && *error) {
-                NSString *description = [NSString stringWithFormat:@"%@ (service=%s, port=%u, ssl=%@)", (*error).localizedDescription ?: @"Legacy attach command failed.", serviceName, debugPort, usesSSL ? @"true" : @"false"];
+                NSString *description = [NSString stringWithFormat:@"%@ (service=com.apple.debugserver.DVTSecureSocketProxy, port=%u, tls=true)", (*error).localizedDescription ?: @"Legacy attach command failed.", debugPort];
                 *error = errorWithCode((*error).code, description);
             }
             

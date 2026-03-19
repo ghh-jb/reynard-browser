@@ -16,30 +16,26 @@ typedef struct DeviceProvider DeviceProvider;
 typedef void (^DeviceLogHandler)(NSString *message);
 
 typedef struct {
-  int socketFD;
-  SSLContextRef sslContext;
-  BOOL usesSSL;
+    int socketFD;
+    SSLContextRef sslContext;
 } LegacyDebugConnection;
 
 typedef struct LegacyDebugSession {
-  LegacyDebugConnection connection;
-  uint16_t debugPort;
-  BOOL usesSSL;
-  const char *serviceName;
+    LegacyDebugConnection connection;
 } LegacyDebugSession;
 
 typedef struct {
-  AdapterHandle *adapter;
-  RsdHandshakeHandle *handshake;
-  RemoteServerHandle *remoteServer;
-  DebugProxyHandle *debugProxy;
+    AdapterHandle *adapter;
+    RsdHandshakeHandle *handshake;
+    RemoteServerHandle *remoteServer;
+    DebugProxyHandle *debugProxy;
 } DebugSession;
 
 dispatch_queue_t debugServiceQueue(void);
 
 DeviceProvider *_Nullable createDeviceProvider(
-    NSString *pairingFilePath, NSString *targetAddress,
-    NSError *_Nullable *_Nullable error);
+                                               NSString *pairingFilePath, NSString *targetAddress,
+                                               NSError *_Nullable *_Nullable error);
 
 BOOL sendDebugCommand(DebugProxyHandle *debugProxy, NSString *commandString,
                       NSString *_Nullable *_Nullable responseOut,
@@ -51,11 +47,9 @@ BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session,
                          NSError *_Nullable *_Nullable error);
 BOOL startLegacyDebugService(DeviceProvider *provider,
                              uint16_t *_Nullable portOut,
-                             BOOL *_Nullable sslOut,
-                             const char *_Nullable *_Nullable serviceNameOut,
                              NSError *_Nullable *_Nullable error);
 BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port,
-                              BOOL useSSL, LegacyDebugConnection *connectionOut,
+                              LegacyDebugConnection *connectionOut,
                               NSError *_Nullable *_Nullable error);
 BOOL sendLegacyDebugCommand(LegacyDebugConnection *connection,
                             NSString *command,

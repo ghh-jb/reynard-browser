@@ -14,19 +14,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/tcp.h>
-#include <sys/select.h>
 #include <unistd.h>
 
 static const char *providerLabel = "Reynard";
 static const uint16_t lockdownPort = 62078;
 static const NSTimeInterval debugPacketTimeoutSeconds = 2.0;
 
-static const char *const legacyDebugServiceIdentifiers[] = {
-    "com.apple.debugserver",
-    "com.apple.debugserver.DVTSecureSocketProxy",
-};
-
-static const size_t legacyDebugServiceIdentifierCount = sizeof(legacyDebugServiceIdentifiers) / sizeof(legacyDebugServiceIdentifiers[0]);
+static const char *const legacyDebugServiceIdentifier = "com.apple.debugserver.DVTSecureSocketProxy";
 
 struct DeviceProvider {
     IdeviceProviderHandle *handle;
@@ -575,47 +569,29 @@ void closeLegacyDebugConnection(LegacyDebugConnection *connection) {
     if (!connection) return;
     if (connection->sslContext) { SSLClose(connection->sslContext); CFRelease(connection->sslContext); connection->sslContext = NULL; }
     if (connection->socketFD >= 0) { close(connection->socketFD); connection->socketFD = -1; }
-    connection->usesSSL = NO;
 }
 
 static BOOL sendAllBytes(LegacyDebugConnection *connection, const uint8_t *bytes, size_t length, NSError **error) {
-    if (!connection || connection->socketFD < 0) {
-        if (error) *error = errorWithCode(-24, @"Missing debugserver socket.");
+    if (!connection || connection->socketFD < 0 || !connection->sslContext) {
+        if (error) *error = errorWithCode(-24, @"Missing TLS debugserver connection.");
         return NO;
     }
     
     size_t bytesWritten = 0;
     while (bytesWritten < length) {
-        if (connection->usesSSL) {
-            size_t processedLength = length - bytesWritten;
-            OSStatus status = SSLWrite(connection->sslContext, bytes + bytesWritten, processedLength, &processedLength);
-            
-            if (status == noErr) {
-                bytesWritten += processedLength;
-                continue;
-            }
-            
-            if (status == errSSLWouldBlock) continue;
-            
-            if (error) {
-                NSString *description = [NSString stringWithFormat:@"Failed to send TLS debugserver packet: %@",
-                                         secureTransportStatusDescription(status)];
-                *error = errorWithCode(-24, description);
-            }
-            
-            return NO;
-        }
+        size_t processedLength = length - bytesWritten;
+        OSStatus status = SSLWrite(connection->sslContext, bytes + bytesWritten, processedLength, &processedLength);
         
-        ssize_t result = send(connection->socketFD, bytes + bytesWritten, length - bytesWritten, 0);
-        if (result > 0) {
-            bytesWritten += (size_t)result;
+        if (status == noErr) {
+            bytesWritten += processedLength;
             continue;
         }
         
-        if (result < 0 && errno == EINTR) continue;
+        if (status == errSSLWouldBlock) continue;
         
         if (error) {
-            NSString *description = [NSString stringWithFormat:@"Failed to send debugserver packet: %s", strerror(errno)];
+            NSString *description = [NSString stringWithFormat:@"Failed to send TLS debugserver packet: %@",
+                                     secureTransportStatusDescription(status)];
             *error = errorWithCode(-24, description);
         }
         
@@ -628,73 +604,27 @@ static BOOL sendAllBytes(LegacyDebugConnection *connection, const uint8_t *bytes
 static BOOL readByteWithTimeout(LegacyDebugConnection *connection, NSTimeInterval timeout, char *byteOut, BOOL *timedOut, NSError **error) {
     if (timedOut) *timedOut = NO;
     
-    if (!connection || connection->socketFD < 0) {
-        if (error) *error = errorWithCode(-25, @"Missing debugserver socket.");
+    if (!connection || connection->socketFD < 0 || !connection->sslContext) {
+        if (error) *error = errorWithCode(-25, @"Missing TLS debugserver connection.");
         return NO;
     }
     
-    if (connection->usesSSL) {
-        size_t processedLength = 1;
-        OSStatus status = SSLRead(connection->sslContext, byteOut, 1, &processedLength);
-        if (status == noErr && processedLength == 1) return YES;
-        
-        if (status == errSSLWouldBlock) {
-            if (timedOut) *timedOut = YES;
-            return YES;
-        }
-        
-        if (status == errSSLClosedGraceful || status == errSSLClosedAbort) {
-            if (error) *error = errorWithCode(-26, @"Debugserver closed the TLS socket.");
-            return NO;
-        }
-        
-        if (error) {
-            NSString *description = [NSString stringWithFormat:@"Failed reading TLS debugserver data: %@", secureTransportStatusDescription(status)];
-            *error = errorWithCode(-27, description);
-        }
-        
-        return NO;
-    }
+    size_t processedLength = 1;
+    OSStatus status = SSLRead(connection->sslContext, byteOut, 1, &processedLength);
+    if (status == noErr && processedLength == 1) return YES;
     
-    fd_set readSet;
-    FD_ZERO(&readSet);
-    FD_SET(connection->socketFD, &readSet);
-    
-    struct timeval timeoutValue;
-    timeoutValue.tv_sec = (time_t)timeout;
-    timeoutValue.tv_usec = (suseconds_t)((timeout - timeoutValue.tv_sec) * 1000000.0);
-    
-    int ready = select(connection->socketFD + 1, &readSet, NULL, NULL, &timeoutValue);
-    if (ready == 0) {
+    if (status == errSSLWouldBlock) {
         if (timedOut) *timedOut = YES;
         return YES;
     }
     
-    if (ready < 0) {
-        if (errno == EINTR) return readByteWithTimeout(connection, timeout, byteOut, timedOut, error);
-        if (error) {
-            NSString *description = [NSString stringWithFormat:@"Failed waiting for debugserver data: %s", strerror(errno)];
-            *error = errorWithCode(-25, description);
-        }
+    if (status == errSSLClosedGraceful || status == errSSLClosedAbort) {
+        if (error) *error = errorWithCode(-26, @"Debugserver closed the TLS socket.");
         return NO;
-    }
-    
-    ssize_t readResult = recv(connection->socketFD, byteOut, 1, 0);
-    if (readResult == 1) return YES;
-    
-    if (readResult == 0) {
-        if (error) *error = errorWithCode(-26, @"Debugserver closed the socket.");
-        return NO;
-    }
-    
-    if (errno == EINTR) return readByteWithTimeout(connection, timeout, byteOut, timedOut, error);
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        if (timedOut) *timedOut = YES;
-        return YES;
     }
     
     if (error) {
-        NSString *description = [NSString stringWithFormat:@"Failed reading debugserver data: %s", strerror(errno)];
+        NSString *description = [NSString stringWithFormat:@"Failed reading TLS debugserver data: %@", secureTransportStatusDescription(status)];
         *error = errorWithCode(-27, description);
     }
     return NO;
@@ -802,7 +732,7 @@ static BOOL sendLegacyContinueCommand(LegacyDebugConnection *connection, NSStrin
     }
 }
 
-BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port, BOOL useSSL, LegacyDebugConnection *connectionOut, NSError **error) {
+BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port, LegacyDebugConnection *connectionOut, NSError **error) {
     if (!connectionOut) {
         if (error) *error = errorWithCode(-33, @"Missing output debugserver connection.");
         return NO;
@@ -810,7 +740,6 @@ BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port, BOOL useSS
     
     connectionOut->socketFD = -1;
     connectionOut->sslContext = NULL;
-    connectionOut->usesSSL = useSSL;
     
     int socketFD = socket(AF_INET, SOCK_STREAM, 0);
     if (socketFD < 0) {
@@ -846,9 +775,8 @@ BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port, BOOL useSS
     }
     
     connectionOut->socketFD = socketFD;
-    connectionOut->usesSSL = useSSL;
     
-    if (useSSL && !configureLegacyDebugTLS(connectionOut, error)) {
+    if (!configureLegacyDebugTLS(connectionOut, error)) {
         closeLegacyDebugConnection(connectionOut);
         return NO;
     }
@@ -856,7 +784,7 @@ BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port, BOOL useSS
     return YES;
 }
 
-BOOL startLegacyDebugService(DeviceProvider *provider, uint16_t *portOut, BOOL *sslOut, const char **serviceNameOut, NSError **error) {
+BOOL startLegacyDebugService(DeviceProvider *provider, uint16_t *portOut, NSError **error) {
     LockdowndClientHandle *lockdownClient = NULL;
     IdevicePairingFile *pairingFile = NULL;
     IdeviceFfiError *ffiError = NULL;
@@ -892,46 +820,31 @@ BOOL startLegacyDebugService(DeviceProvider *provider, uint16_t *portOut, BOOL *
         goto cleanup;
     }
     
-    uint16_t sslFallbackPort = 0;
-    BOOL sslFallbackValue = NO;
-    const char *sslFallbackServiceName = NULL;
-    BOOL hasSSLFallback = NO;
-    
-    for (size_t serviceIndex = 0; serviceIndex < legacyDebugServiceIdentifierCount; serviceIndex++) {
-        uint16_t debugPort = 0;
-        bool enableSSL = false;
-        
-        ffiError = lockdownd_start_service(lockdownClient, legacyDebugServiceIdentifiers[serviceIndex], &debugPort, &enableSSL);
-        if (ffiError) {
-            idevice_error_free(ffiError);
-            continue;
+    uint16_t debugPort = 0;
+    bool enableSSL = false;
+    ffiError = lockdownd_start_service(lockdownClient, legacyDebugServiceIdentifier, &debugPort, &enableSSL);
+    if (ffiError) {
+        if (error) {
+            NSString *description = [NSString stringWithFormat:@"Unable to start legacy debugserver service %s via lockdownd: %@",
+                                     legacyDebugServiceIdentifier,
+                                     [NSString stringWithUTF8String:ffiError->message ?: "unknown error"]];
+            *error = errorWithCode(ffiError->code, description);
         }
-        
-        if (enableSSL) {
-            if (!hasSSLFallback) {
-                sslFallbackPort = debugPort;
-                sslFallbackValue = YES;
-                sslFallbackServiceName = legacyDebugServiceIdentifiers[serviceIndex];
-                hasSSLFallback = YES;
-            }
-            continue;
-        }
-        
-        if (portOut) *portOut = debugPort;
-        if (sslOut) *sslOut = enableSSL;
-        if (serviceNameOut) *serviceNameOut = legacyDebugServiceIdentifiers[serviceIndex];
-        success = YES;
-        break;
+        idevice_error_free(ffiError);
+        goto cleanup;
     }
     
-    if (!success && hasSSLFallback) {
-        if (portOut) *portOut = sslFallbackPort;
-        if (sslOut) *sslOut = sslFallbackValue;
-        if (serviceNameOut) *serviceNameOut = sslFallbackServiceName;
-        success = YES;
+    if (!enableSSL) {
+        if (error) {
+            NSString *description = [NSString stringWithFormat:@"Legacy debugserver service %s did not require TLS.",
+                                     legacyDebugServiceIdentifier];
+            *error = errorWithCode(-36, description);
+        }
+        goto cleanup;
     }
     
-    if (!success && error) *error = errorWithCode(-36, @"Unable to start legacy debugserver service via lockdownd.");
+    if (portOut) *portOut = debugPort;
+    success = YES;
     
 cleanup:
     if (pairingFile) idevice_pairing_file_free(pairingFile);

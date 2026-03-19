@@ -1,0 +1,20 @@
+diff --git a/js/src/jit/arm64/vixl/Cpu-vixl.cpp b/js/src/jit/arm64/vixl/Cpu-vixl.cpp
+index b05d52402d47..4b57cc1c5441 100644
+--- a/js/src/jit/arm64/vixl/Cpu-vixl.cpp
++++ b/js/src/jit/arm64/vixl/Cpu-vixl.cpp
+@@ -385,9 +385,12 @@ CPUFeatures CPU::InferCPUFeaturesFromOS(
+     features.Combine(CPUFeatures::kMTEInstructions);
+   }
+ #elif defined(XP_DARWIN)
+-  // Apple processors have kJSCVT, kDotProduct, and kAtomics features.
+-  features.Combine(CPUFeatures::kJSCVT, CPUFeatures::kDotProduct,
+-                   CPUFeatures::kAtomics);
++  // REYNARD: Some older Apple CPUs (before the A12 Bionic chip) do not implement
++  // Armv8.3 JSCVT. When JIT is enabled on these CPUs, the child process can crash with EXC_BAD_INSTRUCTION at runtime.
++
++  // REYNARD_TODO: Detect devices / CPUs at runtime?
++  features.Combine(/* CPUFeatures::kJSCVT, */CPUFeatures::kDotProduct,
++    CPUFeatures::kAtomics);
+ #endif  // VIXL_USE_LINUX_HWCAP
+ 
+   if ((option == CPUFeatures::kQueryIDRegistersIfAvailable) &&

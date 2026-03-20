@@ -81,6 +81,7 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
     
     private let jitSwitch = UISwitch()
     private let androidUserAgentSwitch = UISwitch()
+    private let backgroundQueue = DispatchQueue(label: "me.minh-ton.reynard.settings.backgroundqueue", qos: .userInitiated)
     
     init() {
         super.init(style: .insetGrouped)
@@ -94,7 +95,7 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        jitSwitch.addTarget(self, action: #selector(jitSwitchChanged), for: .valueChanged)
+        jitSwitch.addTarget(self, action: #selector(jitSwitchChanged(_:)), for: .valueChanged)
         androidUserAgentSwitch.addTarget(self, action: #selector(androidUserAgentSwitchChanged), for: .valueChanged)
         refreshControls()
     }
@@ -201,7 +202,7 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
         
         switch section {
         case .jit:
-            return "Enabling JIT may improve performance and is required for features like WebAssembly to work."
+            return "Enabling JIT improves performance significantly and is required for features like WebAssembly."
         case .search:
             return nil
         case .compatibility:
@@ -214,13 +215,7 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
             return
         }
         
-        do {
-            try preferences.installPairingFile(from: url)
-            refreshControls()
-            tableView.reloadSections(IndexSet(integer: Section.jit.rawValue), with: .automatic)
-        } catch {
-            presentAlert(title: "Import Failed", message: error.localizedDescription)
-        }
+        importPairingFile(from: url)
     }
     
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {}
@@ -232,19 +227,62 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
     }
     
     private func presentPairingFilePicker() {
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedPairingFileTypes(), asCopy: false)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedPairingFileTypes(), asCopy: true)
         picker.delegate = self
         picker.allowsMultipleSelection = false
         present(picker, animated: true)
     }
     
-    @objc private func jitSwitchChanged() {
-        preferences.isJITEnabled = jitSwitch.isOn
-        jitSwitch.isOn = preferences.isJITEnabled
+    private func importPairingFile(from url: URL) {
+        backgroundQueue.async { [weak self] in
+            guard let self else {
+                return
+            }
+            
+            do {
+                try self.preferences.installPairingFile(from: url)
+                DispatchQueue.main.async {
+                    self.refreshControls()
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self.presentAlert(title: "Import Failed", message: error.localizedDescription)
+                }
+            }
+        }
+    }
+    
+    @objc private func jitSwitchChanged(_ sender: UISwitch) {
+        let isOn = sender.isOn
+        
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.preferences.isJITEnabled = isOn
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.presentJITRestartAlert()
+        }
     }
     
     @objc private func androidUserAgentSwitchChanged() {
         preferences.useAndroidUserAgent = androidUserAgentSwitch.isOn
+    }
+    
+    private func presentJITRestartAlert() {
+        let alert = UIAlertController(
+            title: "Restart Required",
+            message: "The app will now close for the JIT setting to take effect.",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
+            UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
+            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1), execute: {
+                exit(EXIT_SUCCESS)
+            })
+        })
+        
+        present(alert, animated: true)
     }
 }
 

@@ -8,9 +8,11 @@
 @import Foundation;
 #import <Security/Security.h>
 
+#import "JITErrors.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
-NSError *errorWithCode(NSInteger code, NSString *description);
+NSError *errorWithCode(ErrorCode code);
 void logger(NSString *message, void (^_Nullable logHandler)(NSString *message));
 
 uint64_t parseLittleEndianHex64(NSString *hexString);

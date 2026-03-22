@@ -9,8 +9,6 @@
 #import "JITSupport.h"
 #import "JITUtils.h"
 
-static NSString *const enablerErrorDomain = @"JITEnabler";
-
 @interface JITEnabler ()
 
 @property(nonatomic, assign) DeviceProvider *sharedProvider;
@@ -57,10 +55,7 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         ProcessControlHandle *processControl = NULL;
         ffiError = process_control_new(session.remoteServer, &processControl);
         if (ffiError) {
-            if (error) {
-                NSString *description = [NSString stringWithUTF8String: ffiError->message ?: "Failed to create process control client."];
-                *error = errorWithCode(ffiError->code, description);
-            }
+            if (error) *error = MakeError(ProcessControlCreateFailed);
             idevice_error_free(ffiError);
             freeDebugSession(&session);
             return NO;
@@ -76,7 +71,7 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         NSError *commandError = nil;
         NSString *noAckResponse = nil;
         if (!configureNoAckMode(session.debugProxy, &noAckResponse, &commandError)) {
-            if (error) *error = commandError ?: errorWithCode(-9, @"Failed to configure no-ack debug mode.");
+            if (error) *error = commandError ?: MakeError(NoAckConfigureFailed);
             freeDebugSession(&session);
             return NO;
         }
@@ -86,7 +81,7 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         NSString *attachCommand = [NSString stringWithFormat:@"vAttach;%X", pid];
         NSString *attachResponse = nil;
         if (!sendDebugCommand(session.debugProxy, attachCommand, &attachResponse, &commandError)) {
-            if (error) *error = commandError ?: errorWithCode(-6, @"Failed to attach debug proxy.");
+            if (error) *error = commandError ?: MakeError(AttachDebugProxyFailed);
             freeDebugSession(&session);
             return NO;
         }
@@ -96,7 +91,7 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         DebugSession *persistentSession = malloc(sizeof(*persistentSession));
         if (!persistentSession) {
             freeDebugSession(&session);
-            if (error) *error = errorWithCode(-8, @"Failed to allocate persistent debug session.");
+            if (error) *error = MakeError(SessionAllocationFailed);
             return NO;
         }
         
@@ -123,7 +118,7 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         
         LegacyDebugSession *legacySession = calloc(1, sizeof(*legacySession));
         if (!legacySession) {
-            if (error) *error = errorWithCode(-8, @"Failed to allocate legacy debug session.");
+            if (error) *error = MakeError(SessionAllocationFailed);
             return NO;
         }
         
@@ -131,10 +126,6 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         legacySession->connection.sslContext = NULL;
         
         if (!connectLegacyDebugSocket(@"10.7.0.1", debugPort, &legacySession->connection, error)) {
-            if (error && *error) {
-                NSString *description = [NSString stringWithFormat:@"%@ (port=%u, tls=true)", (*error).localizedDescription ?: @"Legacy debug connect failed.", debugPort];
-                *error = errorWithCode((*error).code, description);
-            }
             free(legacySession);
             return NO;
         }
@@ -142,11 +133,6 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
         NSString *attachResponse = nil;
         NSString *attachCommand = [NSString stringWithFormat:@"vAttach;%08X", (uint32_t)pid];
         if (!sendLegacyDebugCommand(&legacySession->connection, attachCommand, &attachResponse, error)) {
-            if (error && *error) {
-                NSString *description = [NSString stringWithFormat:@"%@ (service=com.apple.debugserver.DVTSecureSocketProxy, port=%u, tls=true)", (*error).localizedDescription ?: @"Legacy attach command failed.", debugPort];
-                *error = errorWithCode((*error).code, description);
-            }
-            
             closeLegacyDebugConnection(&legacySession->connection);
             free(legacySession);
             return NO;

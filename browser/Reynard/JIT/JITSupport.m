@@ -70,7 +70,7 @@ static void startHeartbeat(DeviceProvider *provider) {
 BOOL sendDebugCommand(DebugProxyHandle *debugProxy, NSString *commandString, NSString **responseOut, NSError **error) {
     DebugserverCommandHandle *command = debugserver_command_new(commandString.UTF8String, NULL, 0);
     if (!command) {
-        if (error) *error = errorWithCode(-6, [NSString stringWithFormat:@"Failed to create debugserver command %@", commandString]);
+        if (error) *error = MakeError(DebugCommandCreateFailed);
         return NO;
     }
     
@@ -79,10 +79,7 @@ BOOL sendDebugCommand(DebugProxyHandle *debugProxy, NSString *commandString, NSS
     debugserver_command_free(command);
     
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithFormat:@"Debug command %@ failed: %@", commandString, [NSString stringWithUTF8String:ffiError->message ?: "unknown error"]];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(DebugCommandSendFailed);
         
         idevice_error_free(ffiError);
         if (response) idevice_string_free(response);
@@ -107,7 +104,7 @@ static BOOL writeRegisterValue(DebugProxyHandle *debugProxy, NSString *registerN
     
     if (!sendDebugCommand(debugProxy, command, &response, error)) return NO;
     if (response.length > 0 && ![response isEqualToString:@"OK"]) {
-        if (error) *error = errorWithCode(-7, [NSString stringWithFormat:@"Unexpected register write response %@", response]);
+        if (error) *error = MakeError(UnexpectedRegisterWriteResponse);
         return NO;
     }
     
@@ -118,11 +115,8 @@ BOOL configureNoAckMode(DebugProxyHandle *debugProxy, NSString **responseOut, NS
     for (NSUInteger ackCount = 0; ackCount < 2; ackCount++) {
         IdeviceFfiError *ffiError = debug_proxy_send_ack(debugProxy);
         if (!ffiError) continue;
-        
-        if (error) {
-            NSString *description = [NSString stringWithFormat:@"Failed to send debug ACK: %@", [NSString stringWithUTF8String:ffiError->message ?: "unknown error"]];
-            *error = errorWithCode(ffiError->code, description);
-        }
+
+        if (error) *error = MakeError(NoAckConfigureFailed);
         idevice_error_free(ffiError);
         return NO;
     }
@@ -130,7 +124,7 @@ BOOL configureNoAckMode(DebugProxyHandle *debugProxy, NSString **responseOut, NS
     NSString *response = nil;
     if (!sendDebugCommand(debugProxy, @"QStartNoAckMode", &response, error)) return NO;
     if (response.length > 0 && ![response isEqualToString:@"OK"]) {
-        if (error) *error = errorWithCode(-9, [NSString stringWithFormat:@"Unexpected no-ack response %@", response]);
+        if (error) *error = MakeError(UnexpectedNoAckResponse);
         return NO;
     }
     
@@ -148,10 +142,7 @@ BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSErro
     
     ffiError = core_device_proxy_connect(provider->handle, &coreDevice);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to connect CoreDeviceProxy."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(CoreDeviceConnectFailed);
         idevice_error_free(ffiError);
         return NO;
     }
@@ -159,10 +150,7 @@ BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSErro
     uint16_t rsdPort = 0;
     ffiError = core_device_proxy_get_server_rsd_port(coreDevice, &rsdPort);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to resolve RSD port."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(CoreDeviceRSDPortResolveFailed);
         idevice_error_free(ffiError);
         core_device_proxy_free(coreDevice);
         return NO;
@@ -170,10 +158,7 @@ BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSErro
     
     ffiError = core_device_proxy_create_tcp_adapter(coreDevice, &session->adapter);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to create CoreDevice adapter."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(CoreDeviceAdapterCreateFailed);
         idevice_error_free(ffiError);
         core_device_proxy_free(coreDevice);
         return NO;
@@ -182,10 +167,7 @@ BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSErro
     
     ffiError = adapter_connect(session->adapter, rsdPort, &stream);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to connect adapter stream."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(AdapterStreamConnectFailed);
         idevice_error_free(ffiError);
         freeDebugSession(session);
         return NO;
@@ -193,10 +175,7 @@ BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSErro
     
     ffiError = rsd_handshake_new(stream, &session->handshake);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to complete RSD handshake."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(RSDHandshakeCreateFailed);
         idevice_error_free(ffiError);
         freeDebugSession(session);
         return NO;
@@ -205,10 +184,7 @@ BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSErro
     
     ffiError = remote_server_connect_rsd(session->adapter, session->handshake, &session->remoteServer);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to connect remote server."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(RemoteServerConnectFailed);
         idevice_error_free(ffiError);
         freeDebugSession(session);
         return NO;
@@ -216,10 +192,7 @@ BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSErro
     
     ffiError = debug_proxy_connect_rsd(session->adapter, session->handshake, &session->debugProxy);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to connect debug proxy."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(DebugProxyConnectFailed);
         idevice_error_free(ffiError);
         freeDebugSession(session);
         return NO;
@@ -241,7 +214,7 @@ static BOOL prepareMemoryRegion(DebugProxyHandle *debugProxy, uint64_t startAddr
         
         if (!existingByte || existingByte.length < 2) {
             if (error && !*error)
-                *error = errorWithCode(-12, [NSString stringWithFormat:@"Failed to read prepare-region byte at 0x%llx (source 0x%llx)", currentAddress, sourceAddress]);
+                *error = MakeError(MemoryPrepareReadFailed);
             return NO;
         }
         
@@ -250,7 +223,7 @@ static BOOL prepareMemoryRegion(DebugProxyHandle *debugProxy, uint64_t startAddr
         
         if (!sendDebugCommand(debugProxy, command, &response, error)) return NO;
         if (response.length > 0 && ![response isEqualToString:@"OK"]) {
-            if (error) *error = errorWithCode(-7, [NSString stringWithFormat:@"Unexpected prepare-region response %@", response]);
+            if (error) *error = MakeError(UnexpectedPrepareRegionResponse);
             return NO;
         }
     }
@@ -265,14 +238,14 @@ static BOOL allocateRXRegion(DebugProxyHandle *debugProxy, uint64_t regionSize, 
     if (!sendDebugCommand(debugProxy, command, &response, error)) return NO;
     
     if (response.length == 0) {
-        if (error) *error = errorWithCode(-10, @"RX allocation returned an empty response.");
+        if (error) *error = MakeError(RXAllocationEmptyResponse);
         return NO;
     }
     
     uint64_t address = 0;
     NSScanner *scanner = [NSScanner scannerWithString:response];
     if (![scanner scanHexLongLong:&address]) {
-        if (error) *error = errorWithCode(-11, [NSString stringWithFormat:@"RX allocation returned invalid address %@", response]);
+        if (error) *error = MakeError(RXAllocationInvalidAddress);
         return NO;
     }
     
@@ -395,7 +368,7 @@ void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHan
 
 DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *targetAddress, NSError **error) {
     if (![[NSFileManager defaultManager] fileExistsAtPath:pairingFilePath]) {
-        if (error) *error = errorWithCode(-2, @"Pairing file not found in Documents.");
+        if (error) *error = MakeError(PairingFileMissing);
         return NULL;
     }
     
@@ -403,10 +376,7 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
     IdeviceFfiError *ffiError = idevice_pairing_file_read(pairingFilePath.fileSystemRepresentation, &pairingFile);
     
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to read pairing file."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(PairingFileReadFailed);
         idevice_error_free(ffiError);
         return NULL;
     }
@@ -418,17 +388,14 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
     
     if (inet_pton(AF_INET, targetAddress.UTF8String, &address.sin_addr) != 1) {
         idevice_pairing_file_free(pairingFile);
-        if (error) *error = errorWithCode(-3, @"Invalid target IP address.");
+        if (error) *error = MakeError(InvalidTargetAddress);
         return NULL;
     }
     
     IdeviceProviderHandle *providerHandle = NULL;
     ffiError = idevice_tcp_provider_new((const struct sockaddr *)&address, pairingFile, providerLabel, &providerHandle);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to create idevice provider."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(DeviceProviderCreateFailed);
         idevice_error_free(ffiError);
         return NULL;
     }
@@ -436,10 +403,7 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
     HeartbeatClientHandle *heartbeatClient = NULL;
     ffiError = heartbeat_connect(providerHandle, &heartbeatClient);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to connect heartbeat service."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(HeartbeatConnectFailed);
         idevice_error_free(ffiError);
         idevice_provider_free(providerHandle);
         return NULL;
@@ -450,10 +414,7 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
     if (!ffiError) ffiError = heartbeat_send_polo(heartbeatClient);
     
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Heartbeat failed."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(HeartbeatExchangeFailed);
         idevice_error_free(ffiError);
         heartbeat_client_free(heartbeatClient);
         idevice_provider_free(providerHandle);
@@ -463,7 +424,7 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
     DeviceProvider *provider = malloc(sizeof(*provider));
     if (!provider) {
         idevice_provider_free(providerHandle);
-        if (error) *error = errorWithCode(-5, @"Failed to allocate device provider.");
+        if (error) *error = MakeError(DeviceProviderAllocationFailed);
         return NULL;
     }
     
@@ -502,19 +463,19 @@ void freeDeviceProvider(DeviceProvider *provider) {
 
 static BOOL configureLegacyDebugTLS(LegacyDebugConnection *connection, NSError **error) {
     if (!connection || connection->socketFD < 0) {
-        if (error) *error = errorWithCode(-24, @"Missing socket for TLS debugserver session.");
+        if (error) *error = MakeError(LegacyTLSConfigurationFailed);
         return NO;
     }
     
     SSLContextRef sslContext = SSLCreateContext(kCFAllocatorDefault, kSSLClientSide, kSSLStreamType);
     if (!sslContext) {
-        if (error) *error = errorWithCode(-24, @"Failed to create SSL context for debugserver session.");
+        if (error) *error = MakeError(LegacyTLSConfigurationFailed);
         return NO;
     }
     
     OSStatus status = SSLSetIOFuncs(sslContext, legacySSLRead, legacySSLWrite);
     if (status != noErr) {
-        if (error) *error = errorWithCode(-24, [NSString stringWithFormat:@"Failed configuring SSL I/O: %@", secureTransportStatusDescription(status)]);
+        if (error) *error = MakeError(LegacyTLSConfigurationFailed);
         CFRelease(sslContext);
         return NO;
     }
@@ -522,7 +483,7 @@ static BOOL configureLegacyDebugTLS(LegacyDebugConnection *connection, NSError *
     int *connectionSocket = &connection->socketFD;
     status = SSLSetConnection(sslContext, connectionSocket);
     if (status != noErr) {
-        if (error) *error = errorWithCode(-24, [NSString stringWithFormat:@"Failed binding SSL socket: %@", secureTransportStatusDescription(status)]);
+        if (error) *error = MakeError(LegacyTLSConfigurationFailed);
         CFRelease(sslContext);
         return NO;
     }
@@ -534,7 +495,7 @@ static BOOL configureLegacyDebugTLS(LegacyDebugConnection *connection, NSError *
     NSError *identityError = nil;
     SecIdentityRef identity = copyLegacyPairingIdentity(&identityError);
     if (!identity) {
-        if (error) *error = identityError ?: errorWithCode(-24, @"Failed loading pairing identity for TLS debugserver session.");
+        if (error) *error = identityError ?: MakeError(TLSIdentityCreateFailed);
         CFRelease(sslContext);
         return NO;
     }
@@ -545,7 +506,7 @@ static BOOL configureLegacyDebugTLS(LegacyDebugConnection *connection, NSError *
     CFRelease(certificateChain);
     CFRelease(identity);
     if (statusSetCert != noErr) {
-        if (error) *error = errorWithCode(-24, [NSString stringWithFormat:@"Failed applying pairing identity to TLS session: %@", secureTransportStatusDescription(statusSetCert)]);
+        if (error) *error = MakeError(LegacyTLSConfigurationFailed);
         CFRelease(sslContext);
         return NO;
     }
@@ -556,7 +517,7 @@ static BOOL configureLegacyDebugTLS(LegacyDebugConnection *connection, NSError *
         if (status == errSSLWouldBlock) continue;
         if (status == errSSLServerAuthCompleted) continue;
         
-        if (error) *error = errorWithCode(-24, [NSString stringWithFormat:@"Failed TLS handshake with debugserver: %@", secureTransportStatusDescription(status)]);
+        if (error) *error = MakeError(LegacyTLSConfigurationFailed);
         CFRelease(sslContext);
         return NO;
     }
@@ -573,7 +534,7 @@ void closeLegacyDebugConnection(LegacyDebugConnection *connection) {
 
 static BOOL sendAllBytes(LegacyDebugConnection *connection, const uint8_t *bytes, size_t length, NSError **error) {
     if (!connection || connection->socketFD < 0 || !connection->sslContext) {
-        if (error) *error = errorWithCode(-24, @"Missing TLS debugserver connection.");
+        if (error) *error = MakeError(LegacyTLSConnectionMissing);
         return NO;
     }
     
@@ -589,11 +550,7 @@ static BOOL sendAllBytes(LegacyDebugConnection *connection, const uint8_t *bytes
         
         if (status == errSSLWouldBlock) continue;
         
-        if (error) {
-            NSString *description = [NSString stringWithFormat:@"Failed to send TLS debugserver packet: %@",
-                                     secureTransportStatusDescription(status)];
-            *error = errorWithCode(-24, description);
-        }
+        if (error) *error = MakeError(LegacyTLSConfigurationFailed);
         
         return NO;
     }
@@ -605,7 +562,7 @@ static BOOL readByteWithTimeout(LegacyDebugConnection *connection, NSTimeInterva
     if (timedOut) *timedOut = NO;
     
     if (!connection || connection->socketFD < 0 || !connection->sslContext) {
-        if (error) *error = errorWithCode(-25, @"Missing TLS debugserver connection.");
+        if (error) *error = MakeError(LegacyTLSConnectionMissing);
         return NO;
     }
     
@@ -619,14 +576,11 @@ static BOOL readByteWithTimeout(LegacyDebugConnection *connection, NSTimeInterva
     }
     
     if (status == errSSLClosedGraceful || status == errSSLClosedAbort) {
-        if (error) *error = errorWithCode(-26, @"Debugserver closed the TLS socket.");
+        if (error) *error = MakeError(LegacyTLSConnectionClosed);
         return NO;
     }
     
-    if (error) {
-        NSString *description = [NSString stringWithFormat:@"Failed reading TLS debugserver data: %@", secureTransportStatusDescription(status)];
-        *error = errorWithCode(-27, description);
-    }
+    if (error) *error = MakeError(LegacyTLSReadFailed);
     return NO;
 }
 
@@ -644,7 +598,7 @@ static BOOL readLegacyDebugResponse(LegacyDebugConnection *connection, NSString 
         
         if (marker == '+') continue;
         if (marker == '-') {
-            if (error) *error = errorWithCode(-28, @"Received NACK from debugserver.");
+            if (error) *error = MakeError(LegacyProtocolNackReceived);
             return NO;
         }
         if (marker != '$') continue;
@@ -655,7 +609,7 @@ static BOOL readLegacyDebugResponse(LegacyDebugConnection *connection, NSString 
             timedOut = NO;
             if (!readByteWithTimeout(connection, debugPacketTimeoutSeconds, &payloadByte, &timedOut, error)) return NO;
             if (timedOut) {
-                if (error) *error = errorWithCode(-29, @"Timed out while reading debugserver payload.");
+                if (error) *error = MakeError(LegacyProtocolPayloadTimeout);
                 return NO;
             }
             
@@ -669,7 +623,7 @@ static BOOL readLegacyDebugResponse(LegacyDebugConnection *connection, NSString 
             if (!readByteWithTimeout(connection, debugPacketTimeoutSeconds, &checksumChars[index], &checksumTimedOut, error)) return NO;
             
             if (checksumTimedOut) {
-                if (error) *error = errorWithCode(-30, @"Timed out while reading debugserver checksum.");
+                if (error) *error = MakeError(LegacyProtocolChecksumTimeout);
                 return NO;
             }
         }
@@ -677,7 +631,7 @@ static BOOL readLegacyDebugResponse(LegacyDebugConnection *connection, NSString 
         unsigned int providedChecksum = 0;
         if (sscanf(checksumChars, "%2x", &providedChecksum) != 1 ||
             (uint8_t)providedChecksum != packetChecksum(payloadData.bytes, payloadData.length)) {
-            if (error) *error = errorWithCode(-31, @"Debugserver packet checksum mismatch.");
+            if (error) *error = MakeError(LegacyProtocolChecksumMismatch);
             return NO;
         }
         
@@ -696,7 +650,7 @@ static BOOL readLegacyDebugResponse(LegacyDebugConnection *connection, NSString 
 static BOOL sendLegacyDebugPacket(LegacyDebugConnection *connection, NSString *command, NSError **error) {
     NSData *payloadData = [command dataUsingEncoding:NSUTF8StringEncoding];
     if (!payloadData) {
-        if (error) *error = errorWithCode(-32, @"Failed to encode legacy debug command.");
+        if (error) *error = MakeError(LegacyCommandEncodingFailed);
         return NO;
     }
     
@@ -716,16 +670,31 @@ static BOOL sendLegacyDebugPacket(LegacyDebugConnection *connection, NSString *c
 }
 
 BOOL sendLegacyDebugCommand(LegacyDebugConnection *connection, NSString *command, NSString **responseOut, NSError **error) {
-    if (!sendLegacyDebugPacket(connection, command, error)) return NO;
-    return readLegacyDebugResponse(connection, responseOut, error);
+    if (!sendLegacyDebugPacket(connection, command, error)) {
+        if (error && !*error) *error = MakeError(LegacyDebugCommandPacketFailed);
+        return NO;
+    }
+
+    if (!readLegacyDebugResponse(connection, responseOut, error)) {
+        if (error && !*error) *error = MakeError(LegacyDebugCommandResponseFailed);
+        return NO;
+    }
+
+    return YES;
 }
 
 static BOOL sendLegacyContinueCommand(LegacyDebugConnection *connection, NSString **responseOut, NSError **error) {
-    if (!sendLegacyDebugPacket(connection, @"c", error)) return NO;
+    if (!sendLegacyDebugPacket(connection, @"c", error)) {
+        if (error && !*error) *error = MakeError(LegacyContinuePacketFailed);
+        return NO;
+    }
     
     while (YES) {
         NSString *response = nil;
-        if (!readLegacyDebugResponse(connection, &response, error)) return NO;
+        if (!readLegacyDebugResponse(connection, &response, error)) {
+            if (error && !*error) *error = MakeError(LegacyContinueResponseFailed);
+            return NO;
+        }
         if (response.length == 0) continue;
         if (responseOut) *responseOut = response;
         return YES;
@@ -734,7 +703,7 @@ static BOOL sendLegacyContinueCommand(LegacyDebugConnection *connection, NSStrin
 
 BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port, LegacyDebugConnection *connectionOut, NSError **error) {
     if (!connectionOut) {
-        if (error) *error = errorWithCode(-33, @"Missing output debugserver connection.");
+        if (error) *error = MakeError(LegacyOutputConnectionMissing);
         return NO;
     }
     
@@ -743,10 +712,7 @@ BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port, LegacyDebu
     
     int socketFD = socket(AF_INET, SOCK_STREAM, 0);
     if (socketFD < 0) {
-        if (error) {
-            NSString *description = [NSString stringWithFormat:@"Failed creating debugserver socket: %s", strerror(errno)];
-            *error = errorWithCode(-33, description);
-        }
+        if (error) *error = MakeError(LegacySocketCreateFailed);
         return NO;
     }
     
@@ -763,20 +729,20 @@ BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port, LegacyDebu
     
     if (inet_pton(AF_INET, targetAddress.UTF8String, &address.sin_addr) != 1) {
         close(socketFD);
-        if (error) *error = errorWithCode(-34, @"Invalid legacy debugserver target address.");
+        if (error) *error = MakeError(LegacySocketInvalidAddress);
         return NO;
     }
     
     if (connect(socketFD, (const struct sockaddr *)&address, sizeof(address)) != 0) {
-        NSString *description = [NSString stringWithFormat:@"Failed connecting to legacy debugserver at %@:%u: %s", targetAddress, port, strerror(errno)];
         close(socketFD);
-        if (error) *error = errorWithCode(-35, description);
+        if (error) *error = MakeError(LegacySocketConnectFailed);
         return NO;
     }
     
     connectionOut->socketFD = socketFD;
     
     if (!configureLegacyDebugTLS(connectionOut, error)) {
+        if (error && !*error) *error = MakeError(LegacySocketTLSSetupFailed);
         closeLegacyDebugConnection(connectionOut);
         return NO;
     }
@@ -792,30 +758,21 @@ BOOL startLegacyDebugService(DeviceProvider *provider, uint16_t *portOut, NSErro
     
     ffiError = lockdownd_connect(provider->handle, &lockdownClient);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to connect lockdownd."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(LockdowndConnectFailed);
         idevice_error_free(ffiError);
         return NO;
     }
     
     ffiError = idevice_provider_get_pairing_file(provider->handle, &pairingFile);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to get provider pairing file."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(ProviderPairingFileFetchFailed);
         idevice_error_free(ffiError);
         goto cleanup;
     }
     
     ffiError = lockdownd_start_session(lockdownClient, pairingFile);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithUTF8String:ffiError->message ?: "Failed to start lockdownd session."];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(LockdowndSessionStartFailed);
         idevice_error_free(ffiError);
         goto cleanup;
     }
@@ -824,22 +781,13 @@ BOOL startLegacyDebugService(DeviceProvider *provider, uint16_t *portOut, NSErro
     bool enableSSL = false;
     ffiError = lockdownd_start_service(lockdownClient, legacyDebugServiceIdentifier, &debugPort, &enableSSL);
     if (ffiError) {
-        if (error) {
-            NSString *description = [NSString stringWithFormat:@"Unable to start legacy debugserver service %s via lockdownd: %@",
-                                     legacyDebugServiceIdentifier,
-                                     [NSString stringWithUTF8String:ffiError->message ?: "unknown error"]];
-            *error = errorWithCode(ffiError->code, description);
-        }
+        if (error) *error = MakeError(LockdowndStartServiceFailed);
         idevice_error_free(ffiError);
         goto cleanup;
     }
     
     if (!enableSSL) {
-        if (error) {
-            NSString *description = [NSString stringWithFormat:@"Legacy debugserver service %s did not require TLS.",
-                                     legacyDebugServiceIdentifier];
-            *error = errorWithCode(-36, description);
-        }
+        if (error) *error = MakeError(LegacyServiceTLSNotEnabled);
         goto cleanup;
     }
     
@@ -864,7 +812,7 @@ static BOOL writeLegacyRegisterValue(LegacyDebugConnection *connection, NSString
     
     if (!sendLegacyDebugCommand(connection, command, &response, error)) return NO;
     if (response.length > 0 && ![response isEqualToString:@"OK"]) {
-        if (error) *error = errorWithCode(-7, [NSString stringWithFormat:@"Unexpected register write response %@", response]);
+        if (error) *error = MakeError(UnexpectedRegisterWriteResponse);
         return NO;
     }
     
@@ -884,7 +832,7 @@ static BOOL prepareLegacyMemoryRegion(LegacyDebugConnection *connection, uint64_
         
         if (!existingByte || existingByte.length < 2) {
             if (error && !*error) {
-                *error = errorWithCode(-12, [NSString stringWithFormat:@"Failed to read prepare-region byte at 0x%llx (source 0x%llx)", currentAddress, sourceAddress]);
+                *error = MakeError(MemoryPrepareReadFailed);
             }
             return NO;
         }
@@ -894,7 +842,7 @@ static BOOL prepareLegacyMemoryRegion(LegacyDebugConnection *connection, uint64_
         
         if (!sendLegacyDebugCommand(connection, command, &response, error)) return NO;
         if (response.length > 0 && ![response isEqualToString:@"OK"]) {
-            if (error) *error = errorWithCode(-7, [NSString stringWithFormat:@"Unexpected prepare-region response %@", response]);
+            if (error) *error = MakeError(UnexpectedPrepareRegionResponse);
             return NO;
         }
     }
@@ -909,14 +857,14 @@ static BOOL allocateLegacyRXRegion(LegacyDebugConnection *connection, uint64_t r
     if (!sendLegacyDebugCommand(connection, command, &response, error)) return NO;
     
     if (response.length == 0) {
-        if (error) *error = errorWithCode(-10, @"RX allocation returned an empty response.");
+        if (error) *error = MakeError(RXAllocationEmptyResponse);
         return NO;
     }
     
     uint64_t address = 0;
     NSScanner *scanner = [NSScanner scannerWithString:response];
     if (![scanner scanHexLongLong:&address]) {
-        if (error) *error = errorWithCode(-11, [NSString stringWithFormat:@"RX allocation returned invalid address %@", response]);
+        if (error) *error = MakeError(RXAllocationInvalidAddress);
         return NO;
     }
     

@@ -14,10 +14,6 @@
 
 static const NSTimeInterval debugPacketTimeoutSeconds = 2.0;
 
-NSError *errorWithCode(NSInteger code, NSString *description) {
-    return [NSError errorWithDomain:@"Reynard.JIT" code:code userInfo:@{NSLocalizedDescriptionKey: description}];
-}
-
 void logger(NSString *message, void (^logHandler)(NSString *message)) {
     if (logHandler) logHandler(message);
 }
@@ -258,20 +254,20 @@ SecIdentityRef copyLegacyPairingIdentity(NSError **error) {
     NSURL *documentsDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
     NSString *pairingFilePath = [[documentsDirectory URLByAppendingPathComponent:@"pairingFile.plist"] path];
     if (pairingFilePath.length == 0) {
-        if (error) *error = errorWithCode(-24, @"Unable to resolve pairing file path for TLS debugserver session.");
+        if (error) *error = MakeError(PairingFilePathUnavailable);
         return NULL;
     }
     
     NSDictionary *pairingDictionary = [NSDictionary dictionaryWithContentsOfFile:pairingFilePath];
     if (![pairingDictionary isKindOfClass:[NSDictionary class]]) {
-        if (error) *error = errorWithCode(-24, @"Failed loading pairing file for TLS debugserver session.");
+        if (error) *error = MakeError(PairingFileLoadFailed);
         return NULL;
     }
     
     NSData *hostCertificateRaw = pairingDictionary[@"HostCertificate"];
     NSData *hostPrivateKeyRaw = pairingDictionary[@"HostPrivateKey"];
     if (![hostCertificateRaw isKindOfClass:[NSData class]] || ![hostPrivateKeyRaw isKindOfClass:[NSData class]]) {
-        if (error) *error = errorWithCode(-24, @"Pairing file is missing HostCertificate/HostPrivateKey data.");
+        if (error) *error = MakeError(PairingFileMissingCredentials);
         return NULL;
     }
     
@@ -283,13 +279,13 @@ SecIdentityRef copyLegacyPairingIdentity(NSError **error) {
     
     SecCertificateRef hostCertificate = SecCertificateCreateWithData(NULL, (__bridge CFDataRef)hostCertificateData);
     if (!hostCertificate) {
-        if (error) *error = errorWithCode(-24, @"Failed parsing HostCertificate from pairing file.");
+        if (error) *error = MakeError(HostCertificateParseFailed);
         return NULL;
     }
     
     SecKeyRef privateKey = createPrivateKeyFromPairingData(hostPrivateKeyData);
     if (!privateKey) {
-        if (error) *error = errorWithCode(-24, @"Failed parsing HostPrivateKey from pairing file.");
+        if (error) *error = MakeError(HostPrivateKeyParseFailed);
         CFRelease(hostCertificate);
         return NULL;
     }
@@ -299,7 +295,7 @@ SecIdentityRef copyLegacyPairingIdentity(NSError **error) {
     CFRelease(hostCertificate);
     
     if (!identity) {
-        if (error) *error = errorWithCode(-24, @"Failed creating TLS identity from pairing certificate/private key.");
+        if (error) *error = MakeError(TLSIdentityCreateFailed);
         return NULL;
     }
     

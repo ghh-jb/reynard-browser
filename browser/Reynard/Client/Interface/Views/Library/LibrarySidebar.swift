@@ -154,6 +154,7 @@ private final class LibrarySidebarHostedSectionViewController: UIViewController 
 private final class LibrarySidebarDetailViewController: UIViewController {
     private let contentViewController: UIViewController
     private let detailTitle: String
+    private let maximumContentWidth: CGFloat = 360
     private lazy var sidebarButton = makeLibrarySidebarButton(target: self, action: #selector(collapseSidebarFromChild))
     
     init(title: String, contentViewController: UIViewController) {
@@ -174,11 +175,19 @@ private final class LibrarySidebarDetailViewController: UIViewController {
         addChild(contentViewController)
         contentViewController.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(contentViewController.view)
+        
+        let safeArea = view.safeAreaLayoutGuide
+        let fillWidthConstraint = contentViewController.view.widthAnchor.constraint(equalTo: safeArea.widthAnchor)
+        fillWidthConstraint.priority = .defaultHigh
+        
         NSLayoutConstraint.activate([
             contentViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            contentViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            contentViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             contentViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            contentViewController.view.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
+            contentViewController.view.leadingAnchor.constraint(greaterThanOrEqualTo: safeArea.leadingAnchor),
+            contentViewController.view.trailingAnchor.constraint(lessThanOrEqualTo: safeArea.trailingAnchor),
+            contentViewController.view.widthAnchor.constraint(lessThanOrEqualToConstant: maximumContentWidth),
+            fillWidthConstraint,
         ])
         contentViewController.didMove(toParent: self)
     }

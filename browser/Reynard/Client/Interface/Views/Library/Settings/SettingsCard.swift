@@ -49,6 +49,8 @@ class SettingsTableViewController: UITableViewController {
         
         tableView.alwaysBounceVertical = true
         tableView.keyboardDismissMode = .interactive
+        tableView.sectionFooterHeight = UITableView.automaticDimension
+        tableView.estimatedSectionFooterHeight = 44
         
         if #available(iOS 15.0, *) {
             tableView.sectionHeaderTopPadding = 0
@@ -82,6 +84,7 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
     private let jitSwitch = UISwitch()
     private let androidUserAgentSwitch = UISwitch()
     private let backgroundQueue = DispatchQueue(label: "me.minh-ton.reynard.settings.backgroundqueue", qos: .userInitiated)
+    private var isJITLessModeActive = false
     
     init() {
         super.init(style: .insetGrouped)
@@ -97,6 +100,12 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
         
         jitSwitch.addTarget(self, action: #selector(jitSwitchChanged(_:)), for: .valueChanged)
         androidUserAgentSwitch.addTarget(self, action: #selector(androidUserAgentSwitchChanged), for: .valueChanged)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleJITLessModeActivated),
+            name: Notification.Name(rawValue: "me.minh-ton.reynard.jitless-mode-activated"),
+            object: nil
+        )
         refreshControls()
     }
     
@@ -202,12 +211,60 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
         
         switch section {
         case .jit:
-            return "Enabling JIT improves performance significantly and is required for features like WebAssembly."
+            return nil
         case .search:
             return nil
         case .compatibility:
             return "Compatibility with several websites, such as YouTube, improves when the user agent is set to Firefox on Android. You might see websites identify your device as an Android though."
         }
+    }
+    
+    override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        guard let section = Section(rawValue: section), section == .jit else {
+            return nil
+        }
+        
+        let footerView = UITableViewHeaderFooterView(reuseIdentifier: nil)
+        footerView.contentView.preservesSuperviewLayoutMargins = true
+        
+        let stack = UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.alignment = .fill
+        stack.spacing = 4
+        
+        let footerPointSize = UIFont.preferredFont(forTextStyle: .footnote).pointSize
+        let statusBoldFont = UIFontMetrics(forTextStyle: .footnote)
+            .scaledFont(for: UIFont.systemFont(ofSize: footerPointSize, weight: .semibold))
+        
+        if isJITLessModeActive {
+            let statusLabel = UILabel()
+            statusLabel.numberOfLines = 0
+            statusLabel.font = statusBoldFont
+            statusLabel.adjustsFontForContentSizeCategory = true
+            statusLabel.textColor = .systemOrange
+            statusLabel.text = "▲ JIT-Less Mode is Currently Active"
+            stack.addArrangedSubview(statusLabel)
+        }
+        
+        let detailText = "Enabling JIT improves performance significantly and is required for features like WebAssembly."
+        let detailLabel = UILabel()
+        detailLabel.numberOfLines = 0
+        detailLabel.font = UIFont.preferredFont(forTextStyle: .footnote)
+        detailLabel.adjustsFontForContentSizeCategory = true
+        detailLabel.textColor = .secondaryLabel
+        detailLabel.text = detailText
+        stack.addArrangedSubview(detailLabel)
+        
+        footerView.contentView.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: footerView.contentView.layoutMarginsGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: footerView.contentView.layoutMarginsGuide.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: footerView.contentView.layoutMarginsGuide.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: footerView.contentView.layoutMarginsGuide.bottomAnchor),
+        ])
+        
+        return footerView
     }
     
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
@@ -224,6 +281,16 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
         jitSwitch.isEnabled = preferences.hasPairingFile
         jitSwitch.isOn = preferences.isJITEnabled
         androidUserAgentSwitch.isOn = preferences.useAndroidUserAgent
+        isJITLessModeActive = JITController.shared.isJITLessModeActive
+    }
+    
+    @objc private func handleJITLessModeActivated() {
+        guard !isJITLessModeActive else {
+            return
+        }
+        
+        isJITLessModeActive = true
+        tableView.reloadSections(IndexSet(integer: Section.jit.rawValue), with: .automatic)
     }
     
     private func presentPairingFilePicker() {

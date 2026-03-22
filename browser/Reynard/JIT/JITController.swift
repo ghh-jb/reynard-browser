@@ -17,7 +17,7 @@ final class JITController {
     private var attachedPIDs: Set<Int32> = []
     private var preflightWatchdogs: [Int32: DispatchWorkItem] = [:]
     private var hasHandledFailure = false
-    private var jitDisabledTemporarily = false
+    private(set) var isJITLessModeActive = false
     private let preflightTimeoutSeconds: Int = 5
     private let failurePresentationRetryLimit = 12
     
@@ -42,7 +42,7 @@ final class JITController {
             return
         }
         
-        guard BrowserPreferences.shared.isJITEnabled, !jitDisabledTemporarily else {
+        guard BrowserPreferences.shared.isJITEnabled, !isJITLessModeActive else {
             ReportChildProcessJITEnabled(pid, false)
             return
         }
@@ -143,7 +143,7 @@ final class JITController {
     }
     
     private func activateJITLessMode() {
-        jitDisabledTemporarily = true
+        isJITLessModeActive = true
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "me.minh-ton.reynard.jitless-mode-activated"), object: nil)
         }

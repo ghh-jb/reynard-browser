@@ -64,7 +64,7 @@ final class JITFailureView: UIView {
         symbolImageView.setContentHuggingPriority(.required, for: .vertical)
         symbolImageView.setContentCompressionResistancePriority(.required, for: .vertical)
         
-        titleLabel.text = "JIT Enablement Failed"
+        titleLabel.text = "Failed to enable JIT"
         titleLabel.textAlignment = .center
         let titlePointSize = UIFont.preferredFont(forTextStyle: .title1).pointSize
         let boldTitleFont = UIFont.systemFont(ofSize: titlePointSize, weight: .bold)
@@ -72,7 +72,7 @@ final class JITFailureView: UIView {
         titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.numberOfLines = 0
         
-        messageLabel.text = "Please check that your pairing file is valid, your loopback VPN is on, and you're connected to a stable Wi-Fi network.\n\nYou may use the browser without JIT temporarily until the next launch."
+        messageLabel.text = "Please check that your pairing file is valid, your loopback VPN is on, and you're connected to a stable Wi-Fi network.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode."
         messageLabel.textAlignment = .center
         messageLabel.font = .preferredFont(forTextStyle: .body)
         messageLabel.textColor = .secondaryLabel
@@ -101,7 +101,7 @@ final class JITFailureView: UIView {
             weight: .regular
         )
         
-        quitButton.setTitle("Use JIT-Less Mode", for: .normal)
+        quitButton.setTitle("Activate JIT-Less Mode", for: .normal)
         quitButton.titleLabel?.font = .preferredFont(forTextStyle: .headline)
         quitButton.titleLabel?.adjustsFontForContentSizeCategory = true
         quitButton.backgroundColor = .label
@@ -122,7 +122,7 @@ final class JITFailureView: UIView {
         topContentStackView.axis = .vertical
         topContentStackView.alignment = .fill
         topContentStackView.spacing = 20
-        topContentStackView.setCustomSpacing(48, after: symbolImageView)
+        topContentStackView.setCustomSpacing(56, after: symbolImageView)
         topContentStackView.translatesAutoresizingMaskIntoConstraints = false
         
         quitButton.translatesAutoresizingMaskIntoConstraints = false

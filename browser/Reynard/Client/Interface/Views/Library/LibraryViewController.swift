@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class LibraryViewController: UITabBarController, UITabBarControllerDelegate {
+final class LibraryViewController: UITabBarController, UITabBarControllerDelegate, UINavigationControllerDelegate {
     private let onClose: (() -> Void)?
     
     init(onClose: (() -> Void)? = nil) {
@@ -27,29 +27,25 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
         selectedIndex = LibrarySection.bookmarks.rawValue
         LibraryTabBarStyle.apply(to: tabBar)
         if onClose != nil {
-            if #available(iOS 26.0, *) {
-                navigationItem.rightBarButtonItem = UIBarButtonItem(
-                    barButtonSystemItem: .close,
-                    target: self,
-                    action: #selector(dismissLibraryMenu)
-                )
-                navigationItem.rightBarButtonItem?.tintColor = .label
-            } else {
-                navigationItem.rightBarButtonItem = UIBarButtonItem(
-                    barButtonSystemItem: .done,
-                    target: self,
-                    action: #selector(dismissLibraryMenu)
-                )
-            }
+            navigationItem.rightBarButtonItem = makeCloseBarButtonItem()
         }
         updateNavigationTitle()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.delegate = self
         navigationItem.leftItemsSupplementBackButton = false
         navigationItem.leftBarButtonItems = []
         navigationItem.leftBarButtonItem = nil
+    }
+    
+    func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        guard onClose != nil else {
+            return
+        }
+        
+        viewController.navigationItem.rightBarButtonItem = makeCloseBarButtonItem()
     }
     
     private func makeSectionViewControllers() -> [UIViewController] {
@@ -81,6 +77,24 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
     
     @objc private func dismissLibraryMenu() {
         onClose?()
+    }
+    
+    private func makeCloseBarButtonItem() -> UIBarButtonItem {
+        if #available(iOS 26.0, *) {
+            let button = UIBarButtonItem(
+                barButtonSystemItem: .close,
+                target: self,
+                action: #selector(dismissLibraryMenu)
+            )
+            button.tintColor = .label
+            return button
+        }
+        
+        return UIBarButtonItem(
+            barButtonSystemItem: .done,
+            target: self,
+            action: #selector(dismissLibraryMenu)
+        )
     }
 }
 

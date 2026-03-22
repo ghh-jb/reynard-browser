@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class LibrarySidebarViewController: UIViewController, UICollectionViewDelegate {
+final class LibrarySidebarViewController: UIViewController, UICollectionViewDelegate, UINavigationControllerDelegate {
     private let mainSection = "main"
     private var dataSource: UICollectionViewDiffableDataSource<String, LibrarySection>!
     private lazy var sidebarButton = makeLibrarySidebarButton(target: self, action: #selector(collapseSidebarFromRoot))
@@ -41,10 +41,24 @@ final class LibrarySidebarViewController: UIViewController, UICollectionViewDele
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.delegate = self
         navigationController?.setNavigationBarHidden(false, animated: animated)
         SidebarToggleButtonConfiguration.configure(sidebarButton, in: splitViewController)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: sidebarButton)
         navigationItem.rightBarButtonItem = nil
+    }
+    
+    func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        if viewController === self {
+            SidebarToggleButtonConfiguration.configure(sidebarButton, in: splitViewController)
+            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: sidebarButton)
+            navigationItem.rightBarButtonItem = nil
+            return
+        }
+        
+        let button = makeLibrarySidebarButton(target: self, action: #selector(collapseSidebarFromAnyChild(_:)))
+        SidebarToggleButtonConfiguration.configure(button, in: splitViewController)
+        viewController.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: button)
     }
     
     private func configureCollectionView() {
@@ -113,6 +127,10 @@ final class LibrarySidebarViewController: UIViewController, UICollectionViewDele
     @objc private func collapseSidebarFromRoot() {
         (splitViewController as? BrowserSplitViewController)?.setLibrarySidebarVisible(false)
     }
+    
+    @objc private func collapseSidebarFromAnyChild(_ sender: UIButton) {
+        (splitViewController as? BrowserSplitViewController)?.collapseLibrarySidebar(from: sender)
+    }
 }
 
 private func makeLibrarySidebarButton(target: AnyObject, action: Selector) -> UIButton {
@@ -155,7 +173,6 @@ private final class LibrarySidebarDetailViewController: UIViewController {
     private let contentViewController: UIViewController
     private let detailTitle: String
     private let maximumContentWidth: CGFloat = 360
-    private lazy var sidebarButton = makeLibrarySidebarButton(target: self, action: #selector(collapseSidebarFromChild))
     
     init(title: String, contentViewController: UIViewController) {
         self.detailTitle = title
@@ -197,11 +214,5 @@ private final class LibrarySidebarDetailViewController: UIViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
         navigationItem.leftItemsSupplementBackButton = false
         navigationItem.leftBarButtonItem = nil
-        SidebarToggleButtonConfiguration.configure(sidebarButton, in: splitViewController)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: sidebarButton)
-    }
-    
-    @objc private func collapseSidebarFromChild() {
-        (splitViewController as? BrowserSplitViewController)?.collapseLibrarySidebar(from: sidebarButton)
     }
 }

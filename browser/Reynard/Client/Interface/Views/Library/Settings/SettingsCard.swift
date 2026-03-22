@@ -102,7 +102,7 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
         androidUserAgentSwitch.addTarget(self, action: #selector(androidUserAgentSwitchChanged), for: .valueChanged)
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleJITLessModeActivated),
+            selector: #selector(handleJITLessModeActivated(_:)),
             name: Notification.Name(rawValue: "me.minh-ton.reynard.jitless-mode-activated"),
             object: nil
         )
@@ -284,13 +284,9 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
         isJITLessModeActive = JITController.shared.isJITLessModeActive
     }
     
-    @objc private func handleJITLessModeActivated() {
-        guard !isJITLessModeActive else {
-            return
-        }
-        
-        isJITLessModeActive = true
-        tableView.reloadSections(IndexSet(integer: Section.jit.rawValue), with: .automatic)
+    @objc private func handleJITLessModeActivated(_ notification: Notification) {
+        refreshControls()
+        tableView.reloadData()
     }
     
     private func presentPairingFilePicker() {

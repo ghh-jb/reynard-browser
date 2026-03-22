@@ -243,7 +243,8 @@ final class JITFailureViewController: UIViewController {
     }
     
     @objc private func useJITLessMode() {
-        onUseJITLessMode?()
-        dismiss(animated: true)
+        dismiss(animated: true) { [onUseJITLessMode] in
+            onUseJITLessMode?()
+        }
     }
 }

@@ -32,6 +32,9 @@ typedef struct {
 } DebugSession;
 
 dispatch_queue_t debugServiceQueue(void);
+dispatch_queue_t debugSessionStateQueue(void);
+NSMutableSet<NSNumber *> *activeDebugSessionPIDs(void);
+NSMutableSet<NSNumber *> *detachRequestedDebugSessionPIDs(void);
 
 DeviceProvider *_Nullable createDeviceProvider(
                                                NSString *pairingFilePath, NSString *targetAddress,

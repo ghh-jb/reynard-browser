@@ -37,6 +37,63 @@ dispatch_queue_t debugServiceQueue(void) {
     return queue;
 }
 
+dispatch_queue_t debugSessionStateQueue(void) {
+    static dispatch_queue_t queue;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        queue = dispatch_queue_create("me.minh-ton.jit.debug-service-state", DISPATCH_QUEUE_SERIAL);
+    });
+    return queue;
+}
+
+NSMutableSet<NSNumber *> *activeDebugSessionPIDs(void) {
+    static NSMutableSet<NSNumber *> *activePIDs;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        activePIDs = [NSMutableSet set];
+    });
+    return activePIDs;
+}
+
+NSMutableSet<NSNumber *> *detachRequestedDebugSessionPIDs(void) {
+    static NSMutableSet<NSNumber *> *requestedPIDs;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        requestedPIDs = [NSMutableSet set];
+    });
+    return requestedPIDs;
+}
+
+static void registerDebugSessionPID(int32_t pid) {
+    if (pid <= 0) return;
+    
+    dispatch_sync(debugSessionStateQueue(), ^{
+        NSNumber *key = @(pid);
+        [activeDebugSessionPIDs() addObject:key];
+        [detachRequestedDebugSessionPIDs() removeObject:key];
+    });
+}
+
+static void unregisterDebugSessionPID(int32_t pid) {
+    if (pid <= 0) return;
+    
+    dispatch_sync(debugSessionStateQueue(), ^{
+        NSNumber *key = @(pid);
+        [activeDebugSessionPIDs() removeObject:key];
+        [detachRequestedDebugSessionPIDs() removeObject:key];
+    });
+}
+
+static BOOL shouldDetachDebugSessionPID(int32_t pid) {
+    if (pid <= 0) return NO;
+    
+    __block BOOL shouldDetach = NO;
+    dispatch_sync(debugSessionStateQueue(), ^{
+        shouldDetach = [detachRequestedDebugSessionPIDs() containsObject:@(pid)];
+    });
+    return shouldDetach;
+}
+
 // MARK: JIT on iOS 17+
 
 static void startHeartbeat(DeviceProvider *provider) {
@@ -115,7 +172,7 @@ BOOL configureNoAckMode(DebugProxyHandle *debugProxy, NSString **responseOut, NS
     for (NSUInteger ackCount = 0; ackCount < 2; ackCount++) {
         IdeviceFfiError *ffiError = debug_proxy_send_ack(debugProxy);
         if (!ffiError) continue;
-
+        
         if (error) *error = MakeError(NoAckConfigureFailed);
         idevice_error_free(ffiError);
         return NO;
@@ -253,7 +310,25 @@ static BOOL allocateRXRegion(DebugProxyHandle *debugProxy, uint64_t regionSize, 
     return YES;
 }
 
+static BOOL detachDebuggerSession(DebugProxyHandle *debugProxy, int32_t pid, DeviceLogHandler logHandler) {
+    NSString *detachResponse = nil;
+    NSError *detachError = nil;
+    if (sendDebugCommand(debugProxy, @"D", &detachResponse, &detachError)) {
+        logger([NSString stringWithFormat:@"Detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"], logHandler);
+        return YES;
+    }
+    
+    if (!isNotConnectedError(detachError)) {
+        logger([NSString stringWithFormat:@"Detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"], logHandler);
+    }
+    return NO;
+}
+
 void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHandler) {
+    if (!session) return;
+    
+    registerDebugSessionPID(pid);
+    
     NSError *commandError = nil;
     BOOL exitPacketPresent = NO;
     BOOL detachedByCommand = NO;
@@ -265,6 +340,11 @@ void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHan
         if (!sendDebugCommand(session->debugProxy, @"c", &stopResponse, &commandError)) {
             if (!isNotConnectedError(commandError)) logger([NSString stringWithFormat:@"Debug loop ended for pid %d: %@", pid, commandError.localizedDescription ?: @"continue failed"], logHandler);
             break;
+        }
+        
+        if (shouldDetachDebugSessionPID(pid)) {
+            detachedByCommand = detachDebuggerSession(session->debugProxy, pid, logHandler);
+            if (detachedByCommand) break;
         }
         
         if ([stopResponse hasPrefix:@"W"] || [stopResponse hasPrefix:@"X"]) {
@@ -305,15 +385,7 @@ void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHan
             if (!writeRegisterValue(session->debugProxy, @"20", pc + 4, threadID, &commandError)) break;
             
             if (x16 == 0) {
-                detachedByCommand = YES;
-                
-                NSString *detachResponse = nil;
-                NSError *detachError = nil;
-                if (sendDebugCommand(session->debugProxy, @"D", &detachResponse, &detachError)) {
-                    logger([NSString stringWithFormat:@"Detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"], logHandler);
-                } else if (!isNotConnectedError(detachError)) {
-                    logger([NSString stringWithFormat:@"Detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"], logHandler);
-                }
+                detachedByCommand = detachDebuggerSession(session->debugProxy, pid, logHandler);
                 break;
             }
             
@@ -353,15 +425,10 @@ void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHan
     }
     
     if (!exitPacketPresent && !detachedByCommand) {
-        NSString *detachResponse = nil;
-        NSError *detachError = nil;
-        if (sendDebugCommand(session->debugProxy, @"D", &detachResponse, &detachError)) {
-            logger([NSString stringWithFormat:@"Detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"], logHandler);
-        } else if (!isNotConnectedError(detachError)) {
-            logger([NSString stringWithFormat:@"Detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"], logHandler);
-        }
+        detachedByCommand = detachDebuggerSession(session->debugProxy, pid, logHandler);
     }
     
+    unregisterDebugSessionPID(pid);
     freeDebugSession(session);
     free(session);
 }
@@ -674,12 +741,12 @@ BOOL sendLegacyDebugCommand(LegacyDebugConnection *connection, NSString *command
         if (error && !*error) *error = MakeError(LegacyDebugCommandPacketFailed);
         return NO;
     }
-
+    
     if (!readLegacyDebugResponse(connection, responseOut, error)) {
         if (error && !*error) *error = MakeError(LegacyDebugCommandResponseFailed);
         return NO;
     }
-
+    
     return YES;
 }
 
@@ -872,8 +939,24 @@ static BOOL allocateLegacyRXRegion(LegacyDebugConnection *connection, uint64_t r
     return YES;
 }
 
+static BOOL detachLegacyDebuggerSession(LegacyDebugConnection *connection, int32_t pid, DeviceLogHandler logHandler) {
+    NSString *detachResponse = nil;
+    NSError *detachError = nil;
+    if (sendLegacyDebugCommand(connection, @"D", &detachResponse, &detachError)) {
+        logger([NSString stringWithFormat:@"Legacy detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"], logHandler);
+        return YES;
+    }
+    
+    if (!isNotConnectedError(detachError)) {
+        logger([NSString stringWithFormat:@"Legacy detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"], logHandler);
+    }
+    return NO;
+}
+
 void runLegacyDebugService(int32_t pid, LegacyDebugSession *session, DeviceLogHandler logHandler) {
     if (!session) return;
+    
+    registerDebugSessionPID(pid);
     
     NSError *commandError = nil;
     BOOL exitPacketPresent = NO;
@@ -888,6 +971,11 @@ void runLegacyDebugService(int32_t pid, LegacyDebugSession *session, DeviceLogHa
                 logger([NSString stringWithFormat:@"Legacy debug loop ended for pid %d: %@", pid, commandError.localizedDescription ?: @"continue failed"], logHandler);
             }
             break;
+        }
+        
+        if (shouldDetachDebugSessionPID(pid)) {
+            detachedByCommand = detachLegacyDebuggerSession(&session->connection, pid, logHandler);
+            if (detachedByCommand) break;
         }
         
         if ([stopResponse hasPrefix:@"W"] || [stopResponse hasPrefix:@"X"]) {
@@ -928,15 +1016,7 @@ void runLegacyDebugService(int32_t pid, LegacyDebugSession *session, DeviceLogHa
             if (!writeLegacyRegisterValue(&session->connection, @"20", pc + 4, threadID, &commandError)) break;
             
             if (x16 == 0) {
-                detachedByCommand = YES;
-                
-                NSString *detachResponse = nil;
-                NSError *detachError = nil;
-                if (sendLegacyDebugCommand(&session->connection, @"D", &detachResponse, &detachError)) {
-                    logger([NSString stringWithFormat:@"Legacy detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"], logHandler);
-                } else if (!isNotConnectedError(detachError)) {
-                    logger([NSString stringWithFormat:@"Legacy detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"], logHandler);
-                }
+                detachedByCommand = detachLegacyDebuggerSession(&session->connection, pid, logHandler);
                 break;
             }
             
@@ -975,16 +1055,9 @@ void runLegacyDebugService(int32_t pid, LegacyDebugSession *session, DeviceLogHa
         }
     }
     
-    if (!exitPacketPresent && !detachedByCommand) {
-        NSString *detachResponse = nil;
-        NSError *detachError = nil;
-        if (sendLegacyDebugCommand(&session->connection, @"D", &detachResponse, &detachError)) {
-            logger([NSString stringWithFormat:@"Legacy detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"], logHandler);
-        } else if (!isNotConnectedError(detachError)) {
-            logger([NSString stringWithFormat:@"Legacy detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"], logHandler);
-        }
-    }
+    if (!exitPacketPresent && !detachedByCommand) detachedByCommand = detachLegacyDebuggerSession(&session->connection, pid, logHandler);
     
+    unregisterDebugSessionPID(pid);
     closeLegacyDebugConnection(&session->connection);
     free(session);
 }

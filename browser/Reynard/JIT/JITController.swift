@@ -103,6 +103,12 @@ final class JITController {
         preflightWatchdogs.removeValue(forKey: pid)
     }
     
+    private func cancelAllPreflightWatchdogs() {
+        for pid in preflightWatchdogs.keys {
+            cancelPreflightWatchdog(for: pid)
+        }
+    }
+    
     private func handleJITFailure(error: NSError) {
         DispatchQueue.main.async {
             guard !self.hasHandledFailure else {
@@ -143,7 +149,17 @@ final class JITController {
     }
     
     private func activateJITLessMode() {
+        guard !isJITLessModeActive else {
+            return
+        }
+        
         isJITLessModeActive = true
+        attachQueue.async {
+            self.cancelAllPreflightWatchdogs()
+            self.attachedPIDs.removeAll()
+            JITEnabler.shared.detachAllJITSessions()
+        }
+        
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "me.minh-ton.reynard.jitless-mode-activated"), object: nil)
         }

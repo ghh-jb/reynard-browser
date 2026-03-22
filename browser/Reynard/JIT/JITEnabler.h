@@ -21,6 +21,8 @@ typedef void (^LogHandler)(NSString *message);
 
     NS_SWIFT_NAME(enableJIT(forPID:logHandler:));
 
+- (void)detachAllJITSessions NS_SWIFT_NAME(detachAllJITSessions());
+
 @end
 
 NS_ASSUME_NONNULL_END

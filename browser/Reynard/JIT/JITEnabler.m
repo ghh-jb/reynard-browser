@@ -153,6 +153,14 @@
     return NO;
 }
 
+- (void)detachAllJITSessions {
+    dispatch_sync(debugSessionStateQueue(), ^{
+        NSMutableSet<NSNumber *> *active = activeDebugSessionPIDs();
+        NSMutableSet<NSNumber *> *detachRequested = detachRequestedDebugSessionPIDs();
+        [detachRequested unionSet:active];
+    });
+}
+
 - (DeviceProvider *)getProvider:(NSError **)error {
     __block DeviceProvider *provider = NULL;
     __block NSError *providerError = nil;

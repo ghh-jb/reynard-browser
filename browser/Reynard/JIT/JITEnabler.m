@@ -41,8 +41,8 @@ static NSString *const enablerErrorDomain = @"JITEnabler";
 }
 
 - (BOOL)enableJITForPID:(int32_t)pid logHandler:(LogHandler)logHandler error:(NSError **)error {
-    if (@available(iOS 17, *)) {
-        // For iOS 17 and later
+    if (@available(iOS 17.4, *)) {
+        // For iOS 17.4 and later
         // Thanks StikDebug!
         // https://github.com/StephenDev0/StikDebug
         

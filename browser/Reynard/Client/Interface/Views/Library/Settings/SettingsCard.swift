@@ -85,6 +85,7 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
     private let androidUserAgentSwitch = UISwitch()
     private let backgroundQueue = DispatchQueue(label: "me.minh-ton.reynard.settings.backgroundqueue", qos: .userInitiated)
     private var isJITLessModeActive = false
+    private var activeDDIDownloadToken: UUID?
     
     init() {
         super.init(style: .insetGrouped)
@@ -318,13 +319,133 @@ final class SettingsRootViewController: SettingsTableViewController, UIDocumentP
     @objc private func jitSwitchChanged(_ sender: UISwitch) {
         let isOn = sender.isOn
         
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            self?.preferences.isJITEnabled = isOn
+        preferences.isJITEnabled = isOn
+        
+        guard isOn else {
+            presentJITRestartAlert()
+            return
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
-            self?.presentJITRestartAlert()
+        guard !DDIManager.shared.hasRequiredDDIFiles() else {
+            presentJITRestartAlert()
+            return
         }
+        
+        presentDDIDownloadAlert(for: sender)
+    }
+    
+    private func presentDDIDownloadAlert(for sender: UISwitch) {
+        sender.isEnabled = false
+        
+        let alert = UIAlertController(
+            title: "Preparing JIT",
+            message: "Since this is your first time enabling JIT, Reynard needs to download and mount the Developer Disk Image. This is required for JIT to work properly.",
+            preferredStyle: .alert
+        )
+        
+        let progressView = UIProgressView(progressViewStyle: .default)
+        progressView.translatesAutoresizingMaskIntoConstraints = false
+        progressView.progress = 0
+        
+        let token = UUID()
+        activeDDIDownloadToken = token
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { [weak self] _ in
+            self?.cancelDDIDownload(for: sender, token: token)
+        })
+        
+        present(alert, animated: true) { [weak self] in
+            self?.attachProgressView(progressView, to: alert)
+            self?.startDDIDownload(for: sender, alert: alert, progressView: progressView, token: token)
+        }
+    }
+    
+    private func attachProgressView(_ progressView: UIProgressView, to alert: UIAlertController) {
+        guard let messageText = alert.message,
+              let messageLabel = alert.view.firstDescendantLabel(withText: messageText) else {
+            return
+        }
+        
+        alert.view.addSubview(progressView)
+        let cancelAnchorView: UIView? = {
+            if let button = alert.view.firstDescendantButton(withTitle: "Cancel") {
+                return button
+            }
+            
+            return alert.view.firstDescendantView(containingLabelText: "Cancel")
+        }()
+        
+        var constraints = [
+            progressView.widthAnchor.constraint(equalTo: messageLabel.widthAnchor),
+            progressView.centerXAnchor.constraint(equalTo: messageLabel.centerXAnchor),
+            progressView.topAnchor.constraint(greaterThanOrEqualTo: messageLabel.bottomAnchor, constant: 12),
+        ]
+        
+        if let cancelAnchorView {
+            let verticalGuide = UILayoutGuide()
+            alert.view.addLayoutGuide(verticalGuide)
+            constraints.append(contentsOf: [
+                verticalGuide.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 16),
+                verticalGuide.bottomAnchor.constraint(equalTo: cancelAnchorView.topAnchor, constant: -16),
+                progressView.centerYAnchor.constraint(equalTo: verticalGuide.centerYAnchor),
+            ])
+        } else {
+            constraints.append(progressView.topAnchor.constraint(equalTo: messageLabel.bottomAnchor, constant: 20))
+        }
+        
+        NSLayoutConstraint.activate(constraints)
+    }
+    
+    private func startDDIDownload(for sender: UISwitch, alert: UIAlertController, progressView: UIProgressView, token: UUID) {
+        DDIManager.shared.ensureRequiredDDIFiles(
+            progress: { [weak self] value in
+                guard let self, self.activeDDIDownloadToken == token else {
+                    return
+                }
+                progressView.setProgress(Float(value), animated: true)
+            },
+            completion: { [weak self] result in
+                guard let self, self.activeDDIDownloadToken == token else {
+                    return
+                }
+                
+                self.activeDDIDownloadToken = nil
+                sender.isEnabled = self.preferences.hasPairingFile
+                
+                switch result {
+                case .success:
+                    self.dismissAlertIfPresented(alert) {
+                        self.presentJITRestartAlert()
+                    }
+                case .failure(let error):
+                    self.preferences.isJITEnabled = false
+                    sender.setOn(false, animated: true)
+                    self.dismissAlertIfPresented(alert) {
+                        self.presentAlert(title: "Download Failed", message: error.localizedDescription)
+                    }
+                }
+            }
+        )
+    }
+    
+    private func cancelDDIDownload(for sender: UISwitch, token: UUID) {
+        guard activeDDIDownloadToken == token else {
+            return
+        }
+        
+        activeDDIDownloadToken = nil
+        DDIManager.shared.cancelActiveDownload()
+        preferences.isJITEnabled = false
+        sender.setOn(false, animated: true)
+        sender.isEnabled = preferences.hasPairingFile
+    }
+    
+    private func dismissAlertIfPresented(_ alert: UIAlertController, completion: @escaping () -> Void) {
+        guard presentedViewController === alert else {
+            completion()
+            return
+        }
+        
+        alert.dismiss(animated: true, completion: completion)
     }
     
     @objc private func androidUserAgentSwitchChanged() {
@@ -535,5 +656,49 @@ extension UIViewController {
 private extension UIView {
     var containingViewController: UIViewController? {
         sequence(first: next, next: { $0?.next }).first(where: { $0 is UIViewController }) as? UIViewController
+    }
+    
+    func firstDescendantLabel(withText text: String) -> UILabel? {
+        if let label = self as? UILabel,
+           label.text == text {
+            return label
+        }
+        
+        for subview in subviews {
+            if let match = subview.firstDescendantLabel(withText: text) {
+                return match
+            }
+        }
+        
+        return nil
+    }
+    
+    func firstDescendantButton(withTitle title: String) -> UIButton? {
+        if let button = self as? UIButton,
+           button.currentTitle == title {
+            return button
+        }
+        
+        for subview in subviews {
+            if let match = subview.firstDescendantButton(withTitle: title) {
+                return match
+            }
+        }
+        
+        return nil
+    }
+    
+    func firstDescendantView(containingLabelText text: String) -> UIView? {
+        if subviews.contains(where: { ($0 as? UILabel)?.text == text }) {
+            return self
+        }
+        
+        for subview in subviews {
+            if let match = subview.firstDescendantView(containingLabelText: text) {
+                return match
+            }
+        }
+        
+        return nil
     }
 }

@@ -1062,3 +1062,210 @@ void runLegacyDebugService(int32_t pid, LegacyDebugSession *session, DeviceLogHa
     free(session);
 }
 
+// MARK: Developer Disk Image Mounting
+
+// There's actually a pretty helpful example from the 'idevice' submodule for this
+// at ./support/idevice/cpp/examples/mounter.cpp, so I just ended up copying most
+// of the logic from there with only a few modifications here.
+
+static NSURL *ddiDirectoryURL(NSError **error) {
+    NSURL *documentsDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
+    if (!documentsDirectory) {
+        if (error) *error = MakeError(DDIMountPathResolveFailed);
+        return nil;
+    }
+    
+    return [documentsDirectory URLByAppendingPathComponent:@"DDI" isDirectory:YES];
+}
+
+static NSData *ddiFileData(NSURL *ddiDirectory, NSString *fileName, NSError **error) {
+    NSURL *fileURL = [ddiDirectory URLByAppendingPathComponent:fileName isDirectory:NO];
+    NSError *readError = nil;
+    NSData *data = [NSData dataWithContentsOfURL:fileURL options:NSDataReadingMappedIfSafe error:&readError];
+    if (!data || data.length == 0) {
+        if (error) *error = MakeError(DDIFileReadFailed);
+        return nil;
+    }
+    return data;
+}
+
+static BOOL isImageMounted(ImageMounterHandle *mounterClient, const char *imageType, BOOL *mountedOut, NSError **error) {
+    uint8_t *signature = NULL;
+    size_t signatureLength = 0;
+    
+    IdeviceFfiError *ffiError = image_mounter_lookup_image(mounterClient, imageType, &signature, &signatureLength);
+    if (!ffiError) {
+        if (signature) idevice_data_free(signature, signatureLength);
+        if (mountedOut) *mountedOut = YES;
+        return YES;
+    }
+    
+    BOOL notFound = ffiError->code == -14;
+    idevice_error_free(ffiError);
+    
+    if (notFound) {
+        if (mountedOut) *mountedOut = NO;
+        return YES;
+    }
+    
+    if (error) *error = MakeError(DDIMountStateQueryFailed);
+    return NO;
+}
+
+BOOL ensureDDIMounted(DeviceProvider *provider, NSError **error) {
+    if (!provider || !provider->handle) {
+        if (error) *error = MakeError(DeviceProviderCreateFailed);
+        return NO;
+    }
+    
+    NSURL *ddiDirectory = ddiDirectoryURL(error);
+    if (!ddiDirectory) return NO;
+    
+    LockdowndClientHandle *lockdownClient = NULL;
+    IdevicePairingFile *pairingFile = NULL;
+    ImageMounterHandle *mounterClient = NULL;
+    IdeviceFfiError *ffiError = NULL;
+    plist_t versionNode = NULL;
+    plist_t chipIDNode = NULL;
+    char *versionCString = NULL;
+    NSString *versionString = nil;
+    NSInteger majorVersion = 0;
+    const char *imageType = NULL;
+    BOOL mounted = NO;
+    NSData *legacyImageData = nil;
+    NSData *legacySignatureData = nil;
+    NSData *modernImageData = nil;
+    NSData *modernTrustCacheData = nil;
+    NSData *modernBuildManifestData = nil;
+    uint64_t uniqueChipID = 0;
+    BOOL success = NO;
+    
+    ffiError = lockdownd_connect(provider->handle, &lockdownClient);
+    if (ffiError) {
+        if (error) *error = MakeError(LockdowndConnectFailed);
+        idevice_error_free(ffiError);
+        goto cleanup;
+    }
+    
+    ffiError = idevice_provider_get_pairing_file(provider->handle, &pairingFile);
+    if (ffiError) {
+        if (error) *error = MakeError(ProviderPairingFileFetchFailed);
+        idevice_error_free(ffiError);
+        goto cleanup;
+    }
+    
+    ffiError = lockdownd_start_session(lockdownClient, pairingFile);
+    if (ffiError) {
+        if (error) *error = MakeError(LockdowndSessionStartFailed);
+        idevice_error_free(ffiError);
+        goto cleanup;
+    }
+    
+    ffiError = lockdownd_get_value(lockdownClient, "ProductVersion", NULL, &versionNode);
+    if (ffiError) {
+        if (error) *error = MakeError(DDIDeviceVersionReadFailed);
+        idevice_error_free(ffiError);
+        goto cleanup;
+    }
+    
+    plist_get_string_val(versionNode, &versionCString);
+    if (!versionCString) {
+        if (error) *error = MakeError(DDIDeviceVersionInvalid);
+        goto cleanup;
+    }
+    
+    versionString = [NSString stringWithUTF8String:versionCString] ?: @"";
+    majorVersion = versionString.integerValue;
+    if (majorVersion <= 0) {
+        if (error) *error = MakeError(DDIDeviceVersionInvalid);
+        goto cleanup;
+    }
+    
+    ffiError = image_mounter_connect(provider->handle, &mounterClient);
+    if (ffiError) {
+        if (error) *error = MakeError(ImageMounterConnectFailed);
+        idevice_error_free(ffiError);
+        goto cleanup;
+    }
+    
+    imageType = majorVersion < 17 ? "Developer" : "Personalized";
+    if (!isImageMounted(mounterClient, imageType, &mounted, error)) {
+        goto cleanup;
+    }
+    
+    if (mounted) {
+        success = YES;
+        goto cleanup;
+    }
+    
+    if (majorVersion < 17) {
+        legacyImageData = ddiFileData(ddiDirectory, @"DeveloperDiskImage.dmg", error);
+        if (!legacyImageData) goto cleanup;
+        
+        legacySignatureData = ddiFileData(ddiDirectory, @"DeveloperDiskImage.dmg.signature", error);
+        if (!legacySignatureData) goto cleanup;
+        
+        ffiError = image_mounter_mount_developer(mounterClient,
+                                                 legacyImageData.bytes,
+                                                 legacyImageData.length,
+                                                 legacySignatureData.bytes,
+                                                 legacySignatureData.length);
+        if (ffiError) {
+            if (error) *error = MakeError(LegacyDDIMountFailed);
+            idevice_error_free(ffiError);
+            goto cleanup;
+        }
+        
+        success = YES;
+        goto cleanup;
+    }
+    
+    modernImageData = ddiFileData(ddiDirectory, @"Image.dmg", error);
+    if (!modernImageData) goto cleanup;
+    
+    modernTrustCacheData = ddiFileData(ddiDirectory, @"Image.dmg.trustcache", error);
+    if (!modernTrustCacheData) goto cleanup;
+    
+    modernBuildManifestData = ddiFileData(ddiDirectory, @"BuildManifest.plist", error);
+    if (!modernBuildManifestData) goto cleanup;
+    
+    ffiError = lockdownd_get_value(lockdownClient, "UniqueChipID", NULL, &chipIDNode);
+    if (ffiError) {
+        if (error) *error = MakeError(UniqueChipIDReadFailed);
+        idevice_error_free(ffiError);
+        goto cleanup;
+    }
+    
+    plist_get_uint_val(chipIDNode, &uniqueChipID);
+    if (uniqueChipID == 0) {
+        if (error) *error = MakeError(UniqueChipIDInvalid);
+        goto cleanup;
+    }
+    
+    ffiError = image_mounter_mount_personalized(mounterClient,
+                                                provider->handle,
+                                                modernImageData.bytes,
+                                                modernImageData.length,
+                                                modernTrustCacheData.bytes,
+                                                modernTrustCacheData.length,
+                                                modernBuildManifestData.bytes,
+                                                modernBuildManifestData.length,
+                                                NULL,
+                                                uniqueChipID);
+    if (ffiError) {
+        if (error) *error = MakeError(ModernDDIMountFailed);
+        idevice_error_free(ffiError);
+        goto cleanup;
+    }
+    
+    success = YES;
+    
+cleanup:
+    if (versionCString) free(versionCString);
+    if (chipIDNode) plist_free(chipIDNode);
+    if (versionNode) plist_free(versionNode);
+    if (mounterClient) image_mounter_free(mounterClient);
+    if (pairingFile) idevice_pairing_file_free(pairingFile);
+    if (lockdownClient) lockdownd_client_free(lockdownClient);
+    return success;
+}

@@ -13,6 +13,7 @@
 
 @property(nonatomic, assign) DeviceProvider *sharedProvider;
 @property(nonatomic, strong) dispatch_queue_t providerQueue;
+@property(nonatomic, assign) BOOL didEnsureDDIMounted;
 
 - (DeviceProvider *)getProvider:(NSError **)error;
 
@@ -34,6 +35,7 @@
     if (self) {
         _sharedProvider = NULL;
         _providerQueue = dispatch_queue_create("me.minh-ton.jit.enabler.provider", DISPATCH_QUEUE_SERIAL);
+        _didEnsureDDIMounted = NO;
     }
     return self;
 }
@@ -164,8 +166,22 @@
 - (DeviceProvider *)getProvider:(NSError **)error {
     __block DeviceProvider *provider = NULL;
     __block NSError *providerError = nil;
+    
     dispatch_sync(self.providerQueue, ^{
-        if (!self.sharedProvider) self.sharedProvider = createDeviceProvider([self pairingFilePath], @"10.7.0.1", &providerError);
+        if (!self.sharedProvider) {
+            self.sharedProvider = createDeviceProvider([self pairingFilePath], @"10.7.0.1", &providerError);
+            self.didEnsureDDIMounted = NO;
+        }
+        
+        if (self.sharedProvider && !self.didEnsureDDIMounted) {
+            if (!ensureDDIMounted(self.sharedProvider, &providerError)) {
+                provider = NULL;
+                return;
+            }
+            
+            self.didEnsureDDIMounted = YES;
+        }
+        
         provider = self.sharedProvider;
     });
     

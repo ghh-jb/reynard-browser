@@ -90,6 +90,18 @@ typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
     LegacyDebugCommandResponseFailed = -53,
     LegacyContinuePacketFailed = -54,
     LegacyContinueResponseFailed = -55,
+
+    // Developer Disk Image mounting
+    DDIMountPathResolveFailed = -56,
+    DDIFileReadFailed = -57,
+    ImageMounterConnectFailed = -58,
+    DDIDeviceVersionReadFailed = -59,
+    DDIDeviceVersionInvalid = -60,
+    DDIMountStateQueryFailed = -61,
+    LegacyDDIMountFailed = -62,
+    UniqueChipIDReadFailed = -63,
+    UniqueChipIDInvalid = -64,
+    ModernDDIMountFailed = -65,
 };
 
 NSString *ErrorDescription(ErrorCode code);

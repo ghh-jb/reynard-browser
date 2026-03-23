@@ -20,12 +20,15 @@ typedef struct HeartbeatClientHandle HeartbeatClientHandle;
 typedef struct IdeviceHandle IdeviceHandle;
 typedef struct IdevicePairingFile IdevicePairingFile;
 typedef struct IdeviceProviderHandle IdeviceProviderHandle;
+typedef struct ImageMounterHandle ImageMounterHandle;
 typedef struct LockdowndClientHandle LockdowndClientHandle;
 typedef struct ProcessControlHandle ProcessControlHandle;
 typedef struct ReadWriteOpaque ReadWriteOpaque;
 typedef struct RemoteServerHandle RemoteServerHandle;
 typedef struct RsdHandshakeHandle RsdHandshakeHandle;
 typedef struct CoreDeviceProxyHandle CoreDeviceProxyHandle;
+
+typedef void *plist_t;
 
 typedef struct IdeviceFfiError {
   int32_t code;
@@ -52,7 +55,28 @@ IdeviceFfiError *lockdownd_start_session(LockdowndClientHandle *client,
 IdeviceFfiError *lockdownd_start_service(LockdowndClientHandle *client,
                                          const char *identifier, uint16_t *port,
                                          bool *ssl);
+IdeviceFfiError *lockdownd_get_value(LockdowndClientHandle *client,
+                                     const char *key, const char *domain,
+                                     plist_t *out_plist);
 void lockdownd_client_free(LockdowndClientHandle *handle);
+
+IdeviceFfiError *image_mounter_connect(IdeviceProviderHandle *provider,
+                                       ImageMounterHandle **client);
+void image_mounter_free(ImageMounterHandle *handle);
+IdeviceFfiError *image_mounter_lookup_image(ImageMounterHandle *client,
+                                            const char *image_type,
+                                            uint8_t **signature,
+                                            size_t *signature_len);
+IdeviceFfiError *image_mounter_mount_developer(ImageMounterHandle *client,
+                                               const uint8_t *image,
+                                               size_t image_len,
+                                               const uint8_t *signature,
+                                               size_t signature_len);
+IdeviceFfiError *image_mounter_mount_personalized(
+    ImageMounterHandle *client, IdeviceProviderHandle *provider,
+    const uint8_t *image, size_t image_len, const uint8_t *trust_cache,
+    size_t trust_cache_len, const uint8_t *build_manifest,
+    size_t build_manifest_len, const void *info_plist, uint64_t unique_chip_id);
 
 IdeviceFfiError *heartbeat_connect(IdeviceProviderHandle *provider,
                                    HeartbeatClientHandle **client);
@@ -108,7 +132,12 @@ DebugserverCommandHandle *debugserver_command_new(const char *name,
                                                   uintptr_t argv_count);
 void debugserver_command_free(DebugserverCommandHandle *command);
 
+void idevice_data_free(uint8_t *data, uintptr_t len);
 void idevice_error_free(IdeviceFfiError *err);
 void idevice_string_free(char *string);
+
+void plist_free(plist_t plist);
+void plist_get_string_val(plist_t node, char **val);
+void plist_get_uint_val(plist_t node, uint64_t *val);
 
 #endif /* IdeviceFFI_h */

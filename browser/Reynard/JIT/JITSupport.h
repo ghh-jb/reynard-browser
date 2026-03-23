@@ -16,19 +16,19 @@ typedef struct DeviceProvider DeviceProvider;
 typedef void (^DeviceLogHandler)(NSString *message);
 
 typedef struct {
-    int socketFD;
-    SSLContextRef sslContext;
+  int socketFD;
+  SSLContextRef sslContext;
 } LegacyDebugConnection;
 
 typedef struct LegacyDebugSession {
-    LegacyDebugConnection connection;
+  LegacyDebugConnection connection;
 } LegacyDebugSession;
 
 typedef struct {
-    AdapterHandle *adapter;
-    RsdHandshakeHandle *handshake;
-    RemoteServerHandle *remoteServer;
-    DebugProxyHandle *debugProxy;
+  AdapterHandle *adapter;
+  RsdHandshakeHandle *handshake;
+  RemoteServerHandle *remoteServer;
+  DebugProxyHandle *debugProxy;
 } DebugSession;
 
 dispatch_queue_t debugServiceQueue(void);
@@ -37,8 +37,10 @@ NSMutableSet<NSNumber *> *activeDebugSessionPIDs(void);
 NSMutableSet<NSNumber *> *detachRequestedDebugSessionPIDs(void);
 
 DeviceProvider *_Nullable createDeviceProvider(
-                                               NSString *pairingFilePath, NSString *targetAddress,
-                                               NSError *_Nullable *_Nullable error);
+    NSString *pairingFilePath, NSString *targetAddress,
+    NSError *_Nullable *_Nullable error);
+BOOL ensureDDIMounted(DeviceProvider *provider,
+                      NSError *_Nullable *_Nullable error);
 
 BOOL sendDebugCommand(DebugProxyHandle *debugProxy, NSString *commandString,
                       NSString *_Nullable *_Nullable responseOut,

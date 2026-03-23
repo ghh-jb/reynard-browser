@@ -41,6 +41,7 @@ DeviceProvider *_Nullable createDeviceProvider(
     NSError *_Nullable *_Nullable error);
 BOOL ensureDDIMounted(DeviceProvider *provider,
                       NSError *_Nullable *_Nullable error);
+size_t getMountedDeviceCount(DeviceProvider *provider);
 
 BOOL sendDebugCommand(DebugProxyHandle *debugProxy, NSString *commandString,
                       NSString *_Nullable *_Nullable responseOut,

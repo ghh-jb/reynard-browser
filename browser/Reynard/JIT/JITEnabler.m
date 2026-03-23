@@ -14,8 +14,11 @@
 @property(nonatomic, assign) DeviceProvider *sharedProvider;
 @property(nonatomic, strong) dispatch_queue_t providerQueue;
 @property(nonatomic, assign) BOOL didEnsureDDIMounted;
+@property(nonatomic, strong) dispatch_source_t ddiMountedMonitor;
 
 - (DeviceProvider *)getProvider:(NSError **)error;
+- (void)startDDIMonitor;
+- (void)stopDDIMonitor;
 
 @end
 
@@ -36,6 +39,7 @@
         _sharedProvider = NULL;
         _providerQueue = dispatch_queue_create("me.minh-ton.jit.enabler.provider", DISPATCH_QUEUE_SERIAL);
         _didEnsureDDIMounted = NO;
+        _ddiMountedMonitor = nil;
     }
     return self;
 }
@@ -178,8 +182,8 @@
                 provider = NULL;
                 return;
             }
-            
             self.didEnsureDDIMounted = YES;
+            [self startDDIMonitor];
         }
         
         provider = self.sharedProvider;
@@ -189,7 +193,42 @@
     return provider;
 }
 
+- (void)startDDIMonitor {
+    if (self.ddiMountedMonitor) return;
+    
+    dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, self.providerQueue);
+    if (!timer) return;
+    
+    dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC), NSEC_PER_SEC, 0);
+    
+    __weak typeof(self) weakSelf = self;
+    dispatch_source_set_event_handler(timer, ^{
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        if (!strongSelf.sharedProvider || !strongSelf.didEnsureDDIMounted) return;
+        
+        size_t mountedDeviceCount = getMountedDeviceCount(strongSelf.sharedProvider);
+        if (mountedDeviceCount > 0) return;
+        
+        [strongSelf stopDDIMonitor];
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[NSNotificationCenter defaultCenter] postNotificationName:@"me-minh-ton.jit.ddimonitor" object:nil userInfo:nil];
+        });
+    });
+    
+    self.ddiMountedMonitor = timer;
+    dispatch_resume(timer);
+}
+
+- (void)stopDDIMonitor {
+    if (!self.ddiMountedMonitor) return;
+    dispatch_source_cancel(self.ddiMountedMonitor);
+    self.ddiMountedMonitor = nil;
+}
+
 - (void)dealloc {
+    [self stopDDIMonitor];
     if (_sharedProvider) {
         freeDeviceProvider(_sharedProvider);
         _sharedProvider = NULL;

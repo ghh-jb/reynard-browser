@@ -36,6 +36,13 @@ final class JITController {
             name: NSNotification.Name("GeckoRuntimeChildProcessDidStart"),
             object: nil
         )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleDDIUnmountedNotification(_:)),
+            name: Notification.Name("me-minh-ton.jit.ddimonitor"),
+            object: nil
+        )
     }
     
     private func isDDIMissing() -> Bool {
@@ -181,16 +188,52 @@ final class JITController {
             messageText: "The required Developer Disk Image files for enabling JIT were not found.\n\nJIT has been disabled. Quit the app using the button below, then re-enable JIT from the browser settings.",
             actionButtonTitle: "Quit Reynard",
             onPrimaryAction: {
-                BrowserPreferences.shared.isJITEnabled = false
-                UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
-                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-                    exit(EXIT_SUCCESS)
-                }
+                self.disableJITAndQuit()
             }
         )
         viewController.modalPresentationStyle = .pageSheet
         viewController.modalTransitionStyle = .coverVertical
         presenter.present(viewController, animated: true)
+    }
+    
+    private func presentUnmountedDDIFailureScreen(retryCount: Int = 0) {
+        guard retryCount <= failurePresentationRetryLimit else {
+            return
+        }
+        
+        guard let presenter = Self.topViewControllerForPresentation() else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) {
+                self.presentUnmountedDDIFailureScreen(retryCount: retryCount + 1)
+            }
+            return
+        }
+        
+        let viewController = JITFailureViewController(
+            errorCode: Int(ENOENT),
+            errorDescription: "Developer Disk Image was unmounted unexpectedly.",
+            showsErrorDetails: false,
+            titleText: "Failed to enable JIT",
+            messageText: "The required Developer Disk Image for enabling JIT has been unmounted unexpectedly.\n\nQuit the app using the button below and relaunch it manually to continue using the browser.",
+            actionButtonTitle: "Quit Reynard",
+            onPrimaryAction: {
+                self.quitApp()
+            }
+        )
+        viewController.modalPresentationStyle = .pageSheet
+        viewController.modalTransitionStyle = .coverVertical
+        presenter.present(viewController, animated: true)
+    }
+    
+    private func disableJITAndQuit() {
+        BrowserPreferences.shared.isJITEnabled = false
+        quitApp()
+    }
+    
+    private func quitApp() {
+        UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+            exit(EXIT_SUCCESS)
+        }
     }
     
     private func activateJITLessMode() {
@@ -247,5 +290,20 @@ final class JITController {
         }
         
         childProcessDidStart(pid: pidNumber.int32Value, processType: processType)
+    }
+    
+    @objc private func handleDDIUnmountedNotification(_ notification: Notification) {
+        guard BrowserPreferences.shared.isJITEnabled else {
+            return
+        }
+        
+        DispatchQueue.main.async {
+            guard !self.hasHandledFailure else {
+                return
+            }
+            
+            self.hasHandledFailure = true
+            self.presentUnmountedDDIFailureScreen()
+        }
     }
 }

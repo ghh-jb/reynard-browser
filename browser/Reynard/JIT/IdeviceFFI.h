@@ -63,6 +63,9 @@ void lockdownd_client_free(LockdowndClientHandle *handle);
 IdeviceFfiError *image_mounter_connect(IdeviceProviderHandle *provider,
                                        ImageMounterHandle **client);
 void image_mounter_free(ImageMounterHandle *handle);
+IdeviceFfiError *image_mounter_copy_devices(ImageMounterHandle *client,
+                                            plist_t **devices,
+                                            size_t *devices_len);
 IdeviceFfiError *image_mounter_lookup_image(ImageMounterHandle *client,
                                             const char *image_type,
                                             uint8_t **signature,

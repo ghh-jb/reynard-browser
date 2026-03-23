@@ -1269,3 +1269,34 @@ cleanup:
     if (lockdownClient) lockdownd_client_free(lockdownClient);
     return success;
 }
+
+// From StikDebug
+size_t getMountedDeviceCount(DeviceProvider *provider) {
+    if (!provider || !provider->handle) {
+        logger(@"getMountedDeviceCount failed: missing provider handle", nil);
+        return 0;
+    }
+    
+    ImageMounterHandle *client = NULL;
+    IdeviceFfiError *ffiError = image_mounter_connect(provider->handle, &client);
+    if (ffiError) {
+        if (ffiError->message) logger([NSString stringWithFormat:@"getMountedDeviceCount image_mounter_connect failed: %s", ffiError->message], nil);
+        idevice_error_free(ffiError);
+        return 0;
+    }
+    
+    plist_t *devices = NULL;
+    size_t deviceLength = 0;
+    ffiError = image_mounter_copy_devices(client, &devices, &deviceLength);
+    image_mounter_free(client);
+    if (ffiError) {
+        if (ffiError->message) logger([NSString stringWithFormat:@"getMountedDeviceCount image_mounter_copy_devices failed: %s", ffiError->message], nil);
+        idevice_error_free(ffiError);
+        return 0;
+    }
+    
+    for (size_t i = 0; i < deviceLength; i++) if (devices[i]) plist_free(devices[i]);
+    if (devices) idevice_data_free((uint8_t *)devices, deviceLength * sizeof(plist_t));
+    
+    return deviceLength;
+}

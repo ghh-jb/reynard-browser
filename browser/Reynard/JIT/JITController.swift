@@ -24,12 +24,22 @@ final class JITController {
     private init() {}
     
     func start() {
+        guard !isDDIMissing() else {
+            hasHandledFailure = true
+            presentMissingDDIFailureScreen()
+            return
+        }
+        
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleChildProcessNotification(_:)),
             name: NSNotification.Name("GeckoRuntimeChildProcessDidStart"),
             object: nil
         )
+    }
+    
+    private func isDDIMissing() -> Bool {
+        BrowserPreferences.shared.isJITEnabled && !DDIManager.shared.hasRequiredDDIFiles()
     }
     
     private func shouldAttach(to processType: String) -> Bool {
@@ -115,21 +125,21 @@ final class JITController {
                 return
             }
             self.hasHandledFailure = true
-            self.presentFailureScreen(
+            self.presentEnablementFailureScreen(
                 error: error,
                 showsErrorDetails: error.code != Int(ETIMEDOUT)
             )
         }
     }
     
-    private func presentFailureScreen(error: NSError, showsErrorDetails: Bool, retryCount: Int = 0) {
+    private func presentEnablementFailureScreen(error: NSError, showsErrorDetails: Bool, retryCount: Int = 0) {
         guard retryCount <= failurePresentationRetryLimit else {
             return
         }
         
         guard let presenter = Self.topViewControllerForPresentation() else {
             DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) {
-                self.presentFailureScreen(error: error, showsErrorDetails: showsErrorDetails, retryCount: retryCount + 1)
+                self.presentEnablementFailureScreen(error: error, showsErrorDetails: showsErrorDetails, retryCount: retryCount + 1)
             }
             return
         }
@@ -139,8 +149,43 @@ final class JITController {
             errorCode: error.code,
             errorDescription: description,
             showsErrorDetails: showsErrorDetails,
-            onUseJITLessMode: { [weak self] in
+            titleText: "Failed to enable JIT",
+            messageText: "Please check that your pairing file is valid, your loopback VPN is on, and you're connected to a stable Wi-Fi network.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode.",
+            actionButtonTitle: "Activate JIT-Less Mode",
+            onPrimaryAction: { [weak self] in
                 self?.activateJITLessMode()
+            }
+        )
+        viewController.modalPresentationStyle = .pageSheet
+        viewController.modalTransitionStyle = .coverVertical
+        presenter.present(viewController, animated: true)
+    }
+    
+    private func presentMissingDDIFailureScreen(retryCount: Int = 0) {
+        guard retryCount <= failurePresentationRetryLimit else {
+            return
+        }
+        
+        guard let presenter = Self.topViewControllerForPresentation() else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) {
+                self.presentMissingDDIFailureScreen(retryCount: retryCount + 1)
+            }
+            return
+        }
+        
+        let viewController = JITFailureViewController(
+            errorCode: Int(ENOENT),
+            errorDescription: "Required DDI files are missing.",
+            showsErrorDetails: false,
+            titleText: "Failed to enable JIT",
+            messageText: "The required Developer Disk Image files for enabling JIT were not found.\n\nJIT has been disabled. Quit the app using the button below, then re-enable JIT from the browser settings.",
+            actionButtonTitle: "Quit Reynard",
+            onPrimaryAction: {
+                BrowserPreferences.shared.isJITEnabled = false
+                UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
+                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+                    exit(EXIT_SUCCESS)
+                }
             }
         )
         viewController.modalPresentationStyle = .pageSheet

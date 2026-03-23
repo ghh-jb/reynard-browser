@@ -36,6 +36,12 @@ final class JITFailureView: UIView {
         errorScrollView.setContentOffset(.zero, animated: false)
     }
     
+    func updateContent(title: String, message: String, buttonTitle: String) {
+        titleLabel.text = title
+        messageLabel.text = message
+        quitButton.setTitle(buttonTitle, for: .normal)
+    }
+    
     func setErrorDetailsHidden(_ hidden: Bool) {
         errorContainerView.isHidden = hidden
     }
@@ -64,7 +70,7 @@ final class JITFailureView: UIView {
         symbolImageView.setContentHuggingPriority(.required, for: .vertical)
         symbolImageView.setContentCompressionResistancePriority(.required, for: .vertical)
         
-        titleLabel.text = "Failed to enable JIT"
+        titleLabel.text = nil
         titleLabel.textAlignment = .center
         let titlePointSize = UIFont.preferredFont(forTextStyle: .title1).pointSize
         let boldTitleFont = UIFont.systemFont(ofSize: titlePointSize, weight: .bold)
@@ -72,7 +78,7 @@ final class JITFailureView: UIView {
         titleLabel.adjustsFontForContentSizeCategory = true
         titleLabel.numberOfLines = 0
         
-        messageLabel.text = "Please check that your pairing file is valid, your loopback VPN is on, and you're connected to a stable Wi-Fi network.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode."
+        messageLabel.text = nil
         messageLabel.textAlignment = .center
         messageLabel.font = .preferredFont(forTextStyle: .body)
         messageLabel.textColor = .secondaryLabel
@@ -101,7 +107,7 @@ final class JITFailureView: UIView {
             weight: .regular
         )
         
-        quitButton.setTitle("Activate JIT-Less Mode", for: .normal)
+        quitButton.setTitle(nil, for: .normal)
         quitButton.titleLabel?.font = .preferredFont(forTextStyle: .headline)
         quitButton.titleLabel?.adjustsFontForContentSizeCategory = true
         quitButton.backgroundColor = .label
@@ -204,19 +210,28 @@ final class JITFailureViewController: UIViewController {
     private let errorCode: Int
     private let errorDescriptionText: String
     private let showsErrorDetails: Bool
-    private let onUseJITLessMode: (() -> Void)?
+    private let titleText: String
+    private let messageText: String
+    private let actionButtonTitle: String
+    private let onPrimaryAction: (() -> Void)?
     private let contentView = JITFailureView()
     
     init(
         errorCode: Int,
         errorDescription: String,
         showsErrorDetails: Bool = true,
-        onUseJITLessMode: (() -> Void)? = nil
+        titleText: String,
+        messageText: String,
+        actionButtonTitle: String,
+        onPrimaryAction: (() -> Void)? = nil
     ) {
         self.errorCode = errorCode
         self.errorDescriptionText = errorDescription.isEmpty ? "Unknown error." : errorDescription
         self.showsErrorDetails = showsErrorDetails
-        self.onUseJITLessMode = onUseJITLessMode
+        self.titleText = titleText
+        self.messageText = messageText
+        self.actionButtonTitle = actionButtonTitle
+        self.onPrimaryAction = onPrimaryAction
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -231,9 +246,10 @@ final class JITFailureViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         isModalInPresentation = true
+        contentView.updateContent(title: titleText, message: messageText, buttonTitle: actionButtonTitle)
         contentView.updateError(code: errorCode, description: errorDescriptionText)
         contentView.setErrorDetailsHidden(!showsErrorDetails)
-        contentView.quitButton.addTarget(self, action: #selector(useJITLessMode), for: .touchUpInside)
+        contentView.quitButton.addTarget(self, action: #selector(handlePrimaryAction), for: .touchUpInside)
     }
     
     override func viewWillLayoutSubviews() {
@@ -242,9 +258,9 @@ final class JITFailureViewController: UIViewController {
         contentView.updateForOrientation(isPhoneLandscape: isPhoneLandscape)
     }
     
-    @objc private func useJITLessMode() {
-        dismiss(animated: true) { [onUseJITLessMode] in
-            onUseJITLessMode?()
+    @objc private func handlePrimaryAction() {
+        dismiss(animated: true) { [onPrimaryAction] in
+            onPrimaryAction?()
         }
     }
 }

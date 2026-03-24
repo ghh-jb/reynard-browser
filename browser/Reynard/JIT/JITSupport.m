@@ -13,6 +13,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>
@@ -1332,9 +1333,14 @@ static void stopEndpointMonitorLocked(void) {
     endpointMonitorTimer = nil;
 }
 
-static BOOL probeTCPEndpoint(NSString *targetAddress, uint16_t port, NSTimeInterval timeoutSeconds) {
+static BOOL probeTCPEndpoint(NSString *targetAddress, uint16_t port, NSTimeInterval timeoutSeconds, int *errorCodeOut) {
+    if (errorCodeOut) *errorCodeOut = 0;
+    
     int socketFD = socket(AF_INET, SOCK_STREAM, 0);
-    if (socketFD < 0) return NO;
+    if (socketFD < 0) {
+        if (errorCodeOut) *errorCodeOut = errno;
+        return NO;
+    }
     
     int noSigPipe = 1;
     setsockopt(socketFD, SOL_SOCKET, SO_NOSIGPIPE, &noSigPipe, sizeof(noSigPipe));
@@ -1345,6 +1351,7 @@ static BOOL probeTCPEndpoint(NSString *targetAddress, uint16_t port, NSTimeInter
     int flags = fcntl(socketFD, F_GETFL, 0);
     if (flags < 0 || fcntl(socketFD, F_SETFL, flags | O_NONBLOCK) < 0) {
         close(socketFD);
+        if (errorCodeOut) *errorCodeOut = errno;
         return NO;
     }
     
@@ -1355,6 +1362,7 @@ static BOOL probeTCPEndpoint(NSString *targetAddress, uint16_t port, NSTimeInter
     
     if (inet_pton(AF_INET, targetAddress.UTF8String, &address.sin_addr) != 1) {
         close(socketFD);
+        if (errorCodeOut) *errorCodeOut = EINVAL;
         return NO;
     }
     
@@ -1365,6 +1373,7 @@ static BOOL probeTCPEndpoint(NSString *targetAddress, uint16_t port, NSTimeInter
     }
     
     if (errno != EINPROGRESS) {
+        if (errorCodeOut) *errorCodeOut = errno;
         close(socketFD);
         return NO;
     }
@@ -1379,6 +1388,7 @@ static BOOL probeTCPEndpoint(NSString *targetAddress, uint16_t port, NSTimeInter
     
     int selectResult = select(socketFD + 1, NULL, &writeSet, NULL, &timeoutValue);
     if (selectResult <= 0) {
+        if (errorCodeOut) *errorCodeOut = (selectResult == 0 ? ETIMEDOUT : errno);
         close(socketFD);
         return NO;
     }
@@ -1386,12 +1396,42 @@ static BOOL probeTCPEndpoint(NSString *targetAddress, uint16_t port, NSTimeInter
     int socketError = 0;
     socklen_t socketErrorLength = sizeof(socketError);
     if (getsockopt(socketFD, SOL_SOCKET, SO_ERROR, &socketError, &socketErrorLength) != 0) {
+        if (errorCodeOut) *errorCodeOut = errno;
         close(socketFD);
         return NO;
     }
     
     close(socketFD);
+    
+    if (socketError != 0 && errorCodeOut) *errorCodeOut = socketError;
     return socketError == 0;
+}
+
+static BOOL legacyEndpointSocketHealthy(int socketFD) {
+    if (socketFD < 0) return NO;
+    
+    int socketError = 0;
+    socklen_t socketErrorLength = sizeof(socketError);
+    if (getsockopt(socketFD, SOL_SOCKET, SO_ERROR, &socketError, &socketErrorLength) != 0) return NO;
+    if (socketError != 0) return NO;
+    
+    struct pollfd pfd;
+    memset(&pfd, 0, sizeof(pfd));
+    pfd.fd = socketFD;
+    pfd.events = POLLIN | POLLOUT | POLLERR | POLLHUP;
+    
+    int pollResult = poll(&pfd, 1, 0);
+    if (pollResult < 0) return NO;
+    if (pollResult > 0 && (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))) return NO;
+    
+    if (pollResult > 0 && (pfd.revents & POLLIN)) {
+        char peekByte = 0;
+        ssize_t peekResult = recv(socketFD, &peekByte, 1, MSG_PEEK | MSG_DONTWAIT);
+        if (peekResult == 0) return NO;
+        if (peekResult < 0 && errno != EAGAIN && errno != EWOULDBLOCK) return NO;
+    }
+    
+    return YES;
 }
 
 static NSDictionary<NSString *, id> *endpointEntryForKey(NSString *endpointKey, NSNumber **pidOut) {
@@ -1452,7 +1492,20 @@ static void performEndpointMonitorTick(void) {
     if (targetAddress.length == 0 || !portNumber) return;
     
     uint16_t port = (uint16_t)portNumber.unsignedShortValue;
-    if (probeTCPEndpoint(targetAddress, port, 0.35)) {
+    NSNumber *socketNumber = endpointEntry[@"socketFD"];
+    int socketFD = socketNumber ? socketNumber.intValue : -1;
+    
+    BOOL endpointHealthy = NO;
+    if (socketFD >= 0) {
+        int legacyProbeError = 0;
+        BOOL legacyProbeReachable = probeTCPEndpoint(targetAddress, port, 0.35, &legacyProbeError);
+        BOOL legacyProbeHealthy = legacyProbeReachable || legacyProbeError == ECONNREFUSED || legacyProbeError == EADDRINUSE;
+        endpointHealthy = legacyEndpointSocketHealthy(socketFD) && legacyProbeHealthy;
+    } else {
+        endpointHealthy = probeTCPEndpoint(targetAddress, port, 0.35, NULL);
+    }
+    
+    if (endpointHealthy) {
         [endpointFailureCounts() removeObjectForKey:endpointKey];
         return;
     }
@@ -1461,7 +1514,8 @@ static void performEndpointMonitorTick(void) {
     NSUInteger failureCount = [failureCounts[endpointKey] unsignedIntegerValue] + 1;
     failureCounts[endpointKey] = @(failureCount);
     
-    if (failureCount < 2) return;
+    NSUInteger requiredFailures = socketFD >= 0 ? 1 : 2;
+    if (failureCount < requiredFailures) return;
     
     endpointFailureLatched = YES;
     stopEndpointMonitorLocked();
@@ -1485,8 +1539,7 @@ static void startEndpointMonitorLocked(void) {
     dispatch_resume(timer);
 }
 
-void registerJITEndpointForPID(int32_t pid, NSString *targetAddress,
-                               uint16_t port) {
+void registerJITEndpointForPID(int32_t pid, NSString *targetAddress, uint16_t port, int socketFD) {
     if (pid <= 0 || targetAddress.length == 0 || port == 0) return;
     
     dispatch_async(endpointMonitorQueue(), ^{
@@ -1495,6 +1548,7 @@ void registerJITEndpointForPID(int32_t pid, NSString *targetAddress,
             @"key": endpointKey,
             @"address": [targetAddress copy],
             @"port": @(port),
+            @"socketFD": @(socketFD),
         };
         
         [endpointFailureCounts() removeObjectForKey:endpointKey];

@@ -94,7 +94,7 @@
         
         logger([NSString stringWithFormat:@"Attach response for pid %d: %@", pid, attachResponse.length > 0 ? @"<stop packet>" : @"<no response>"], logHandler);
         
-        registerJITEndpointForPID(pid, @"10.7.0.1", 62078);
+        registerJITEndpointForPID(pid, @"10.7.0.1", 62078, -1);
         
         DebugSession *persistentSession = malloc(sizeof(*persistentSession));
         if (!persistentSession) {
@@ -148,7 +148,7 @@
         
         logger([NSString stringWithFormat:@"Legacy attach response for pid %d: %@", pid, attachResponse.length > 0 ? attachResponse : @"<no response>"], logHandler);
         
-        registerJITEndpointForPID(pid, @"10.7.0.1", debugPort);
+        registerJITEndpointForPID(pid, @"10.7.0.1", debugPort, legacySession->connection.socketFD);
         
         DeviceLogHandler copiedHandler = [logHandler copy];
         dispatch_async(debugServiceQueue(), ^{

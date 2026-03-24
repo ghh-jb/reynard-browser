@@ -69,7 +69,7 @@ void runLegacyDebugService(int32_t pid, LegacyDebugSession *session,
                            DeviceLogHandler _Nullable logHandler);
 
 void registerJITEndpointForPID(int32_t pid, NSString *targetAddress,
-                               uint16_t port);
+                               uint16_t port, int socketFD);
 void unregisterJITEndpointForPID(int32_t pid);
 void resetJITEndpointMonitor(void);
 

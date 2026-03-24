@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 NSError *errorWithCode(ErrorCode code);
 void logger(NSString *message, void (^_Nullable logHandler)(NSString *message));
+NSString *pairingFilePath(void);
 
 uint64_t parseLittleEndianHex64(NSString *hexString);
 NSString *encodeLittleEndianHex64(uint64_t value);

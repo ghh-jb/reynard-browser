@@ -18,6 +18,12 @@ void logger(NSString *message, void (^logHandler)(NSString *message)) {
     if (logHandler) logHandler(message);
 }
 
+NSString *pairingFilePath(void) {
+    NSURL *documentsDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
+    if (!documentsDirectory) return @"";
+    return [[documentsDirectory URLByAppendingPathComponent:@"pairingFile.plist"] path] ?: @"";
+}
+
 uint64_t parseLittleEndianHex64(NSString *hexString) {
     uint64_t value = 0;
     NSUInteger length = hexString.length;
@@ -251,14 +257,13 @@ SecKeyRef createPrivateKeyFromPairingData(NSData *privateKeyData) {
 }
 
 SecIdentityRef copyLegacyPairingIdentity(NSError **error) {
-    NSURL *documentsDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
-    NSString *pairingFilePath = [[documentsDirectory URLByAppendingPathComponent:@"pairingFile.plist"] path];
-    if (pairingFilePath.length == 0) {
+    NSString *resolvedPairingFilePath = pairingFilePath();
+    if (resolvedPairingFilePath.length == 0) {
         if (error) *error = MakeError(PairingFilePathUnavailable);
         return NULL;
     }
     
-    NSDictionary *pairingDictionary = [NSDictionary dictionaryWithContentsOfFile:pairingFilePath];
+    NSDictionary *pairingDictionary = [NSDictionary dictionaryWithContentsOfFile:resolvedPairingFilePath];
     if (![pairingDictionary isKindOfClass:[NSDictionary class]]) {
         if (error) *error = MakeError(PairingFileLoadFailed);
         return NULL;

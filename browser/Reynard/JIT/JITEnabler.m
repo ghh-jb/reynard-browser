@@ -178,7 +178,7 @@
     
     dispatch_sync(self.providerQueue, ^{
         if (!self.sharedProvider) {
-            self.sharedProvider = createDeviceProvider([self pairingFilePath], @"10.7.0.1", &providerError);
+            self.sharedProvider = createDeviceProvider(pairingFilePath(), @"10.7.0.1", &providerError);
             self.didEnsureDDIMounted = NO;
         }
         
@@ -239,11 +239,6 @@
         freeDeviceProvider(_sharedProvider);
         _sharedProvider = NULL;
     }
-}
-
-- (NSString *)pairingFilePath {
-    NSURL *documentsDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
-    return [[documentsDirectory URLByAppendingPathComponent:@"pairingFile.plist"] path];
 }
 
 @end

@@ -68,6 +68,11 @@ void runDebugService(int32_t pid, DebugSession *session,
 void runLegacyDebugService(int32_t pid, LegacyDebugSession *session,
                            DeviceLogHandler _Nullable logHandler);
 
+void registerJITEndpointForPID(int32_t pid, NSString *targetAddress,
+                               uint16_t port);
+void unregisterJITEndpointForPID(int32_t pid);
+void resetJITEndpointMonitor(void);
+
 void freeDebugSession(DebugSession *session);
 void freeDeviceProvider(DeviceProvider *_Nullable provider);
 

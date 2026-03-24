@@ -43,6 +43,13 @@ final class JITController {
             name: Notification.Name("me-minh-ton.jit.ddimonitor"),
             object: nil
         )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleJITDisconnectNotification(_:)),
+            name: Notification.Name("me-minh-ton.jit.endpoint-monitor-failed"),
+            object: nil
+        )
     }
     
     private func isDDIMissing() -> Bool {
@@ -59,7 +66,7 @@ final class JITController {
             return
         }
         
-        guard BrowserPreferences.shared.isJITEnabled, !isJITLessModeActive else {
+        guard BrowserPreferences.shared.isJITEnabled, !isJITLessModeActive, !hasHandledFailure else {
             ReportChildProcessJITEnabled(pid, false)
             return
         }
@@ -304,6 +311,25 @@ final class JITController {
             
             self.hasHandledFailure = true
             self.presentUnmountedDDIFailureScreen()
+        }
+    }
+    
+    @objc private func handleJITDisconnectNotification(_ notification: Notification) {
+        guard BrowserPreferences.shared.isJITEnabled, !isJITLessModeActive else {
+            return
+        }
+        
+        if let pid = (notification.userInfo?["pid"] as? NSNumber)?.int32Value, pid > 0 {
+            ReportChildProcessJITEnabled(pid, false)
+        }
+        
+        DispatchQueue.main.async {
+            guard !self.hasHandledFailure else {
+                return
+            }
+            
+            self.hasHandledFailure = true
+            self.presentEnablementFailureScreen(error: NSError(domain: "Reynard.JIT", code: Int(ETIMEDOUT), userInfo: nil), showsErrorDetails: false)
         }
     }
 }

@@ -142,6 +142,8 @@ NSString *ErrorDescription(ErrorCode code) {
             return @"UniqueChipID value is invalid.";
         case ModernDDIMountFailed:
             return @"Failed to mount personalized DDI image.";
+        case EndpointConnectivityLost:
+            return @"Lost TCP connectivity to the JIT debug endpoint.";
     }
     
     return @"Unknown error.";
@@ -168,6 +170,7 @@ ErrorGroup ErrorGroupForCode(ErrorCode code) {
         case ImageMounterConnectFailed:
         case DDIDeviceVersionReadFailed:
         case DDIDeviceVersionInvalid:
+        case EndpointConnectivityLost:
             return ErrorGroupSharedSetup;
         case ProcessControlCreateFailed:
         case CoreDeviceConnectFailed:

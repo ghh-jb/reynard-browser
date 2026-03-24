@@ -102,6 +102,9 @@ typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
     UniqueChipIDReadFailed = -63,
     UniqueChipIDInvalid = -64,
     ModernDDIMountFailed = -65,
+
+    // Runtime connectivity monitoring
+    EndpointConnectivityLost = -66,
 };
 
 NSString *ErrorDescription(ErrorCode code);

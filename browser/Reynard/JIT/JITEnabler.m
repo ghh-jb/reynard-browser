@@ -94,6 +94,8 @@
         
         logger([NSString stringWithFormat:@"Attach response for pid %d: %@", pid, attachResponse.length > 0 ? @"<stop packet>" : @"<no response>"], logHandler);
         
+        registerJITEndpointForPID(pid, @"10.7.0.1", 62078);
+        
         DebugSession *persistentSession = malloc(sizeof(*persistentSession));
         if (!persistentSession) {
             freeDebugSession(&session);
@@ -146,6 +148,8 @@
         
         logger([NSString stringWithFormat:@"Legacy attach response for pid %d: %@", pid, attachResponse.length > 0 ? attachResponse : @"<no response>"], logHandler);
         
+        registerJITEndpointForPID(pid, @"10.7.0.1", debugPort);
+        
         DeviceLogHandler copiedHandler = [logHandler copy];
         dispatch_async(debugServiceQueue(), ^{
             runLegacyDebugService(pid, legacySession, copiedHandler);
@@ -160,6 +164,7 @@
 }
 
 - (void)detachAllJITSessions {
+    resetJITEndpointMonitor();
     dispatch_sync(debugSessionStateQueue(), ^{
         NSMutableSet<NSNumber *> *active = activeDebugSessionPIDs();
         NSMutableSet<NSNumber *> *detachRequested = detachRequestedDebugSessionPIDs();
@@ -228,6 +233,7 @@
 }
 
 - (void)dealloc {
+    resetJITEndpointMonitor();
     [self stopDDIMonitor];
     if (_sharedProvider) {
         freeDeviceProvider(_sharedProvider);

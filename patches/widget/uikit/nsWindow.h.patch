@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/nsWindow.h b/widget/uikit/nsWindow.h
-index 07abe22076e8..a20921726564 100644
+index 07abe22076e8..baaaf45e9b94 100644
 --- a/widget/uikit/nsWindow.h
 +++ b/widget/uikit/nsWindow.h
 @@ -23,10 +23,12 @@ typedef struct objc_object ChildView;
@@ -16,16 +16,17 @@ index 07abe22076e8..a20921726564 100644
  class TextInputHandler;
  }  // namespace mozilla::widget
  
-@@ -94,6 +96,8 @@ class nsWindow final : public nsIWidget {
+@@ -94,6 +96,9 @@ class nsWindow final : public nsIWidget {
    void SetInputContext(const InputContext& aContext,
                         const InputContextAction& aAction) override;
    InputContext GetInputContext() override;
++  void NotifyWindowActivationState(bool aActive);
 +  void SetCompositorWidgetDelegate(
 +      mozilla::widget::CompositorWidgetDelegate* aDelegate) override;
    TextEventDispatcherListener* GetNativeTextEventDispatcherListener() override;
  
    mozilla::widget::TextInputHandler* GetTextInputHandler() const {
-@@ -110,6 +114,11 @@ class nsWindow final : public nsIWidget {
+@@ -110,6 +115,11 @@ class nsWindow final : public nsIWidget {
    */
  
    mozilla::layers::NativeLayerRoot* GetNativeLayerRoot() override;
@@ -37,7 +38,7 @@ index 07abe22076e8..a20921726564 100644
  
    void HandleMainThreadCATransaction();
  
-@@ -148,6 +157,8 @@ class nsWindow final : public nsIWidget {
+@@ -148,6 +158,8 @@ class nsWindow final : public nsIWidget {
    nsresult GetCurrentOffset(uint32_t& aOffset, uint32_t& aLength);
    nsresult DeleteRange(int aOffset, int aLen);
  
@@ -46,7 +47,7 @@ index 07abe22076e8..a20921726564 100644
    void TearDownView();
  
    ChildView* mNativeView;
-@@ -159,8 +170,12 @@ class nsWindow final : public nsIWidget {
+@@ -159,8 +171,12 @@ class nsWindow final : public nsIWidget {
    mozilla::widget::InputContext mInputContext;
    RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
    RefPtr<mozilla::widget::IOSView> mIOSView;

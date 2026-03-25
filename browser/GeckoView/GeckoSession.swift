@@ -156,6 +156,10 @@ public class GeckoSession {
         dispatcher.dispatch(type: "GeckoView:SetActive", message: ["active": active])
     }
     
+    public func setFocused(_ focused: Bool) {
+        dispatcher.dispatch(type: "GeckoView:SetFocused", message: ["focused": focused])
+    }
+    
     public func focusedInputBottomRatio() async -> CGFloat? {
         let response = try? await dispatcher.query(type: "GeckoView:GetFocusedInputMetrics")
         guard let values = response as? [AnyHashable: Any],

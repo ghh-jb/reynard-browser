@@ -190,7 +190,14 @@ extension TabManagerImplementation: ContentDelegate {
     
     func onPreviewImage(session: GeckoSession, previewImageUrl: String) {}
     
-    func onFocusRequest(session: GeckoSession) {}
+    func onFocusRequest(session: GeckoSession) {
+        guard selectedTab?.session === session else {
+            return
+        }
+        
+        session.setActive(true)
+        session.setFocused(true)
+    }
     
     func onCloseRequest(session: GeckoSession) {
         guard let index = tabIndex(for: session) else {

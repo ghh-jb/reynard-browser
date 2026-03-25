@@ -1,8 +1,8 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index 4699cd72b924..140b2bfce7e1 100644
+index 262eee800b3f..e059ec115468 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
-@@ -7402,7 +7402,13 @@
+@@ -7426,7 +7426,13 @@
    # backend.
  -   name: gfx.font_rendering.coretext.enabled
      type: RelaxedAtomicBool
@@ -16,7 +16,7 @@ index 4699cd72b924..140b2bfce7e1 100644
      mirror: always
  #endif
  
-@@ -9601,7 +9607,7 @@
+@@ -9625,7 +9631,7 @@
  # or executable but never both at the same time. OpenBSD defaults to W^X.
  - name: javascript.options.content_process_write_protect_code
    type: bool
@@ -25,7 +25,7 @@ index 4699cd72b924..140b2bfce7e1 100644
    value: true
  #else
    value: false
-@@ -9770,7 +9776,9 @@
+@@ -9794,7 +9800,9 @@
  
  - name: layers.gpu-process.enabled
    type: bool
@@ -36,7 +36,7 @@ index 4699cd72b924..140b2bfce7e1 100644
    value: true
  #elif defined(MOZ_X11)
    value: false  # we'd like this to be @IS_NIGHTLY_BUILD@, see Bug 1927058
-@@ -14452,7 +14460,10 @@
+@@ -14476,7 +14484,10 @@
  - name: network.process.enabled
    type: RelaxedAtomicBool
    mirror: always
@@ -48,7 +48,7 @@ index 4699cd72b924..140b2bfce7e1 100644
    value: false # see bug 1641427
  #else
    value: true
-@@ -14501,7 +14512,13 @@
+@@ -14525,7 +14536,13 @@
  - name: network.http.network_access_on_socket_process.enabled
    type: RelaxedAtomicBool
    mirror: always

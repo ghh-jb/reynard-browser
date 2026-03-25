@@ -1,5 +1,5 @@
 diff --git a/dom/ipc/BrowserParent.cpp b/dom/ipc/BrowserParent.cpp
-index 65a02c53ef3c..984f78da338d 100644
+index 7d405ed7d3b3..6e79a23b2b6a 100644
 --- a/dom/ipc/BrowserParent.cpp
 +++ b/dom/ipc/BrowserParent.cpp
 @@ -789,6 +789,21 @@ mozilla::ipc::IPCResult BrowserParent::RecvEnsureLayersConnected(

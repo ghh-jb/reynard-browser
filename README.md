@@ -8,6 +8,9 @@ The core issue is **WebKit**, the browser engine behind Safari. It’s bundled w
 
 With Reynard, my goal is to build a Gecko-based browser that does not depend on BrowserEngineKit, allowing it to run on older iOS and iPadOS versions.
 
+## Getting Started
+For installation instructions, known issues, and FAQs, check out the [Reynard Browser wiki](https://github.com/minh-ton/reynard-browser/wiki).
+
 ## Preview
 
 These clips compare how several sites that are known to break in Safari on iOS 14 & 15 load versus how they load in Reynard. The screen recordings were captured on an iPhone 6S Plus running iOS 14.1 and an iPhone 7 running iOS 15.8.6.
@@ -76,33 +79,35 @@ And Reynard also works on iOS 26!
   </tr>
 </table>
 
-## Issues
-- The JIT backend for child processes is disabled, which means that the JS interpreter, JIT compiler, and WebAssembly are currently not available. As a result, performance will be slower on several sites and features requiring WebAssembly will not work.
-- Some POST request responses like dynamically loaded scripts and video streams are not fully delivered, which can cause Google reCAPTCHA to fail during loading or lead to stalled playback on YouTube. A workaround would be to set the user-agent string to a generic Firefox on Android one. I observed this behavior through debug logs and never fully understood it.
-- On some websites that use `-apple-system` or `BlinkMacSystemFont`, the rendered text falls back to an overly thin SF UI variant.
-- Video playback has no sound output.
-- Child processes responsible for WebContent and Rendering crashes due to "fault hit memory shortage" quite frequently on devices such as the iPad Air 2 on iOS 15.
-
-## Installation
-
-> [!IMPORTANT]
-> I would **highly** recommend that you sideload Reynard using **TrollStore**, **SideStore**, or **AltStore**. 
-> 
-> When sideloading through SideStore or AltStore, you **must** enable **Keep App Extensions**. Reynard relies on an app extension to launch child processes and will not function properly without it. 
-> 
-> Please note that **LiveContainer is not supported**, as it does not currently support signing the app extension required for running Reynard.
->
-> <table>
->   <tr>
->     <td><img src="https://github.com/user-attachments/assets/b8578358-8c0a-4148-a33b-4e8f8da5514b" width=250/></td>
->     <td><img src="https://github.com/user-attachments/assets/62d10f96-47d4-45bd-83f9-3a205fe9ff1f" width=250/></td>
->   </tr>
-> </table>
-
-The latest experimental Reynard `.ipa` builds are available on the [Releases](https://github.com/minh-ton/reynard-browser/releases) page. Please note that this project is under active development and there is no formal release yet, so these experimental builds are updated frequently and may contain significant bugs.
-
 ## Changes
+
+As of March 25, JIT compilation support is added. This means sites that rely on WebAssembly now work properly, and overall browsing performance is much faster. See [Enabling JIT](https://github.com/minh-ton/reynard-browser/wiki/2.-Enabling-JIT) to get started.
+
+The table below compares WASM support check, rendering WASM-heavy website (Shopify Winter 2026 edition), and browser performance on an iPhone 7 running iOS 15.8.6.
+
+<table>
+  <tr>
+    <th>JIT</th>
+    <th>Without JIT</th>
+  </tr>
+  <tr>
+    <td>
+      <img width="100" src="https://github.com/user-attachments/assets/1e30b02f-d0d0-4fcd-83fb-76454b137282" />
+      <img width="100" src="https://github.com/user-attachments/assets/f9b3be04-4207-4f02-bdeb-dd8440485b7b" />
+      <img width="100" src="https://github.com/user-attachments/assets/330c6bbc-ec37-45cb-b578-636a3ec25bba" />
+    </td>
+    <td>
+      <img width="100" src="https://github.com/user-attachments/assets/2cb9a19d-3da7-4fc0-94f3-d7b869eb650e" />
+      <img width="100" src="https://github.com/user-attachments/assets/0a360079-aa7b-4514-88ef-5f22b073cc68" />
+      <img width="100" src="https://github.com/user-attachments/assets/a85f9669-1d14-4b31-9adb-d009f74658da" />
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary>Changes on February 23, 2026</summary>
 As of February 23, the browser uses a multi-process architecture, spawning child-processes (WebContent, Rendering, and Networking) through NSExtension. Most modern websites render correctly, including proper font and emoji support, and general browsing feels much smoother. While performance still does not match Safari, the browser is now reliable enough for everyday use.
+</details>
 
 <details>
 <summary>Changes on February 4, 2026</summary>

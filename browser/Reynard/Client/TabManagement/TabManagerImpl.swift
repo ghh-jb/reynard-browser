@@ -18,14 +18,16 @@ final class TabManagerImplementation: NSObject, TabManager {
     }
     
     private weak var delegate: TabManagerDelegate?
+    private let store: TabManagementStore
     
     private lazy var isURLLenient: NSRegularExpression = {
         let pattern = "^\\s*(\\w+-+)*[\\w\\[]+(://[/]*|:|\\.)(\\w+-+)*[\\w\\[:]+([\\S&&[^\\w-]]\\S*)?\\s*$"
         return try! NSRegularExpression(pattern: pattern)
     }()
     
-    init(delegate: TabManagerDelegate?) {
+    init(delegate: TabManagerDelegate?, store: TabManagementStore = .shared) {
         self.delegate = delegate
+        self.store = store
     }
     
     private func closeSession(_ session: GeckoSession) {
@@ -35,13 +37,82 @@ final class TabManagerImplementation: NSObject, TabManager {
         session.close()
     }
     
+    private func persistState() {
+        store.saveTabs(tabs, selectedTabID: selectedTab?.id)
+    }
+    
+    private func makeTab(windowId: String?) -> Tab {
+        Tab(session: createSession(windowId: windowId))
+    }
+    
+    private func restoredURL(from value: String?) -> String? {
+        guard let trimmedValue = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmedValue.isEmpty,
+              trimmedValue.lowercased() != "about:blank" else {
+            return nil
+        }
+        
+        return trimmedValue
+    }
+    
+    private func restoreTabsIfNeeded() -> Bool {
+        guard tabs.isEmpty else {
+            return true
+        }
+        
+        let snapshot = store.loadSnapshot()
+        guard !snapshot.tabs.isEmpty else {
+            return false
+        }
+        
+        tabs = snapshot.tabs.map { snapshot in
+            let tab = Tab(
+                id: snapshot.id,
+                session: createSession(windowId: nil),
+                title: snapshot.title,
+                url: snapshot.url,
+                thumbnail: snapshot.thumbnail
+            )
+            tab.pendingRestoreURL = restoredURL(from: snapshot.url)
+            return tab
+        }
+        selectedTabIndex = -1
+        
+        delegate?.tabManagerDidChangeTabs(self)
+        
+        let selectedIndex = snapshot.selectedTabID.flatMap { selectedTabID in
+            tabs.firstIndex(where: { $0.id == selectedTabID })
+        } ?? 0
+        selectTab(at: selectedIndex)
+        return true
+    }
+    
+    private func loadRestoredURLIfNeeded(for index: Int) {
+        guard tabs.indices.contains(index) else {
+            return
+        }
+        
+        let tab = tabs[index]
+        guard let url = tab.pendingRestoreURL else {
+            return
+        }
+        
+        tab.pendingRestoreURL = nil
+        tab.suppressInitialNavigation = false
+        tab.session.load(url)
+    }
+    
     func createInitialTab() {
+        if restoreTabsIfNeeded() {
+            return
+        }
+        
         addTab(selecting: true, windowId: nil, at: nil)
     }
     
     @discardableResult
     func addTab(selecting: Bool, windowId: String? = nil, at insertionIndex: Int? = nil) -> Int {
-        let tab = Tab(session: createSession(windowId: windowId))
+        let tab = makeTab(windowId: windowId)
         let index = min(max(insertionIndex ?? tabs.count, 0), tabs.count)
         
         if index == tabs.count {
@@ -57,6 +128,8 @@ final class TabManagerImplementation: NSObject, TabManager {
         
         if selecting {
             selectTab(at: index)
+        } else {
+            persistState()
         }
         
         return index
@@ -69,14 +142,12 @@ final class TabManagerImplementation: NSObject, TabManager {
         
         let previousIndex = tabs.indices.contains(selectedTabIndex) ? selectedTabIndex : nil
         
-        if let previousIndex, previousIndex != index {
-            tabs[previousIndex].session.setActive(false)
-        }
-        
         selectedTabIndex = index
         tabs[index].session.setActive(true)
         
         delegate?.tabManager(self, didSelectTabAt: index, previousIndex: previousIndex)
+        loadRestoredURLIfNeeded(for: index)
+        persistState()
     }
     
     func removeTab(at index: Int) {
@@ -106,6 +177,8 @@ final class TabManagerImplementation: NSObject, TabManager {
         if wasSelected {
             let fallback = min(index, tabs.count - 1)
             selectTab(at: fallback)
+        } else {
+            persistState()
         }
         
         closeSession(removedTab.session)
@@ -167,6 +240,16 @@ final class TabManagerImplementation: NSObject, TabManager {
         return url
     }
     
+    func updateThumbnail(_ image: UIImage?, forTabAt index: Int) {
+        guard tabs.indices.contains(index) else {
+            return
+        }
+        
+        let tab = tabs[index]
+        tab.thumbnail = image
+        store.saveThumbnail(image, for: tab.id)
+    }
+    
     private func createSession(windowId: String?) -> GeckoSession {
         let session = GeckoSession()
         session.userAgentOverride = BrowserPreferences.shared.androidUserAgentOverride
@@ -186,6 +269,7 @@ extension TabManagerImplementation: ContentDelegate {
         
         tabs[index].title = title.isEmpty ? "Homepage" : title
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .title)
+        persistState()
     }
     
     func onPreviewImage(session: GeckoSession, previewImageUrl: String) {}
@@ -283,6 +367,7 @@ extension TabManagerImplementation: NavigationDelegate {
         
         tabs[index].url = url
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
+        persistState()
     }
     
     func onCanGoBack(session: GeckoSession, canGoBack: Bool) {
@@ -317,6 +402,7 @@ extension TabManagerImplementation: NavigationDelegate {
         let newTab = tabs[index]
         newTab.url = uri
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
+        persistState()
         delegate?.tabManager(self, animateNewTabSelectionAt: index) { [weak self] in
             self?.selectTab(at: index)
         }

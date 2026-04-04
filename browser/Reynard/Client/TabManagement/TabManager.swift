@@ -7,6 +7,7 @@
 
 import Foundation
 import GeckoView
+import UIKit
 
 protocol TabManager: AnyObject {
     var tabs: [Tab] { get }
@@ -23,6 +24,7 @@ protocol TabManager: AnyObject {
     func browse(to term: String, in tab: Tab)
     func tabIndex(for session: GeckoSession) -> Int?
     func shareableURL(for tab: Tab) -> URL?
+    func updateThumbnail(_ image: UIImage?, forTabAt index: Int)
 }
 
 enum TabManagerUpdateReason {

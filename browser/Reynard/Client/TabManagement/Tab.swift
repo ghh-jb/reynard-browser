@@ -9,9 +9,11 @@ import GeckoView
 import UIKit
 
 final class Tab {
+    let id: UUID
     let session: GeckoSession
     var title: String
     var url: String?
+    var pendingRestoreURL: String?
     var suppressInitialNavigation = true
     var canGoBack = false
     var canGoForward = false
@@ -19,8 +21,17 @@ final class Tab {
     var progress: Float = 0
     var thumbnail: UIImage?
     
-    init(session: GeckoSession, title: String = "Homepage") {
+    init(
+        id: UUID = UUID(),
+        session: GeckoSession,
+        title: String = "Homepage",
+        url: String? = nil,
+        thumbnail: UIImage? = nil
+    ) {
+        self.id = id
         self.session = session
         self.title = title
+        self.url = url
+        self.thumbnail = thumbnail
     }
 }

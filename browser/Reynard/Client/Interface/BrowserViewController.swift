@@ -298,13 +298,9 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     func captureThumbnail(for index: Int) {
-        guard tabManager.tabs.indices.contains(index),
-              index == tabManager.selectedTabIndex,
-              !browserUI.geckoView.isHidden else {
-            return
-        }
-        
-        guard let tab = tabManager.tabs[safe: index] else {
+        guard !browserUI.geckoView.isHidden,
+              let tab = tabManager.tabs[safe: index],
+              browserUI.geckoView.session === tab.session else {
             return
         }
         
@@ -319,7 +315,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         let image = renderer.image { context in
             browserUI.geckoView.layer.render(in: context.cgContext)
         }
-        tab.thumbnail = image
+        tabManager.updateThumbnail(image, forTabAt: index)
     }
     
     func syncAddressBarLoadingState(progress: Float, isLoading: Bool) {

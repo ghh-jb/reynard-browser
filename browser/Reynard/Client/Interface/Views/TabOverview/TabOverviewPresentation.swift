@@ -123,9 +123,10 @@ final class TabOverviewPresentation {
         
         let selectedIndex = controller.tabManager.selectedTabIndex
         controller.captureThumbnail(for: selectedIndex)
+        controller.browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
         controller.browserUI.tabOverviewCollection.collectionView.reloadData()
         controller.browserUI.tabOverview.containerView.isHidden = false
-        controller.browserUI.tabOverview.containerView.alpha = 1
+        controller.browserUI.tabOverview.containerView.alpha = 0
         controller.browserUI.tabOverview.blurView.alpha = 0
         controller.browserUI.tabOverviewBottomBar.barView.alpha = 0
         controller.browserUI.tabOverviewBottomBar.safeAreaFillView.alpha = 0
@@ -151,6 +152,7 @@ final class TabOverviewPresentation {
         }
         
         selectedCell.setTransitionHidden(true)
+        controller.browserUI.tabOverview.containerView.alpha = 1
         
         pageSnapshot.frame = controller.browserUI.geckoView.frame
         pageSnapshot.layer.cornerRadius = 0
@@ -277,9 +279,10 @@ final class TabOverviewPresentation {
         
         let selectedIndex = controller.tabManager.selectedTabIndex
         controller.captureThumbnail(for: selectedIndex)
+        controller.browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
         controller.browserUI.tabOverviewCollection.collectionView.reloadData()
         controller.browserUI.tabOverview.containerView.isHidden = false
-        controller.browserUI.tabOverview.containerView.alpha = 1
+        controller.browserUI.tabOverview.containerView.alpha = 0
         controller.browserUI.tabOverview.blurView.alpha = 0
         controller.browserUI.tabOverviewTopBar.barView.alpha = 0
         controller.view.bringSubviewToFront(controller.browserUI.tabOverview.containerView)
@@ -302,6 +305,7 @@ final class TabOverviewPresentation {
         }
         
         selectedCell.setTransitionHidden(true)
+        controller.browserUI.tabOverview.containerView.alpha = 1
         
         pageSnapshot.frame = controller.browserUI.geckoView.frame
         pageSnapshot.layer.cornerRadius = 0

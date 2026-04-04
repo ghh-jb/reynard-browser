@@ -122,6 +122,7 @@ final class TabOverviewCard: UICollectionViewCell {
             titleLabel.topAnchor.constraint(equalTo: cardView.bottomAnchor, constant: 4),
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 4),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -4),
+            titleLabel.heightAnchor.constraint(equalToConstant: 18),
             titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
         ])
     }

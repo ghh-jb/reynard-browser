@@ -1,9 +1,9 @@
 diff --git a/ipc/glue/NSExtensionUtils.mm b/ipc/glue/NSExtensionUtils.mm
 new file mode 100644
-index 000000000000..c1eb995343ef
+index 000000000000..9bbcf372fc2c
 --- /dev/null
 +++ b/ipc/glue/NSExtensionUtils.mm
-@@ -0,0 +1,543 @@
+@@ -0,0 +1,558 @@
 +/* -*- Mode: c++; c-basic-offset: 2; tab-width: 4; indent-tabs-mode: nil; -*-
 + * vim: set sw=2 ts=4 expandtab:
 + * This Source Code Form is subject to the terms of the Mozilla Public
@@ -137,8 +137,23 @@ index 000000000000..c1eb995343ef
 +  NSArray<NSURL*>* appExtensions =
 +      [items filteredArrayUsingPredicate:isAppExtension];
 +
-+  NSBundle* extensionBundle =
-+      [NSBundle bundleWithURL:appExtensions.firstObject];
++  NSURL* preferredExtensionURL = nil;
++  for (NSURL* itemURL in appExtensions) {
++    if ([[itemURL lastPathComponent] isEqualToString:@"Reynard Helper.appex"]) {
++      preferredExtensionURL = itemURL;
++      break;
++    }
++  }
++
++  // This is bad, but I don't know of
++  // a better way for this.
++  // TODO: Report this to the parent app
++  // for error handling?
++  if (!preferredExtensionURL) {
++    preferredExtensionURL = appExtensions.firstObject;
++  }
++
++  NSBundle* extensionBundle = [NSBundle bundleWithURL:preferredExtensionURL];
 +  if (!extensionBundle) {
 +    return nil;
 +  }

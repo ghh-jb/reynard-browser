@@ -496,7 +496,9 @@ final class BrowserLayout {
                 return
             }
             
-            self.focusedInputBottomRatio = bottomRatio
+            if let bottomRatio {
+                self.focusedInputBottomRatio = bottomRatio
+            }
             self.applyFocusedInputRelocation(duration: duration, curve: curve)
         }
     }
@@ -544,7 +546,10 @@ final class BrowserLayout {
             return 0
         }
         
-        let keyboardOverlap = max(0, geckoFrame.maxY - keyboardFrame.minY)
+        let safeAreaTop = controller.view.safeAreaLayoutGuide.layoutFrame.minY
+        let currentGeckoShift = max(0, safeAreaTop - geckoFrame.minY)
+        let unshiftedGeckoMaxY = geckoFrame.maxY + currentGeckoShift
+        let keyboardOverlap = max(0, unshiftedGeckoMaxY - keyboardFrame.minY)
         guard keyboardOverlap > 0 else {
             return 0
         }

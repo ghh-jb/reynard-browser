@@ -1,0 +1,27 @@
+diff --git a/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs b/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs
+index 70ca45b8185e..d65662f3c948 100644
+--- a/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs
++++ b/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs
+@@ -162,11 +162,22 @@ export class PromptFactory {
+       mozSystemGroup: true,
+     });
+ 
++    const elemRect = aElement.getBoundingClientRect();
++    const winUtils = aElement.ownerGlobal.windowUtils;
++    const screenRect = winUtils.toScreenRectInCSSUnits(
++      elemRect.left, elemRect.top, elemRect.width, elemRect.height
++    );
+     prompt.asyncShowPrompt(
+       {
+         type: "choice",
+         mode: aElement.multiple ? "multiple" : "single",
+         choices: items,
++        rect: {
++          left: screenRect.left,
++          top: screenRect.top,
++          width: screenRect.width,
++          height: screenRect.height,
++        },
+       },
+       result => {
+         deferredUpdate.disarm();

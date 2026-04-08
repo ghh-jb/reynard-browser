@@ -41,11 +41,18 @@ public class GeckoSession {
         set { progressHandler.setDelegate(newValue) }
     }
     
+    lazy var promptHandler: GeckoSessionHandler = {
+        let handler = newPromptHandler(self)
+        handler.setDelegate(true as AnyObject)
+        return handler
+    }()
+    
     lazy var sessionHandlers: [GeckoSessionHandlerCommon] = [
         contentHandler,
         processHangHandler,
         navigationHandler,
         progressHandler,
+        promptHandler,
     ]
     
     public init() {

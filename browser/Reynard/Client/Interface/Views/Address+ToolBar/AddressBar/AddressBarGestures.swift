@@ -15,6 +15,7 @@ final class AddressBarGestures: NSObject {
     }
     
     private unowned let controller: BrowserViewController
+    private let swipeHaptic = UIImpactFeedbackGenerator(style: .rigid)
     
     private var searchPanMode: SearchPanMode = .blocked
     private var horizontalDirection = 0
@@ -250,6 +251,7 @@ final class AddressBarGestures: NSObject {
                 self.controller.selectTab(at: targetIndex, animated: true)
             }
         } else if shouldCreateNewTab {
+            swipeHaptic.impactOccurred()
             animateAutomaticNewTabTransition {
                 _ = self.controller.createTab(selecting: true)
             }
@@ -283,6 +285,7 @@ final class AddressBarGestures: NSObject {
         case .began:
             searchPanMode = .undecided
             resetHorizontalTransition()
+            swipeHaptic.prepare()
             
         case .changed:
             if searchPanMode == .undecided {
@@ -291,7 +294,11 @@ final class AddressBarGestures: NSObject {
                 }
                 
                 if abs(translation.x) > abs(translation.y) {
-                    searchPanMode = (!controller.tabOverviewPresentation.isVisible && !controller.isSearchFocused) ? .horizontalTabs : .blocked
+                    let newMode: SearchPanMode = (!controller.tabOverviewPresentation.isVisible && !controller.isSearchFocused) ? .horizontalTabs : .blocked
+                    searchPanMode = newMode
+                    if newMode == .horizontalTabs {
+                        swipeHaptic.impactOccurred()
+                    }
                 } else {
                     searchPanMode = .blocked
                 }

@@ -37,12 +37,13 @@ final class JITController {
             object: nil
         )
         
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleDDIUnmountedNotification(_:)),
-            name: Notification.Name("me-minh-ton.jit.ddimonitor"),
-            object: nil
-        )
+        // Unreliable, commented out temporarily.
+        /* NotificationCenter.default.addObserver(
+         self,
+         selector: #selector(handleDDIUnmountedNotification(_:)),
+         name: Notification.Name("me-minh-ton.jit.ddimonitor"),
+         object: nil
+         ) */
         
         NotificationCenter.default.addObserver(
             self,

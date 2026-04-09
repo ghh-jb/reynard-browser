@@ -14,13 +14,13 @@ FOUNDATION_EXPORT NSErrorDomain const ErrorDomain;
 FOUNDATION_EXPORT NSString *const ErrorCategory;
 
 typedef NS_ENUM(NSInteger, ErrorGroup) {
-  ErrorGroupUnknown = 0,
-  ErrorGroupSharedSetup = 1,
-  ErrorGroupModernPath = 2,
-  ErrorGroupLegacyPath = 3,
-  ErrorGroupPairing = 4,
-  ErrorGroupTLS = 5,
-  ErrorGroupProtocol = 6,
+    ErrorGroupUnknown = 0,
+    ErrorGroupSharedSetup = 1,
+    ErrorGroupModernPath = 2,
+    ErrorGroupLegacyPath = 3,
+    ErrorGroupPairing = 4,
+    ErrorGroupTLS = 5,
+    ErrorGroupProtocol = 6,
 };
 
 typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
@@ -38,27 +38,22 @@ typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
     PairingFileReadFailed = -11,
     HeartbeatConnectFailed = -12,
     HeartbeatExchangeFailed = -13,
-
+    
     // Legacy service bootstrap
     LockdowndConnectFailed = -14,
     ProviderPairingFileFetchFailed = -15,
     LockdowndSessionStartFailed = -16,
     LockdowndStartServiceFailed = -17,
     LegacyServiceTLSNotEnabled = -18,
-
+    
     // Modern (iOS 17.4+) attach path
     ProcessControlCreateFailed = -19,
-    CoreDeviceConnectFailed = -20,
-    CoreDeviceRSDPortResolveFailed = -21,
-    CoreDeviceAdapterCreateFailed = -22,
-    AdapterStreamConnectFailed = -23,
-    RSDHandshakeCreateFailed = -24,
     RemoteServerConnectFailed = -25,
     DebugProxyConnectFailed = -26,
     NoAckConfigureFailed = -27,
     AttachDebugProxyFailed = -28,
     SessionAllocationFailed = -29,
-
+    
     // Protocol handling and command execution
     DebugCommandCreateFailed = -30,
     DebugCommandSendFailed = -31,
@@ -68,7 +63,7 @@ typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
     UnexpectedPrepareRegionResponse = -35,
     RXAllocationEmptyResponse = -36,
     RXAllocationInvalidAddress = -37,
-
+    
     // Legacy TLS and packet transport
     LegacyTLSConfigurationFailed = -38,
     LegacyTLSConnectionMissing = -39,
@@ -83,14 +78,14 @@ typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
     LegacySocketCreateFailed = -48,
     LegacySocketInvalidAddress = -49,
     LegacySocketConnectFailed = -50,
-
+    
     // Wrapper-level legacy operation failures
     LegacySocketTLSSetupFailed = -51,
     LegacyDebugCommandPacketFailed = -52,
     LegacyDebugCommandResponseFailed = -53,
     LegacyContinuePacketFailed = -54,
     LegacyContinueResponseFailed = -55,
-
+    
     // Developer Disk Image mounting
     DDIMountPathResolveFailed = -56,
     DDIFileReadFailed = -57,
@@ -102,9 +97,12 @@ typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
     UniqueChipIDReadFailed = -63,
     UniqueChipIDInvalid = -64,
     ModernDDIMountFailed = -65,
-
+    
     // Runtime connectivity monitoring
     EndpointConnectivityLost = -66,
+    
+    // RPPairing tunnel
+    TunnelCreateFailed = -67,
 };
 
 NSString *ErrorDescription(ErrorCode code);

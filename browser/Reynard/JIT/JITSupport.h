@@ -50,6 +50,7 @@ BOOL configureNoAckMode(DebugProxyHandle *debugProxy,
                         NSString *_Nullable *_Nullable responseOut,
                         NSError *_Nullable *_Nullable error);
 BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session,
+                         NSString *targetAddress,
                          NSError *_Nullable *_Nullable error);
 BOOL startLegacyDebugService(DeviceProvider *provider,
                              uint16_t *_Nullable portOut,

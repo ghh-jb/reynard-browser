@@ -21,12 +21,15 @@
 
 static const char *providerLabel = "Reynard";
 static const uint16_t lockdownPort = 62078;
+static const uint16_t rppairingPort = 49152;
 static const NSTimeInterval debugPacketTimeoutSeconds = 2.0;
 
 static const char *const legacyDebugServiceIdentifier = "com.apple.debugserver.DVTSecureSocketProxy";
 
 struct DeviceProvider {
     IdeviceProviderHandle *handle;
+    AdapterHandle *adapter;
+    RsdHandshakeHandle *handshake;
     HeartbeatClientHandle *heartbeatClient;
     BOOL heartbeatRunning;
 };
@@ -208,52 +211,39 @@ BOOL configureNoAckMode(DebugProxyHandle *debugProxy, NSString **responseOut, NS
     return YES;
 }
 
-BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSError **error) {
+BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSString *targetAddress, NSError **error) {
     IdeviceFfiError *ffiError = NULL;
-    CoreDeviceProxyHandle *coreDevice = NULL;
-    ReadWriteOpaque *stream = NULL;
     
-    ffiError = core_device_proxy_connect(provider->handle, &coreDevice);
+    NSString *resolvedPairingFilePath = pairingFilePath();
+    RpPairingFileHandle *rpPairingFile = NULL;
+    ffiError = rp_pairing_file_read(resolvedPairingFilePath.fileSystemRepresentation, &rpPairingFile);
     if (ffiError) {
-        if (error) *error = MakeError(CoreDeviceConnectFailed);
+        if (error) *error = MakeError(PairingFileReadFailed);
         idevice_error_free(ffiError);
         return NO;
     }
     
-    uint16_t rsdPort = 0;
-    ffiError = core_device_proxy_get_server_rsd_port(coreDevice, &rsdPort);
-    if (ffiError) {
-        if (error) *error = MakeError(CoreDeviceRSDPortResolveFailed);
-        idevice_error_free(ffiError);
-        core_device_proxy_free(coreDevice);
-        return NO;
-    }
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    address.sin_port = htons(rppairingPort);
+    inet_pton(AF_INET, targetAddress.UTF8String, &address.sin_addr);
     
-    ffiError = core_device_proxy_create_tcp_adapter(coreDevice, &session->adapter);
-    if (ffiError) {
-        if (error) *error = MakeError(CoreDeviceAdapterCreateFailed);
-        idevice_error_free(ffiError);
-        core_device_proxy_free(coreDevice);
-        return NO;
-    }
-    coreDevice = NULL;
+    ffiError = tunnel_create_rppairing(
+                                       (const struct sockaddr *)&address,
+                                       (socklen_t)sizeof(address),
+                                       "ReynardDebug",
+                                       rpPairingFile,
+                                       NULL, NULL,
+                                       &session->adapter, &session->handshake
+                                       );
+    rp_pairing_file_free(rpPairingFile);
     
-    ffiError = adapter_connect(session->adapter, rsdPort, &stream);
     if (ffiError) {
-        if (error) *error = MakeError(AdapterStreamConnectFailed);
+        if (error) *error = MakeError(TunnelCreateFailed);
         idevice_error_free(ffiError);
-        freeDebugSession(session);
         return NO;
     }
-    
-    ffiError = rsd_handshake_new(stream, &session->handshake);
-    if (ffiError) {
-        if (error) *error = MakeError(RSDHandshakeCreateFailed);
-        idevice_error_free(ffiError);
-        freeDebugSession(session);
-        return NO;
-    }
-    stream = NULL;
     
     ffiError = remote_server_connect_rsd(session->adapter, session->handshake, &session->remoteServer);
     if (ffiError) {
@@ -456,6 +446,84 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
         return NULL;
     }
     
+    if (__builtin_available(iOS 17.4, *)) {
+        RpPairingFileHandle *rpPairingFile = NULL;
+        IdeviceFfiError *ffiError = rp_pairing_file_read(pairingFilePath.fileSystemRepresentation, &rpPairingFile);
+        if (ffiError) {
+            if (error) *error = MakeError(PairingFileReadFailed);
+            idevice_error_free(ffiError);
+            return NULL;
+        }
+        
+        struct sockaddr_in address;
+        memset(&address, 0, sizeof(address));
+        address.sin_family = AF_INET;
+        address.sin_port = htons(rppairingPort);
+        
+        if (inet_pton(AF_INET, targetAddress.UTF8String, &address.sin_addr) != 1) {
+            rp_pairing_file_free(rpPairingFile);
+            if (error) *error = MakeError(InvalidTargetAddress);
+            return NULL;
+        }
+        
+        AdapterHandle *adapter = NULL;
+        RsdHandshakeHandle *handshake = NULL;
+        ffiError = tunnel_create_rppairing(
+                                           (const struct sockaddr *)&address,
+                                           (socklen_t)sizeof(address),
+                                           "Reynard",
+                                           rpPairingFile,
+                                           NULL, NULL,
+                                           &adapter, &handshake
+                                           );
+        rp_pairing_file_free(rpPairingFile);
+        
+        if (ffiError) {
+            if (error) *error = MakeError(TunnelCreateFailed);
+            idevice_error_free(ffiError);
+            return NULL;
+        }
+        
+        HeartbeatClientHandle *heartbeatClient = NULL;
+        ffiError = heartbeat_connect_rsd(adapter, handshake, &heartbeatClient);
+        if (ffiError) {
+            if (error) *error = MakeError(HeartbeatConnectFailed);
+            idevice_error_free(ffiError);
+            rsd_handshake_free(handshake);
+            adapter_free(adapter);
+            return NULL;
+        }
+        
+        uint64_t nextInterval = 0;
+        ffiError = heartbeat_get_marco(heartbeatClient, 2, &nextInterval);
+        if (!ffiError) ffiError = heartbeat_send_polo(heartbeatClient);
+        
+        if (ffiError) {
+            // Seems like StikDebug don't do anything on this
+            // so I guess I'll just log it and keep going?
+            logger([NSString stringWithFormat:@"Heartbeat exchange failed: %s", ffiError->message ?: "unknown error"], nil);
+        }
+        
+        DeviceProvider *provider = calloc(1, sizeof(*provider));
+        if (!provider) {
+            heartbeat_client_free(heartbeatClient);
+            rsd_handshake_free(handshake);
+            adapter_free(adapter);
+            if (error) *error = MakeError(DeviceProviderAllocationFailed);
+            return NULL;
+        }
+        
+        provider->handle = NULL;
+        provider->adapter = adapter;
+        provider->handshake = handshake;
+        provider->heartbeatClient = heartbeatClient;
+        provider->heartbeatRunning = NO;
+        
+        startHeartbeat(provider);
+        
+        return provider;
+    }
+    
     IdevicePairingFile *pairingFile = NULL;
     IdeviceFfiError *ffiError = idevice_pairing_file_read(pairingFilePath.fileSystemRepresentation, &pairingFile);
     
@@ -505,7 +573,7 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
         return NULL;
     }
     
-    DeviceProvider *provider = malloc(sizeof(*provider));
+    DeviceProvider *provider = calloc(1, sizeof(*provider));
     if (!provider) {
         idevice_provider_free(providerHandle);
         if (error) *error = MakeError(DeviceProviderAllocationFailed);
@@ -513,6 +581,8 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
     }
     
     provider->handle = providerHandle;
+    provider->adapter = NULL;
+    provider->handshake = NULL;
     provider->heartbeatClient = heartbeatClient;
     provider->heartbeatRunning = NO;
     
@@ -532,6 +602,8 @@ void freeDeviceProvider(DeviceProvider *provider) {
     if (!provider) return;
     provider->heartbeatRunning = NO;
     if (provider->heartbeatClient) { heartbeat_client_free(provider->heartbeatClient); provider->heartbeatClient = NULL; }
+    if (provider->handshake) { rsd_handshake_free(provider->handshake); provider->handshake = NULL; }
+    if (provider->adapter) { adapter_free(provider->adapter); provider->adapter = NULL; }
     if (provider->handle) { idevice_provider_free(provider->handle); provider->handle = NULL; }
     free(provider);
 }
@@ -1131,7 +1203,7 @@ static BOOL isImageMounted(ImageMounterHandle *mounterClient, const char *imageT
 }
 
 BOOL ensureDDIMounted(DeviceProvider *provider, NSError **error) {
-    if (!provider || !provider->handle) {
+    if (!provider) {
         if (error) *error = MakeError(DeviceProviderCreateFailed);
         return NO;
     }
@@ -1158,25 +1230,44 @@ BOOL ensureDDIMounted(DeviceProvider *provider, NSError **error) {
     uint64_t uniqueChipID = 0;
     BOOL success = NO;
     
-    ffiError = lockdownd_connect(provider->handle, &lockdownClient);
-    if (ffiError) {
-        if (error) *error = MakeError(LockdowndConnectFailed);
-        idevice_error_free(ffiError);
-        goto cleanup;
-    }
-    
-    ffiError = idevice_provider_get_pairing_file(provider->handle, &pairingFile);
-    if (ffiError) {
-        if (error) *error = MakeError(ProviderPairingFileFetchFailed);
-        idevice_error_free(ffiError);
-        goto cleanup;
-    }
-    
-    ffiError = lockdownd_start_session(lockdownClient, pairingFile);
-    if (ffiError) {
-        if (error) *error = MakeError(LockdowndSessionStartFailed);
-        idevice_error_free(ffiError);
-        goto cleanup;
+    if (__builtin_available(iOS 17.4, *)) {
+        if (!provider->adapter || !provider->handshake) {
+            if (error) *error = MakeError(DeviceProviderCreateFailed);
+            return NO;
+        }
+        
+        ffiError = lockdownd_connect_rsd(provider->adapter, provider->handshake, &lockdownClient);
+        if (ffiError) {
+            if (error) *error = MakeError(LockdowndConnectFailed);
+            idevice_error_free(ffiError);
+            goto cleanup;
+        }
+    } else {
+        if (!provider->handle) {
+            if (error) *error = MakeError(DeviceProviderCreateFailed);
+            return NO;
+        }
+        
+        ffiError = lockdownd_connect(provider->handle, &lockdownClient);
+        if (ffiError) {
+            if (error) *error = MakeError(LockdowndConnectFailed);
+            idevice_error_free(ffiError);
+            goto cleanup;
+        }
+        
+        ffiError = idevice_provider_get_pairing_file(provider->handle, &pairingFile);
+        if (ffiError) {
+            if (error) *error = MakeError(ProviderPairingFileFetchFailed);
+            idevice_error_free(ffiError);
+            goto cleanup;
+        }
+        
+        ffiError = lockdownd_start_session(lockdownClient, pairingFile);
+        if (ffiError) {
+            if (error) *error = MakeError(LockdowndSessionStartFailed);
+            idevice_error_free(ffiError);
+            goto cleanup;
+        }
     }
     
     ffiError = lockdownd_get_value(lockdownClient, "ProductVersion", NULL, &versionNode);
@@ -1199,7 +1290,11 @@ BOOL ensureDDIMounted(DeviceProvider *provider, NSError **error) {
         goto cleanup;
     }
     
-    ffiError = image_mounter_connect(provider->handle, &mounterClient);
+    if (__builtin_available(iOS 17.4, *)) {
+        ffiError = image_mounter_connect_rsd(provider->adapter, provider->handshake, &mounterClient);
+    } else {
+        ffiError = image_mounter_connect(provider->handle, &mounterClient);
+    }
     if (ffiError) {
         if (error) *error = MakeError(ImageMounterConnectFailed);
         idevice_error_free(ffiError);
@@ -1256,7 +1351,11 @@ BOOL ensureDDIMounted(DeviceProvider *provider, NSError **error) {
         goto cleanup;
     }
     
-    ffiError = image_mounter_mount_personalized(mounterClient, provider->handle, modernImageData.bytes, modernImageData.length, modernTrustCacheData.bytes, modernTrustCacheData.length, modernBuildManifestData.bytes, modernBuildManifestData.length, NULL, uniqueChipID);
+    if (__builtin_available(iOS 17.4, *)) {
+        ffiError = image_mounter_mount_personalized_rsd(mounterClient, provider->adapter, provider->handshake, modernImageData.bytes, modernImageData.length, modernTrustCacheData.bytes, modernTrustCacheData.length, modernBuildManifestData.bytes, modernBuildManifestData.length, NULL, uniqueChipID);
+    } else {
+        ffiError = image_mounter_mount_personalized(mounterClient, provider->handle, modernImageData.bytes, modernImageData.length, modernTrustCacheData.bytes, modernTrustCacheData.length, modernBuildManifestData.bytes, modernBuildManifestData.length, NULL, uniqueChipID);
+    }
     
     if (ffiError) {
         if (error) *error = MakeError(ModernDDIMountFailed);
@@ -1278,13 +1377,27 @@ cleanup:
 
 // From StikDebug
 size_t getMountedDeviceCount(DeviceProvider *provider) {
-    if (!provider || !provider->handle) {
-        logger(@"getMountedDeviceCount failed: missing provider handle", nil);
+    if (!provider) {
+        logger(@"getMountedDeviceCount failed: missing provider", nil);
         return 0;
     }
     
     ImageMounterHandle *client = NULL;
-    IdeviceFfiError *ffiError = image_mounter_connect(provider->handle, &client);
+    IdeviceFfiError *ffiError = NULL;
+    
+    if (__builtin_available(iOS 17.4, *)) {
+        if (!provider->adapter || !provider->handshake) {
+            logger(@"getMountedDeviceCount failed: missing tunnel handles", nil);
+            return 0;
+        }
+        ffiError = image_mounter_connect_rsd(provider->adapter, provider->handshake, &client);
+    } else {
+        if (!provider->handle) {
+            logger(@"getMountedDeviceCount failed: missing provider handle", nil);
+            return 0;
+        }
+        ffiError = image_mounter_connect(provider->handle, &client);
+    }
     if (ffiError) {
         if (ffiError->message) logger([NSString stringWithFormat:@"getMountedDeviceCount image_mounter_connect failed: %s", ffiError->message], nil);
         idevice_error_free(ffiError);

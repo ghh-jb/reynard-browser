@@ -50,16 +50,6 @@ NSString *ErrorDescription(ErrorCode code) {
             return @"Legacy debug service did not enable TLS.";
         case ProcessControlCreateFailed:
             return @"Failed to create process control client.";
-        case CoreDeviceConnectFailed:
-            return @"Failed to connect CoreDevice proxy.";
-        case CoreDeviceRSDPortResolveFailed:
-            return @"Failed to resolve RSD port.";
-        case CoreDeviceAdapterCreateFailed:
-            return @"Failed to create CoreDevice TCP adapter.";
-        case AdapterStreamConnectFailed:
-            return @"Failed to connect adapter stream.";
-        case RSDHandshakeCreateFailed:
-            return @"Failed to create RSD handshake.";
         case RemoteServerConnectFailed:
             return @"Failed to connect remote server.";
         case DebugProxyConnectFailed:
@@ -144,6 +134,8 @@ NSString *ErrorDescription(ErrorCode code) {
             return @"Failed to mount personalized DDI image.";
         case EndpointConnectivityLost:
             return @"Lost TCP connectivity to the JIT debug endpoint.";
+        case TunnelCreateFailed:
+            return @"Failed to create RPPairing tunnel.";
     }
     
     return @"Unknown error.";
@@ -173,11 +165,6 @@ ErrorGroup ErrorGroupForCode(ErrorCode code) {
         case EndpointConnectivityLost:
             return ErrorGroupSharedSetup;
         case ProcessControlCreateFailed:
-        case CoreDeviceConnectFailed:
-        case CoreDeviceRSDPortResolveFailed:
-        case CoreDeviceAdapterCreateFailed:
-        case AdapterStreamConnectFailed:
-        case RSDHandshakeCreateFailed:
         case RemoteServerConnectFailed:
         case DebugProxyConnectFailed:
         case NoAckConfigureFailed:
@@ -186,6 +173,7 @@ ErrorGroup ErrorGroupForCode(ErrorCode code) {
         case UniqueChipIDReadFailed:
         case UniqueChipIDInvalid:
         case ModernDDIMountFailed:
+        case TunnelCreateFailed:
             return ErrorGroupModernPath;
         case LockdowndConnectFailed:
         case ProviderPairingFileFetchFailed:

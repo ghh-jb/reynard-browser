@@ -56,7 +56,7 @@
         DebugSession session = {0};
         IdeviceFfiError *ffiError = NULL;
         
-        if (!connectDebugSession(provider, &session, error)) return NO;
+        if (!connectDebugSession(provider, &session, @"10.7.0.1", error)) return NO;
         
         ProcessControlHandle *processControl = NULL;
         ffiError = process_control_new(session.remoteServer, &processControl);
@@ -94,7 +94,7 @@
         
         logger([NSString stringWithFormat:@"Attach response for pid %d: %@", pid, attachResponse.length > 0 ? @"<stop packet>" : @"<no response>"], logHandler);
         
-        registerJITEndpointForPID(pid, @"10.7.0.1", 62078, -1);
+        registerJITEndpointForPID(pid, @"10.7.0.1", 49152, -1);
         
         DebugSession *persistentSession = malloc(sizeof(*persistentSession));
         if (!persistentSession) {
@@ -188,7 +188,10 @@
                 return;
             }
             self.didEnsureDDIMounted = YES;
-            [self startDDIMonitor];
+            
+            // Not sure why but it's quite unreliable. So commented.
+            // But still it's very unlikely that the DDI is unmounted I guess?
+            // [self startDDIMonitor];
         }
         
         provider = self.sharedProvider;
@@ -234,7 +237,7 @@
 
 - (void)dealloc {
     resetJITEndpointMonitor();
-    [self stopDDIMonitor];
+    // [self stopDDIMonitor];
     if (_sharedProvider) {
         freeDeviceProvider(_sharedProvider);
         _sharedProvider = NULL;

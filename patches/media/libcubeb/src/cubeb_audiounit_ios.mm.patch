@@ -1,0 +1,27 @@
+diff --git a/media/libcubeb/src/cubeb_audiounit_ios.mm b/media/libcubeb/src/cubeb_audiounit_ios.mm
+new file mode 100644
+index 000000000000..42063f754716
+--- /dev/null
++++ b/media/libcubeb/src/cubeb_audiounit_ios.mm
+@@ -0,0 +1,21 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++/* This source code is introduced during the work of an iOS 15+ browser
++ * https://github.com/minh-ton/reynard-browser using the Gecko fork
++ * https://github.com/minh-ton/truefox in Feb 2026. */
++
++#import <AVFoundation/AVFoundation.h>
++
++extern "C" void cubeb_ios_activate_audio_session(void) {
++  AVAudioSession* session = [AVAudioSession sharedInstance];
++  NSError* error = nil;
++
++  [session setCategory:AVAudioSessionCategoryPlayback
++                  mode:AVAudioSessionModeMoviePlayback
++               options:0
++                 error:&error];
++
++  [session setActive:YES error:nil];
++}

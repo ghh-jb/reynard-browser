@@ -1,0 +1,92 @@
+diff --git a/media/libcubeb/src/cubeb_audiounit.cpp b/media/libcubeb/src/cubeb_audiounit.cpp
+index d1a217687acd..aeb83310d38a 100644
+--- a/media/libcubeb/src/cubeb_audiounit.cpp
++++ b/media/libcubeb/src/cubeb_audiounit.cpp
+@@ -299,6 +299,12 @@ struct cubeb_stream {
+   unique_ptr<property_listener> input_source_listener;
+   unique_ptr<property_listener> output_source_listener;
+   #endif
++#if TARGET_OS_IPHONE
++  // REYNARD: kHALOutputParam_Volume is unavailable on RemoteIO,
++  // so volume is applied as a software gain multiplier in the 
++  // render callback instead.
++  atomic<float> software_volume{1.0f};
++#endif
+ };
+ 
+ bool
+@@ -756,15 +762,38 @@ audiounit_output_callback(void * user_ptr,
+                                 outBufferList->mBuffers[0].mDataByteSize);
+   }
+ 
++#if TARGET_OS_IPHONE
++  // REYNARD: Apply software volume.
++  float vol = stm->software_volume.load(memory_order_relaxed);
++  if (vol != 1.0f) {
++    float * samples =
++        static_cast<float *>(outBufferList->mBuffers[0].mData);
++    uint32_t sample_count =
++        output_frames * outBufferList->mBuffers[0].mNumberChannels;
++    for (uint32_t i = 0; i < sample_count; i++) {
++      samples[i] *= vol;
++    }
++  }
++#endif
++
+   return noErr;
+ }
+ 
++#if TARGET_OS_IPHONE
++/* Defined in cubeb_audiounit_ios.mm */
++extern "C" void cubeb_ios_activate_audio_session(void);
++#endif
++
+ extern "C" {
+ int
+ audiounit_init(cubeb ** context, char const * /* context_name */)
+ {
+ #if !TARGET_OS_IPHONE
+   cubeb_set_coreaudio_notification_runloop();
++#else
++  // REYNARD: Activate AVAudioSession so that AudioUnitInitialize()
++  // on the RemoteIO unit succeeds.
++  cubeb_ios_activate_audio_session();
+ #endif
+ 
+   *context = new cubeb;
+@@ -3115,6 +3144,10 @@ audiounit_stream_get_latency(cubeb_stream * stm, uint32_t * latency)
+ static int
+ audiounit_stream_get_volume(cubeb_stream * stm, float * volume)
+ {
++#if TARGET_OS_IPHONE
++  *volume = stm->software_volume.load(memory_order_relaxed);
++  return CUBEB_OK;
++#else
+   assert(stm->output_unit);
+   OSStatus r = AudioUnitGetParameter(stm->output_unit, kHALOutputParam_Volume,
+                                      kAudioUnitScope_Global, 0, volume);
+@@ -3123,11 +3156,16 @@ audiounit_stream_get_volume(cubeb_stream * stm, float * volume)
+     return CUBEB_ERROR;
+   }
+   return CUBEB_OK;
++#endif
+ }
+ 
+ static int
+ audiounit_stream_set_volume(cubeb_stream * stm, float volume)
+ {
++#if TARGET_OS_IPHONE
++  stm->software_volume.store(volume, memory_order_relaxed);
++  return CUBEB_OK;
++#else
+   assert(stm->output_unit);
+   OSStatus r;
+   r = AudioUnitSetParameter(stm->output_unit, kHALOutputParam_Volume,
+@@ -3138,6 +3176,7 @@ audiounit_stream_set_volume(cubeb_stream * stm, float volume)
+     return CUBEB_ERROR;
+   }
+   return CUBEB_OK;
++#endif
+ }
+ 
+ unique_ptr<char[]>

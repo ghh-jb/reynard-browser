@@ -42,7 +42,11 @@ final class TabManagerImplementation: NSObject, TabManager {
     }
     
     private func makeTab(windowId: String?) -> Tab {
-        Tab(session: createSession(windowId: windowId))
+        let tab = Tab(session: createSession(windowId: windowId))
+        let controller = NowPlayingController(session: tab.session)
+        tab.session.mediaSessionDelegate = controller
+        tab.nowPlayingController = controller
+        return tab
     }
     
     private func restoredURL(from value: String?) -> String? {
@@ -74,6 +78,9 @@ final class TabManagerImplementation: NSObject, TabManager {
                 thumbnail: snapshot.thumbnail
             )
             tab.pendingRestoreURL = restoredURL(from: snapshot.url)
+            let controller = NowPlayingController(session: tab.session)
+            tab.session.mediaSessionDelegate = controller
+            tab.nowPlayingController = controller
             return tab
         }
         selectedTabIndex = -1

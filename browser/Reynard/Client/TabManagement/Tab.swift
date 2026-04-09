@@ -20,6 +20,7 @@ final class Tab {
     var isLoading = false
     var progress: Float = 0
     var thumbnail: UIImage?
+    var nowPlayingController: NowPlayingController?
     
     init(
         id: UUID = UUID(),

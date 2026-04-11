@@ -18,6 +18,7 @@ final class PadTabCell: UICollectionViewCell {
         label.font = .systemFont(ofSize: 14, weight: .semibold)
         label.textColor = .secondaryLabel
         label.numberOfLines = 1
+        label.textAlignment = .center
         return label
     }()
     
@@ -37,7 +38,7 @@ final class PadTabCell: UICollectionViewCell {
     private let separatorView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .systemGray3
+        view.backgroundColor = .separator
         return view
     }()
     
@@ -53,18 +54,19 @@ final class PadTabCell: UICollectionViewCell {
         closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
         
         NSLayoutConstraint.activate([
-            titleLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
+            titleLabel.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -8),
             titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 10),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: closeButton.leadingAnchor, constant: -8),
             
             closeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -6),
             closeButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            closeButton.widthAnchor.constraint(equalToConstant: 22),
+            closeButton.heightAnchor.constraint(equalToConstant: 22),
             
             separatorView.topAnchor.constraint(equalTo: contentView.topAnchor),
             separatorView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             separatorView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            separatorView.widthAnchor.constraint(equalToConstant: 1 / UIScreen.main.scale),
+            separatorView.widthAnchor.constraint(equalToConstant: 2 / UIScreen.main.scale),
         ])
     }
     
@@ -74,9 +76,10 @@ final class PadTabCell: UICollectionViewCell {
     
     func configure(title: String, selected: Bool) {
         titleLabel.text = title.isEmpty ? "Homepage" : title
-        contentView.backgroundColor = selected ? .systemGray6 : .systemGray4
+        contentView.backgroundColor = selected ? .systemGray6 : .systemGray5
         titleLabel.textColor = selected ? .label : .secondaryLabel
         closeButton.isHidden = !selected
+        separatorView.isHidden = selected
     }
     
     @objc private func closeTapped() {

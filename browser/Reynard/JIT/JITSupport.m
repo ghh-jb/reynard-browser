@@ -113,14 +113,12 @@ static BOOL shouldDetachDebugSessionPID(int32_t pid) {
     return shouldDetach;
 }
 
-// MARK: JIT on iOS 17+
-
 static void startHeartbeat(DeviceProvider *provider) {
     dispatch_queue_t heartbeatQueue = dispatch_queue_create("me.minh-ton.jit.provider-heartbeat",DISPATCH_QUEUE_SERIAL);
     provider->heartbeatRunning = YES;
     
     dispatch_async(heartbeatQueue, ^{
-        uint64_t currentInterval = 2;
+        uint64_t currentInterval = 15;
         while (provider->heartbeatRunning) {
             uint64_t newInterval = 0;
             IdeviceFfiError *ffiError = heartbeat_get_marco(provider->heartbeatClient, currentInterval, &newInterval);
@@ -138,10 +136,12 @@ static void startHeartbeat(DeviceProvider *provider) {
                 break;
             }
             
-            currentInterval = (newInterval > 0) ? (newInterval + 2) : 2;
+            currentInterval = (newInterval > 0) ? (newInterval + 5) : 15;
         }
     });
 }
+
+// MARK: JIT on iOS 17+
 
 BOOL sendDebugCommand(DebugProxyHandle *debugProxy, NSString *commandString, NSString **responseOut, NSError **error) {
     DebugserverCommandHandle *command = debugserver_command_new(commandString.UTF8String, NULL, 0);
@@ -390,7 +390,7 @@ void runDebugService(int32_t pid, DebugSession *session) {
     free(session);
 }
 
-DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *targetAddress, BOOL enableHeartbeat, NSError **error) {
+DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *targetAddress, NSError **error) {
     if (![[NSFileManager defaultManager] fileExistsAtPath:pairingFilePath]) {
         if (error) *error = MakeError(PairingFileMissing);
         return NULL;
@@ -435,26 +435,18 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
         }
         
         HeartbeatClientHandle *heartbeatClient = NULL;
-        if (enableHeartbeat) {  // Only on TXM iOS 26+ devices
-            ffiError = heartbeat_connect_rsd(adapter, handshake, &heartbeatClient);
-            if (ffiError) {
-                if (error) *error = MakeError(HeartbeatConnectFailed);
-                idevice_error_free(ffiError);
-                rsd_handshake_free(handshake);
-                adapter_free(adapter);
-                return NULL;
-            }
-            
-            uint64_t nextInterval = 0;
-            ffiError = heartbeat_get_marco(heartbeatClient, 2, &nextInterval);
-            if (!ffiError) ffiError = heartbeat_send_polo(heartbeatClient);
-            
-            if (ffiError) {
-                // Seems like StikDebug don't do anything on this
-                // so I guess I'll just log it and keep going?
-                logger([NSString stringWithFormat:@"Heartbeat exchange failed: %s", ffiError->message ?: "unknown error"]);
-            }
+        ffiError = heartbeat_connect_rsd(adapter, handshake, &heartbeatClient);
+        if (ffiError) {
+            if (error) *error = MakeError(HeartbeatConnectFailed);
+            idevice_error_free(ffiError);
+            rsd_handshake_free(handshake);
+            adapter_free(adapter);
+            return NULL;
         }
+        
+        uint64_t nextInterval = 0;
+        ffiError = heartbeat_get_marco(heartbeatClient, 15, &nextInterval);
+        if (!ffiError) ffiError = heartbeat_send_polo(heartbeatClient);
         
         DeviceProvider *provider = calloc(1, sizeof(*provider));
         if (!provider) {
@@ -471,7 +463,7 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
         provider->heartbeatClient = heartbeatClient;
         provider->heartbeatRunning = NO;
         
-        if (enableHeartbeat && heartbeatClient) startHeartbeat(provider);
+        if (heartbeatClient) startHeartbeat(provider);
         
         return provider;
     }
@@ -511,11 +503,26 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
         return NULL;
     }
     
+    HeartbeatClientHandle *heartbeatClient = NULL;
+    ffiError = heartbeat_connect(providerHandle, &heartbeatClient);
+    if (ffiError) {
+        if (error) *error = MakeError(HeartbeatConnectFailed);
+        idevice_error_free(ffiError);
+        idevice_provider_free(providerHandle);
+        return NULL;
+    }
+    
+    uint64_t nextInterval = 0;
+    ffiError = heartbeat_get_marco(heartbeatClient, 15, &nextInterval);
+    if (!ffiError) ffiError = heartbeat_send_polo(heartbeatClient);
+    
     provider->handle = providerHandle;
     provider->adapter = NULL;
     provider->handshake = NULL;
-    provider->heartbeatClient = NULL;
+    provider->heartbeatClient = heartbeatClient;
     provider->heartbeatRunning = NO;
+    
+    startHeartbeat(provider);
     
     return provider;
 }
@@ -1204,33 +1211,6 @@ static BOOL probeTCPEndpoint(NSString *targetAddress, uint16_t port, NSTimeInter
     return socketError == 0;
 }
 
-static BOOL legacyEndpointSocketHealthy(int socketFD) {
-    if (socketFD < 0) return NO;
-    
-    int socketError = 0;
-    socklen_t socketErrorLength = sizeof(socketError);
-    if (getsockopt(socketFD, SOL_SOCKET, SO_ERROR, &socketError, &socketErrorLength) != 0) return NO;
-    if (socketError != 0) return NO;
-    
-    struct pollfd pfd;
-    memset(&pfd, 0, sizeof(pfd));
-    pfd.fd = socketFD;
-    pfd.events = POLLIN | POLLOUT | POLLERR | POLLHUP;
-    
-    int pollResult = poll(&pfd, 1, 0);
-    if (pollResult < 0) return NO;
-    if (pollResult > 0 && (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))) return NO;
-    
-    if (pollResult > 0 && (pfd.revents & POLLIN)) {
-        char peekByte = 0;
-        ssize_t peekResult = recv(socketFD, &peekByte, 1, MSG_PEEK | MSG_DONTWAIT);
-        if (peekResult == 0) return NO;
-        if (peekResult < 0 && errno != EAGAIN && errno != EWOULDBLOCK) return NO;
-    }
-    
-    return YES;
-}
-
 static NSDictionary<NSString *, id> *endpointEntryForKey(NSString *endpointKey, NSNumber **pidOut) {
     __block NSDictionary<NSString *, id> *matchedEntry = nil;
     __block NSNumber *matchedPID = nil;
@@ -1289,18 +1269,7 @@ static void performEndpointMonitorTick(void) {
     if (targetAddress.length == 0 || !portNumber) return;
     
     uint16_t port = (uint16_t)portNumber.unsignedShortValue;
-    NSNumber *socketNumber = endpointEntry[@"socketFD"];
-    int socketFD = socketNumber ? socketNumber.intValue : -1;
-    
-    BOOL endpointHealthy = NO;
-    if (socketFD >= 0) {
-        int legacyProbeError = 0;
-        BOOL legacyProbeReachable = probeTCPEndpoint(targetAddress, port, 0.35, &legacyProbeError);
-        BOOL legacyProbeHealthy = legacyProbeReachable || legacyProbeError == ECONNREFUSED || legacyProbeError == EADDRINUSE;
-        endpointHealthy = legacyEndpointSocketHealthy(socketFD) && legacyProbeHealthy;
-    } else {
-        endpointHealthy = probeTCPEndpoint(targetAddress, port, 0.35, NULL);
-    }
+    BOOL endpointHealthy = probeTCPEndpoint(targetAddress, port, 0.35, NULL);
     
     if (endpointHealthy) {
         [endpointFailureCounts() removeObjectForKey:endpointKey];
@@ -1311,8 +1280,7 @@ static void performEndpointMonitorTick(void) {
     NSUInteger failureCount = [failureCounts[endpointKey] unsignedIntegerValue] + 1;
     failureCounts[endpointKey] = @(failureCount);
     
-    NSUInteger requiredFailures = socketFD >= 0 ? 1 : 2;
-    if (failureCount < requiredFailures) return;
+    if (failureCount < 2) return;
     
     endpointFailureLatched = YES;
     stopEndpointMonitorLocked();
@@ -1336,7 +1304,7 @@ static void startEndpointMonitorLocked(void) {
     dispatch_resume(timer);
 }
 
-void registerJITEndpointForPID(int32_t pid, NSString *targetAddress, uint16_t port, int socketFD) {
+void registerJITEndpointForPID(int32_t pid, NSString *targetAddress, uint16_t port) {
     if (pid <= 0 || targetAddress.length == 0 || port == 0) return;
     
     dispatch_async(endpointMonitorQueue(), ^{
@@ -1345,7 +1313,6 @@ void registerJITEndpointForPID(int32_t pid, NSString *targetAddress, uint16_t po
             @"key": endpointKey,
             @"address": [targetAddress copy],
             @"port": @(port),
-            @"socketFD": @(socketFD),
         };
         
         [endpointFailureCounts() removeObjectForKey:endpointKey];

@@ -15,7 +15,7 @@
 @property(nonatomic, strong) dispatch_queue_t providerQueue;
 @property(nonatomic, assign) BOOL didEnsureDDIMounted;
 
-- (DeviceProvider *)getProvider:(BOOL)hasTXM26 error:(NSError **)error;
+- (DeviceProvider *)getProvider:(NSError **)error;
 
 @end
 
@@ -46,7 +46,7 @@
         // Thanks StikDebug!
         // https://github.com/StephenDev0/StikDebug
         
-        DeviceProvider *provider = [self getProvider:hasTXM26 error:error];
+        DeviceProvider *provider = [self getProvider:error];
         if (!provider) return NO;
         
         DebugSession session = {0};
@@ -90,9 +90,9 @@
         
         logger([NSString stringWithFormat:@"Attach response for pid %d: %@", pid, attachResponse.length > 0 ? @"<stop packet>" : @"<no response>"]);
         
-        registerJITEndpointForPID(pid, @"10.7.0.1", 49152, -1);
-        
         if (hasTXM26) {
+            registerJITEndpointForPID(pid, @"10.7.0.1", 49152);
+            
             DebugSession *persistentSession = malloc(sizeof(*persistentSession));
             if (!persistentSession) {
                 freeDebugSession(&session);
@@ -120,7 +120,7 @@
         
         return YES;
     } else {
-        DeviceProvider *provider = [self getProvider:NO error:error];
+        DeviceProvider *provider = [self getProvider:error];
         if (!provider) return NO;
         
         uint16_t debugPort = 0;
@@ -144,8 +144,6 @@
         
         logger([NSString stringWithFormat:@"Legacy attach response for pid %d: %@", pid, attachResponse.length > 0 ? attachResponse : @"<no response>"]);
         
-        registerJITEndpointForPID(pid, @"10.7.0.1", debugPort, connection.socketFD);
-        
         // detach immediately
         if (!detachLegacyDebuggerSession(&connection, pid)) {
             closeLegacyDebugConnection(&connection);
@@ -165,15 +163,13 @@
     });
 }
 
-- (DeviceProvider *)getProvider:(BOOL)hasTXM26 error:(NSError **)error {
+- (DeviceProvider *)getProvider:(NSError **)error {
     __block DeviceProvider *provider = NULL;
     __block NSError *providerError = nil;
     
     dispatch_sync(self.providerQueue, ^{
-        BOOL enableHeartbeat = hasTXM26;
-        
         if (!self.sharedProvider) {
-            self.sharedProvider = createDeviceProvider(pairingFilePath(), @"10.7.0.1", enableHeartbeat, &providerError);
+            self.sharedProvider = createDeviceProvider(pairingFilePath(), @"10.7.0.1", &providerError);
             self.didEnsureDDIMounted = NO;
         }
         

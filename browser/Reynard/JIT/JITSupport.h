@@ -32,7 +32,7 @@ NSMutableSet<NSNumber *> *activeDebugSessionPIDs(void);
 NSMutableSet<NSNumber *> *detachRequestedDebugSessionPIDs(void);
 
 DeviceProvider *_Nullable createDeviceProvider(
-    NSString *pairingFilePath, NSString *targetAddress, BOOL enableHeartbeat,
+    NSString *pairingFilePath, NSString *targetAddress,
     NSError *_Nullable *_Nullable error);
 BOOL ensureDDIMounted(DeviceProvider *provider,
                       NSError *_Nullable *_Nullable error);
@@ -64,7 +64,7 @@ void closeLegacyDebugConnection(LegacyDebugConnection *connection);
 void runDebugService(int32_t pid, DebugSession *session);
 
 void registerJITEndpointForPID(int32_t pid, NSString *targetAddress,
-                               uint16_t port, int socketFD);
+                               uint16_t port);
 void unregisterJITEndpointForPID(int32_t pid);
 void resetJITEndpointMonitor(void);
 

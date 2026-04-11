@@ -12,8 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-NSError *errorWithCode(ErrorCode code);
-void logger(NSString *message, void (^_Nullable logHandler)(NSString *message));
+void logger(NSString *message);
 NSString *pairingFilePath(void);
 
 uint64_t parseLittleEndianHex64(NSString *hexString);

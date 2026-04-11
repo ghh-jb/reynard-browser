@@ -37,14 +37,6 @@ final class JITController {
             object: nil
         )
         
-        // Unreliable, commented out temporarily.
-        /* NotificationCenter.default.addObserver(
-         self,
-         selector: #selector(handleDDIUnmountedNotification(_:)),
-         name: Notification.Name("me-minh-ton.jit.ddimonitor"),
-         object: nil
-         ) */
-        
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleJITDisconnectNotification(_:)),
@@ -62,18 +54,41 @@ final class JITController {
         return normalized == "tab"
     }
     
+    private func filePath(atPath path: String, withLength length: Int) -> String? {
+        guard let file = try? FileManager.default.contentsOfDirectory(atPath: path).first(where: { $0.count == length }) else {
+            return nil
+        }
+        return "\(path)/\(file)"
+    }
+    
+    // Also from StikDebug
+    private func hasTXM26() -> Bool {
+        guard #available(iOS 26, *) else {
+            return false
+        }
+        
+        if let boot = filePath(atPath: "/System/Volumes/Preboot", withLength: 36),
+           let file = filePath(atPath: "\(boot)/boot", withLength: 96) {
+            return access("\(file)/usr/standalone/firmware/FUD/Ap,TrustedExecutionMonitor.img4", F_OK) == 0
+        }
+        
+        return (filePath(atPath: "/private/preboot", withLength: 96).map {
+            access("\($0)/usr/standalone/firmware/FUD/Ap,TrustedExecutionMonitor.img4", F_OK) == 0
+        }) ?? false
+    }
+    
     func childProcessDidStart(pid: Int32, processType: String) {
         guard pid > 0 else {
             return
         }
         
         guard BrowserPreferences.shared.isJITEnabled, !isJITLessModeActive, !hasHandledFailure else {
-            ReportChildProcessJITEnabled(pid, false)
+            ReportJITStatusForChild(pid, false, hasTXM26())
             return
         }
         
         guard shouldAttach(to: processType) else {
-            ReportChildProcessJITEnabled(pid, false)
+            ReportJITStatusForChild(pid, false, hasTXM26())
             return
         }
         
@@ -89,13 +104,13 @@ final class JITController {
     
     private func attachToProcess(pid: Int32) {
         do {
-            try JITEnabler.shared.enableJIT(forPID: pid) { _ in }
+            try JITEnabler.shared.enableJIT(forPID: pid, hasTXM26: hasTXM26())
             cancelPreflightWatchdog(for: pid)
-            ReportChildProcessJITEnabled(pid, true)
+            ReportJITStatusForChild(pid, true, hasTXM26())
         } catch {
             let nsError = error as NSError
             cancelPreflightWatchdog(for: pid)
-            ReportChildProcessJITEnabled(pid, false)
+            ReportJITStatusForChild(pid, false, hasTXM26())
             handleJITFailure(error: nsError)
         }
     }
@@ -111,7 +126,7 @@ final class JITController {
                 return
             }
             
-            ReportChildProcessJITEnabled(pid, false)
+            ReportJITStatusForChild(pid, false, hasTXM26())
             self.handleJITFailure(error: NSError(domain: "Reynard.JIT", code: Int(ETIMEDOUT), userInfo: nil))
         }
         
@@ -204,34 +219,6 @@ final class JITController {
         presenter.present(viewController, animated: true)
     }
     
-    private func presentUnmountedDDIFailureScreen(retryCount: Int = 0) {
-        guard retryCount <= failurePresentationRetryLimit else {
-            return
-        }
-        
-        guard let presenter = Self.topViewControllerForPresentation() else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) {
-                self.presentUnmountedDDIFailureScreen(retryCount: retryCount + 1)
-            }
-            return
-        }
-        
-        let viewController = JITFailureViewController(
-            errorCode: Int(ENOENT),
-            errorDescription: "Developer Disk Image was unmounted unexpectedly.",
-            showsErrorDetails: false,
-            titleText: "Failed to enable JIT",
-            messageText: "The required Developer Disk Image for enabling JIT has been unmounted unexpectedly.\n\nQuit the app using the button below and relaunch it manually to continue using the browser.",
-            actionButtonTitle: "Quit Reynard",
-            onPrimaryAction: {
-                self.quitApp()
-            }
-        )
-        viewController.modalPresentationStyle = .pageSheet
-        viewController.modalTransitionStyle = .coverVertical
-        presenter.present(viewController, animated: true)
-    }
-    
     private func disableJITAndQuit() {
         BrowserPreferences.shared.isJITEnabled = false
         quitApp()
@@ -300,28 +287,13 @@ final class JITController {
         childProcessDidStart(pid: pidNumber.int32Value, processType: processType)
     }
     
-    @objc private func handleDDIUnmountedNotification(_ notification: Notification) {
-        guard BrowserPreferences.shared.isJITEnabled else {
-            return
-        }
-        
-        DispatchQueue.main.async {
-            guard !self.hasHandledFailure else {
-                return
-            }
-            
-            self.hasHandledFailure = true
-            self.presentUnmountedDDIFailureScreen()
-        }
-    }
-    
     @objc private func handleJITDisconnectNotification(_ notification: Notification) {
         guard BrowserPreferences.shared.isJITEnabled, !isJITLessModeActive else {
             return
         }
         
         if let pid = (notification.userInfo?["pid"] as? NSNumber)?.int32Value, pid > 0 {
-            ReportChildProcessJITEnabled(pid, false)
+            ReportJITStatusForChild(pid, false, hasTXM26())
         }
         
         DispatchQueue.main.async {

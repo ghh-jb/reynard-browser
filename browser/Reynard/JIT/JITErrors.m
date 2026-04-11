@@ -36,8 +36,6 @@ NSString *ErrorDescription(ErrorCode code) {
             return @"Failed to read pairing file for provider.";
         case HeartbeatConnectFailed:
             return @"Failed to connect heartbeat service.";
-        case HeartbeatExchangeFailed:
-            return @"Heartbeat exchange failed.";
         case LockdowndConnectFailed:
             return @"Failed to connect lockdownd service.";
         case ProviderPairingFileFetchFailed:
@@ -72,10 +70,6 @@ NSString *ErrorDescription(ErrorCode code) {
             return @"Failed to read source memory for prepare-region.";
         case UnexpectedPrepareRegionResponse:
             return @"Unexpected prepare-region response.";
-        case RXAllocationEmptyResponse:
-            return @"RX allocation returned empty response.";
-        case RXAllocationInvalidAddress:
-            return @"RX allocation returned invalid address.";
         case LegacyTLSConfigurationFailed:
             return @"Legacy TLS configuration failed.";
         case LegacyTLSConnectionMissing:
@@ -108,10 +102,6 @@ NSString *ErrorDescription(ErrorCode code) {
             return @"Failed sending legacy debug command packet.";
         case LegacyDebugCommandResponseFailed:
             return @"Failed reading legacy debug command response.";
-        case LegacyContinuePacketFailed:
-            return @"Failed sending legacy continue packet.";
-        case LegacyContinueResponseFailed:
-            return @"Failed reading legacy continue response.";
         case DDIMountPathResolveFailed:
             return @"Unable to resolve the DDI directory path.";
         case DDIFileReadFailed:
@@ -156,7 +146,6 @@ ErrorGroup ErrorGroupForCode(ErrorCode code) {
         case DeviceProviderAllocationFailed:
         case DeviceProviderCreateFailed:
         case HeartbeatConnectFailed:
-        case HeartbeatExchangeFailed:
         case DDIMountPathResolveFailed:
         case DDIFileReadFailed:
         case ImageMounterConnectFailed:
@@ -198,8 +187,6 @@ ErrorGroup ErrorGroupForCode(ErrorCode code) {
         case UnexpectedNoAckResponse:
         case MemoryPrepareReadFailed:
         case UnexpectedPrepareRegionResponse:
-        case RXAllocationEmptyResponse:
-        case RXAllocationInvalidAddress:
         case LegacyProtocolNackReceived:
         case LegacyProtocolPayloadTimeout:
         case LegacyProtocolChecksumTimeout:
@@ -207,8 +194,6 @@ ErrorGroup ErrorGroupForCode(ErrorCode code) {
         case LegacyCommandEncodingFailed:
         case LegacyDebugCommandPacketFailed:
         case LegacyDebugCommandResponseFailed:
-        case LegacyContinuePacketFailed:
-        case LegacyContinueResponseFailed:
         case DDIMountStateQueryFailed:
             return ErrorGroupProtocol;
     }

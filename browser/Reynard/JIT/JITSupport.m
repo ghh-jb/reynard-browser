@@ -120,7 +120,7 @@ static void startHeartbeat(DeviceProvider *provider) {
     provider->heartbeatRunning = YES;
     
     dispatch_async(heartbeatQueue, ^{
-        uint64_t currentInterval = 15;
+        uint64_t currentInterval = 2;
         while (provider->heartbeatRunning) {
             uint64_t newInterval = 0;
             IdeviceFfiError *ffiError = heartbeat_get_marco(provider->heartbeatClient, currentInterval, &newInterval);
@@ -138,7 +138,7 @@ static void startHeartbeat(DeviceProvider *provider) {
                 break;
             }
             
-            currentInterval = (newInterval > 0) ? (newInterval + 5) : 15;
+            currentInterval = (newInterval > 0) ? (newInterval + 2) : 2;
         }
     });
 }
@@ -294,43 +294,21 @@ static BOOL prepareMemoryRegion(DebugProxyHandle *debugProxy, uint64_t startAddr
     return YES;
 }
 
-static BOOL allocateRXRegion(DebugProxyHandle *debugProxy, uint64_t regionSize, uint64_t *addressOut, NSError **error) {
-    NSString *response = nil;
-    NSString *command = [NSString stringWithFormat:@"_M%llx,rx", regionSize];
-    
-    if (!sendDebugCommand(debugProxy, command, &response, error)) return NO;
-    
-    if (response.length == 0) {
-        if (error) *error = MakeError(RXAllocationEmptyResponse);
-        return NO;
-    }
-    
-    uint64_t address = 0;
-    NSScanner *scanner = [NSScanner scannerWithString:response];
-    if (![scanner scanHexLongLong:&address]) {
-        if (error) *error = MakeError(RXAllocationInvalidAddress);
-        return NO;
-    }
-    
-    if (addressOut) *addressOut = address;
-    return YES;
-}
-
-static BOOL detachDebuggerSession(DebugProxyHandle *debugProxy, int32_t pid, DeviceLogHandler logHandler) {
+BOOL detachDebuggerSession(DebugProxyHandle *debugProxy, int32_t pid) {
     NSString *detachResponse = nil;
     NSError *detachError = nil;
     if (sendDebugCommand(debugProxy, @"D", &detachResponse, &detachError)) {
-        logger([NSString stringWithFormat:@"Detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"], logHandler);
+        logger([NSString stringWithFormat:@"Detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"]);
         return YES;
     }
     
     if (!isNotConnectedError(detachError)) {
-        logger([NSString stringWithFormat:@"Detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"], logHandler);
+        logger([NSString stringWithFormat:@"Detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"]);
     }
     return NO;
 }
 
-void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHandler) {
+void runDebugService(int32_t pid, DebugSession *session) {
     if (!session) return;
     
     registerDebugSessionPID(pid);
@@ -343,19 +321,19 @@ void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHan
         NSString *stopResponse = nil;
         commandError = nil;
         
-        if (!sendDebugCommand(session->debugProxy, @"c", &stopResponse, &commandError)) {
-            if (!isNotConnectedError(commandError)) logger([NSString stringWithFormat:@"Debug loop ended for pid %d: %@", pid, commandError.localizedDescription ?: @"continue failed"], logHandler);
-            break;
+        if (shouldDetachDebugSessionPID(pid)) {
+            detachedByCommand = detachDebuggerSession(session->debugProxy, pid);
+            if (detachedByCommand) break;
         }
         
-        if (shouldDetachDebugSessionPID(pid)) {
-            detachedByCommand = detachDebuggerSession(session->debugProxy, pid, logHandler);
-            if (detachedByCommand) break;
+        if (!sendDebugCommand(session->debugProxy, @"c", &stopResponse, &commandError)) {
+            if (!isNotConnectedError(commandError)) logger([NSString stringWithFormat:@"Debug loop ended for pid %d: %@", pid, commandError.localizedDescription ?: @"continue failed"]);
+            break;
         }
         
         if ([stopResponse hasPrefix:@"W"] || [stopResponse hasPrefix:@"X"]) {
             exitPacketPresent = YES;
-            logger([NSString stringWithFormat:@"Target exited for pid %d with packet %@", pid, stopResponse], logHandler);
+            logger([NSString stringWithFormat:@"Target exited for pid %d with packet %@", pid, stopResponse]);
             break;
         }
         
@@ -364,13 +342,11 @@ void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHan
         NSString *x0Field = packetField(stopResponse, @"00");
         NSString *x1Field = packetField(stopResponse, @"01");
         NSString *x2Field = packetField(stopResponse, @"02");
-        NSString *x16Field = packetField(stopResponse, @"10");
         
         uint64_t pc = parseLittleEndianHex64(pcField);
         uint64_t x0 = x0Field ? parseLittleEndianHex64(x0Field) : 0;
         uint64_t x1 = x1Field ? parseLittleEndianHex64(x1Field) : 0;
         uint64_t x2 = x2Field ? parseLittleEndianHex64(x2Field) : 0;
-        uint64_t x16 = x16Field ? parseLittleEndianHex64(x16Field) : 0;
         
         NSString *instructionResponse = nil;
         NSString *readInstruction = [NSString stringWithFormat:@"m%llx,4", pc];
@@ -379,51 +355,25 @@ void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHan
         uint32_t instruction = (uint32_t)parseLittleEndianHex64(instructionResponse ?: @"");
         if (instructionResponse.length == 0 || !instructionIsBreakpoint(instruction)) {
             NSString *signal = packetSignal(stopResponse);
+            
+            // continue with signal
             if (signal && !forwardSignalStop(session->debugProxy, signal, threadID, &commandError)) break;
             continue;
         }
         
         uint16_t breakpointImmediate = (instruction >> 5) & 0xffff;
-        uint64_t executableAddress = x0;
         
-        if (breakpointImmediate == 0xf00d) {
-            if (!threadID || !x16Field) break;
-            if (!writeRegisterValue(session->debugProxy, @"20", pc + 4, threadID, &commandError)) break;
-            
-            if (x16 == 0) {
-                detachedByCommand = detachDebuggerSession(session->debugProxy, pid, logHandler);
-                break;
-            }
-            
-            if (x16 == 1) {
-                if (!x1Field) break;
-                
-                if (executableAddress == 0) {
-                    if (!allocateRXRegion(session->debugProxy, x1, &executableAddress, &commandError)) break;
-                    logger([NSString stringWithFormat:@"Allocated RX region for pid %d at 0x%llx size=0x%llx", pid, executableAddress, x1], logHandler);
-                }
-                
-                if (!prepareMemoryRegion(session->debugProxy, executableAddress, x1, 0, &commandError)) break;
-                if (!writeRegisterValue(session->debugProxy, @"0", executableAddress, threadID, &commandError)) break;
-                continue;
-            }
-            
-            if (x16 == 2) {
-                logger([NSString stringWithFormat:@"Received unsupported 0xf00d x16 command 0x%llx for pid %d", x16, pid], logHandler);
-                if (!writeRegisterValue(session->debugProxy, @"0", 0xE0000002ull, threadID, &commandError)) break;
-                continue;
-            }
-            
-            logger([NSString stringWithFormat:@"Received unknown 0xf00d x16 command 0x%llx for pid %d", x16, pid], logHandler);
-            if (!writeRegisterValue(session->debugProxy, @"0", (0xE0000000ull | (x16 & 0xffffull)), threadID, &commandError)) break;
-            continue;
-        } else if (breakpointImmediate == 0x69) {
+        if (breakpointImmediate == 0x69) {
             if (!x0Field || !x1Field) break;
             
             uint64_t regionSize = x2 != 0 ? x2 : x1;
             uint64_t writableSourceAddress = x2 != 0 ? x1 : 0;
             
+            // ProcessExecutableMemory has already allocated a region, so we just need to prepare it
+            // without allocating first like the universal jit script in StikDebug/Amethyst
             if (!prepareMemoryRegion(session->debugProxy, x0, regionSize, writableSourceAddress, &commandError)) break;
+            
+            // jump over breakpoint
             if (!writeRegisterValue(session->debugProxy, @"20", pc + 4, threadID, &commandError)) break;
         } else {
             continue;
@@ -431,7 +381,7 @@ void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHan
     }
     
     if (!exitPacketPresent && !detachedByCommand) {
-        detachedByCommand = detachDebuggerSession(session->debugProxy, pid, logHandler);
+        detachedByCommand = detachDebuggerSession(session->debugProxy, pid);
     }
     
     unregisterDebugSessionPID(pid);
@@ -440,7 +390,7 @@ void runDebugService(int32_t pid, DebugSession *session, DeviceLogHandler logHan
     free(session);
 }
 
-DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *targetAddress, NSError **error) {
+DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *targetAddress, BOOL enableHeartbeat, NSError **error) {
     if (![[NSFileManager defaultManager] fileExistsAtPath:pairingFilePath]) {
         if (error) *error = MakeError(PairingFileMissing);
         return NULL;
@@ -485,28 +435,30 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
         }
         
         HeartbeatClientHandle *heartbeatClient = NULL;
-        ffiError = heartbeat_connect_rsd(adapter, handshake, &heartbeatClient);
-        if (ffiError) {
-            if (error) *error = MakeError(HeartbeatConnectFailed);
-            idevice_error_free(ffiError);
-            rsd_handshake_free(handshake);
-            adapter_free(adapter);
-            return NULL;
-        }
-        
-        uint64_t nextInterval = 0;
-        ffiError = heartbeat_get_marco(heartbeatClient, 2, &nextInterval);
-        if (!ffiError) ffiError = heartbeat_send_polo(heartbeatClient);
-        
-        if (ffiError) {
-            // Seems like StikDebug don't do anything on this
-            // so I guess I'll just log it and keep going?
-            logger([NSString stringWithFormat:@"Heartbeat exchange failed: %s", ffiError->message ?: "unknown error"], nil);
+        if (enableHeartbeat) {  // Only on TXM iOS 26+ devices
+            ffiError = heartbeat_connect_rsd(adapter, handshake, &heartbeatClient);
+            if (ffiError) {
+                if (error) *error = MakeError(HeartbeatConnectFailed);
+                idevice_error_free(ffiError);
+                rsd_handshake_free(handshake);
+                adapter_free(adapter);
+                return NULL;
+            }
+            
+            uint64_t nextInterval = 0;
+            ffiError = heartbeat_get_marco(heartbeatClient, 2, &nextInterval);
+            if (!ffiError) ffiError = heartbeat_send_polo(heartbeatClient);
+            
+            if (ffiError) {
+                // Seems like StikDebug don't do anything on this
+                // so I guess I'll just log it and keep going?
+                logger([NSString stringWithFormat:@"Heartbeat exchange failed: %s", ffiError->message ?: "unknown error"]);
+            }
         }
         
         DeviceProvider *provider = calloc(1, sizeof(*provider));
         if (!provider) {
-            heartbeat_client_free(heartbeatClient);
+            if (heartbeatClient) heartbeat_client_free(heartbeatClient);
             rsd_handshake_free(handshake);
             adapter_free(adapter);
             if (error) *error = MakeError(DeviceProviderAllocationFailed);
@@ -519,7 +471,7 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
         provider->heartbeatClient = heartbeatClient;
         provider->heartbeatRunning = NO;
         
-        startHeartbeat(provider);
+        if (enableHeartbeat && heartbeatClient) startHeartbeat(provider);
         
         return provider;
     }
@@ -552,27 +504,6 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
         return NULL;
     }
     
-    HeartbeatClientHandle *heartbeatClient = NULL;
-    ffiError = heartbeat_connect(providerHandle, &heartbeatClient);
-    if (ffiError) {
-        if (error) *error = MakeError(HeartbeatConnectFailed);
-        idevice_error_free(ffiError);
-        idevice_provider_free(providerHandle);
-        return NULL;
-    }
-    
-    uint64_t nextInterval = 0;
-    ffiError = heartbeat_get_marco(heartbeatClient, 15, &nextInterval);
-    if (!ffiError) ffiError = heartbeat_send_polo(heartbeatClient);
-    
-    if (ffiError) {
-        if (error) *error = MakeError(HeartbeatExchangeFailed);
-        idevice_error_free(ffiError);
-        heartbeat_client_free(heartbeatClient);
-        idevice_provider_free(providerHandle);
-        return NULL;
-    }
-    
     DeviceProvider *provider = calloc(1, sizeof(*provider));
     if (!provider) {
         idevice_provider_free(providerHandle);
@@ -583,10 +514,8 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
     provider->handle = providerHandle;
     provider->adapter = NULL;
     provider->handshake = NULL;
-    provider->heartbeatClient = heartbeatClient;
+    provider->heartbeatClient = NULL;
     provider->heartbeatRunning = NO;
-    
-    startHeartbeat(provider);
     
     return provider;
 }
@@ -839,24 +768,6 @@ BOOL sendLegacyDebugCommand(LegacyDebugConnection *connection, NSString *command
     return YES;
 }
 
-static BOOL sendLegacyContinueCommand(LegacyDebugConnection *connection, NSString **responseOut, NSError **error) {
-    if (!sendLegacyDebugPacket(connection, @"c", error)) {
-        if (error && !*error) *error = MakeError(LegacyContinuePacketFailed);
-        return NO;
-    }
-    
-    while (YES) {
-        NSString *response = nil;
-        if (!readLegacyDebugResponse(connection, &response, error)) {
-            if (error && !*error) *error = MakeError(LegacyContinueResponseFailed);
-            return NO;
-        }
-        if (response.length == 0) continue;
-        if (responseOut) *responseOut = response;
-        return YES;
-    }
-}
-
 BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port, LegacyDebugConnection *connectionOut, NSError **error) {
     if (!connectionOut) {
         if (error) *error = MakeError(LegacyOutputConnectionMissing);
@@ -956,200 +867,18 @@ cleanup:
     return success;
 }
 
-static BOOL forwardLegacySignalStop(LegacyDebugConnection *connection, NSString *signal, NSString *threadID, NSError **error) {
-    NSString *continueCommand = [NSString stringWithFormat:@"vCont;S%@:%@", signal, threadID];
-    NSString *stopResponse = nil;
-    return sendLegacyDebugCommand(connection, continueCommand, &stopResponse, error);
-}
-
-static BOOL writeLegacyRegisterValue(LegacyDebugConnection *connection, NSString *registerName, uint64_t value, NSString *threadID, NSError **error) {
-    NSString *response = nil;
-    NSString *command = [NSString stringWithFormat:@"P%@=%@;thread:%@;", registerName, encodeLittleEndianHex64(value), threadID];
-    
-    if (!sendLegacyDebugCommand(connection, command, &response, error)) return NO;
-    if (response.length > 0 && ![response isEqualToString:@"OK"]) {
-        if (error) *error = MakeError(UnexpectedRegisterWriteResponse);
-        return NO;
-    }
-    
-    return YES;
-}
-
-static BOOL prepareLegacyMemoryRegion(LegacyDebugConnection *connection, uint64_t startAddress, uint64_t regionSize, uint64_t writableSourceAddress, NSError **error) {
-    uint64_t size = regionSize == 0 ? 0x4000 : regionSize;
-    
-    for (uint64_t currentAddress = startAddress; currentAddress < startAddress + size; currentAddress += 0x4000) {
-        uint64_t sourceAddress = currentAddress;
-        if (writableSourceAddress != 0) sourceAddress = writableSourceAddress + (currentAddress - startAddress);
-        
-        NSString *existingByte = nil;
-        NSString *readCommand = [NSString stringWithFormat:@"m%llx,1", sourceAddress];
-        if (!sendLegacyDebugCommand(connection, readCommand, &existingByte, error)) return NO;
-        
-        if (!existingByte || existingByte.length < 2) {
-            if (error && !*error) {
-                *error = MakeError(MemoryPrepareReadFailed);
-            }
-            return NO;
-        }
-        
-        NSString *command = [NSString stringWithFormat:@"M%llx,1:%@", currentAddress, [existingByte substringToIndex:2]];
-        NSString *response = nil;
-        
-        if (!sendLegacyDebugCommand(connection, command, &response, error)) return NO;
-        if (response.length > 0 && ![response isEqualToString:@"OK"]) {
-            if (error) *error = MakeError(UnexpectedPrepareRegionResponse);
-            return NO;
-        }
-    }
-    
-    return YES;
-}
-
-static BOOL allocateLegacyRXRegion(LegacyDebugConnection *connection, uint64_t regionSize, uint64_t *addressOut, NSError **error) {
-    NSString *response = nil;
-    NSString *command = [NSString stringWithFormat:@"_M%llx,rx", regionSize];
-    
-    if (!sendLegacyDebugCommand(connection, command, &response, error)) return NO;
-    
-    if (response.length == 0) {
-        if (error) *error = MakeError(RXAllocationEmptyResponse);
-        return NO;
-    }
-    
-    uint64_t address = 0;
-    NSScanner *scanner = [NSScanner scannerWithString:response];
-    if (![scanner scanHexLongLong:&address]) {
-        if (error) *error = MakeError(RXAllocationInvalidAddress);
-        return NO;
-    }
-    
-    if (addressOut) *addressOut = address;
-    return YES;
-}
-
-static BOOL detachLegacyDebuggerSession(LegacyDebugConnection *connection, int32_t pid, DeviceLogHandler logHandler) {
+BOOL detachLegacyDebuggerSession(LegacyDebugConnection *connection, int32_t pid) {
     NSString *detachResponse = nil;
     NSError *detachError = nil;
     if (sendLegacyDebugCommand(connection, @"D", &detachResponse, &detachError)) {
-        logger([NSString stringWithFormat:@"Legacy detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"], logHandler);
+        logger([NSString stringWithFormat:@"Legacy detach response for pid %d: %@", pid, detachResponse ?: @"<no response>"]);
         return YES;
     }
     
     if (!isNotConnectedError(detachError)) {
-        logger([NSString stringWithFormat:@"Legacy detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"], logHandler);
+        logger([NSString stringWithFormat:@"Legacy detach failed for pid %d: %@", pid, detachError.localizedDescription ?: @"detach failed"]);
     }
     return NO;
-}
-
-void runLegacyDebugService(int32_t pid, LegacyDebugSession *session, DeviceLogHandler logHandler) {
-    if (!session) return;
-    
-    registerDebugSessionPID(pid);
-    
-    NSError *commandError = nil;
-    BOOL exitPacketPresent = NO;
-    BOOL detachedByCommand = NO;
-    
-    while (YES) {
-        NSString *stopResponse = nil;
-        commandError = nil;
-        
-        if (!sendLegacyContinueCommand(&session->connection, &stopResponse, &commandError)) {
-            if (!isNotConnectedError(commandError)) {
-                logger([NSString stringWithFormat:@"Legacy debug loop ended for pid %d: %@", pid, commandError.localizedDescription ?: @"continue failed"], logHandler);
-            }
-            break;
-        }
-        
-        if (shouldDetachDebugSessionPID(pid)) {
-            detachedByCommand = detachLegacyDebuggerSession(&session->connection, pid, logHandler);
-            if (detachedByCommand) break;
-        }
-        
-        if ([stopResponse hasPrefix:@"W"] || [stopResponse hasPrefix:@"X"]) {
-            exitPacketPresent = YES;
-            logger([NSString stringWithFormat:@"Legacy target exited for pid %d with packet %@", pid, stopResponse], logHandler);
-            break;
-        }
-        
-        NSString *threadID = packetField(stopResponse, @"thread");
-        NSString *pcField = packetField(stopResponse, @"20");
-        NSString *x0Field = packetField(stopResponse, @"00");
-        NSString *x1Field = packetField(stopResponse, @"01");
-        NSString *x2Field = packetField(stopResponse, @"02");
-        NSString *x16Field = packetField(stopResponse, @"10");
-        
-        uint64_t pc = parseLittleEndianHex64(pcField);
-        uint64_t x0 = x0Field ? parseLittleEndianHex64(x0Field) : 0;
-        uint64_t x1 = x1Field ? parseLittleEndianHex64(x1Field) : 0;
-        uint64_t x2 = x2Field ? parseLittleEndianHex64(x2Field) : 0;
-        uint64_t x16 = x16Field ? parseLittleEndianHex64(x16Field) : 0;
-        
-        NSString *instructionResponse = nil;
-        NSString *readInstruction = [NSString stringWithFormat:@"m%llx,4", pc];
-        if (!sendLegacyDebugCommand(&session->connection, readInstruction, &instructionResponse, &commandError)) instructionResponse = nil;
-        
-        uint32_t instruction = (uint32_t)parseLittleEndianHex64(instructionResponse ?: @"");
-        if (instructionResponse.length == 0 || !instructionIsBreakpoint(instruction)) {
-            NSString *signal = packetSignal(stopResponse);
-            if (signal && !forwardLegacySignalStop(&session->connection, signal, threadID, &commandError)) break;
-            continue;
-        }
-        
-        uint16_t breakpointImmediate = (instruction >> 5) & 0xffff;
-        uint64_t executableAddress = x0;
-        
-        if (breakpointImmediate == 0xf00d) {
-            if (!threadID || !x16Field) break;
-            if (!writeLegacyRegisterValue(&session->connection, @"20", pc + 4, threadID, &commandError)) break;
-            
-            if (x16 == 0) {
-                detachedByCommand = detachLegacyDebuggerSession(&session->connection, pid, logHandler);
-                break;
-            }
-            
-            if (x16 == 1) {
-                if (!x1Field) break;
-                
-                if (executableAddress == 0) {
-                    if (!allocateLegacyRXRegion(&session->connection, x1, &executableAddress, &commandError)) break;
-                    logger([NSString stringWithFormat:@"Legacy allocated RX region for pid %d at 0x%llx size=0x%llx", pid, executableAddress, x1], logHandler);
-                }
-                
-                if (!prepareLegacyMemoryRegion(&session->connection, executableAddress, x1, 0, &commandError)) break;
-                if (!writeLegacyRegisterValue(&session->connection, @"0", executableAddress, threadID, &commandError)) break;
-                continue;
-            }
-            
-            if (x16 == 2) {
-                logger([NSString stringWithFormat:@"Legacy received unsupported 0xf00d x16 command 0x%llx for pid %d", x16, pid], logHandler);
-                if (!writeLegacyRegisterValue(&session->connection, @"0", 0xE0000002ull, threadID, &commandError)) break;
-                continue;
-            }
-            
-            logger([NSString stringWithFormat:@"Legacy received unknown 0xf00d x16 command 0x%llx for pid %d", x16, pid], logHandler);
-            if (!writeLegacyRegisterValue(&session->connection, @"0", (0xE0000000ull | (x16 & 0xffffull)), threadID, &commandError)) break;
-            continue;
-        } else if (breakpointImmediate == 0x69) {
-            if (!x0Field || !x1Field) break;
-            
-            uint64_t regionSize = x2 != 0 ? x2 : x1;
-            uint64_t writableSourceAddress = x2 != 0 ? x1 : 0;
-            
-            if (!prepareLegacyMemoryRegion(&session->connection, x0, regionSize, writableSourceAddress, &commandError)) break;
-            if (!writeLegacyRegisterValue(&session->connection, @"20", pc + 4, threadID, &commandError)) break;
-        } else {
-            continue;
-        }
-    }
-    
-    if (!exitPacketPresent && !detachedByCommand) detachedByCommand = detachLegacyDebuggerSession(&session->connection, pid, logHandler);
-    
-    unregisterDebugSessionPID(pid);
-    unregisterJITEndpointForPID(pid);
-    closeLegacyDebugConnection(&session->connection);
-    free(session);
 }
 
 // MARK: Developer Disk Image Mounting
@@ -1373,51 +1102,6 @@ cleanup:
     if (pairingFile) idevice_pairing_file_free(pairingFile);
     if (lockdownClient) lockdownd_client_free(lockdownClient);
     return success;
-}
-
-// From StikDebug
-size_t getMountedDeviceCount(DeviceProvider *provider) {
-    if (!provider) {
-        logger(@"getMountedDeviceCount failed: missing provider", nil);
-        return 0;
-    }
-    
-    ImageMounterHandle *client = NULL;
-    IdeviceFfiError *ffiError = NULL;
-    
-    if (__builtin_available(iOS 17.4, *)) {
-        if (!provider->adapter || !provider->handshake) {
-            logger(@"getMountedDeviceCount failed: missing tunnel handles", nil);
-            return 0;
-        }
-        ffiError = image_mounter_connect_rsd(provider->adapter, provider->handshake, &client);
-    } else {
-        if (!provider->handle) {
-            logger(@"getMountedDeviceCount failed: missing provider handle", nil);
-            return 0;
-        }
-        ffiError = image_mounter_connect(provider->handle, &client);
-    }
-    if (ffiError) {
-        if (ffiError->message) logger([NSString stringWithFormat:@"getMountedDeviceCount image_mounter_connect failed: %s", ffiError->message], nil);
-        idevice_error_free(ffiError);
-        return 0;
-    }
-    
-    plist_t *devices = NULL;
-    size_t deviceLength = 0;
-    ffiError = image_mounter_copy_devices(client, &devices, &deviceLength);
-    image_mounter_free(client);
-    if (ffiError) {
-        if (ffiError->message) logger([NSString stringWithFormat:@"getMountedDeviceCount image_mounter_copy_devices failed: %s", ffiError->message], nil);
-        idevice_error_free(ffiError);
-        return 0;
-    }
-    
-    for (size_t i = 0; i < deviceLength; i++) if (devices[i]) plist_free(devices[i]);
-    if (devices) idevice_data_free((uint8_t *)devices, deviceLength * sizeof(plist_t));
-    
-    return deviceLength;
 }
 
 // MARK: Endpoint Connectivity Monitoring

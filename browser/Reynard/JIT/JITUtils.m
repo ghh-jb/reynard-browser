@@ -14,9 +14,8 @@
 
 static const NSTimeInterval debugPacketTimeoutSeconds = 2.0;
 
-void logger(NSString *message, void (^logHandler)(NSString *message)) {
-    if (logHandler) logHandler(message);
-    else NSLog(@"[REYNARD_DEBUG] %@", message);
+void logger(NSString *message) {
+    NSLog(@"[REYNARD_DEBUG] %@", message);
 }
 
 NSString *pairingFilePath(void) {

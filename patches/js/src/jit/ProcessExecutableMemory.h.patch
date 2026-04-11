@@ -1,5 +1,5 @@
 diff --git a/js/src/jit/ProcessExecutableMemory.h b/js/src/jit/ProcessExecutableMemory.h
-index d312da312350..81dc6e58e12a 100644
+index d312da312350..4225e4e4c582 100644
 --- a/js/src/jit/ProcessExecutableMemory.h
 +++ b/js/src/jit/ProcessExecutableMemory.h
 @@ -9,16 +9,16 @@
@@ -17,14 +17,14 @@ index d312da312350..81dc6e58e12a 100644
  // attacks.
 -#if JS_BITS_PER_WORD == 32
 +#if defined(XP_IOS)
-+// REYNARD: Let the iOS extension children reserve this address space eagerly during
-+// JIT startup
++// REYNARD: Let the iOS extension children reserve this address space eagerly
++// during JIT startup
 +static const size_t MaxCodeBytesPerProcess = 256 * 1024 * 1024;
 +#elif JS_BITS_PER_WORD == 32
  static const size_t MaxCodeBytesPerProcess = 140 * 1024 * 1024;
  #else
  // This is the largest number which satisfies various alignment static
-@@ -79,6 +79,21 @@ enum class MustFlushICache { No, Yes };
+@@ -79,10 +79,26 @@ enum class MustFlushICache { No, Yes };
                                            ProtectionSetting protection,
                                            MustFlushICache flushICache);
  
@@ -46,7 +46,12 @@ index d312da312350..81dc6e58e12a 100644
  // Functions called at process start-up/shutdown to initialize/release the
  // executable memory region.
  [[nodiscard]] extern bool InitProcessExecutableMemory();
-@@ -125,22 +140,14 @@ class MOZ_RAII AutoMarkJitCodeWritableForThread {
+ extern void ReleaseProcessExecutableMemory();
++extern void SetHasTXM26(bool aHasTXM26);
+ 
+ // Allocate/deallocate executable pages.
+ extern void* AllocateExecutableMemory(size_t bytes,
+@@ -125,22 +141,14 @@ class MOZ_RAII AutoMarkJitCodeWritableForThread {
  
   public:
    MOZ_ALWAYS_INLINE_EVEN_DEBUG AutoMarkJitCodeWritableForThread() {

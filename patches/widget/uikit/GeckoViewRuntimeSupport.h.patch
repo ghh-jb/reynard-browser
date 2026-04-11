@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoViewRuntimeSupport.h b/widget/uikit/GeckoViewRuntimeSupport.h
 new file mode 100644
-index 000000000000..5f40557465a8
+index 000000000000..e0d828bd8276
 --- /dev/null
 +++ b/widget/uikit/GeckoViewRuntimeSupport.h
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,27 @@
 +/* clang-format off */
 +/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* clang-format on */
@@ -20,8 +20,13 @@ index 000000000000..5f40557465a8
 +
 +namespace mozilla::widget {
 +
++struct ChildJITStatus {
++  uint8_t enabled;
++  uint8_t hasTXM26;
++};
++
 +void NotifyChildProcessStarted(int32_t aPid, const char* aProcessType);
-+void ReportChildProcessJITEnabled(int32_t aPid, bool aEnabled);
++void ReportJITStatusForChild(int32_t aPid, bool aEnabled, bool aHasTXM26);
 +
 +}  // namespace mozilla::widget
 +

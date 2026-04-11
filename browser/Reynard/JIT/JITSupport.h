@@ -13,16 +13,11 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef struct DeviceProvider DeviceProvider;
-typedef void (^DeviceLogHandler)(NSString *message);
 
 typedef struct {
   int socketFD;
   SSLContextRef sslContext;
 } LegacyDebugConnection;
-
-typedef struct LegacyDebugSession {
-  LegacyDebugConnection connection;
-} LegacyDebugSession;
 
 typedef struct {
   AdapterHandle *adapter;
@@ -37,11 +32,10 @@ NSMutableSet<NSNumber *> *activeDebugSessionPIDs(void);
 NSMutableSet<NSNumber *> *detachRequestedDebugSessionPIDs(void);
 
 DeviceProvider *_Nullable createDeviceProvider(
-    NSString *pairingFilePath, NSString *targetAddress,
+    NSString *pairingFilePath, NSString *targetAddress, BOOL enableHeartbeat,
     NSError *_Nullable *_Nullable error);
 BOOL ensureDDIMounted(DeviceProvider *provider,
                       NSError *_Nullable *_Nullable error);
-size_t getMountedDeviceCount(DeviceProvider *provider);
 
 BOOL sendDebugCommand(DebugProxyHandle *debugProxy, NSString *commandString,
                       NSString *_Nullable *_Nullable responseOut,
@@ -52,22 +46,22 @@ BOOL configureNoAckMode(DebugProxyHandle *debugProxy,
 BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session,
                          NSString *targetAddress,
                          NSError *_Nullable *_Nullable error);
-BOOL startLegacyDebugService(DeviceProvider *provider,
-                             uint16_t *_Nullable portOut,
-                             NSError *_Nullable *_Nullable error);
 BOOL connectLegacyDebugSocket(NSString *targetAddress, uint16_t port,
                               LegacyDebugConnection *connectionOut,
                               NSError *_Nullable *_Nullable error);
+BOOL startLegacyDebugService(DeviceProvider *provider,
+                             uint16_t *_Nullable portOut,
+                             NSError *_Nullable *_Nullable error);
 BOOL sendLegacyDebugCommand(LegacyDebugConnection *connection,
                             NSString *command,
                             NSString *_Nullable *_Nullable responseOut,
                             NSError *_Nullable *_Nullable error);
+BOOL detachDebuggerSession(DebugProxyHandle *debugProxy, int32_t pid);
+BOOL detachLegacyDebuggerSession(LegacyDebugConnection *connection,
+                                 int32_t pid);
 void closeLegacyDebugConnection(LegacyDebugConnection *connection);
 
-void runDebugService(int32_t pid, DebugSession *session,
-                     DeviceLogHandler _Nullable logHandler);
-void runLegacyDebugService(int32_t pid, LegacyDebugSession *session,
-                           DeviceLogHandler _Nullable logHandler);
+void runDebugService(int32_t pid, DebugSession *session);
 
 void registerJITEndpointForPID(int32_t pid, NSString *targetAddress,
                                uint16_t port, int socketFD);

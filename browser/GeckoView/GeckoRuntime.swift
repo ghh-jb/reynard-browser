@@ -9,8 +9,6 @@ import Foundation
 import UIKit
 
 class GeckoRuntimeImpl: NSObject, SwiftGeckoViewRuntime {
-    static let childProcessDidStartNotification = Notification.Name("GeckoRuntimeChildProcessDidStart")
-    
     func runtimeDispatcher() -> any SwiftEventDispatcher {
         return GeckoEventDispatcherWrapper.runtimeInstance
     }
@@ -22,7 +20,7 @@ class GeckoRuntimeImpl: NSObject, SwiftGeckoViewRuntime {
     @objc(childProcessDidStartWithPID:processType:)
     func childProcessDidStart(withPID pid: Int32, processType: String) {
         NotificationCenter.default.post(
-            name: Self.childProcessDidStartNotification,
+            name: Notification.Name("GeckoRuntimeChildProcessDidStart"),
             object: nil,
             userInfo: [
                 "pid": NSNumber(value: pid),

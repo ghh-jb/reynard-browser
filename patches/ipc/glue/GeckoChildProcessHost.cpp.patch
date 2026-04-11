@@ -1,5 +1,5 @@
 diff --git a/ipc/glue/GeckoChildProcessHost.cpp b/ipc/glue/GeckoChildProcessHost.cpp
-index ef75406acf6b..0c56b4bbe586 100644
+index ef75406acf6b..1017b9eeffd2 100644
 --- a/ipc/glue/GeckoChildProcessHost.cpp
 +++ b/ipc/glue/GeckoChildProcessHost.cpp
 @@ -34,6 +34,13 @@
@@ -25,7 +25,7 @@ index ef75406acf6b..0c56b4bbe586 100644
  using mozilla::MonitorAutoLock;
  using mozilla::Preferences;
  using mozilla::StaticMutexAutoLock;
-@@ -129,13 +138,56 @@ extern char** environ;
+@@ -129,13 +138,53 @@ extern char** environ;
  namespace mozilla {
  namespace ipc {
  
@@ -36,18 +36,13 @@ index ef75406acf6b..0c56b4bbe586 100644
 +static StaticMutex sChildJITPipeMutex;
 +static std::unordered_map<int32_t, UniqueFileHandle> sChildJITPipeWriters;
 +
-+static void RegisterChildProcessJITPipe(int32_t aPid,
-+                                        UniqueFileHandle&& aWritePipe) {
-+  StaticMutexAutoLock lock(sChildJITPipeMutex);
-+  sChildJITPipeWriters.insert_or_assign(aPid, std::move(aWritePipe));
-+}
-+
 +}  // namespace ipc
 +
 +namespace widget {
 +
-+void ReportChildProcessJITEnabled(int32_t aPid, bool aEnabled) {
++void ReportJITStatusForChild(int32_t aPid, bool aEnabled, bool aHasTXM26) {
 +  UniqueFileHandle writePipe;
++  
 +  {
 +    StaticMutexAutoLock lock(ipc::sChildJITPipeMutex);
 +    auto it = ipc::sChildJITPipeWriters.find(aPid);
@@ -62,9 +57,11 @@ index ef75406acf6b..0c56b4bbe586 100644
 +    return;
 +  }
 +
-+  const uint8_t status = aEnabled ? 1 : 0;
-+  ssize_t bytesWritten = write(writePipe.get(), &status, sizeof(status));
-+  (void)bytesWritten;
++  const ChildJITStatus status = {
++      uint8_t(aEnabled ? 1 : 0),
++      uint8_t(aHasTXM26 ? 1 : 0),
++  };
++  write(writePipe.get(), &status, sizeof(status));
 +}
 +
 +}  // namespace widget
@@ -83,7 +80,7 @@ index ef75406acf6b..0c56b4bbe586 100644
    DarwinObjectPtr<xpc_connection_t> mXPCConnection;
    UniqueBEProcessCapabilityGrant mForegroundCapabilityGrant;
  #endif
-@@ -354,6 +406,7 @@ class IosProcessLauncher : public PosixProcessLauncher {
+@@ -354,6 +403,7 @@ class IosProcessLauncher : public PosixProcessLauncher {
    virtual RefPtr<ProcessLaunchPromise> DoLaunch() override;
  
    DarwinObjectPtr<xpc_object_t> mBootstrapMessage;
@@ -91,7 +88,7 @@ index ef75406acf6b..0c56b4bbe586 100644
  };
  typedef IosProcessLauncher ProcessLauncher;
  #  else
-@@ -434,8 +487,8 @@ GeckoChildProcessHost::~GeckoChildProcessHost() {
+@@ -434,8 +484,8 @@ GeckoChildProcessHost::~GeckoChildProcessHost() {
      if (mForegroundCapabilityGrant) {
        mForegroundCapabilityGrant.reset();
      }
@@ -102,7 +99,7 @@ index ef75406acf6b..0c56b4bbe586 100644
      }
      if (mXPCConnection) {
        xpc_connection_cancel(mXPCConnection.get());
-@@ -787,7 +840,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
+@@ -787,7 +837,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
                      this->mChildTask = aResults.mChildTask;
  #endif
  #ifdef XP_IOS
@@ -111,7 +108,7 @@ index ef75406acf6b..0c56b4bbe586 100644
                      this->mXPCConnection = aResults.mXPCConnection;
                      this->mForegroundCapabilityGrant =
                          std::move(aResults.mForegroundCapabilityGrant);
-@@ -933,6 +986,7 @@ bool GeckoChildProcessHost::InitializeChannel(
+@@ -933,6 +983,7 @@ bool GeckoChildProcessHost::InitializeChannel(
  
  void GeckoChildProcessHost::SetAlreadyDead() {
    mozilla::AutoWriteLock handleLock(mHandleLock);
@@ -119,7 +116,7 @@ index ef75406acf6b..0c56b4bbe586 100644
    if (mChildProcessHandle &&
        mChildProcessHandle != base::kInvalidProcessHandle) {
      base::CloseProcessHandle(mChildProcessHandle);
-@@ -941,6 +995,30 @@ void GeckoChildProcessHost::SetAlreadyDead() {
+@@ -941,6 +992,30 @@ void GeckoChildProcessHost::SetAlreadyDead() {
    mChildProcessHandle = 0;
  }
  
@@ -150,7 +147,7 @@ index ef75406acf6b..0c56b4bbe586 100644
  void BaseProcessLauncher::GetChildLogName(const char* origLogName,
                                            nsACString& buffer) {
  #ifdef XP_WIN
-@@ -1400,18 +1478,25 @@ Result<Ok, LaunchError> IosProcessLauncher::DoSetup() {
+@@ -1400,18 +1475,24 @@ Result<Ok, LaunchError> IosProcessLauncher::DoSetup() {
  }
  
  RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
@@ -172,8 +169,7 @@ index ef75406acf6b..0c56b4bbe586 100644
 +  // JIT startup until the host-side attach flow reports success or failure.
 +  int jitReadyPipe[2] = {-1, -1};
 +  if (pipe(jitReadyPipe) != 0) {
-+    return ProcessLaunchPromise::CreateAndReject(LaunchError("pipe"),
-+                                                 __func__);
++    return ProcessLaunchPromise::CreateAndReject(LaunchError("pipe"), __func__);
 +  }
 +  UniqueFileHandle jitReadyReadFd(jitReadyPipe[0]);
 +  mJITReadySignalWriteFd = UniqueFileHandle(jitReadyPipe[1]);
@@ -183,7 +179,7 @@ index ef75406acf6b..0c56b4bbe586 100644
    DarwinObjectPtr<xpc_object_t> environDict =
        AdoptDarwinObject(xpc_dictionary_create_empty());
    for (auto& [envKey, envValue] : mLaunchOptions->env_map) {
-@@ -1459,34 +1544,36 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
+@@ -1459,34 +1540,36 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
                             sendRightsArray.get());
  
    auto promise = MakeRefPtr<ProcessLaunchPromise::Private>(__func__);
@@ -239,7 +235,7 @@ index ef75406acf6b..0c56b4bbe586 100644
  
      // Send our bootstrap message to the content and wait for it to reply with
      // the task port before resolving.
-@@ -1496,22 +1583,28 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
+@@ -1496,22 +1579,28 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
      xpc_connection_send_message_with_reply(
          self->mResults.mXPCConnection.get(), bootstrapMessage.get(), nullptr,
          ^(xpc_object_t reply) {
@@ -277,7 +273,7 @@ index ef75406acf6b..0c56b4bbe586 100644
              return;
            }
  
-@@ -1524,10 +1617,22 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
+@@ -1524,10 +1613,30 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
            // this point, so we should be able to trust it.
            pid_t pid =
                static_cast<pid_t>(xpc_dictionary_get_int64(reply, "pid"));
@@ -289,8 +285,16 @@ index ef75406acf6b..0c56b4bbe586 100644
 +                  "REYNARD_DEBUG: Extension process started, pid=%d, type=%s\n",
 +                  static_cast<int>(pid), processType);
 +          fflush(stderr);
-+            RegisterChildProcessJITPipe(pid,
-+                      std::move(self->mJITReadySignalWriteFd));
++
++          // REYNARD: Register pipe
++          {
++            StaticMutexAutoLock lock(sChildJITPipeMutex);
++            sChildJITPipeWriters.insert_or_assign(
++              static_cast<int32_t>(pid),
++              std::move(self->mJITReadySignalWriteFd));
++          }
++
++          // REYNARD: Notify child process start
 +          mozilla::widget::NotifyChildProcessStarted(static_cast<int32_t>(pid),
 +                                                     processType);
  

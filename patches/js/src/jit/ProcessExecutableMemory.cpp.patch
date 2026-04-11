@@ -1,215 +1,34 @@
 diff --git a/js/src/jit/ProcessExecutableMemory.cpp b/js/src/jit/ProcessExecutableMemory.cpp
-index 315958ac692b..d9f8ad518acd 100644
+index 315958ac692b..b5472e8cdffa 100644
 --- a/js/src/jit/ProcessExecutableMemory.cpp
 +++ b/js/src/jit/ProcessExecutableMemory.cpp
-@@ -15,6 +15,13 @@
+@@ -15,6 +15,9 @@
  #include "mozilla/XorShift128PlusRNG.h"
  
  #include <errno.h>
 +#include <limits>
-+#include <stdio.h>
-+
-+#ifdef XP_IOS
-+#  include <libkern/OSCacheControl.h>
-+#  include <mach/mach.h>
-+#endif
++#include <libkern/OSCacheControl.h>
++#include <mach/mach.h>
  
  #include "jsfriendapi.h"
  
-@@ -49,6 +56,210 @@
+@@ -49,6 +52,118 @@
  using namespace js;
  using namespace js::jit;
  
-+#ifdef XP_IOS
 +static uint8_t* sExecutableMemoryBase = nullptr;
 +static uint8_t* sWritableExecutableMemoryBase = nullptr;
-+static void* WritableAliasForExecutableAddress(void* addr, size_t bytes);
-+static constexpr size_t DebugPreparePageShift = 14;
-+static constexpr size_t DebugPreparePageSize = size_t(1)
-+                                               << DebugPreparePageShift;
-+static constexpr size_t DebugPrepareCacheEntries = 1 << 16;
-+static_assert((DebugPrepareCacheEntries & (DebugPrepareCacheEntries - 1)) == 0,
-+              "Debugger prepare cache size must be a power of two");
++
++// REYNARD:
++// We prepare each page with a size of 16MB
++// And there're a total of 65K+ pages
++// Here we also track prepared page
++static constexpr size_t PreparePageSize = 1 << 14;
++static constexpr size_t PrepareEntries = 1 << 16;
++static constexpr size_t PageTagMagic = 11400714819323198485ull;  // hashing
 +static mozilla::Atomic<uint64_t, mozilla::Relaxed>
-+    sDebuggerPreparedPageTags[DebugPrepareCacheEntries];
-+
-+static bool ShouldRequestDebuggerPreparePage(uintptr_t aPageStart) {
-+  uint64_t pageTag =
-+      (static_cast<uint64_t>(aPageStart >> DebugPreparePageShift)) + 1u;
-+  size_t slot = static_cast<size_t>((pageTag * 11400714819323198485ull) &
-+                                    (DebugPrepareCacheEntries - 1));
-+
-+  if (sDebuggerPreparedPageTags[slot] == pageTag) {
-+    return false;
-+  }
-+
-+  sDebuggerPreparedPageTags[slot] = pageTag;
-+  return true;
-+}
-+
-+// REYNARD: Decommitted executable pages can later be recommitted with new code;
-+// clear page-tag cache entries so the next executable transition re-runs
-+// debugger-backed prepare for those pages.
-+static void InvalidateDebuggerPrepareCacheRange(void* aAddress, size_t aSize) {
-+  if (!aAddress || !aSize || !sExecutableMemoryBase) {
-+    return;
-+  }
-+
-+  auto* executable = static_cast<uint8_t*>(aAddress);
-+  auto* begin = sExecutableMemoryBase;
-+  auto* end = begin + MaxCodeBytesPerProcess;
-+  if (executable < begin || executable + aSize > end) {
-+    return;
-+  }
-+
-+  uintptr_t rangeStart = reinterpret_cast<uintptr_t>(executable);
-+  if (aSize > (std::numeric_limits<uintptr_t>::max() - rangeStart)) {
-+    return;
-+  }
-+
-+  uintptr_t firstPageStart = rangeStart & ~(DebugPreparePageSize - 1);
-+  uintptr_t lastPageStart =
-+      (rangeStart + aSize - 1) & ~(DebugPreparePageSize - 1);
-+
-+  for (uintptr_t page = firstPageStart; page <= lastPageStart;
-+       page += DebugPreparePageSize) {
-+    uint64_t pageTag =
-+        (static_cast<uint64_t>(page >> DebugPreparePageShift)) + 1u;
-+    size_t slot = static_cast<size_t>((pageTag * 11400714819323198485ull) &
-+                                      (DebugPrepareCacheEntries - 1));
-+    sDebuggerPreparedPageTags[slot] = 0;
-+  }
-+}
-+
-+// REYNARD: Preparing each page only once avoids a trap storm on hot JIT paths
-+// while still bootstrapping executable permissions for newly-touched pages.
-+static bool ShouldRequestDebuggerPrepare(void* aAddress, size_t aSize) {
-+  if (!aAddress || !aSize || !sExecutableMemoryBase) {
-+    return true;
-+  }
-+
-+  auto* executable = static_cast<uint8_t*>(aAddress);
-+  auto* begin = sExecutableMemoryBase;
-+  auto* end = begin + MaxCodeBytesPerProcess;
-+  if (executable < begin || executable + aSize > end) {
-+    return true;
-+  }
-+
-+  uintptr_t rangeStart = reinterpret_cast<uintptr_t>(executable);
-+  if (aSize > (std::numeric_limits<uintptr_t>::max() - rangeStart)) {
-+    return true;
-+  }
-+
-+  uintptr_t firstPageStart = rangeStart & ~(DebugPreparePageSize - 1);
-+  uintptr_t lastPageStart =
-+      (rangeStart + aSize - 1) & ~(DebugPreparePageSize - 1);
-+
-+  bool needsPrepare = false;
-+  for (uintptr_t page = firstPageStart; page <= lastPageStart;
-+       page += DebugPreparePageSize) {
-+    if (ShouldRequestDebuggerPreparePage(page)) {
-+      needsPrepare = true;
-+    }
-+  }
-+
-+  return needsPrepare;
-+}
-+
-+// REYNARD: Ask the debugger-backed iOS JIT path to prepare a freshly
-+// committed executable range so child processes can execute it.
-+#  if defined(__aarch64__)
-+__attribute__((noinline, optnone, naked)) static void
-+DebuggerPrepareExecutableRegionTrap(void* aExecutableAddress,
-+                                    void* aWritableAddress, size_t aSize) {
-+  asm volatile(
-+      "brk #0x69\n"
-+      "ret\n");
-+}
-+
-+static void RequestDebuggerPrepareExecutableRegion(void* aExecutableAddress,
-+                                                   void* aWritableAddress,
-+                                                   size_t aSize) {
-+  DebuggerPrepareExecutableRegionTrap(aExecutableAddress, aWritableAddress,
-+                                      aSize);
-+}
-+#  else
-+static void RequestDebuggerPrepareExecutableRegion(void* aExecutableAddress,
-+                                                   void* aWritableAddress,
-+                                                   size_t aSize) {
-+  (void)aExecutableAddress;
-+  (void)aWritableAddress;
-+  (void)aSize;
-+}
-+#  endif
-+
-+static void PrepareExecutableRegionForExecution(void* aAddress, size_t aSize) {
-+  if (!aAddress || !aSize) {
-+    return;
-+  }
-+
-+  // REYNARD: Keep RX pages in sync by explicitly sourcing bytes from the
-+  // writable alias before preparing instruction fetch on the executable view.
-+  if (ShouldRequestDebuggerPrepare(aAddress, aSize)) {
-+    void* writableAddress = WritableAliasForExecutableAddress(aAddress, aSize);
-+    RequestDebuggerPrepareExecutableRegion(aAddress, writableAddress, aSize);
-+  }
-+  sys_cache_control(kCacheFunctionPrepareForExecution, aAddress, aSize);
-+}
-+
-+// REYNARD: Keep executable and writable aliases in an explicit, stable
-+// permission state so iOS does not leave JIT pages non-executable after a
-+// write phase.
-+static bool SetAliasProtection(void* executableAddress, void* writableAddress,
-+                               size_t bytes, ProtectionSetting protection) {
-+  int result = 0;
-+  switch (protection) {
-+    case ProtectionSetting::Writable:
-+      result = mprotect(writableAddress, bytes, PROT_READ | PROT_WRITE);
-+      if (result != 0) {
-+#  ifdef XP_IOS
-+        fprintf(stderr,
-+                "REYNARD_DEBUG: SetAliasProtection writable mprotect failed, "
-+                "pid=%d, writable=%p, bytes=%zu, errno=%d\n",
-+                getpid(), writableAddress, bytes, errno);
-+        fflush(stderr);
-+#  endif
-+        return false;
-+      }
-+
-+      // REYNARD: On jailed iOS, removing EXEC from the executable alias and
-+      // then restoring it can fail for child-process JIT pages. Keep the
-+      // executable alias RX while writes go through the writable alias.
-+      result = mprotect(executableAddress, bytes, PROT_READ | PROT_EXEC);
-+      break;
-+    case ProtectionSetting::Executable:
-+      result = mprotect(writableAddress, bytes, PROT_READ);
-+      if (result != 0) {
-+#  ifdef XP_IOS
-+        fprintf(stderr,
-+                "REYNARD_DEBUG: SetAliasProtection executable writable-alias "
-+                "mprotect failed, pid=%d, writable=%p, bytes=%zu, errno=%d\n",
-+                getpid(), writableAddress, bytes, errno);
-+        fflush(stderr);
-+#  endif
-+        return false;
-+      }
-+      result = mprotect(executableAddress, bytes, PROT_READ | PROT_EXEC);
-+      break;
-+  }
-+
-+#  ifdef XP_IOS
-+  if (result != 0) {
-+    fprintf(
-+        stderr,
-+        "REYNARD_DEBUG: SetAliasProtection executable-alias mprotect failed, "
-+        "pid=%d, executable=%p, bytes=%zu, protection=%u, errno=%d\n",
-+        getpid(), executableAddress, bytes, unsigned(protection), errno);
-+    fflush(stderr);
-+  }
-+#  endif
-+
-+  return result == 0;
-+}
++    PreparedPageTags[PrepareEntries];
++static mozilla::Atomic<bool, mozilla::Relaxed> sHasTXM26(false);
 +
 +static void* WritableAliasForExecutableAddress(void* addr, size_t bytes) {
 +  if (!sWritableExecutableMemoryBase || !sExecutableMemoryBase) {
@@ -222,40 +41,189 @@ index 315958ac692b..d9f8ad518acd 100644
 +                         sExecutableMemoryBase + MaxCodeBytesPerProcess);
 +  return sWritableExecutableMemoryBase + (executable - sExecutableMemoryBase);
 +}
-+#endif
++
++static bool ShouldRequestDebuggerPrepare(void* aAddress, size_t aSize) {
++  // TXM check
++  if (!sHasTXM26) {
++    return false;
++  }
++
++  if (!aAddress || !aSize || !sExecutableMemoryBase) {
++    return true;
++  }
++
++  auto* executable = static_cast<uint8_t*>(aAddress);
++  auto* begin = sExecutableMemoryBase;
++  auto* end = begin + MaxCodeBytesPerProcess;
++  if (executable < begin || executable + aSize > end) {
++    return true;
++  }
++
++  uintptr_t rangeStart = reinterpret_cast<uintptr_t>(executable);
++  if (aSize > (std::numeric_limits<uintptr_t>::max() - rangeStart)) {
++    return true;
++  }
++
++  uintptr_t firstPageStart = rangeStart & ~(PreparePageSize - 1);
++  uintptr_t lastPageStart = (rangeStart + aSize - 1) & ~(PreparePageSize - 1);
++
++  bool needsPrepare = false;
++  for (uintptr_t page = firstPageStart; page <= lastPageStart;
++       page += PreparePageSize) {
++    uint64_t pageTag = (static_cast<uint64_t>(page >> 14)) + 1u;
++    size_t slot =
++        static_cast<size_t>((pageTag * PageTagMagic) & (PrepareEntries - 1));
++
++    if (PreparedPageTags[slot] != pageTag) {
++      PreparedPageTags[slot] = pageTag;
++      needsPrepare = true;
++    }
++  }
++
++  return needsPrepare;
++}
++
++__attribute__((noinline, optnone, naked)) static void
++RequestDebuggerPrepareExecutableRegion(void* aExecutableAddress,
++                                       void* aWritableAddress, size_t aSize) {
++  // REYNARD: In ARM assembly:
++  //    + aExecutableAddress is x0
++  //    + aWritableAddress is x1
++  //    + aSize is x2
++  // Ask the debugger to handle these via brk 0x69
++  asm volatile(
++      "brk #0x69\n"
++      "ret\n");
++}
++
++static void PrepareExecutableRegionForExecution(void* aAddress, size_t aSize) {
++  if (!aAddress || !aSize) {
++    return;
++  }
++
++  // Only do this on TXM iOS 26
++  if (ShouldRequestDebuggerPrepare(aAddress, aSize)) {
++    void* writableAddress = WritableAliasForExecutableAddress(aAddress, aSize);
++    RequestDebuggerPrepareExecutableRegion(aAddress, writableAddress, aSize);
++  }
++
++  sys_cache_control(kCacheFunctionPrepareForExecution, aAddress, aSize);
++}
++
++static bool SetAliasProtection(void* executableAddress, void* writableAddress,
++                               size_t bytes, ProtectionSetting protection) {
++  int result = 0;
++  switch (protection) {
++    case ProtectionSetting::Writable:
++      result = mprotect(writableAddress, bytes, PROT_READ | PROT_WRITE);
++      if (result != 0) return false;
++      result = mprotect(executableAddress, bytes, PROT_READ | PROT_EXEC);
++      break;
++    case ProtectionSetting::Executable:
++      result = mprotect(writableAddress, bytes, PROT_READ);
++      if (result != 0) return false;
++      result = mprotect(executableAddress, bytes, PROT_READ | PROT_EXEC);
++      break;
++  }
++  return result == 0;
++}
 +
  #ifdef XP_WIN
  #  if defined(HAVE_64BIT_BUILD)
  #    define NEED_JIT_UNWIND_HANDLING
-@@ -509,9 +720,12 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
+@@ -465,64 +580,14 @@ static void* ComputeRandomAllocationAddress() {
+ static void DecommitPages(void* addr, size_t bytes);
+ 
+ static void* ReserveProcessExecutableMemory(size_t bytes) {
+-  // On most Unix platforms our strategy is as follows:
+-  //
+-  // * Reserve:  mmap with PROT_NONE
+-  // * Commit:   mmap with MAP_FIXED, PROT_READ | ...
+-  // * Decommit: mmap with MAP_FIXED, PROT_NONE
+-  //
+-  // On Apple Silicon this only works if we use mprotect to implement W^X. To
+-  // use RWX pages with the faster pthread_jit_write_protect_np API for
+-  // thread-local writable/executable switching, the kernel enforces the
+-  // following rules:
+-  //
+-  // * The initial mmap must be called with MAP_JIT.
+-  // * MAP_FIXED can't be used with MAP_JIT.
+-  // * Since macOS 11.2, mprotect can't be used to change permissions of RWX JIT
+-  //   pages (even PROT_NONE fails).
+-  //   See https://developer.apple.com/forums/thread/672804.
+-  //
+-  // This means we have to use the following strategy on Apple Silicon:
+-  //
+-  // * Reserve:  1) mmap with PROT_READ | PROT_WRITE | PROT_EXEC and MAP_JIT
+-  //             2) decommit
+-  // * Commit:   madvise with MADV_FREE_REUSE
+-  // * Decommit: madvise with MADV_FREE_REUSABLE
+-  //
+-  // On Intel Macs we also need to use MAP_JIT, to be compatible with the
+-  // Hardened Runtime (with com.apple.security.cs.allow-jit = true). The
+-  // pthread_jit_write_protect_np API is not available on Intel and MAP_JIT
+-  // can't be used with MAP_FIXED, so we have to use a hybrid of the above two
+-  // strategies:
+-  //
+-  // * Reserve:  1) mmap with PROT_NONE and MAP_JIT
+-  //             2) decommit
+-  // * Commit:   1) madvise with MADV_FREE_REUSE
+-  //             2) mprotect with PROT_READ | ...
+-  // * Decommit: 1) mprotect with PROT_NONE
+-  //             2) madvise with MADV_FREE_REUSABLE
+-  //
+-  // This is inspired by V8's code in OS::SetPermissions.
+-
+-  // Note that randomAddr is just a hint: if the address is not available
+-  // mmap will pick a different address.
    void* randomAddr = ComputeRandomAllocationAddress();
-   unsigned protection = PROT_NONE;
+-  unsigned protection = PROT_NONE;
++  unsigned protection = PROT_READ | PROT_EXEC;
    unsigned flags = MAP_NORESERVE | MAP_PRIVATE | MAP_ANON;
 -#  if defined(XP_DARWIN)
-+#  if defined(XP_IOS)
-+  protection = PROT_READ | PROT_EXEC;
-+#  endif
-+#  if defined(XP_DARWIN) && !defined(XP_IOS)
-   flags |= MAP_JIT;
+-  flags |= MAP_JIT;
 -#    if defined(JS_USE_APPLE_FAST_WX)
-+#    if defined(JS_USE_APPLE_FAST_WX) && !defined(XP_IOS)
-   protection = PROT_READ | PROT_WRITE | PROT_EXEC;
- #    endif
- #  endif
-@@ -520,7 +734,7 @@ static void* ReserveProcessExecutableMemory(size_t bytes) {
+-  protection = PROT_READ | PROT_WRITE | PROT_EXEC;
+-#    endif
+-#  endif
+   void* p = MozTaggedAnonymousMmap(randomAddr, bytes, protection, flags, -1, 0,
+                                    "js-executable-memory");
    if (p == MAP_FAILED) {
      return nullptr;
    }
 -#  if defined(XP_DARWIN)
-+#  if defined(XP_DARWIN) && !defined(XP_IOS)
-   DecommitPages(p, bytes);
- #  endif
+-  DecommitPages(p, bytes);
+-#  endif
    return p;
-@@ -565,6 +779,18 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
+ }
+ 
+@@ -563,55 +628,57 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
+ 
+ [[nodiscard]] static bool CommitPages(void* addr, size_t bytes,
                                        ProtectionSetting protection) {
-   // See the comment in ReserveProcessExecutableMemory.
- #  if defined(XP_DARWIN)
-+#    if defined(XP_IOS)
+-  // See the comment in ReserveProcessExecutableMemory.
+-#  if defined(XP_DARWIN)
+-  int ret;
+-  do {
+-    ret = madvise(addr, bytes, MADV_FREE_REUSE);
+-  } while (ret != 0 && errno == EAGAIN);
+-  if (ret != 0) {
+-    return false;
+-  }
+-#    if !defined(JS_USE_APPLE_FAST_WX)
+-  unsigned flags = ProtectionSettingToFlags(protection);
+-  if (mprotect(addr, bytes, flags)) {
+-    return false;
+-  }
+-#    endif
+-  return true;
+-#  else
+-  unsigned flags = ProtectionSettingToFlags(protection);
+-  void* p = MozTaggedAnonymousMmap(addr, bytes, flags,
+-                                   MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0,
+-                                   "js-executable-memory");
+-  if (p == MAP_FAILED) {
+-    return false;
 +  if (sWritableExecutableMemoryBase) {
 +    void* writable = WritableAliasForExecutableAddress(addr, bytes);
 +    if (!SetAliasProtection(addr, writable, bytes, protection)) {
@@ -264,36 +232,62 @@ index 315958ac692b..d9f8ad518acd 100644
 +    if (protection == ProtectionSetting::Executable) {
 +      PrepareExecutableRegionForExecution(addr, bytes);
 +    }
-+  }
-+  return true;
-+#    else
-   int ret;
-   do {
-     ret = madvise(addr, bytes, MADV_FREE_REUSE);
-@@ -572,13 +798,14 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
-   if (ret != 0) {
-     return false;
    }
--#    if !defined(JS_USE_APPLE_FAST_WX)
-+#      if !defined(JS_USE_APPLE_FAST_WX) || defined(XP_IOS)
-   unsigned flags = ProtectionSettingToFlags(protection);
-   if (mprotect(addr, bytes, flags)) {
-     return false;
-   }
--#    endif
-+#      endif
+-  MOZ_RELEASE_ASSERT(p == addr);
    return true;
-+#    endif
- #  else
-   unsigned flags = ProtectionSettingToFlags(protection);
-   void* p = MozTaggedAnonymousMmap(addr, bytes, flags,
-@@ -596,14 +823,25 @@ static void DecommitPages(void* addr, size_t bytes) {
-   // See the comment in ReserveProcessExecutableMemory.
- #  if defined(XP_DARWIN)
+-#  endif
+ }
+ 
+ static void DecommitPages(void* addr, size_t bytes) {
+-  // See the comment in ReserveProcessExecutableMemory.
+-#  if defined(XP_DARWIN)
++  if (!addr || !bytes || !sExecutableMemoryBase) {
++    return;
++  }
++
++  // REYNARD: Invalidate prepared pages (on TXM26)
++  if (sHasTXM26) {
++    auto* executable = static_cast<uint8_t*>(addr);
++    auto* begin = sExecutableMemoryBase;
++    auto* end = begin + MaxCodeBytesPerProcess;
++    if (executable < begin || executable + bytes > end) {
++      return;
++    }
++
++    uintptr_t rangeStart = reinterpret_cast<uintptr_t>(executable);
++    if (bytes > (std::numeric_limits<uintptr_t>::max() - rangeStart)) {
++      return;
++    }
++
++    uintptr_t firstPageStart = rangeStart & ~(PreparePageSize - 1);
++    uintptr_t lastPageStart = (rangeStart + bytes - 1) & ~(PreparePageSize - 1);
++
++    for (uintptr_t page = firstPageStart; page <= lastPageStart;
++         page += PreparePageSize) {
++      uint64_t pageTag = (static_cast<uint64_t>(page >> 14)) + 1u;
++      size_t slot =
++          static_cast<size_t>((pageTag * PageTagMagic) & (PrepareEntries - 1));
++      PreparedPageTags[slot] = 0;
++    }
++  }
++
    int ret;
 -#    if !defined(JS_USE_APPLE_FAST_WX)
-+#    if defined(XP_IOS)
-+  InvalidateDebuggerPrepareCacheRange(addr, bytes);
+-  ret = mprotect(addr, bytes, PROT_NONE);
+-  MOZ_RELEASE_ASSERT(ret == 0);
+-#    endif
+-  do {
+-    ret = madvise(addr, bytes, MADV_FREE_REUSABLE);
+-  } while (ret != 0 && errno == EAGAIN);
+-  MOZ_RELEASE_ASSERT(ret == 0);
+-#  else
+-  // Use mmap with MAP_FIXED and PROT_NONE. Inspired by jemalloc's
+-  // pages_decommit.
+-  void* p = MozTaggedAnonymousMmap(addr, bytes, PROT_NONE,
+-                                   MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0,
+-                                   "js-executable-memory");
+-  MOZ_RELEASE_ASSERT(addr == p);
+-#  endif
 +  if (sWritableExecutableMemoryBase) {
 +    void* writable = WritableAliasForExecutableAddress(addr, bytes);
 +    ret = mprotect(writable, bytes, PROT_NONE);
@@ -301,34 +295,13 @@ index 315958ac692b..d9f8ad518acd 100644
 +    ret = mprotect(addr, bytes, PROT_NONE);
 +    MOZ_RELEASE_ASSERT(ret == 0);
 +  }
-+#    elif !defined(JS_USE_APPLE_FAST_WX)
-   ret = mprotect(addr, bytes, PROT_NONE);
-   MOZ_RELEASE_ASSERT(ret == 0);
- #    endif
-+#    if !defined(XP_IOS)
-   do {
-     ret = madvise(addr, bytes, MADV_FREE_REUSABLE);
-   } while (ret != 0 && errno == EAGAIN);
-   MOZ_RELEASE_ASSERT(ret == 0);
-+#    endif
- #  else
-   // Use mmap with MAP_FIXED and PROT_NONE. Inspired by jemalloc's
-   // pages_decommit.
-@@ -721,10 +959,42 @@ class ProcessExecutableMemory {
+ }
+ #endif
  
-     void* p = ReserveProcessExecutableMemory(MaxCodeBytesPerProcess);
-     if (!p) {
-+#ifdef XP_IOS
-+      fprintf(stderr,
-+              "REYNARD_DEBUG: ReserveProcessExecutableMemory failed, pid=%d, "
-+              "bytes=%zu, errno=%d\n",
-+              getpid(), MaxCodeBytesPerProcess, errno);
-+      fflush(stderr);
-+#endif
+@@ -724,7 +791,29 @@ class ProcessExecutableMemory {
        return false;
      }
--
-+#ifdef XP_IOS
+ 
 +    vm_address_t writableAlias = 0;
 +    vm_prot_t currentProtection = VM_PROT_READ | VM_PROT_WRITE;
 +    vm_prot_t maxProtection = VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE;
@@ -350,19 +323,15 @@ index 315958ac692b..d9f8ad518acd 100644
 +      return false;
 +    }
 +    sWritableExecutableMemoryBase = reinterpret_cast<uint8_t*>(writableAlias);
-+#endif
      base_ = static_cast<uint8_t*>(p);
-+#ifdef XP_IOS
 +    sExecutableMemoryBase = base_;
-+#endif
  
      mozilla::Array<uint64_t, 2> seed;
      GenerateXorShift128PlusSeed(seed);
-@@ -745,6 +1015,17 @@ class ProcessExecutableMemory {
+@@ -745,6 +834,15 @@ class ProcessExecutableMemory {
      MOZ_ASSERT(initialized());
      MOZ_ASSERT(pages_.empty());
      MOZ_ASSERT(pagesAllocated_ == 0);
-+#ifdef XP_IOS
 +    if (sWritableExecutableMemoryBase) {
 +      kern_return_t result = vm_deallocate(
 +          mach_task_self(),
@@ -372,42 +341,34 @@ index 315958ac692b..d9f8ad518acd 100644
 +      sWritableExecutableMemoryBase = nullptr;
 +    }
 +    sExecutableMemoryBase = nullptr;
-+#endif
      DeallocateProcessExecutableMemory(base_, MaxCodeBytesPerProcess);
      base_ = nullptr;
      rng_.reset();
-@@ -836,6 +1117,13 @@ void* ProcessExecutableMemory::allocate(size_t bytes,
+@@ -903,6 +1001,8 @@ bool js::jit::InitProcessExecutableMemory() { return execMemory.init(); }
  
-   // Commit the pages after releasing the lock.
-   if (!CommitPages(p, bytes, protection)) {
-+#ifdef XP_IOS
-+    fprintf(stderr,
-+            "REYNARD_DEBUG: CommitPages failed, pid=%d, addr=%p, bytes=%zu, "
-+            "protection=%u, errno=%d\n",
-+            getpid(), p, bytes, unsigned(protection), errno);
-+    fflush(stderr);
-+#endif
-     deallocate(p, bytes, /* decommit = */ false);
-     return nullptr;
-   }
-@@ -922,6 +1210,16 @@ bool js::jit::AddressIsInExecutableMemory(const void* p) {
+ void js::jit::ReleaseProcessExecutableMemory() { execMemory.release(); }
+ 
++void js::jit::SetHasTXM26(bool aHasTXM26) { sHasTXM26 = aHasTXM26; }
++
+ size_t js::jit::LikelyAvailableExecutableMemory() {
+   // Round down available memory to the closest MB.
+   return MaxCodeBytesPerProcess -
+@@ -922,6 +1022,14 @@ bool js::jit::AddressIsInExecutableMemory(const void* p) {
    return execMemory.containsAddress(p);
  }
  
 +void* js::jit::WritableJitAllocationFromExecutable(void* start, size_t size) {
-+#ifdef XP_IOS
 +  if (sWritableExecutableMemoryBase && start &&
 +      execMemory.containsAddress(start)) {
 +    return WritableAliasForExecutableAddress(start, size);
 +  }
-+#endif
 +  return start;
 +}
 +
  bool js::jit::ReprotectRegion(void* start, size_t size,
                                ProtectionSetting protection,
                                MustFlushICache flushICache) {
-@@ -971,7 +1269,26 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
+@@ -971,7 +1079,23 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
      return true;
    }
  
@@ -419,9 +380,6 @@ index 315958ac692b..d9f8ad518acd 100644
 +      return false;
 +    }
 +
-+    // REYNARD: The debugger-backed iOS JIT mapping must be prepared each time
-+    // freshly written code flips back to executable, otherwise the RX view can
-+    // stay stale or zero-filled for wasm pages.
 +    if (protection == ProtectionSetting::Executable) {
 +      PrepareExecutableRegionForExecution(pageStart, size);
 +    }

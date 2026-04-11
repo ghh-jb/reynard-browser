@@ -106,6 +106,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         
         tab.pendingRestoreURL = nil
         tab.suppressInitialNavigation = false
+        tab.session.updateUserAgent(BrowserPreferences.shared.androidUserAgentOverride(for: url))
         tab.session.load(url)
     }
     
@@ -224,10 +225,12 @@ final class TabManagerImplementation: NSObject, TabManager {
         let isURL = isURLLenient.firstMatch(in: trimmedValue, range: fullRange) != nil
         
         if isURL {
+            tab.session.updateUserAgent(BrowserPreferences.shared.androidUserAgentOverride(for: trimmedValue))
             tab.session.load(trimmedValue)
             return
         }
         
+        tab.session.updateUserAgent(nil)
         tab.session.load(BrowserPreferences.shared.searchURL(for: trimmedValue))
     }
     
@@ -259,7 +262,6 @@ final class TabManagerImplementation: NSObject, TabManager {
     
     private func createSession(windowId: String?) -> GeckoSession {
         let session = GeckoSession()
-        session.userAgentOverride = BrowserPreferences.shared.androidUserAgentOverride
         session.contentDelegate = self
         session.progressDelegate = self
         session.navigationDelegate = self
@@ -372,6 +374,10 @@ extension TabManagerImplementation: NavigationDelegate {
             tabs[index].suppressInitialNavigation = false
         }
         
+        if let url {
+            session.updateUserAgent(BrowserPreferences.shared.androidUserAgentOverride(for: url))
+        }
+        
         tabs[index].url = url
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
         persistState()
@@ -404,16 +410,36 @@ extension TabManagerImplementation: NavigationDelegate {
     }
     
     func onNewSession(session: GeckoSession, uri: String, windowId: String) async -> GeckoSession? {
-        let insertionIndex = tabIndex(for: session).map { $0 + 1 }
-        let index = addTab(selecting: false, windowId: windowId, at: insertionIndex)
-        let newTab = tabs[index]
+        let newSession = GeckoSession()
+        newSession.userAgentOverride = BrowserPreferences.shared.androidUserAgentOverride(for: uri)
+        newSession.contentDelegate = self
+        newSession.progressDelegate = self
+        newSession.navigationDelegate = self
+        
+        let newTab = Tab(session: newSession)
+        let controller = NowPlayingController(session: newSession)
+        newSession.mediaSessionDelegate = controller
+        newTab.nowPlayingController = controller
         newTab.url = uri
+        
+        let insertionIndex = tabIndex(for: session).map { $0 + 1 }
+        let index = min(max(insertionIndex ?? tabs.count, 0), tabs.count)
+        if index == tabs.count {
+            tabs.append(newTab)
+        } else {
+            tabs.insert(newTab, at: index)
+            if selectedTabIndex >= index {
+                selectedTabIndex += 1
+            }
+        }
+        
+        delegate?.tabManagerDidChangeTabs(self)
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
         persistState()
         delegate?.tabManager(self, animateNewTabSelectionAt: index) { [weak self] in
             self?.selectTab(at: index)
         }
-        return newTab.session
+        return newSession
     }
 }
 

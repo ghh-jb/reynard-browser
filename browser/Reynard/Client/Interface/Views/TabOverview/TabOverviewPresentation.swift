@@ -281,10 +281,16 @@ final class TabOverviewPresentation {
         controller.captureThumbnail(for: selectedIndex)
         controller.browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
         controller.browserUI.tabOverviewCollection.collectionView.reloadData()
+        let isPhoneTopPresentation = controller.usesPhoneBottomOverviewLayout
         controller.browserUI.tabOverview.containerView.isHidden = false
         controller.browserUI.tabOverview.containerView.alpha = 0
         controller.browserUI.tabOverview.blurView.alpha = 0
-        controller.browserUI.tabOverviewTopBar.barView.alpha = 0
+        if isPhoneTopPresentation {
+            controller.browserUI.tabOverviewBottomBar.barView.alpha = 0
+            controller.browserUI.tabOverviewBottomBar.safeAreaFillView.alpha = 0
+        } else {
+            controller.browserUI.tabOverviewTopBar.barView.alpha = 0
+        }
         controller.view.bringSubviewToFront(controller.browserUI.tabOverview.containerView)
         controller.view.endEditing(true)
         controller.view.layoutIfNeeded()
@@ -319,7 +325,12 @@ final class TabOverviewPresentation {
             pageSnapshot.frame = targetFrame
             pageSnapshot.layer.cornerRadius = 18
             self.controller.browserUI.tabOverview.blurView.alpha = 1
-            self.controller.browserUI.tabOverviewTopBar.barView.alpha = 1
+            if isPhoneTopPresentation {
+                self.controller.browserUI.tabOverviewBottomBar.barView.alpha = 1
+                self.controller.browserUI.tabOverviewBottomBar.safeAreaFillView.alpha = 1
+            } else {
+                self.controller.browserUI.tabOverviewTopBar.barView.alpha = 1
+            }
             self.controller.browserUI.topBar.barView.alpha = 0
             self.controller.browserUI.topBar.safeAreaFillView.alpha = 0
             self.controller.browserUI.padTabBar.collectionView.alpha = 0
@@ -339,10 +350,16 @@ final class TabOverviewPresentation {
         isTransitionRunning = true
         let overviewIndex = overviewAnimationIndex()
         
+        let isPhoneTopDismissal = controller.usesPhoneBottomOverviewLayout
         controller.browserUI.tabOverview.containerView.isHidden = false
         controller.browserUI.tabOverview.containerView.alpha = 1
         controller.browserUI.tabOverview.blurView.alpha = 1
-        controller.browserUI.tabOverviewTopBar.barView.alpha = 1
+        if isPhoneTopDismissal {
+            controller.browserUI.tabOverviewBottomBar.barView.alpha = 1
+            controller.browserUI.tabOverviewBottomBar.safeAreaFillView.alpha = 1
+        } else {
+            controller.browserUI.tabOverviewTopBar.barView.alpha = 1
+        }
         controller.view.bringSubviewToFront(controller.browserUI.tabOverview.containerView)
         controller.view.layoutIfNeeded()
         
@@ -391,7 +408,12 @@ final class TabOverviewPresentation {
             pageSnapshot.layer.cornerRadius = 0
             self.controller.browserUI.tabOverview.blurView.alpha = 0
             self.controller.browserUI.tabOverviewCollection.collectionView.alpha = 0
-            self.controller.browserUI.tabOverviewTopBar.barView.alpha = 0
+            if isPhoneTopDismissal {
+                self.controller.browserUI.tabOverviewBottomBar.barView.alpha = 0
+                self.controller.browserUI.tabOverviewBottomBar.safeAreaFillView.alpha = 0
+            } else {
+                self.controller.browserUI.tabOverviewTopBar.barView.alpha = 0
+            }
             self.controller.browserUI.topBar.barView.alpha = 1
             self.controller.browserUI.topBar.safeAreaFillView.alpha = 1
             self.controller.browserUI.padTabBar.collectionView.alpha = 1
@@ -407,7 +429,12 @@ final class TabOverviewPresentation {
             self.controller.browserUI.tabOverview.containerView.alpha = 0
             self.controller.browserUI.tabOverview.containerView.isHidden = true
             self.controller.browserUI.tabOverview.blurView.alpha = 1
-            self.controller.browserUI.tabOverviewTopBar.barView.alpha = 1
+            if isPhoneTopDismissal {
+                self.controller.browserUI.tabOverviewBottomBar.barView.alpha = 1
+                self.controller.browserUI.tabOverviewBottomBar.safeAreaFillView.alpha = 1
+            } else {
+                self.controller.browserUI.tabOverviewTopBar.barView.alpha = 1
+            }
             
             self.isVisible = false
             self.currentOverviewProgress = 0

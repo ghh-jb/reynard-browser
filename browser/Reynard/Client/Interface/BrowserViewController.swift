@@ -43,20 +43,34 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     var usesCompactPadChromeMode: Bool {
-        isPadLayout && traitCollection.horizontalSizeClass == .compact
+        if isPadLayout && traitCollection.horizontalSizeClass == .compact { return true }
+        return usesPhoneTopAddressBarLayout
     }
     
     var usesPadChromeLayout: Bool {
-        if isPadLayout {
-            return true
-        }
-        
-        // Also use the pad layout in iPhone landscape mode
+        if isPadLayout { return true }
+        if usesPhoneTopAddressBarLayout { return true }
         if let orientation = view.window?.windowScene?.interfaceOrientation {
             return orientation.isLandscape
         }
-        
         return view.bounds.width > view.bounds.height
+    }
+    
+    var usesPhoneTopAddressBarLayout: Bool {
+        guard !isPadLayout else { return false }
+        let isLandscape: Bool
+        if let orientation = view.window?.windowScene?.interfaceOrientation {
+            isLandscape = orientation.isLandscape
+        } else {
+            isLandscape = view.bounds.width > view.bounds.height
+        }
+        guard !isLandscape else { return false }
+        return BrowserPreferences.shared.addressBarPosition == .top
+    }
+    
+    var usesPhoneBottomOverviewLayout: Bool {
+        guard !isPadLayout else { return false }
+        return usesPhoneTopAddressBarLayout || !usesPadChromeLayout
     }
     
     var activeAddressBar: AddressBar {
@@ -92,6 +106,19 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         
         observeDownloadState()
         syncDownloadButtonState()
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(addressBarPositionDidChange),
+            name: Notification.Name("addressBarPositionChanged"),
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(landscapeTabBarDidChange),
+            name: Notification.Name("landscapeTabBarChanged"),
+            object: nil
+        )
         
         browserLayout.configureLayout()
         syncBrowserNavigationChrome(animated: false)
@@ -238,6 +265,14 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     
     @objc private func handleDownloadStoreDidChange() {
         syncDownloadButtonState()
+    }
+    
+    @objc private func addressBarPositionDidChange() {
+        browserLayout.applyChromeLayout(animated: true)
+    }
+    
+    @objc private func landscapeTabBarDidChange() {
+        browserLayout.applyChromeLayout(animated: true)
     }
     
     private func syncDownloadButtonState() {

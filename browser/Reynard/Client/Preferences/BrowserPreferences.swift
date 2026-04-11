@@ -56,11 +56,18 @@ final class BrowserPreferences {
         }
     }
     
+    enum AddressBarPosition: String {
+        case bottom
+        case top
+    }
+    
     private enum Keys {
         static let searchEngine = "BrowserPreferences.searchEngine"
         static let customSearchTemplate = "BrowserPreferences.customSearchTemplate"
         static let jitEnabled = "BrowserPreferences.jitEnabled"
-        static let useAndroidUserAgent = "BrowserPreferences.useAndroidUserAgent"
+        static let androidUserAgentDomains = "BrowserPreferences.androidUserAgentDomains"
+        static let addressBarPosition = "BrowserPreferences.addressBarPosition"
+        static let showsLandscapeTabBar = "BrowserPreferences.showsLandscapeTabBar"
     }
     
     static let shared = BrowserPreferences()
@@ -109,17 +116,54 @@ final class BrowserPreferences {
         }
     }
     
-    var useAndroidUserAgent: Bool {
-        get { defaults.object(forKey: Keys.useAndroidUserAgent) as? Bool ?? true }
-        set { defaults.set(newValue, forKey: Keys.useAndroidUserAgent) }
+    var androidUserAgentDomains: [String] {
+        get {
+            guard let data = defaults.data(forKey: Keys.androidUserAgentDomains),
+                  let list = try? JSONDecoder().decode([String].self, from: data) else { return [] }
+            return list
+        }
+        set {
+            let data = try? JSONEncoder().encode(newValue)
+            defaults.set(data, forKey: Keys.androidUserAgentDomains)
+        }
     }
     
-    var androidUserAgentOverride: String? {
-        guard useAndroidUserAgent else {
+    var addressBarPosition: AddressBarPosition {
+        get {
+            let rawValue = defaults.string(forKey: Keys.addressBarPosition) ?? AddressBarPosition.bottom.rawValue
+            return AddressBarPosition(rawValue: rawValue) ?? .bottom
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: Keys.addressBarPosition)
+            NotificationCenter.default.post(name: Notification.Name("addressBarPositionChanged"), object: nil)
+        }
+    }
+    
+    var showsLandscapeTabBar: Bool {
+        get { defaults.object(forKey: Keys.showsLandscapeTabBar) as? Bool ?? true }
+        set {
+            defaults.set(newValue, forKey: Keys.showsLandscapeTabBar)
+            NotificationCenter.default.post(name: Notification.Name("landscapeTabBarChanged"), object: nil)
+        }
+    }
+    
+    func androidUserAgentOverride(for urlString: String) -> String? {
+        guard !androidUserAgentDomains.isEmpty else { return nil }
+        
+        let host: String
+        if let h = URL(string: urlString)?.host?.lowercased() {
+            host = h
+        } else if let h = URL(string: "https://" + urlString)?.host?.lowercased() {
+            host = h
+        } else {
             return nil
         }
         
-        return "Mozilla/5.0 (Android 15; Mobile; rv:149.0) Gecko/149.0 Firefox/149.0"
+        let matches = androidUserAgentDomains.contains { domain in
+            let d = domain.lowercased()
+            return host == d || host.hasSuffix("." + d)
+        }
+        return matches ? "Mozilla/5.0 (Android 15; Mobile; rv:150.0) Gecko/150.0 Firefox/150.0" : nil
     }
     
     var pairingFileURL: URL {
@@ -186,12 +230,17 @@ final class BrowserPreferences {
         fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
     
+    static let defaultAndroidUserAgentDomains: [String] = ["youtube.com"]
+    
     private func registerDefaults() {
+        let defaultDomains = (try? JSONEncoder().encode(Self.defaultAndroidUserAgentDomains)) ?? Data()
         defaults.register(defaults: [
             Keys.searchEngine: SearchEngine.google.rawValue,
             Keys.customSearchTemplate: "",
             Keys.jitEnabled: false,
-            Keys.useAndroidUserAgent: true,
+            Keys.androidUserAgentDomains: defaultDomains,
+            Keys.addressBarPosition: AddressBarPosition.bottom.rawValue,
+            Keys.showsLandscapeTabBar: true,
         ])
     }
 }

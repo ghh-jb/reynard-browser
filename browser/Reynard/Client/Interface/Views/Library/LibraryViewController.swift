@@ -55,7 +55,7 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
             makeSectionViewController(for: .bookmarks, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { BookmarksManagerView() })),
             makeSectionViewController(for: .history, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { HistoryManagerView() })),
             makeSectionViewController(for: .downloads, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { DownloadsManagerView() })),
-            makeSectionViewController(for: .settings, contentViewController: SettingsRootViewController()),
+            makeSectionViewController(for: .settings, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { SettingsView() })),
         ]
     }
     
@@ -126,7 +126,7 @@ private final class LibraryHostedSectionViewController: UIViewController {
             hostedView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             hostedView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostedView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            hostedView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            hostedView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
     }
 }

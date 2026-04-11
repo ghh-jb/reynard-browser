@@ -19,6 +19,13 @@ public class GeckoSession {
     var id: String?
     public var userAgentOverride: String?
     
+    public func updateUserAgent(_ ua: String?) {
+        userAgentOverride = ua
+        guard isOpen() else { return }
+        let uaValue: Any = ua ?? NSNull()
+        dispatcher.dispatch(type: "GeckoView:UpdateSettings", message: ["userAgentOverride": uaValue])
+    }
+    
     lazy var contentHandler = newContentHandler(self)
     lazy var processHangHandler = newProcessHangHandler(self)
     public var contentDelegate: ContentDelegate? {

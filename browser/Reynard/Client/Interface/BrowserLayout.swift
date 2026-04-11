@@ -276,12 +276,13 @@ final class BrowserLayout {
         ui.geckoLeadingPadConstraint.isActive = pad
         ui.geckoTrailingPadConstraint.isActive = pad
         
-        ui.tabOverviewCollection.topPhoneConstraint.isActive = !pad
-        ui.tabOverviewCollection.bottomPhoneConstraint.isActive = !pad
-        ui.tabOverviewCollection.topPadConstraint.isActive = pad
-        ui.tabOverviewCollection.bottomPadConstraint.isActive = pad
+        let phoneOverview = controller.usesPhoneBottomOverviewLayout
+        ui.tabOverviewCollection.topPhoneConstraint.isActive = phoneOverview
+        ui.tabOverviewCollection.bottomPhoneConstraint.isActive = phoneOverview
+        ui.tabOverviewCollection.topPadConstraint.isActive = !phoneOverview
+        ui.tabOverviewCollection.bottomPadConstraint.isActive = !phoneOverview
         
-        let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1
+        let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPadLayout ? BrowserPreferences.shared.showsLandscapeTabBar : true)
         let showsCompactPadBottomToolbar = compactPad && !controller.tabOverviewPresentation.isVisible
         ui.topBar.barView.isHidden = !pad
         ui.topBar.safeAreaFillView.isHidden = !pad
@@ -295,10 +296,10 @@ final class BrowserLayout {
         ui.chromeContainer.bottomSafeAreaFillView.backgroundColor = controller.isSearchFocused && !pad ? .clear : .systemGray6
         ui.toolbarView.alpha = compactPad ? 1 : ui.toolbarView.alpha
         
-        ui.tabOverviewTopBar.barView.isHidden = !pad
-        ui.tabOverviewBottomBar.barView.isHidden = pad
+        ui.tabOverviewTopBar.barView.isHidden = phoneOverview
+        ui.tabOverviewBottomBar.barView.isHidden = !phoneOverview
         ui.tabOverviewBottomBar.safeAreaFillView.isHidden = true
-        ui.tabOverviewBarButtons.attach(to: pad ? ui.tabOverviewTopBar.barView : ui.tabOverviewBottomBar.barView)
+        ui.tabOverviewBarButtons.attach(to: phoneOverview ? ui.tabOverviewBottomBar.barView : ui.tabOverviewTopBar.barView)
         ui.padTopBarButtons.updateLayout(isPadLayout: controller.isPadLayout, showsCompactPadChrome: compactPad, sidebarVisible: controller.isLibrarySidebarVisible)
         ui.padTopBarButtons.leftStack.isHidden = compactPad
         ui.padTopBarButtons.rightStack.isHidden = compactPad

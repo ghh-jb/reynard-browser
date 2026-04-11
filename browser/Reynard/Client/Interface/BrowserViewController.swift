@@ -237,7 +237,23 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     func openExternalURL(_ url: URL) {
-        browse(to: url.absoluteString)
+        let targetController = activeContentBrowserViewController
+        targetController.loadViewIfNeeded()
+        targetController.prepareTabForExternalLoad()
+        targetController.browse(to: url.absoluteString)
+    }
+    
+    private var activeContentBrowserViewController: BrowserViewController {
+        embeddedSplitController?.contentBrowserViewController ?? self
+    }
+    
+    private func prepareTabForExternalLoad() {
+        guard !tabManager.tabs.isEmpty else {
+            tabManager.createInitialTab()
+            return
+        }
+        
+        _ = createTab(selecting: true, at: tabManager.tabs.count)
     }
     
     func updateNavigationButtons() {
@@ -605,6 +621,10 @@ final class BrowserSplitViewController: UISplitViewController, UISplitViewContro
     private let browserViewController: BrowserViewController
     private var sidebarVisible = false
     private lazy var libraryViewController = LibrarySidebarViewController()
+    
+    var contentBrowserViewController: BrowserViewController {
+        browserViewController
+    }
     
     private lazy var browserNavigationController: UINavigationController = {
         let navigationController = UINavigationController(rootViewController: browserViewController)

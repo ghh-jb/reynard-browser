@@ -123,7 +123,7 @@ private final class LibraryHostedSectionViewController: UIViewController {
         view.addSubview(hostedView)
         
         NSLayoutConstraint.activate([
-            hostedView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            hostedView.topAnchor.constraint(equalTo: view.topAnchor),
             hostedView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostedView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             hostedView.bottomAnchor.constraint(equalTo: view.bottomAnchor),

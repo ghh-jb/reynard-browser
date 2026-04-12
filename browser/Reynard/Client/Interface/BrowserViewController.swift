@@ -253,6 +253,10 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             return
         }
         
+        if tabManager.tabs.count == 1 && tabManager.tabs[0].url == nil {
+            return
+        }
+        
         _ = createTab(selecting: true, at: tabManager.tabs.count)
     }
     

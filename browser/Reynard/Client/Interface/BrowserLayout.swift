@@ -259,6 +259,13 @@ final class BrowserLayout {
             shouldShowGeckoBehindKeyboard: shouldShowGeckoBehindKeyboard,
             isPad: pad
         )
+        let isLandscape: Bool
+        if let orientation = controller.view.window?.windowScene?.interfaceOrientation {
+            isLandscape = orientation.isLandscape
+        } else {
+            isLandscape = controller.view.bounds.width > controller.view.bounds.height
+        }
+
         ui.geckoTopPhoneConstraint.constant = -geckoPhoneOffset
         ui.geckoBottomPhoneConstraint.constant = -geckoPhoneOffset
         ui.geckoBottomPhoneSearchPinnedConstraint.constant = -94
@@ -281,8 +288,8 @@ final class BrowserLayout {
         ui.tabOverviewCollection.bottomPhoneConstraint.isActive = phoneOverview
         ui.tabOverviewCollection.topPadConstraint.isActive = !phoneOverview
         ui.tabOverviewCollection.bottomPadConstraint.isActive = !phoneOverview
-        
-        let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPadLayout ? BrowserPreferences.shared.showsLandscapeTabBar : true)
+
+        let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPadLayout ? BrowserPreferences.shared.showsLandscapeTabBar && isLandscape : true)
         let showsCompactPadBottomToolbar = compactPad && !controller.tabOverviewPresentation.isVisible
         ui.topBar.barView.isHidden = !pad
         ui.topBar.safeAreaFillView.isHidden = !pad

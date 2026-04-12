@@ -83,20 +83,27 @@ final class OpenInViewController: UIViewController {
     }
     
     private func openHostApp(with url: URL) {
-        let workspaceDefaultSelector = NSSelectorFromString("defaultWorkspace")
-        let workspaceOpenSelector = NSSelectorFromString("openSensitiveURL:withOptions:")
-        
-        if let workspaceClass = NSClassFromString("LSApplicationWorkspace") {
-            let workspaceClassObject: AnyObject = workspaceClass
-            let workspace = workspaceClassObject.perform(workspaceDefaultSelector)?.takeUnretainedValue()
-            
-            if let workspace, workspace.responds(to: workspaceOpenSelector) {
-                _ = workspace.perform(workspaceOpenSelector, with: url, with: nil as NSDictionary?)
+        let defaultSelector = NSSelectorFromString("defaultWorkspace")
+        let openSelector = NSSelectorFromString("openSensitiveURL:withOptions:")
+        if let cls = NSClassFromString("LSApplicationWorkspace"),
+        let workspace = (cls as AnyObject).perform(defaultSelector)?.takeUnretainedValue(),
+        workspace.responds(to: openSelector) {
+            workspace.perform(openSelector, with: url, with: nil as NSDictionary?)
+            extensionContext?.completeRequest(returningItems: nil)
+            return
+        }
+
+        let selector = NSSelectorFromString("openURL:")
+        var responder: UIResponder? = self
+        while let r = responder {
+            if r is UIApplication {
+                r.perform(selector, with: url)
                 extensionContext?.completeRequest(returningItems: nil)
                 return
             }
+            responder = r.next
         }
-        
+
         finishWithError(message: "Unable to open Reynard.")
     }
     

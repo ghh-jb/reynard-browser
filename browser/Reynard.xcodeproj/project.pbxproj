@@ -101,6 +101,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Resources/Info.plist,
+				TrollStore/JIT/ptrace_jit.c,
 			);
 			target = 018C679D2F2F289C001F0BBB /* Reynard */;
 		};

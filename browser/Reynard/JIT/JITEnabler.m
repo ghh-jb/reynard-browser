@@ -8,6 +8,8 @@
 #import "JITEnabler.h"
 #import "JITSupport.h"
 #import "JITUtils.h"
+#import "Root.h"
+#import "Utils.h"
 
 @interface JITEnabler ()
 
@@ -41,6 +43,28 @@
 }
 
 - (BOOL)enableJITForPID:(int32_t)pid hasTXM26:(BOOL)hasTXM26 error:(NSError **)error {
+    // TrollStore or jailbroken devices
+    if (!isBeingDebugged() && getEntitlementValue(@"com.apple.private.security.no-sandbox")) {
+        NSString *helperPath = [NSBundle.mainBundle.resourcePath stringByAppendingPathComponent:@"ptrace_jit"];
+        if (![[NSFileManager defaultManager] isExecutableFileAtPath:helperPath]) {
+            if (error) *error = MakeError(TSPtraceHelperMissing);
+            return NO;
+        }
+        
+        int result = spawnRoot(helperPath, @[[NSString stringWithFormat:@"%d", pid]]);
+        if (result >= 128) {
+            if (error) *error = MakeError(TSPtraceHelperTerminated);
+            return NO;
+        }
+        
+        if (result != 0) {
+            if (error) *error = MakeError(TSPtraceHelperAttachFailed);
+            return NO;
+        }
+        
+        return YES;
+    }
+    
     if (@available(iOS 17.4, *)) {
         // For iOS 17.4 and later
         // Thanks StikDebug!

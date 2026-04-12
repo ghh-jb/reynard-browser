@@ -8,10 +8,11 @@
 #ifndef Reynard_Bridging_Header_h
 #define Reynard_Bridging_Header_h
 
-#import <GeckoView/IOSBootstrap.h>
-#import <GeckoView/GeckoViewSwiftSupport.h>
-#import "UIKit+Private.h"
 #import "ExtensionBridge.h"
 #import "JITEnabler.h"
+#import "UIKit+Private.h"
+#import "Utils.h"
+#import <GeckoView/GeckoViewSwiftSupport.h>
+#import <GeckoView/IOSBootstrap.h>
 
 #endif /* Reynard_Bridging_Header_h */

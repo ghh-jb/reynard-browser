@@ -126,6 +126,12 @@ NSString *ErrorDescription(ErrorCode code) {
             return @"Lost TCP connectivity to the JIT debug endpoint.";
         case TunnelCreateFailed:
             return @"Failed to create RPPairing tunnel.";
+        case TSPtraceHelperMissing:
+            return @"Bundled ptrace_jit is missing or not executable.";
+        case TSPtraceHelperAttachFailed:
+            return @"ptrace_jit failed to attach to the child process.";
+        case TSPtraceHelperTerminated:
+            return @"ptrace_jit terminated before it could attach to the child process.";
     }
     
     return @"Unknown error.";
@@ -176,6 +182,10 @@ ErrorGroup ErrorGroupForCode(ErrorCode code) {
         case LegacySocketTLSSetupFailed:
         case LegacyDDIMountFailed:
             return ErrorGroupLegacyPath;
+        case TSPtraceHelperMissing:
+        case TSPtraceHelperAttachFailed:
+        case TSPtraceHelperTerminated:
+            return ErrorGroupTrollStore;
         case LegacyTLSConfigurationFailed:
         case LegacyTLSConnectionMissing:
         case LegacyTLSConnectionClosed:

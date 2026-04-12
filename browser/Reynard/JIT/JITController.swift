@@ -23,8 +23,13 @@ final class JITController {
     
     private init() {}
     
+    // For TrollStore or jailbroken devices
+    private func usePtraceJIT() -> Bool {
+        !isBeingDebugged() && getEntitlementValue("com.apple.private.security.no-sandbox")
+    }
+    
     func start() {
-        guard !isDDIMissing() else {
+        guard usePtraceJIT() || !isDDIMissing() else {
             hasHandledFailure = true
             presentMissingDDIFailureScreen()
             return
@@ -82,7 +87,12 @@ final class JITController {
             return
         }
         
-        guard BrowserPreferences.shared.isJITEnabled, !isJITLessModeActive, !hasHandledFailure else {
+        guard !isJITLessModeActive, !hasHandledFailure else {
+            ReportJITStatusForChild(pid, false, hasTXM26())
+            return
+        }
+        
+        guard usePtraceJIT() || BrowserPreferences.shared.isJITEnabled else {
             ReportJITStatusForChild(pid, false, hasTXM26())
             return
         }
@@ -175,12 +185,19 @@ final class JITController {
         }
         
         let description = error.localizedDescription.isEmpty ? "Unknown error." : error.localizedDescription
+        let messageText: String
+        if usePtraceJIT() {
+            messageText = "It's extremely rare that you encounter this issue! Make sure that your TrollStore installation or jailbroken environment is properly configured.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode."
+        } else {
+            messageText = "Please check that your pairing file is valid, your loopback VPN is on, and you're connected to a stable Wi-Fi network.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode."
+        }
+        
         let viewController = JITFailureViewController(
             errorCode: error.code,
             errorDescription: description,
             showsErrorDetails: showsErrorDetails,
             titleText: "Failed to enable JIT",
-            messageText: "Please check that your pairing file is valid, your loopback VPN is on, and you're connected to a stable Wi-Fi network.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode.",
+            messageText: messageText,
             actionButtonTitle: "Activate JIT-Less Mode",
             onPrimaryAction: { [weak self] in
                 self?.activateJITLessMode()

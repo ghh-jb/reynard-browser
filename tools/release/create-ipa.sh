@@ -2,6 +2,8 @@
 
 set -eu
 
+CLANG_PATH="$(xcrun --sdk iphoneos --find clang)"
+SDK_PATH="$(xcrun --sdk iphoneos --show-sdk-path)"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 ROOT_DIR="$(CDPATH= cd -- "$SCRIPT_DIR/../.." && pwd)"
 ARCHIVE_DIR="$ROOT_DIR/dist/Reynard.xcarchive"
@@ -22,10 +24,26 @@ if [ -z "$APP_PATH" ]; then
 	exit 1
 fi
 
-rm -rf "$WORK_DIR" "$ROOT_DIR/dist/Reynard.ipa"
+rm -rf "$WORK_DIR" "$ROOT_DIR/dist/Reynard.ipa" "$ROOT_DIR/dist/Reynard-TrollStore.ipa"
 mkdir -p "$WORK_DIR/Payload"
-
 cp -R "$APP_PATH" "$WORK_DIR/Payload/"
 
 cd "$WORK_DIR"
-zip -r ../Reynard.ipa Payload -x "._*" -x ".DS_Store" -x "__MACOSX"
+zip -r ../Reynard.ipa Payload -x "._*" -x ".DS_Store" -x "__MACOSX" # normal ipa
+
+PTRACE_JIT_SRC="$ROOT_DIR/browser/Reynard/TrollStore/JIT/ptrace_jit.c"
+PTRACE_JIT_OUT="Payload/Reynard.app/ptrace_jit"
+
+"$CLANG_PATH" \
+	-arch arm64 \
+	-isysroot "$SDK_PATH" \
+	-miphoneos-version-min=14.0 \
+	-Os \
+	"$PTRACE_JIT_SRC" \
+	-o "$PTRACE_JIT_OUT"
+
+chmod 0755 "$PTRACE_JIT_OUT"
+ldid -S"$ROOT_DIR/browser/Reynard/TrollStore/JIT/ptrace_jit.entitlements" "$PTRACE_JIT_OUT"
+ldid -S"$ROOT_DIR/browser/Reynard/Entitlements/Reynard.private.entitlements" "Payload/Reynard.app/Reynard"
+ldid -S"$ROOT_DIR/browser/Helper/Entitlements/Reynard-Helper.private.entitlements" "Payload/Reynard.app/PlugIns/Reynard Helper.appex/Reynard Helper"
+zip -r ../Reynard-TrollStore.tipa Payload -x "._*" -x ".DS_Store" -x "__MACOSX" # trollstore ipa

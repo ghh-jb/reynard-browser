@@ -21,6 +21,7 @@ typedef NS_ENUM(NSInteger, ErrorGroup) {
   ErrorGroupPairing = 4,
   ErrorGroupTLS = 5,
   ErrorGroupProtocol = 6,
+  ErrorGroupTrollStore = 7,
 };
 
 typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
@@ -98,6 +99,11 @@ typedef NS_ERROR_ENUM(ErrorDomain, ErrorCode){
 
     // RPPairing tunnel
     TunnelCreateFailed = -57,
+
+    // TrollStore ptrace attach path
+    TSPtraceHelperMissing = -58,
+    TSPtraceHelperAttachFailed = -59,
+    TSPtraceHelperTerminated = -60,
 };
 
 NSString *ErrorDescription(ErrorCode code);

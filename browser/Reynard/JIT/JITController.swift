@@ -25,7 +25,7 @@ final class JITController {
     
     // For TrollStore or jailbroken devices
     private func usePtraceJIT() -> Bool {
-        !isBeingDebugged() && getEntitlementValue("com.apple.private.security.no-sandbox")
+        getEntitlementValue("com.apple.private.security.no-sandbox")
     }
     
     func start() {

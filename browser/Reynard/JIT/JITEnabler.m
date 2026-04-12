@@ -44,7 +44,7 @@
 
 - (BOOL)enableJITForPID:(int32_t)pid hasTXM26:(BOOL)hasTXM26 error:(NSError **)error {
     // TrollStore or jailbroken devices
-    if (!isBeingDebugged() && getEntitlementValue(@"com.apple.private.security.no-sandbox")) {
+    if (getEntitlementValue(@"com.apple.private.security.no-sandbox")) {
         NSString *helperPath = [NSBundle.mainBundle.resourcePath stringByAppendingPathComponent:@"ptrace_jit"];
         if (![[NSFileManager defaultManager] isExecutableFileAtPath:helperPath]) {
             if (error) *error = MakeError(TSPtraceHelperMissing);

@@ -30,16 +30,18 @@ final class SettingsRootViewController: SettingsTableViewController {
     }
     
     var visibleSections: [Section] {
+        var hiddenSections: Set<Section> = []
+        
         if UIDevice.current.userInterfaceIdiom == .pad {
-            return Section.allCases.filter { $0 != .tab }
+            hiddenSections.insert(.tab)
         }
         
         // if using Trollstore or jailbroken, hide JIT section
         if getEntitlementValue("com.apple.private.security.no-sandbox") {
-            return Section.allCases.filter { $0 != .jit }
+            hiddenSections.insert(.jit)
         }
         
-        return Section.allCases
+        return Section.allCases.filter { !hiddenSections.contains($0) }
     }
     
     let jitSwitch = UISwitch()

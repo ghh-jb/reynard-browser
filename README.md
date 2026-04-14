@@ -6,25 +6,25 @@ Reynard is a **Gecko-based** mobile web browser for iOS 14+.
 
 Unlike other browsers on iOS that are forced to use Apple's **WebKit** engine (including Safari and all third-party browsers), Reynard uses **Gecko**. This is the same engine that powers the Firefox browser on desktop and Android devices.
 
-This project is mainly for users on older iOS versions who are stuck with an outdated version of WebKit. Because WebKit is bundled with the OS, these devices cannot receive engine updates and often fail to load modern websites. By using Gecko which is kept up to date independently, Reynard allows these sites to work again. Users on newer iOS versions can also use the browser if they want to use an alternative browser engine on their device.
+This project is mainly for users on older iOS versions who are stuck with an outdated version of WebKit. Because WebKit is bundled with the OS, these devices cannot receive engine updates and often fail to load modern websites. By using Gecko which is kept up to date independently, Reynard allows these sites to work again. Users on newer iOS versions can also use the browser if they want an alternative browser engine on their device.
 
 ## Installation
 
 The latest builds are available on the [Releases](https://github.com/minh-ton/reynard-browser/releases) page.
 
-For the best performance and automatic JIT enablement, it is recommended to sideload Reynard using [TrollStore](https://github.com/opa334/TrollStore), using the `Reynard-TrollStore.ipa` build.
+For the best performance and automatic JIT enablement, it is recommended to sideload Reynard via [TrollStore](https://github.com/opa334/TrollStore) using the `Reynard-TrollStore.tipa` build.
 
-If TrollStore is not available, you should use [AltStore](https://altstore.io/) or [SideStore](https://sidestore.io/) to sideload the `Reynard.ipa` build instead. Please note that you must select the **Keep App Extensions** option during installation, as Reynard relies on its extension to function and will not work without it. After sideloading, you may want to enable JIT by following [this guide](https://github.com/minh-ton/reynard-browser/wiki/2.-Enabling-JIT).
+If TrollStore is not available, you should use [AltStore](https://altstore.io/) or [SideStore](https://sidestore.io/) to sideload the `Reynard.ipa` build instead. Please note that you must select the **Keep App Extensions** option during installation, as Reynard relies on its extensions to function and will not work without them. After sideloading, you may want to enable JIT by following [this guide](https://github.com/minh-ton/reynard-browser/wiki/2.-Enabling-JIT).
 
 > [!WARNING]
-> - **LiveContainer is not supported**, as it does not handle extensions or launch apps in a way that is compatible with Reynard.
+> - **LiveContainer is not supported**, as it does not support extensions or launch apps in a way that is compatible with Reynard.
 > - Compatibility with other sideloading methods is currently unknown.
 
 This project is still in an early experimental state, so expect bugs and missing features. If you encounter issues, check the [Issues & FAQ](https://github.com/minh-ton/reynard-browser/wiki/3.-Issues-&-FAQ) page before opening a new issue.
 
 ## Preview
 
-### iOS 14 (iPhone 6S Plus, iOS 14.1)
+### iOS 14 (iPhone 6S Plus, 14.1)
 
 These sites are known to break or render incorrectly on iOS 14. The screenshots below compare how they load in Safari versus Reynard.
 
@@ -64,7 +64,7 @@ These sites are known to break or render incorrectly on iOS 14. The screenshots 
   </tr>
 </table>
 
-### iOS 15 (iPhone 7, iOS 15.8.6)
+### iOS 15 (iPhone 7, 15.8.6)
 
 <table>
   <tr>
@@ -86,7 +86,7 @@ These sites are known to break or render incorrectly on iOS 14. The screenshots 
   </tr>
 </table>
 
-### iOS 26 (iPhone 13 Mini, iOS 26.1)
+### iOS 26 (iPhone 13 mini, 26.1)
 
 Reynard also works great on the latest version of iOS!
 
@@ -140,7 +140,7 @@ To run Reynard, open `Reynard.xcodeproj` in Xcode and build/run it from there.
 
 ## Notes
 
-This project initially started out of curiosity. I wanted to see if I could get Gecko to run without the [BrowserEngineKit](https://developer.apple.com/documentation/browserenginekit) framework, so it could run on iOS versions as far back as possible. I got it working, and since then, I’ve been focusing on developing engine patches for better UIKit integration, fixing bugs, and turning this into a full, usable browser.
+This project initially started out of curiosity. I wanted to see if I could get Gecko to run without the [BrowserEngineKit](https://developer.apple.com/documentation/browserenginekit) framework, so it could be further modified to run on iOS versions as far back as possible. I got it working, and since then, I’ve been focusing on developing engine patches for better UIKit integration, fixing bugs, and turning this into a full, usable browser.
 
 If you’ve come across this repository and find it interesting, I’d love to get help or collaborate on it. I’m learning as I go here and don’t have much prior experience with iOS app development or with Gecko itself, so any contributions, feedback, or pointers would be greatly appreciated.
 

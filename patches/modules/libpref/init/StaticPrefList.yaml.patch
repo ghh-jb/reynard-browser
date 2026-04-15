@@ -1,7 +1,52 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index 262eee800b3f..e2565344c4dc 100644
+index 262eee800b3f..527b4632a52e 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
+@@ -5714,7 +5714,7 @@
+ # on aarch64 (Apple Silicon) MacOS.
+ - name: dom.webgpu.enabled
+   type: RelaxedAtomicBool
+-#if defined(XP_WIN) || defined(XP_MACOSX) && defined(MOZ_AARCH64)
++#if defined(XP_WIN) || defined (XP_IOS) || defined(XP_MACOSX) && defined(MOZ_AARCH64)
+   value: true
+ #else
+   value: @IS_EARLY_BETA_OR_EARLIER@
+@@ -5725,7 +5725,7 @@
+ # on a platform that supports the GPU process, else true.
+ - name: dom.webgpu.allow-in-parent
+   type: bool
+-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID)
++#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID) || defined(XP_IOS)
+   value: false
+ #else
+   value: true
+@@ -5735,7 +5735,7 @@
+ # Is support for the Web GPU API enabled on service workers?
+ - name: dom.webgpu.service-workers.enabled
+   type: RelaxedAtomicBool
+-#if defined(XP_WIN) || defined(XP_MACOSX) && defined(MOZ_AARCH64)
++#if defined(XP_WIN) || defined(XP_IOS) || defined(XP_MACOSX) && defined(MOZ_AARCH64)
+   value: true
+ #else
+   value: @IS_EARLY_BETA_OR_EARLIER@
+@@ -5762,7 +5762,7 @@
+ 
+ - name: dom.webgpu.allow-present-without-readback
+   type: RelaxedAtomicBool
+-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX) && !defined(ANDROID)
++#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_IOS) || defined(XP_LINUX) && !defined(ANDROID)
+   value: true
+ #else
+   value: false
+@@ -5772,7 +5772,7 @@
+ # Whether WebGPU's GPUExternalTexture API is enabled.
+ - name: dom.webgpu.external-texture.enabled
+   type: bool
+-#if defined(XP_WIN) || defined(XP_MACOSX)
++#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_IOS)
+   value: true
+ #else
+   value: false
 @@ -7426,7 +7426,13 @@
    # backend.
  -   name: gfx.font_rendering.coretext.enabled

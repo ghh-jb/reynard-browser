@@ -10,6 +10,5 @@
 NS_ASSUME_NONNULL_BEGIN
 
 BOOL getEntitlementValue(NSString *key);
-BOOL isBeingDebugged(void);
 
 NS_ASSUME_NONNULL_END

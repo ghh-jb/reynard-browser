@@ -40,6 +40,8 @@ enum PromptEvents: String, CaseIterable {
 private var activePickers: [String: SelectPicker] = [:]
 @MainActor
 private var activeColorPickers: [String: ColorPicker] = [:]
+@MainActor
+private var activeDateTimePickers: [String: DateTimePicker] = [:]
 
 func newPromptHandler(_ session: GeckoSession) -> GeckoSessionHandler {
     GeckoSessionHandler(
@@ -83,6 +85,35 @@ func newPromptHandler(_ session: GeckoSession) -> GeckoSessionHandler {
                 activeColorPickers.removeValue(forKey: promptId)
                 
                 return result.map { ["color": $0] }
+            }
+            
+            if promptType == "datetime" {
+                let inputMode = promptData["mode"] as? String ?? "date"
+                let value = promptData["value"] as? String ?? ""
+                let min = promptData["min"] as? String ?? ""
+                let max = promptData["max"] as? String ?? ""
+                let step = promptData["step"] as? String ?? ""
+                
+                guard let rectDict = promptData["rect"] as? [String: Any],
+                      let geckoView = session.window?.view()?.superview,
+                      let window = geckoView.window else { return nil }
+                
+                var anchorRect = CGRect(
+                    x: (rectDict["left"] as? Double) ?? 0,
+                    y: (rectDict["top"] as? Double) ?? 0,
+                    width: (rectDict["width"] as? Double) ?? 0,
+                    height: (rectDict["height"] as? Double) ?? 0
+                )
+                let windowPoint = window.convert(anchorRect.origin, from: nil)
+                anchorRect.origin = geckoView.convert(windowPoint, from: nil)
+                
+                let picker = DateTimePicker(promptId: promptId, inputMode: inputMode, anchorRect: anchorRect, geckoView: geckoView)
+                activeDateTimePickers[promptId] = picker
+                
+                let result = await picker.present(value: value, min: min, max: max, step: step)
+                activeDateTimePickers.removeValue(forKey: promptId)
+                
+                return result.map { ["datetime": $0] }
             }
             
             if promptType == "choice" {

@@ -1,8 +1,8 @@
 diff --git a/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs b/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs
-index 51ce0b4bd1b7..3d20d7af13c7 100644
+index 51ce0b4bd1b7..9733d36da989 100644
 --- a/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs
 +++ b/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs
-@@ -72,6 +72,11 @@ export class PromptFactory {
+@@ -72,6 +72,17 @@ export class PromptFactory {
      }
  
      const type = target.type;
@@ -11,10 +11,16 @@ index 51ce0b4bd1b7..3d20d7af13c7 100644
 +      aEvent.preventDefault();
 +      return;
 +    }
++    if (type === "date" || type === "datetime-local") {
++      this._handleDateTime(target);
++      target.blur();
++      aEvent.preventDefault();
++      return;
++    }
      if (type === "month" || type === "week") {
        // TODO(bug 888320, bug 1283382, bug 1283383): Remove this once we
        // support UA widgets for month/week inputs.
-@@ -158,11 +163,22 @@ export class PromptFactory {
+@@ -158,11 +169,22 @@ export class PromptFactory {
        mozSystemGroup: true,
      });
  
@@ -37,7 +43,85 @@ index 51ce0b4bd1b7..3d20d7af13c7 100644
        },
        result => {
          deferredUpdate.disarm();
-@@ -292,6 +308,50 @@ export class PromptFactory {
+@@ -228,26 +250,36 @@ export class PromptFactory {
+ 
+   _handleDateTime(aElement) {
+     const win = aElement.ownerGlobal;
++    const elemRect = aElement.getBoundingClientRect();
++    const winUtils = win.windowUtils;
++    const screenRect = winUtils.toScreenRectInCSSUnits(
++      elemRect.left,
++      elemRect.top,
++      elemRect.width,
++      elemRect.height
++    );
+     const prompt = new lazy.GeckoViewPrompter(win);
+ 
+     const chromeEventHandler = aElement.ownerGlobal.docShell.chromeEventHandler;
+     const dismissPrompt = () => prompt.dismiss();
+-    // Some controls don't have UA widget (bug 888320)
++
++    // REYNARD: If the input has a UA widget (dateTimeBoxElement), notify it that the
++    // picker is open. Otherwise (called from click before UA widget renders,
++    // or for types without UA widgets) use a blur listener instead.
+     {
+       const dateTimeBoxElement = aElement.dateTimeBoxElement;
+-      if (["month", "week"].includes(aElement.type) && !dateTimeBoxElement) {
+-        aElement.addEventListener("blur", dismissPrompt, {
+-          mozSystemGroup: true,
+-        });
+-      } else {
++      if (dateTimeBoxElement) {
+         chromeEventHandler.addEventListener(
+           "MozCloseDateTimePicker",
+           dismissPrompt
+         );
+-
+         dateTimeBoxElement.dispatchEvent(
+           new win.CustomEvent("MozSetDateTimePickerState", { detail: true })
+         );
++      } else {
++        aElement.addEventListener("blur", dismissPrompt, {
++          mozSystemGroup: true,
++        });
+       }
+     }
+ 
+@@ -259,15 +291,16 @@ export class PromptFactory {
+         min: aElement.min,
+         max: aElement.max,
+         step: aElement.step,
++        rect: {
++          left: screenRect.left,
++          top: screenRect.top,
++          width: screenRect.width,
++          height: screenRect.height,
++        },
+       },
+       result => {
+-        // Some controls don't have UA widget (bug 888320)
+         const dateTimeBoxElement = aElement.dateTimeBoxElement;
+-        if (["month", "week"].includes(aElement.type) && !dateTimeBoxElement) {
+-          aElement.removeEventListener("blur", dismissPrompt, {
+-            mozSystemGroup: true,
+-          });
+-        } else {
++        if (dateTimeBoxElement) {
+           chromeEventHandler.removeEventListener(
+             "MozCloseDateTimePicker",
+             dismissPrompt
+@@ -275,6 +308,10 @@ export class PromptFactory {
+           dateTimeBoxElement.dispatchEvent(
+             new win.CustomEvent("MozSetDateTimePickerState", { detail: false })
+           );
++        } else {
++          aElement.removeEventListener("blur", dismissPrompt, {
++            mozSystemGroup: true,
++          });
+         }
+ 
+         // OK: result
+@@ -292,6 +329,50 @@ export class PromptFactory {
      );
    }
  

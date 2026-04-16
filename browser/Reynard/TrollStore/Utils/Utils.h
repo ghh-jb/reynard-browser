@@ -10,5 +10,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 BOOL getEntitlementValue(NSString *key);
+void updateJetsamControl(pid_t pid);
 
 NS_ASSUME_NONNULL_END

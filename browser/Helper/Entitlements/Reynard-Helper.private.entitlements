@@ -12,9 +12,5 @@
     <true/>
 	<key>platform-application</key>
     <true/>
-
-    <!-- for later -->
-    <key>com.apple.private.memorystatus</key>
-    <true/>
 </dict>
 </plist>

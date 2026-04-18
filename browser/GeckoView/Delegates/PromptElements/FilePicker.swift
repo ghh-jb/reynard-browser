@@ -308,8 +308,7 @@ final class FilePicker: NSObject {
             )
         } else {
             picker = UIDocumentPickerViewController(
-                documentTypes: acceptedTypes.documentTypes.map(\.identifier),
-                in: .open
+                forOpeningContentTypes: acceptedTypes.documentTypes,
             )
         }
         picker.delegate = self

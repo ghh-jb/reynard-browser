@@ -519,10 +519,7 @@
 					"$(PROJECT_DIR)/Reynard/JIT",
 				);
 				MARKETING_VERSION = "$(CURRENT_VERSION)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-lidevice_ffi",
-				);
+				OTHER_LDFLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.Reynard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -575,10 +572,7 @@
 					"$(PROJECT_DIR)/Reynard/JIT",
 				);
 				MARKETING_VERSION = "$(CURRENT_VERSION)";
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					"-lidevice_ffi",
-				);
+				OTHER_LDFLAGS = "$(inherited)";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.Reynard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

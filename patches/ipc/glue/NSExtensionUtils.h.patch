@@ -1,11 +1,9 @@
 diff --git a/ipc/glue/NSExtensionUtils.h b/ipc/glue/NSExtensionUtils.h
 new file mode 100644
-index 000000000000..5056c97ca678
+index 000000000000..401e4dab2978
 --- /dev/null
 +++ b/ipc/glue/NSExtensionUtils.h
-@@ -0,0 +1,73 @@
-+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+@@ -0,0 +1,71 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this file,
 + * You can obtain one at http://mozilla.org/MPL/2.0/. */

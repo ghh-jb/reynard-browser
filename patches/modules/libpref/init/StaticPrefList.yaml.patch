@@ -1,5 +1,5 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index f36788f33221..b9726d855c1a 100644
+index f36788f33221..c8a8964f2676 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
 @@ -5749,7 +5749,7 @@
@@ -90,7 +90,79 @@ index f36788f33221..b9726d855c1a 100644
    value: true
  #else
    value: false
-@@ -14575,7 +14583,10 @@
+@@ -11956,6 +11964,8 @@
+   value: true
+ #elif defined(XP_MACOSX)
+   value: true
++#elif defined(XP_IOS)
++  value: true
+ #elif defined(XP_LINUX) && !defined(ANDROID)
+   value: true
+ #elif defined(XP_FREEBSD)
+@@ -12000,6 +12010,8 @@
+   value: true
+ #elif defined(XP_MACOSX)
+   value: true
++#elif defined(XP_IOS)
++  value: true
+ #elif defined(XP_LINUX) && !defined(ANDROID)
+   value: true
+ #elif defined(XP_FREEBSD)
+@@ -12033,6 +12045,8 @@
+   value: true
+ #elif defined(XP_MACOSX)
+   value: true
++#elif defined(XP_IOS)
++  value: true
+ #elif defined(XP_LINUX) && !defined(ANDROID)
+   value: true
+ #elif defined(XP_FREEBSD)
+@@ -12052,6 +12066,8 @@
+   value: true
+ #elif defined(XP_MACOSX)
+   value: true
++#elif defined(XP_IOS)
++  value: true
+ #elif defined(XP_LINUX) && !defined(ANDROID)
+   value: true
+ #elif defined(XP_FREEBSD)
+@@ -12071,6 +12087,8 @@
+   value: true
+ #elif defined(XP_MACOSX)
+   value: true
++#elif defined(XP_IOS)
++  value: true
+ #elif defined(XP_LINUX) && !defined(ANDROID)
+   value: true
+ #elif defined(XP_FREEBSD)
+@@ -12090,6 +12108,8 @@
+   value: true
+ #elif defined(XP_MACOSX)
+   value: true
++#elif defined(XP_IOS)
++  value: true
+ #elif defined(XP_LINUX) && !defined(ANDROID)
+   value: true
+ #elif defined(XP_FREEBSD)
+@@ -12116,7 +12136,7 @@
+   type: RelaxedAtomicBool
+ #if defined(XP_WIN)
+   value: true
+-#elif defined(XP_MACOSX)
++#elif defined(XP_MACOSX) || defined(XP_IOS)
+   value: true
+ #elif defined(XP_LINUX) || defined(ANDROID)
+   value: true
+@@ -12187,7 +12207,7 @@
+ #ifdef MOZ_FFMPEG
+ -   name: media.ffmpeg.enabled
+     type: RelaxedAtomicBool
+-  #if defined(XP_MACOSX)
++  #if defined(XP_MACOSX) || defined(XP_IOS)
+     value: false
+   #else
+     value: true
+@@ -14575,7 +14595,10 @@
  - name: network.process.enabled
    type: RelaxedAtomicBool
    mirror: always
@@ -102,7 +174,7 @@ index f36788f33221..b9726d855c1a 100644
    value: false # see bug 1641427
  #else
    value: true
-@@ -14624,7 +14635,13 @@
+@@ -14624,7 +14647,13 @@
  - name: network.http.network_access_on_socket_process.enabled
    type: RelaxedAtomicBool
    mirror: always

@@ -127,8 +127,8 @@ final class FilePicker: NSObject {
             return
         }
         
-        guard let anchorRect = resolvedAnchorRect(in: geckoView) else {
-            finish(with: nil)
+        if anchorRect.isEmpty {
+            showActionSheet(in: geckoView)
             return
         }
         
@@ -228,27 +228,49 @@ final class FilePicker: NSObject {
         DispatchQueue.main.async(execute: action)
     }
     
-    private func resolvedAnchorRect(in geckoView: UIView) -> CGRect? {
-        if !anchorRect.isEmpty {
-            return anchorRect
+    private func showActionSheet(in geckoView: UIView) {
+        guard let presentingVC = geckoView.nearestViewController() else {
+            finish(with: nil)
+            return
         }
         
-        guard let geckoView = geckoView as? GeckoView,
-              let lastTouchPoint = geckoView.lastTouchPoint else {
-            return nil
+        let chooserTitle = mode == .folder ? "Choose Folder" : "Choose File"
+        let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        
+        if canUsePhotoLibrary {
+            alert.addAction(UIAlertAction(title: "Photo Library", style: .default) { [weak self] _ in
+                self?.launchFollowupPicker {
+                    self?.performAction(.photoLibrary)
+                }
+            })
         }
         
-        let anchorSize: CGFloat = 2
-        let originX = min(
-            max(lastTouchPoint.x - (anchorSize / 2), 0),
-            max(geckoView.bounds.width - anchorSize, 0)
-        )
-        let originY = min(
-            max(lastTouchPoint.y - (anchorSize / 2), 0),
-            max(geckoView.bounds.height - anchorSize, 0)
-        )
+        if canUseCamera {
+            alert.addAction(UIAlertAction(title: "Take Photo", style: .default) { [weak self] _ in
+                self?.launchFollowupPicker {
+                    self?.performAction(.camera)
+                }
+            })
+        }
         
-        return CGRect(x: originX, y: originY, width: anchorSize, height: anchorSize)
+        alert.addAction(UIAlertAction(title: chooserTitle, style: .default) { [weak self] _ in
+            self?.launchFollowupPicker {
+                self?.performAction(.chooseFile)
+            }
+        })
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { [weak self] _ in
+            self?.finish(with: nil)
+        })
+        
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = geckoView
+            popover.sourceRect = CGRect(x: geckoView.bounds.midX, y: geckoView.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        
+        presentingVC.present(alert, animated: true)
+        presentedController = alert
     }
     
     private func performAction(_ action: PickerAction) {

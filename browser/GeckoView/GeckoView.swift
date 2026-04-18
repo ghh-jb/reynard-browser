@@ -8,8 +8,12 @@
 import UIKit
 
 public class GeckoView: UIView {
+    var lastTouchPoint: CGPoint?
+    
     public var session: GeckoSession? {
         didSet {
+            lastTouchPoint = nil
+            
             for view in subviews {
                 view.removeFromSuperview()
             }
@@ -49,6 +53,15 @@ public class GeckoView: UIView {
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
+    }
+    
+    // This is for the file input fallback hack
+    // TODO: A better workaround?
+    public override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if event?.type == .touches {
+            lastTouchPoint = point
+        }
+        return super.hitTest(point, with: event)
     }
     
     required init?(coder: NSCoder) {

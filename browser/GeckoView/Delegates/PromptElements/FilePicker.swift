@@ -127,6 +127,11 @@ final class FilePicker: NSObject {
             return
         }
         
+        guard let anchorRect = resolvedAnchorRect(in: geckoView) else {
+            finish(with: nil)
+            return
+        }
+        
         let button = FileMenuAnchorButton(frame: anchorRect)
         button.backgroundColor = .clear
         button.menu = buildMenu()
@@ -223,6 +228,29 @@ final class FilePicker: NSObject {
         DispatchQueue.main.async(execute: action)
     }
     
+    private func resolvedAnchorRect(in geckoView: UIView) -> CGRect? {
+        if !anchorRect.isEmpty {
+            return anchorRect
+        }
+        
+        guard let geckoView = geckoView as? GeckoView,
+              let lastTouchPoint = geckoView.lastTouchPoint else {
+            return nil
+        }
+        
+        let anchorSize: CGFloat = 2
+        let originX = min(
+            max(lastTouchPoint.x - (anchorSize / 2), 0),
+            max(geckoView.bounds.width - anchorSize, 0)
+        )
+        let originY = min(
+            max(lastTouchPoint.y - (anchorSize / 2), 0),
+            max(geckoView.bounds.height - anchorSize, 0)
+        )
+        
+        return CGRect(x: originX, y: originY, width: anchorSize, height: anchorSize)
+    }
+    
     private func performAction(_ action: PickerAction) {
         switch action {
         case .photoLibrary:
@@ -284,9 +312,13 @@ final class FilePicker: NSObject {
         
         let picker = UIImagePickerController()
         picker.delegate = self
-        picker.presentationController?.delegate = self
         picker.sourceType = sourceType
         picker.mediaTypes = mediaTypes
+        if sourceType == .camera {
+            picker.modalPresentationStyle = .fullScreen
+            picker.isModalInPresentation = true
+        }
+        picker.presentationController?.delegate = self
         
         if sourceType == .camera {
             let preferredDevice = resolvedCameraDevice()

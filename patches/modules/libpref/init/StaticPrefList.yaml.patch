@@ -1,5 +1,5 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index f36788f33221..c8a8964f2676 100644
+index f36788f33221..9ad41fcaeacf 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
 @@ -5749,7 +5749,7 @@
@@ -47,7 +47,25 @@ index f36788f33221..c8a8964f2676 100644
    value: true
  #else
    value: false
-@@ -7448,7 +7448,13 @@
+@@ -6899,6 +6899,8 @@
+   type: bool
+ #if defined(XP_MACOSX) || defined(XP_LINUX) && !defined(ANDROID)
+   value: true
++#elif defined(MOZ_WIDGET_UIKIT)
++  value: true
+ #elif defined(MOZ_WIDGET_ANDROID)
+   value: true
+ #elif defined(XP_WIN)
+@@ -6910,7 +6912,7 @@
+ 
+ - name: gfx.canvas.accelerated.allow-in-parent
+   type: bool
+-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID)
++#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID) || defined(XP_IOS)
+   value: false
+ #else
+   value: true
+@@ -7448,7 +7450,13 @@
    # backend.
  -   name: gfx.font_rendering.coretext.enabled
      type: RelaxedAtomicBool
@@ -61,7 +79,7 @@ index f36788f33221..c8a8964f2676 100644
      mirror: always
  #endif
  
-@@ -9687,7 +9693,7 @@
+@@ -9687,7 +9695,7 @@
  # or executable but never both at the same time. OpenBSD defaults to W^X.
  - name: javascript.options.content_process_write_protect_code
    type: bool
@@ -70,7 +88,7 @@ index f36788f33221..c8a8964f2676 100644
    value: true
  #else
    value: false
-@@ -9862,7 +9868,9 @@
+@@ -9862,7 +9870,9 @@
  
  - name: layers.gpu-process.enabled
    type: bool
@@ -81,7 +99,7 @@ index f36788f33221..c8a8964f2676 100644
    value: true
  #elif defined(MOZ_X11)
    value: false  # we'd like this to be @IS_NIGHTLY_BUILD@, see Bug 1927058
-@@ -11602,7 +11610,7 @@
+@@ -11602,7 +11612,7 @@
  - name: media.cubeb.sandbox
    type: bool
    mirror: always
@@ -90,7 +108,7 @@ index f36788f33221..c8a8964f2676 100644
    value: true
  #else
    value: false
-@@ -11956,6 +11964,8 @@
+@@ -11956,6 +11966,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -99,7 +117,7 @@ index f36788f33221..c8a8964f2676 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12000,6 +12010,8 @@
+@@ -12000,6 +12012,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -108,7 +126,7 @@ index f36788f33221..c8a8964f2676 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12033,6 +12045,8 @@
+@@ -12033,6 +12047,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -117,7 +135,7 @@ index f36788f33221..c8a8964f2676 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12052,6 +12066,8 @@
+@@ -12052,6 +12068,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -126,7 +144,7 @@ index f36788f33221..c8a8964f2676 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12071,6 +12087,8 @@
+@@ -12071,6 +12089,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -135,7 +153,7 @@ index f36788f33221..c8a8964f2676 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12090,6 +12108,8 @@
+@@ -12090,6 +12110,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -144,7 +162,7 @@ index f36788f33221..c8a8964f2676 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12116,7 +12136,7 @@
+@@ -12116,7 +12138,7 @@
    type: RelaxedAtomicBool
  #if defined(XP_WIN)
    value: true
@@ -153,7 +171,7 @@ index f36788f33221..c8a8964f2676 100644
    value: true
  #elif defined(XP_LINUX) || defined(ANDROID)
    value: true
-@@ -12187,7 +12207,7 @@
+@@ -12187,7 +12209,7 @@
  #ifdef MOZ_FFMPEG
  -   name: media.ffmpeg.enabled
      type: RelaxedAtomicBool
@@ -162,7 +180,7 @@ index f36788f33221..c8a8964f2676 100644
      value: false
    #else
      value: true
-@@ -14575,7 +14595,10 @@
+@@ -14575,7 +14597,10 @@
  - name: network.process.enabled
    type: RelaxedAtomicBool
    mirror: always
@@ -174,7 +192,7 @@ index f36788f33221..c8a8964f2676 100644
    value: false # see bug 1641427
  #else
    value: true
-@@ -14624,7 +14647,13 @@
+@@ -14624,7 +14649,13 @@
  - name: network.http.network_access_on_socket_process.enabled
    type: RelaxedAtomicBool
    mirror: always
@@ -188,3 +206,22 @@ index f36788f33221..c8a8964f2676 100644
  
  # Telemetry of traffic categories. Whether or not to enable HttpTrafficAnalyzer.
  - name: network.traffic_analyzer.enabled
+@@ -19321,14 +19352,16 @@
+ # on a platform that supports the GPU process, else true.
+ - name: webgl.allow-in-parent
+   type: bool
+-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID)
++#if defined(XP_WIN) || defined(XP_MACOSX) || defined(ANDROID) || defined(XP_IOS)
+   value: false
+ #else
+   value: true
+ #endif
+   mirror: once
+ 
+-#if defined(ANDROID)
++# REYNARD: On iOS, especially TXM iOS 26+ systems, content process
++# is constantly being debugged for JIT and is slower
++#if defined(ANDROID) || defined(XP_IOS)
+ - name: webgl.allow-in-content
+   type: bool
+   value: false

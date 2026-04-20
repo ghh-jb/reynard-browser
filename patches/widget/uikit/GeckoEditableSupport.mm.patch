@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..e2515bf38ace
+index 000000000000..46c1a0fb6149
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,2610 @@
+@@ -0,0 +1,2623 @@
 +/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=2 sw=2 et tw=80: */
 +/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -2507,6 +2507,18 @@ index 000000000000..e2515bf38ace
 +
 +@implementation ChildView (Legacy)
 +
++- (void)configureLegacyNonEditableTextInteractionGestures {
++  if (!mEditable.mNonEditableTextInteraction) {
++    return;
++  }
++
++  for (UIGestureRecognizer* gesture in mEditable.mNonEditableTextInteraction
++           .gesturesForFailureRequirements) {
++    gesture.delaysTouchesBegan = NO;
++    gesture.delaysTouchesEnded = NO;
++  }
++}
++
 +- (void)updateLegacyTextInteractions {
 +  if (!mEditable.mEditableTextInteraction ||
 +      !mEditable.mNonEditableTextInteraction) {
@@ -2522,6 +2534,7 @@ index 000000000000..e2515bf38ace
 +    if (mEditable.mNonEditableTextInteraction.view != self) {
 +      [self addInteraction:mEditable.mNonEditableTextInteraction];
 +    }
++    [self configureLegacyNonEditableTextInteractionGestures];
 +  } else {
 +    if (mEditable.mNonEditableTextInteraction.view == self) {
 +      [self removeInteraction:mEditable.mNonEditableTextInteraction];

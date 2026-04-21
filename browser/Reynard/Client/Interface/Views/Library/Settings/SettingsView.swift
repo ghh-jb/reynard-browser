@@ -157,7 +157,7 @@ final class SettingsRootViewController: SettingsTableViewController {
             }
         case .compatibility:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = "User Agent Override"
+            cell.textLabel?.text = "User Agent Overrides"
             cell.accessoryType = .disclosureIndicator
             return cell
         case .about:
@@ -218,7 +218,8 @@ final class SettingsRootViewController: SettingsTableViewController {
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
         guard visibleSections.indices.contains(section) else { return nil }
         switch visibleSections[section] {
-        case .updates, .jit, .search, .tab, .compatibility: return nil
+        case .updates, .jit, .search, .tab: return nil
+        case .compatibility: return "If you encounter issues such as sign-in failures, human verification challenges, or other incorrect site behavior, adding the site's URL to this user agent override list may help resolve the problem."
         case .about:
             let info = Bundle.main.infoDictionary
             let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"

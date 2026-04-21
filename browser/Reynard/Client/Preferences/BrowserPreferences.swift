@@ -147,25 +147,6 @@ final class BrowserPreferences {
         }
     }
     
-    func androidUserAgentOverride(for urlString: String) -> String? {
-        guard !androidUserAgentDomains.isEmpty else { return nil }
-        
-        let host: String
-        if let h = URL(string: urlString)?.host?.lowercased() {
-            host = h
-        } else if let h = URL(string: "https://" + urlString)?.host?.lowercased() {
-            host = h
-        } else {
-            return nil
-        }
-        
-        let matches = androidUserAgentDomains.contains { domain in
-            let d = domain.lowercased()
-            return host == d || host.hasSuffix("." + d)
-        }
-        return matches ? "Mozilla/5.0 (Android 15; Mobile; rv:150.0) Gecko/150.0 Firefox/150.0" : nil
-    }
-    
     var pairingFileURL: URL {
         documentsDirectory.appendingPathComponent("pairingFile.plist", isDirectory: false)
     }
@@ -230,15 +211,12 @@ final class BrowserPreferences {
         fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
     
-    static let defaultAndroidUserAgentDomains: [String] = ["youtube.com"]
-    
     private func registerDefaults() {
-        let defaultDomains = (try? JSONEncoder().encode(Self.defaultAndroidUserAgentDomains)) ?? Data()
         defaults.register(defaults: [
             Keys.searchEngine: SearchEngine.google.rawValue,
             Keys.customSearchTemplate: "",
             Keys.jitEnabled: false,
-            Keys.androidUserAgentDomains: defaultDomains,
+            Keys.androidUserAgentDomains: [],
             Keys.addressBarPosition: AddressBarPosition.bottom.rawValue,
             Keys.showsLandscapeTabBar: true,
         ])

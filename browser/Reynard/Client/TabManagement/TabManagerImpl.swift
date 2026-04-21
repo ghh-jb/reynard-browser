@@ -106,7 +106,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         
         tab.pendingRestoreURL = nil
         tab.suppressInitialNavigation = false
-        tab.session.updateUserAgent(BrowserPreferences.shared.androidUserAgentOverride(for: url))
+        tab.session.updateUserAgent(UAOverride.shared.userAgent(for: url))
         tab.session.load(url)
     }
     
@@ -225,7 +225,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         let isURL = isURLLenient.firstMatch(in: trimmedValue, range: fullRange) != nil
         
         if isURL {
-            tab.session.updateUserAgent(BrowserPreferences.shared.androidUserAgentOverride(for: trimmedValue))
+            tab.session.updateUserAgent(UAOverride.shared.userAgent(for: trimmedValue))
             tab.session.load(trimmedValue)
             return
         }
@@ -375,7 +375,7 @@ extension TabManagerImplementation: NavigationDelegate {
         }
         
         if let url {
-            session.updateUserAgent(BrowserPreferences.shared.androidUserAgentOverride(for: url))
+            session.updateUserAgent(UAOverride.shared.userAgent(for: url))
         }
         
         tabs[index].url = url
@@ -411,7 +411,7 @@ extension TabManagerImplementation: NavigationDelegate {
     
     func onNewSession(session: GeckoSession, uri: String, windowId: String) async -> GeckoSession? {
         let newSession = GeckoSession()
-        newSession.userAgentOverride = BrowserPreferences.shared.androidUserAgentOverride(for: uri)
+        newSession.userAgentOverride = UAOverride.shared.userAgent(for: uri)
         newSession.contentDelegate = self
         newSession.progressDelegate = self
         newSession.navigationDelegate = self

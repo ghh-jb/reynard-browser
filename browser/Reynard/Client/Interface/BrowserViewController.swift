@@ -126,9 +126,25 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         addressBarGestures.configureGestures()
         browserLayout.observeKeyboard()
         
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applyUpdateMenuButtonBadge),
+            name: AppUpdates.updateAvailableNotification,
+            object: nil
+        )
+        if AppUpdates.shared.hasUpdate {
+            applyUpdateMenuButtonBadge()
+        }
+        
         tabManager.createInitialTab()
         browserLayout.applyChromeLayout(animated: false)
     }
+    
+    @objc private func applyUpdateMenuButtonBadge() {
+        browserUI.toolbarView.setMenuButtonIndicatesUpdate(true)
+        browserUI.padTopBarButtons.setMenuButtonIndicatesUpdate(true)
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         guard !usesEmbeddedSplitRoot else {

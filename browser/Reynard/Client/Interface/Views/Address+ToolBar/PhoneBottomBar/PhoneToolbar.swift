@@ -123,4 +123,8 @@ final class PhoneToolbar: UIView {
     @objc func tabsButtonClicked() {
         delegate?.tabsButtonClicked()
     }
+    
+    func setMenuButtonIndicatesUpdate(_ hasUpdate: Bool) {
+        menuButton.setImage(hasUpdate ? UIImage(named: "ellipsis.circle.badge") : UIImage(systemName: "ellipsis.circle"), for: .normal)
+    }
 }

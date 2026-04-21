@@ -22,6 +22,7 @@ class SettingsTableViewController: UITableViewController {
 
 final class SettingsRootViewController: SettingsTableViewController {
     enum Section: Int, CaseIterable {
+        case updates
         case jit
         case search
         case tab
@@ -31,6 +32,10 @@ final class SettingsRootViewController: SettingsTableViewController {
     
     var visibleSections: [Section] {
         var hiddenSections: Set<Section> = []
+        
+        if !AppUpdates.shared.hasUpdate {
+            hiddenSections.insert(.updates)
+        }
         
         if UIDevice.current.userInterfaceIdiom == .pad {
             hiddenSections.insert(.tab)
@@ -49,6 +54,8 @@ final class SettingsRootViewController: SettingsTableViewController {
     let backgroundQueue = DispatchQueue(label: "me.minh-ton.reynard.settings.backgroundqueue", qos: .userInitiated)
     var isJITLessModeActive = false
     var activeDDIDownloadToken: UUID?
+    var activeUpdateTask: URLSessionDownloadTask?
+    var updateProgressObservation: NSKeyValueObservation?
     
     init() {
         super.init(style: .insetGrouped)
@@ -92,6 +99,7 @@ final class SettingsRootViewController: SettingsTableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         guard visibleSections.indices.contains(section) else { return 0 }
         switch visibleSections[section] {
+        case .updates: return 2
         case .jit: return 2
         case .search, .compatibility: return 1
         case .tab: return 2
@@ -102,6 +110,10 @@ final class SettingsRootViewController: SettingsTableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard visibleSections.indices.contains(indexPath.section) else { return UITableViewCell() }
         switch visibleSections[indexPath.section] {
+        case .updates where indexPath.row == 0:
+            return makeReleaseNotesCell()
+        case .updates:
+            return makeUpdateNowCell()
         case .jit where indexPath.row == 0:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = "Enable JIT"
@@ -166,6 +178,8 @@ final class SettingsRootViewController: SettingsTableViewController {
         defer { tableView.deselectRow(at: indexPath, animated: true) }
         guard visibleSections.indices.contains(indexPath.section) else { return }
         switch visibleSections[indexPath.section] {
+        case .updates:
+            if indexPath.row == 1 { presentUpdateAlert() }
         case .jit where indexPath.row == 1:
             presentPairingFilePicker()
         case .search:
@@ -192,6 +206,7 @@ final class SettingsRootViewController: SettingsTableViewController {
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         guard visibleSections.indices.contains(section) else { return nil }
         switch visibleSections[section] {
+        case .updates: return "Update Available"
         case .jit: return "JIT"
         case .search: return "Search"
         case .tab: return "Tabs"
@@ -203,7 +218,7 @@ final class SettingsRootViewController: SettingsTableViewController {
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
         guard visibleSections.indices.contains(section) else { return nil }
         switch visibleSections[section] {
-        case .jit, .search, .tab, .compatibility: return nil
+        case .updates, .jit, .search, .tab, .compatibility: return nil
         case .about:
             let info = Bundle.main.infoDictionary
             let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"

@@ -51,6 +51,10 @@ final class PadTopBarButtons {
         self.controller = controller
     }
     
+    func setMenuButtonIndicatesUpdate(_ hasUpdate: Bool) {
+        menuButton.setImage(hasUpdate ? UIImage(named: "ellipsis.circle.badge") : UIImage(systemName: "ellipsis.circle"), for: .normal)
+    }
+    
     func syncSidebarButton(splitViewController: UISplitViewController?) {
         SidebarToggleButtonConfiguration.configure(sidebarButton, in: splitViewController)
     }

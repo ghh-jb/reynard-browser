@@ -64,6 +64,7 @@ final class UAOverride {
                   let data = try? Data(contentsOf: url) else { return }
             
             let profiles = Self.parseProfiles(from: data)
+            try? FileManager.default.removeItem(at: Self.cachedFileURL())
             try? data.write(to: Self.cachedFileURL())
             
             self.queue.async(flags: .barrier) {

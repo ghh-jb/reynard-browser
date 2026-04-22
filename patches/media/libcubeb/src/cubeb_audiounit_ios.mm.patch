@@ -1,9 +1,9 @@
 diff --git a/media/libcubeb/src/cubeb_audiounit_ios.mm b/media/libcubeb/src/cubeb_audiounit_ios.mm
 new file mode 100644
-index 000000000000..42063f754716
+index 000000000000..71ff604d0873
 --- /dev/null
 +++ b/media/libcubeb/src/cubeb_audiounit_ios.mm
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,26 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -24,4 +24,9 @@ index 000000000000..42063f754716
 +                 error:&error];
 +
 +  [session setActive:YES error:nil];
++}
++
++extern "C" uint32_t cubeb_ios_session_sample_rate(void) {
++  AVAudioSession* session = [AVAudioSession sharedInstance];
++  return static_cast<uint32_t>(session.sampleRate);
 +}

@@ -214,3 +214,25 @@ final class DefaultSiteListViewController: UITableViewController {
         return cell
     }
 }
+
+extension SettingsRootViewController {
+    @objc func androidUASwitchChanged() {
+        let nowOn = androidUASwitch.isOn
+        preferences.useAndroidUserAgent = nowOn
+        guard let section = visibleSections.firstIndex(of: .compatibility) else { return }
+        let overrideRowIndexPath = IndexPath(row: 1, section: section)
+        UIView.performWithoutAnimation {
+            tableView.beginUpdates()
+            if nowOn {
+                tableView.deleteRows(at: [overrideRowIndexPath], with: .none)
+            } else {
+                tableView.insertRows(at: [overrideRowIndexPath], with: .none)
+            }
+            tableView.endUpdates()
+        }
+        if let footer = tableView.footerView(forSection: section) {
+            footer.textLabel?.text = tableView(tableView, titleForFooterInSection: section)
+            footer.sizeToFit()
+        }
+    }
+}

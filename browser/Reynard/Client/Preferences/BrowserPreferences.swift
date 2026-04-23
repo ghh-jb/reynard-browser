@@ -66,6 +66,7 @@ final class BrowserPreferences {
         static let customSearchTemplate = "BrowserPreferences.customSearchTemplate"
         static let jitEnabled = "BrowserPreferences.jitEnabled"
         static let androidUserAgentDomains = "BrowserPreferences.androidUserAgentDomains"
+        static let useAndroidUserAgent = "BrowserPreferences.useAndroidUserAgent"
         static let addressBarPosition = "BrowserPreferences.addressBarPosition"
         static let showsLandscapeTabBar = "BrowserPreferences.showsLandscapeTabBar"
     }
@@ -126,6 +127,11 @@ final class BrowserPreferences {
             let data = try? JSONEncoder().encode(newValue)
             defaults.set(data, forKey: Keys.androidUserAgentDomains)
         }
+    }
+    
+    var useAndroidUserAgent: Bool {
+        get { defaults.bool(forKey: Keys.useAndroidUserAgent) }
+        set { defaults.set(newValue, forKey: Keys.useAndroidUserAgent) }
     }
     
     var addressBarPosition: AddressBarPosition {
@@ -217,6 +223,7 @@ final class BrowserPreferences {
             Keys.customSearchTemplate: "",
             Keys.jitEnabled: false,
             Keys.androidUserAgentDomains: [],
+            Keys.useAndroidUserAgent: true,
             Keys.addressBarPosition: AddressBarPosition.bottom.rawValue,
             Keys.showsLandscapeTabBar: true,
         ])

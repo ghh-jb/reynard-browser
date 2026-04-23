@@ -51,6 +51,7 @@ final class SettingsRootViewController: SettingsTableViewController {
     
     let jitSwitch = UISwitch()
     let landscapeTabBarSwitch = UISwitch()
+    let androidUASwitch = UISwitch()
     let backgroundQueue = DispatchQueue(label: "me.minh-ton.reynard.settings.backgroundqueue", qos: .userInitiated)
     var isJITLessModeActive = false
     var activeDDIDownloadToken: UUID?
@@ -70,6 +71,7 @@ final class SettingsRootViewController: SettingsTableViewController {
         super.viewDidLoad()
         jitSwitch.addTarget(self, action: #selector(jitSwitchChanged(_:)), for: .valueChanged)
         landscapeTabBarSwitch.addTarget(self, action: #selector(landscapeTabBarSwitchChanged), for: .valueChanged)
+        androidUASwitch.addTarget(self, action: #selector(androidUASwitchChanged), for: .valueChanged)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleJITLessModeActivated(_:)),
@@ -89,6 +91,7 @@ final class SettingsRootViewController: SettingsTableViewController {
         jitSwitch.isEnabled = preferences.hasPairingFile
         jitSwitch.isOn = preferences.isJITEnabled
         landscapeTabBarSwitch.isOn = preferences.showsLandscapeTabBar
+        androidUASwitch.isOn = preferences.useAndroidUserAgent
         isJITLessModeActive = JITController.shared.isJITLessModeActive
     }
     
@@ -101,7 +104,8 @@ final class SettingsRootViewController: SettingsTableViewController {
         switch visibleSections[section] {
         case .updates: return 2
         case .jit: return 2
-        case .search, .compatibility: return 1
+        case .search: return 1
+        case .compatibility: return preferences.useAndroidUserAgent ? 1 : 2
         case .tab: return 2
         case .about: return 3
         }
@@ -156,10 +160,18 @@ final class SettingsRootViewController: SettingsTableViewController {
                 return cell
             }
         case .compatibility:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = "User Agent Overrides"
-            cell.accessoryType = .disclosureIndicator
-            return cell
+            if indexPath.row == 0 {
+                let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+                cell.textLabel?.text = "Use Android User Agent"
+                cell.selectionStyle = .none
+                cell.accessoryView = androidUASwitch
+                return cell
+            } else {
+                let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+                cell.textLabel?.text = "User Agent Overrides"
+                cell.accessoryType = .disclosureIndicator
+                return cell
+            }
         case .about:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
             switch indexPath.row {
@@ -185,6 +197,7 @@ final class SettingsRootViewController: SettingsTableViewController {
         case .search:
             navigationController?.pushViewController(SearchEngineSettingsViewController(), animated: true)
         case .compatibility:
+            guard !preferences.useAndroidUserAgent, indexPath.row == 1 else { break }
             navigationController?.pushViewController(UserAgentOverrideViewController(), animated: true)
         case .tab:
             break
@@ -219,7 +232,10 @@ final class SettingsRootViewController: SettingsTableViewController {
         guard visibleSections.indices.contains(section) else { return nil }
         switch visibleSections[section] {
         case .updates, .jit, .search, .tab: return nil
-        case .compatibility: return "If you encounter issues such as sign-in failures, human verification challenges, or other incorrect site behavior, adding the site's URL to this user agent override list may help resolve the problem."
+        case .compatibility:
+            return preferences.useAndroidUserAgent
+            ? "To maximize compatibility, the browser will use the Firefox for Android user agent for navigating the web. As a result, these websites may identify your device as an Android device."
+            : "If you encounter issues such as sign-in failures, human verification challenges, or other incorrect site behavior, adding the site's URL to this user agent override list may help resolve the problem."
         case .about:
             let info = Bundle.main.infoDictionary
             let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"

@@ -76,15 +76,22 @@ final class UAOverride {
     func userAgent(for urlString: String) -> String? {
         guard let host = extractHost(from: urlString) else { return nil }
         
-        let userDomains = BrowserPreferences.shared.androidUserAgentDomains
-        if userDomains.contains(where: { domainMatches(host: host, domain: $0) }) {
-            return "Mozilla/5.0 (Android 15; Mobile; rv:150.0) Gecko/150.0 Firefox/150.0"
-        }
-        
         for profile in cachedProfiles {
             if profile.sites.contains(where: { domainMatches(host: host, domain: $0) }) {
                 return profile.userAgent
             }
+        }
+        
+        let androidUA = "Mozilla/5.0 (Android 15; Mobile; rv:150.0) Gecko/150.0 Firefox/150.0"
+        
+        let prefs = BrowserPreferences.shared
+        if prefs.useAndroidUserAgent {
+            return androidUA
+        }
+        
+        let userDomains = prefs.androidUserAgentDomains
+        if userDomains.contains(where: { domainMatches(host: host, domain: $0) }) {
+            return androidUA
         }
         
         return nil

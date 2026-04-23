@@ -1,0 +1,13 @@
+diff --git a/netwerk/protocol/http/nsHttpHandler.cpp b/netwerk/protocol/http/nsHttpHandler.cpp
+index aed960fc27e3..8034ee44f9af 100644
+--- a/netwerk/protocol/http/nsHttpHandler.cpp
++++ b/netwerk/protocol/http/nsHttpHandler.cpp
+@@ -1166,7 +1166,7 @@ void nsHttpHandler::InitUserAgentComponents() {
+ #if defined(XP_IOS)
+   // Freeze the iOS version to 18.0, use an underscore separator to avoid
+   // detection as macOS.
+-  mCompatDevice.AssignLiteral("CPU iPhone OS 18_0 like Mac OS X");
++  mCompatDevice.AssignLiteral("CPU iPhone OS 18_0 like Mac OS X; Mobile");
+ #endif
+ 
+   // Gather OS/CPU.

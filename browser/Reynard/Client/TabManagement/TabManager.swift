@@ -30,6 +30,7 @@ protocol TabManager: AnyObject {
 enum TabManagerUpdateReason {
     case title
     case location
+    case favicon
     case navigationState
     case loading
     case thumbnail

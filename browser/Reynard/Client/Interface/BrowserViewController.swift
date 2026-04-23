@@ -453,6 +453,10 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
                 updateNavigationButtons()
             }
             
+        case .favicon:
+            browserUI.padTabBar.collectionView.reloadData()
+            browserUI.tabOverviewCollection.collectionView.reloadData()
+            
         case .navigationState:
             if index == tabManager.selectedTabIndex {
                 updateNavigationButtons()

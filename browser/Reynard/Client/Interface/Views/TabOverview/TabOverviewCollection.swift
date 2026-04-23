@@ -77,7 +77,7 @@ final class TabCollectionCoordinator: NSObject, UICollectionViewDataSource, UICo
         }
         
         let tab = controller.tabManager.tabs[indexPath.item]
-        cell.configure(title: tab.title, selected: indexPath.item == controller.tabManager.selectedTabIndex)
+        cell.configure(tab: tab, selected: indexPath.item == controller.tabManager.selectedTabIndex)
         cell.onClose = { [weak self] in
             self?.controller.closeTab(at: indexPath.item)
         }

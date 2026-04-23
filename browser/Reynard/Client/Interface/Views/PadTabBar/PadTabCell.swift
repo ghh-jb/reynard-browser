@@ -10,7 +10,18 @@ import UIKit
 final class PadTabCell: UICollectionViewCell {
     static let reuseIdentifier = "PadTabCell"
     
+    private static let fallbackFavicon = UIImage(systemName: "globe")
+    
     var onClose: (() -> Void)?
+    
+    private let faviconImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .secondaryLabel
+        imageView.clipsToBounds = true
+        return imageView
+    }()
     
     private let titleLabel: UILabel = {
         let label = UILabel()
@@ -42,21 +53,39 @@ final class PadTabCell: UICollectionViewCell {
         return view
     }()
     
+    private let titleStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        stackView.distribution = .fill
+        stackView.spacing = 6
+        return stackView
+    }()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
         contentView.layer.cornerRadius = 0
         
-        contentView.addSubview(titleLabel)
+        contentView.addSubview(titleStackView)
+        titleStackView.addArrangedSubview(faviconImageView)
+        titleStackView.addArrangedSubview(titleLabel)
         contentView.addSubview(closeButton)
         contentView.addSubview(separatorView)
         
         closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
         
         NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 10),
-            titleLabel.trailingAnchor.constraint(equalTo: closeButton.leadingAnchor, constant: -8),
-            titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            titleStackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            titleStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            titleStackView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 10),
+            titleStackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -34),
+            
+            faviconImageView.widthAnchor.constraint(equalToConstant: 16),
+            faviconImageView.heightAnchor.constraint(equalToConstant: 16),
+            
+            titleLabel.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, constant: -58),
             
             closeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -6),
             closeButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -74,10 +103,18 @@ final class PadTabCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(title: String, selected: Bool) {
-        titleLabel.text = title.isEmpty ? "Homepage" : title
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        faviconImageView.image = Self.fallbackFavicon
+        onClose = nil
+    }
+    
+    func configure(tab: Tab, selected: Bool) {
+        titleLabel.text = tab.title.isEmpty ? "Homepage" : tab.title
+        faviconImageView.image = tab.favicon ?? Self.fallbackFavicon
         contentView.backgroundColor = selected ? .systemGray6 : .systemGray5
         titleLabel.textColor = selected ? .label : .secondaryLabel
+        faviconImageView.tintColor = selected ? .label : .secondaryLabel
         closeButton.isHidden = !selected
         separatorView.isHidden = selected
     }

@@ -39,12 +39,13 @@ final class BrowserLayout {
         ui.chromeContainer.containerView.addSubview(ui.toolbarView)
         
         view.addSubview(ui.topBar.barView)
-        ui.topBar.barView.addSubview(ui.padTopBarButtons.leftStack)
-        ui.topBar.barView.addSubview(ui.padTopBarButtons.rightStack)
+        ui.topBar.barView.addSubview(ui.topBar.contentView)
+        ui.topBar.contentView.addSubview(ui.padTopBarButtons.leftStack)
+        ui.topBar.contentView.addSubview(ui.padTopBarButtons.rightStack)
         
         setAddressBarHost(isPad: controller.usesPadChromeLayout)
         
-        view.addSubview(ui.padTabBar.collectionView)
+        ui.topBar.barView.addSubview(ui.padTabBar.collectionView)
         
         view.addSubview(ui.tabOverview.containerView)
         ui.tabOverview.containerView.addSubview(ui.tabOverview.blurView)
@@ -55,7 +56,7 @@ final class BrowserLayout {
         ui.tabOverviewBarButtons.attach(to: ui.tabOverviewBottomBar.barView)
         
         ui.geckoTopPhoneConstraint = ui.geckoView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
-        ui.geckoTopPadConstraint = ui.geckoView.topAnchor.constraint(equalTo: ui.padTabBar.collectionView.bottomAnchor)
+        ui.geckoTopPadConstraint = ui.geckoView.topAnchor.constraint(equalTo: ui.topBar.barView.bottomAnchor)
         ui.geckoBottomPhoneConstraint = ui.geckoView.bottomAnchor.constraint(equalTo: ui.chromeContainer.containerView.topAnchor)
         ui.geckoBottomPhoneSearchPinnedConstraint = ui.geckoView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -94)
         ui.geckoBottomPhoneKeyboardOverlayConstraint = ui.geckoView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -82,7 +83,7 @@ final class BrowserLayout {
         ui.addressBarPadTrailingConstraint = ui.addressBar.trailingAnchor.constraint(equalTo: ui.padTopBarButtons.rightStack.leadingAnchor, constant: -12)
         ui.addressBarCompactPadLeadingConstraint = ui.addressBar.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 12)
         ui.addressBarCompactPadTrailingConstraint = ui.addressBar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -12)
-        ui.addressBarPadCenterYConstraint = ui.addressBar.centerYAnchor.constraint(equalTo: ui.topBar.barView.centerYAnchor)
+        ui.addressBarPadCenterYConstraint = ui.addressBar.centerYAnchor.constraint(equalTo: ui.topBar.contentView.centerYAnchor)
         ui.addressBarPadHeightConstraint = ui.addressBar.heightAnchor.constraint(equalToConstant: 38)
         
         ui.keyboardDismissButton.trailingConstraint = ui.keyboardDismissButton.button.trailingAnchor.constraint(equalTo: ui.chromeContainer.containerView.trailingAnchor, constant: -12)
@@ -92,6 +93,7 @@ final class BrowserLayout {
         
         ui.topBar.heightConstraint = ui.topBar.barView.heightAnchor.constraint(equalToConstant: 52)
         ui.topBar.topConstraint = ui.topBar.barView.topAnchor.constraint(equalTo: view.topAnchor)
+        ui.topBar.contentHeightConstraint = ui.topBar.contentView.heightAnchor.constraint(equalToConstant: 52)
         
         ui.padTopBarButtons.leftLeadingConstraint = ui.padTopBarButtons.leftStack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 12)
         ui.padTopBarButtons.rightTrailingConstraint = ui.padTopBarButtons.rightStack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -12)
@@ -147,24 +149,29 @@ final class BrowserLayout {
             ui.topBar.topConstraint,
             ui.topBar.heightConstraint,
             
+            ui.topBar.contentView.leadingAnchor.constraint(equalTo: ui.topBar.barView.leadingAnchor),
+            ui.topBar.contentView.trailingAnchor.constraint(equalTo: ui.topBar.barView.trailingAnchor),
+            ui.topBar.contentView.topAnchor.constraint(equalTo: ui.topBar.barView.topAnchor),
+            ui.topBar.contentHeightConstraint,
+            
             ui.topBar.safeAreaFillView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             ui.topBar.safeAreaFillView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             ui.topBar.safeAreaFillView.topAnchor.constraint(equalTo: view.topAnchor),
             ui.topBar.safeAreaFillView.bottomAnchor.constraint(equalTo: ui.topBar.barView.topAnchor),
             
             ui.padTopBarButtons.leftLeadingConstraint,
-            ui.padTopBarButtons.leftStack.centerYAnchor.constraint(equalTo: ui.topBar.barView.centerYAnchor),
+            ui.padTopBarButtons.leftStack.centerYAnchor.constraint(equalTo: ui.topBar.contentView.centerYAnchor),
             ui.padTopBarButtons.leftWidthConstraint,
             ui.padTopBarButtons.leftHeightConstraint,
             
             ui.padTopBarButtons.rightTrailingConstraint,
-            ui.padTopBarButtons.rightStack.centerYAnchor.constraint(equalTo: ui.topBar.barView.centerYAnchor),
+            ui.padTopBarButtons.rightStack.centerYAnchor.constraint(equalTo: ui.topBar.contentView.centerYAnchor),
             ui.padTopBarButtons.rightWidthConstraint,
             ui.padTopBarButtons.rightHeightConstraint,
             
-            ui.padTabBar.collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            ui.padTabBar.collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            ui.padTabBar.collectionView.topAnchor.constraint(equalTo: ui.topBar.barView.bottomAnchor),
+            ui.padTabBar.collectionView.leadingAnchor.constraint(equalTo: ui.topBar.barView.leadingAnchor),
+            ui.padTabBar.collectionView.trailingAnchor.constraint(equalTo: ui.topBar.barView.trailingAnchor),
+            ui.padTabBar.collectionView.topAnchor.constraint(equalTo: ui.topBar.contentView.bottomAnchor),
             ui.padTabBar.heightConstraint,
             
             ui.tabOverview.containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -265,7 +272,7 @@ final class BrowserLayout {
         } else {
             isLandscape = controller.view.bounds.width > controller.view.bounds.height
         }
-
+        
         ui.geckoTopPhoneConstraint.constant = -geckoPhoneOffset
         ui.geckoBottomPhoneConstraint.constant = -geckoPhoneOffset
         ui.geckoBottomPhoneSearchPinnedConstraint.constant = -94
@@ -288,12 +295,13 @@ final class BrowserLayout {
         ui.tabOverviewCollection.bottomPhoneConstraint.isActive = phoneOverview
         ui.tabOverviewCollection.topPadConstraint.isActive = !phoneOverview
         ui.tabOverviewCollection.bottomPadConstraint.isActive = !phoneOverview
-
+        
         let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPadLayout ? BrowserPreferences.shared.showsLandscapeTabBar && isLandscape : true)
         let showsCompactPadBottomToolbar = compactPad && !controller.tabOverviewPresentation.isVisible
         ui.topBar.barView.isHidden = !pad
         ui.topBar.safeAreaFillView.isHidden = !pad
         ui.padTabBar.collectionView.isHidden = !showsPadTabStrip
+        ui.topBar.heightConstraint.constant = 52 + (showsPadTabStrip ? 36 : 0)
         ui.padTabBar.heightConstraint.constant = showsPadTabStrip ? 36 : 0
         
         ui.chromeContainer.containerView.isHidden = (!showsCompactPadBottomToolbar && pad) || controller.tabOverviewPresentation.isVisible
@@ -474,7 +482,7 @@ final class BrowserLayout {
     
     private func setAddressBarHost(isPad: Bool) {
         let ui = controller.browserUI
-        let targetHost = isPad ? ui.topBar.barView : ui.chromeContainer.containerView
+        let targetHost = isPad ? ui.topBar.contentView : ui.chromeContainer.containerView
         guard ui.addressBar.superview !== targetHost else {
             return
         }

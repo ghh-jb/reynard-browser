@@ -366,6 +366,37 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         browserLayout.applyChromeLayout(animated: animated)
     }
     
+    private func activeTabStripHeight() -> CGFloat {
+        guard usesPadChromeLayout,
+              tabManager.tabs.count > 1 else {
+            return 0
+        }
+        
+        if !isPadLayout {
+            guard BrowserPreferences.shared.showsLandscapeTabBar else {
+                return 0
+            }
+            let isLandscape: Bool
+            if let orientation = view.window?.windowScene?.interfaceOrientation {
+                isLandscape = orientation.isLandscape
+            } else {
+                isLandscape = view.bounds.width > view.bounds.height
+            }
+            guard isLandscape else {
+                return 0
+            }
+        }
+        
+        return 36
+    }
+    
+    func tabPreviewAspectRatio() -> CGFloat {
+        let bounds = browserUI.geckoView.bounds
+        let width = max(bounds.width, 1)
+        let height = max(bounds.height + activeTabStripHeight(), 1)
+        return height / width
+    }
+    
     func captureThumbnail(for index: Int) {
         guard !browserUI.geckoView.isHidden,
               let tab = tabManager.tabs[safe: index],
@@ -385,6 +416,23 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             browserUI.geckoView.layer.render(in: context.cgContext)
         }
         tabManager.updateThumbnail(image, forTabAt: index)
+    }
+    
+    func dismissalContentFrame() -> CGRect {
+        let frame = browserUI.geckoView.frame
+        let stripHeight = activeTabStripHeight()
+        guard stripHeight > 0,
+              usesPadChromeLayout,
+              tabOverviewPresentation.isVisible else {
+            return frame
+        }
+        
+        return CGRect(
+            x: frame.minX,
+            y: frame.minY + stripHeight,
+            width: frame.width,
+            height: max(1, frame.height - stripHeight)
+        )
     }
     
     func syncAddressBarLoadingState(progress: Float, isLoading: Bool) {

@@ -15,6 +15,13 @@ final class PadTopBar {
         return view
     }()
     
+    let contentView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+        return view
+    }()
+    
     let safeAreaFillView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -24,4 +31,5 @@ final class PadTopBar {
     
     var heightConstraint: NSLayoutConstraint!
     var topConstraint: NSLayoutConstraint!
+    var contentHeightConstraint: NSLayoutConstraint!
 }

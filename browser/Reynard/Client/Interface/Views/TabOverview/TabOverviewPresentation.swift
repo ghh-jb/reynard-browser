@@ -25,7 +25,7 @@ final class TabOverviewPresentation {
     func itemSize(for collectionView: UICollectionView) -> CGSize {
         let horizontalInsets = collectionView.adjustedContentInset.left + collectionView.adjustedContentInset.right
         let availableWidth = collectionView.bounds.width - horizontalInsets
-        let tabViewAspectRatio = max(0.4, controller.browserUI.geckoView.bounds.height / max(controller.browserUI.geckoView.bounds.width, 1))
+        let tabViewAspectRatio = max(0.4, controller.tabPreviewAspectRatio())
         
         let targetWidth: CGFloat = controller.usesPadChromeLayout ? 250 : 170
         let computedColumns = Int((availableWidth + controller.overviewSpacing) / (targetWidth + controller.overviewSpacing))
@@ -111,7 +111,6 @@ final class TabOverviewPresentation {
         if controller.usesPadChromeLayout {
             controller.browserUI.topBar.barView.alpha = 1 - clamped
             controller.browserUI.topBar.safeAreaFillView.alpha = 1 - clamped
-            controller.browserUI.padTabBar.collectionView.alpha = 1 - clamped
         } else {
             controller.browserUI.chromeContainer.containerView.alpha = 1 - clamped
             controller.browserUI.chromeContainer.containerView.transform = CGAffineTransform(translationX: 0, y: 24 * clamped)
@@ -142,7 +141,7 @@ final class TabOverviewPresentation {
         
         guard let selectedCell = selectedOverviewCell(at: selectedIndex),
               let targetFrame = selectedOverviewPreviewFrame(at: selectedIndex),
-              let pageSnapshot = controller.browserUI.geckoView.snapshotView(afterScreenUpdates: false),
+              let pageSnapshot = overviewPreviewSnapshotView(for: selectedIndex),
               let bottomSnapshot = controller.browserUI.toolbarView.snapshotView(afterScreenUpdates: true) else {
             isTransitionRunning = false
             applyOverviewProgress(1)
@@ -244,7 +243,7 @@ final class TabOverviewPresentation {
         controller.browserUI.tabOverviewBottomBar.barView.alpha = 0
         
         UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseInOut]) {
-            pageSnapshot.frame = self.controller.browserUI.geckoView.frame
+            pageSnapshot.frame = self.controller.dismissalContentFrame()
             pageSnapshot.layer.cornerRadius = 0
             bottomSnapshot.alpha = 0
             self.controller.browserUI.tabOverview.blurView.alpha = 0
@@ -302,7 +301,7 @@ final class TabOverviewPresentation {
         
         guard let selectedCell = selectedOverviewCell(at: selectedIndex),
               let targetFrame = selectedOverviewPreviewFrame(at: selectedIndex),
-              let pageSnapshot = controller.browserUI.geckoView.snapshotView(afterScreenUpdates: false) else {
+              let pageSnapshot = overviewPreviewSnapshotView(for: selectedIndex) else {
             isTransitionRunning = false
             applyOverviewProgress(1)
             isVisible = true
@@ -333,7 +332,6 @@ final class TabOverviewPresentation {
             }
             self.controller.browserUI.topBar.barView.alpha = 0
             self.controller.browserUI.topBar.safeAreaFillView.alpha = 0
-            self.controller.browserUI.padTabBar.collectionView.alpha = 0
         } completion: { _ in
             pageSnapshot.removeFromSuperview()
             selectedCell.setTransitionHidden(false)
@@ -401,10 +399,9 @@ final class TabOverviewPresentation {
         controller.browserUI.geckoView.isHidden = true
         controller.browserUI.topBar.barView.alpha = 0
         controller.browserUI.topBar.safeAreaFillView.alpha = 0
-        controller.browserUI.padTabBar.collectionView.alpha = 0
         
         UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseInOut]) {
-            pageSnapshot.frame = self.controller.browserUI.geckoView.frame
+            pageSnapshot.frame = self.controller.dismissalContentFrame()
             pageSnapshot.layer.cornerRadius = 0
             self.controller.browserUI.tabOverview.blurView.alpha = 0
             self.controller.browserUI.tabOverviewCollection.collectionView.alpha = 0
@@ -416,7 +413,6 @@ final class TabOverviewPresentation {
             }
             self.controller.browserUI.topBar.barView.alpha = 1
             self.controller.browserUI.topBar.safeAreaFillView.alpha = 1
-            self.controller.browserUI.padTabBar.collectionView.alpha = 1
         } completion: { _ in
             pageSnapshot.removeFromSuperview()
             selectedCell.setTransitionHidden(false)

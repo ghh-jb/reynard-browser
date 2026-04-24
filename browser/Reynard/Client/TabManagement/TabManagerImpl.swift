@@ -20,6 +20,7 @@ final class TabManagerImplementation: NSObject, TabManager {
     private weak var delegate: TabManagerDelegate?
     private let store: TabManagementStore
     private let faviconStore: FaviconStore
+    private let historyStore: HistoryStore
     private var faviconTasks: [UUID: Task<Void, Never>] = [:]
     
     private lazy var isURLLenient: NSRegularExpression = {
@@ -27,10 +28,16 @@ final class TabManagerImplementation: NSObject, TabManager {
         return try! NSRegularExpression(pattern: pattern)
     }()
     
-    init(delegate: TabManagerDelegate?, store: TabManagementStore = .shared, faviconStore: FaviconStore = .shared) {
+    init(
+        delegate: TabManagerDelegate?,
+        store: TabManagementStore = .shared,
+        faviconStore: FaviconStore = .shared,
+        historyStore: HistoryStore = .shared
+    ) {
         self.delegate = delegate
         self.store = store
         self.faviconStore = faviconStore
+        self.historyStore = historyStore
     }
     
     private func closeSession(_ session: GeckoSession) {
@@ -358,6 +365,9 @@ extension TabManagerImplementation: ContentDelegate {
         }
         
         tabs[index].title = title.isEmpty ? "Homepage" : title
+        if let url = remoteURL(from: tabs[index].url) {
+            historyStore.updateTitle(for: url, title: title)
+        }
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .title)
         persistState()
     }
@@ -464,6 +474,13 @@ extension TabManagerImplementation: NavigationDelegate {
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
         scheduleFaviconUpdate(forTabAt: index)
         persistState()
+        
+        guard let url = remoteURL(from: tabs[index].url) else {
+            return
+        }
+        
+        let title = tabs[index].title == "Homepage" ? "" : tabs[index].title
+        historyStore.recordVisit(url: url, title: title)
     }
     
     func onCanGoBack(session: GeckoSession, canGoBack: Bool) {

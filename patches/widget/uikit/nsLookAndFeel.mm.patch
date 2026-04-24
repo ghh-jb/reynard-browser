@@ -1,8 +1,8 @@
 diff --git a/widget/uikit/nsLookAndFeel.mm b/widget/uikit/nsLookAndFeel.mm
-index e5198c6f3fac..e7671f14199d 100644
+index e5198c6f3fac..fda5da56c58a 100644
 --- a/widget/uikit/nsLookAndFeel.mm
 +++ b/widget/uikit/nsLookAndFeel.mm
-@@ -4,7 +4,10 @@
+@@ -4,20 +4,58 @@
  
  #import <UIKit/UIColor.h>
  #import <UIKit/UIInterface.h>
@@ -13,7 +13,10 @@ index e5198c6f3fac..e7671f14199d 100644
  #include "nsLookAndFeel.h"
  
  #include "mozilla/FontPropertyTypes.h"
-@@ -14,10 +17,44 @@
++#include "gfxPlatformMac.h"
+ #include "nsStyleConsts.h"
+ #include "gfxFont.h"
+ #include "gfxFontConstants.h"
  
  using namespace mozilla;
  
@@ -58,7 +61,7 @@ index e5198c6f3fac..e7671f14199d 100644
  static nscolor GetColorFromUIColor(UIColor* aColor) {
    CGColorRef cgColor = [aColor CGColor];
    CGColorSpaceModel model = CGColorSpaceGetModel(CGColorGetColorSpace(cgColor));
-@@ -34,6 +71,11 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -34,6 +72,11 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
    return 0;
  }
  
@@ -70,7 +73,7 @@ index e5198c6f3fac..e7671f14199d 100644
  void nsLookAndFeel::NativeInit() { EnsureInit(); }
  
  void nsLookAndFeel::RefreshImpl() {
-@@ -92,7 +134,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -92,7 +135,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
      case ColorID::Menutext:
      case ColorID::Infotext:
      case ColorID::Windowtext:
@@ -79,7 +82,7 @@ index e5198c6f3fac..e7671f14199d 100644
        break;
      case ColorID::Activecaption:
        aResult = NS_RGB(0xff, 0xff, 0xff);
-@@ -101,14 +143,15 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -101,14 +144,15 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
        aResult = NS_RGB(0x00, 0x00, 0x00);
        break;
      case ColorID::Appworkspace:
@@ -97,7 +100,7 @@ index e5198c6f3fac..e7671f14199d 100644
        break;
      case ColorID::Buttonhighlight:
        aResult = NS_RGB(0xFF, 0xFF, 0xFF);
-@@ -117,7 +160,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -117,7 +161,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
        aResult = NS_RGB(0xDC, 0xDC, 0xDC);
        break;
      case ColorID::Graytext:
@@ -106,7 +109,7 @@ index e5198c6f3fac..e7671f14199d 100644
        break;
      case ColorID::Inactiveborder:
        aResult = NS_RGB(0xff, 0xff, 0xff);
-@@ -147,7 +190,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -147,7 +191,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
        aResult = NS_RGB(0xDA, 0xDA, 0xDA);
        break;
      case ColorID::Menu:
@@ -115,7 +118,7 @@ index e5198c6f3fac..e7671f14199d 100644
        break;
      case ColorID::Infobackground:
        aResult = NS_RGB(0xFF, 0xFF, 0xC7);
-@@ -158,21 +201,22 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -158,21 +202,22 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
      case ColorID::Window:
      case ColorID::Field:
      case ColorID::MozCombobox:
@@ -142,7 +145,7 @@ index e5198c6f3fac..e7671f14199d 100644
        break;
      case ColorID::MozMacFocusring:
        aResult = NS_RGB(0x3F, 0x98, 0xDD);
-@@ -223,10 +267,12 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -223,10 +268,12 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
        aResult = 3;
        break;
      case IntID::CaretBlinkTime:
@@ -157,7 +160,7 @@ index e5198c6f3fac..e7671f14199d 100644
        break;
      case IntID::SelectTextfieldsOnKeyFocus:
        // Select textfield content when focused by kbd
-@@ -293,6 +339,9 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -293,6 +340,9 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
      case IntID::SpellCheckerUnderlineStyle:
        aResult = static_cast<int32_t>(StyleTextDecorationStyle::Dotted);
        break;
@@ -167,7 +170,7 @@ index e5198c6f3fac..e7671f14199d 100644
      case IntID::ContextMenuOffsetVertical:
      case IntID::ContextMenuOffsetHorizontal:
        aResult = 2;
-@@ -301,6 +350,11 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -301,6 +351,11 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
        aResult = 0;
        res = NS_ERROR_FAILURE;
    }
@@ -179,15 +182,32 @@ index e5198c6f3fac..e7671f14199d 100644
    return res;
  }
  
-@@ -333,7 +387,6 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
-     aFontStyle.size = 14;
-     aFontStyle.systemFont = true;
+@@ -325,20 +380,10 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
  
+ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
+                                   gfxFontStyle& aFontStyle) {
+-  // hack for now
+-  if (aID == FontID::Caption || aID == FontID::Menu) {
+-    aFontStyle.style = FontSlantStyle::NORMAL;
+-    aFontStyle.weight = FontWeight::NORMAL;
+-    aFontStyle.stretch = FontStretch::NORMAL;
+-    aFontStyle.size = 14;
+-    aFontStyle.systemFont = true;
+-
 -    aFontName.AssignLiteral("sans-serif");
-     return true;
-   }
+-    return true;
+-  }
+-
+-  // TODO: implement more here?
+-  return false;
++  nsAutoCString name;
++  gfxPlatformMac::LookupSystemFont(aID, name, aFontStyle);
++  aFontName.Assign(NS_ConvertUTF8toUTF16(name));
++  return true;
+ }
  
-@@ -347,7 +400,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+ void nsLookAndFeel::EnsureInit() {
+@@ -347,7 +392,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
    }
    mInitialized = true;
  

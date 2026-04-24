@@ -1,0 +1,78 @@
+diff --git a/gfx/wr/wr_glyph_rasterizer/src/platform/macos/font.rs b/gfx/wr/wr_glyph_rasterizer/src/platform/macos/font.rs
+index fce3e07e5b3c..e5c767a19561 100644
+--- a/gfx/wr/wr_glyph_rasterizer/src/platform/macos/font.rs
++++ b/gfx/wr/wr_glyph_rasterizer/src/platform/macos/font.rs
+@@ -215,8 +215,17 @@ fn new_ct_font_with_variations(ct_font_desc: &CTFontDescriptor, size: f64, varia
+     let vals_dict = CFDictionary::from_CFType_pairs(&vals);
+     let variation_attribute = unsafe { CFString::wrap_under_get_rule(kCTFontVariationAttribute) };
+     let attrs_dict = CFDictionary::from_CFType_pairs(&[(variation_attribute, vals_dict)]);
+-    let ct_var_font_desc = ct_font.copy_descriptor().create_copy_with_attributes(attrs_dict.to_untyped()).unwrap();
+-    core_text::font::new_from_descriptor(&ct_var_font_desc, size)
++
++    // REYNARD: If CoreText rejects attributes for a descriptor (idk why tbh),
++    // just keep the base CTFont.
++    if let Ok(ct_var_font_desc) = ct_font
++        .copy_descriptor()
++        .create_copy_with_attributes(attrs_dict.to_untyped())
++    {
++        return core_text::font::new_from_descriptor(&ct_var_font_desc, size);
++    }
++
++    ct_font
+ 
+ }
+ 
+@@ -277,20 +286,42 @@ impl FontContext {
+         // we can't instantiate CTFonts via a descriptor. We're really
+         // supposed to use CTFontCreateUIFontForLanguage, but for now
+         // we just use the CGFont.
++
++        // REYNARD: Resolve Apple system font names through the font
++        // API on iOS so WR does not crash.
+         let mut desc = if native_font_handle.name.starts_with('.') {
+-            let cg_font = match CGFont::from_name(&cf_name) {
+-                Ok(cg_font) => cg_font,
++            match CGFont::from_name(&cf_name) {
++                Ok(cg_font) => core_text::font::new_from_CGFont(&cg_font, 0.).copy_descriptor(),
+                 Err(_) => {
+-                    // If for some reason we failed to load a font descriptor, then our
+-                    // only options are to either abort or substitute a fallback font.
+-                    // It is preferable to use a fallback font instead so that rendering
+-                    // can at least still proceed in some fashion without erroring.
+-                    // Lucida Grande is the fallback font in Gecko, so use that here.
+-                    CGFont::from_name(&CFString::from_static_string("Lucida Grande"))
+-                        .expect("couldn't find font with postscript name and couldn't load fallback font")
++                    #[cfg(target_os = "ios")]
++                    {
++                        core_text::font::new_ui_font_for_language(
++                            core_text::font::kCTFontSystemFontType,
++                            0.0,
++                            None,
++                        )
++                        .copy_descriptor()
++                    }
++                    #[cfg(not(target_os = "ios"))]
++                    {
++                        // If for some reason we failed to load a font descriptor, then our
++                        // only options are to either abort or substitute a fallback font.
++                        // It is preferable to use a fallback font instead so that rendering
++                        // can at least still proceed in some fashion without erroring.
++                        // Lucida Grande is the fallback font in Gecko on macOS, so use that here.
++                        if let Ok(cg_font) = CGFont::from_name(&CFString::from_static_string("Lucida Grande")) {
++                            core_text::font::new_from_CGFont(&cg_font, 0.).copy_descriptor()
++                        } else {
++                            core_text::font::new_ui_font_for_language(
++                                core_text::font::kCTFontSystemFontType,
++                                0.0,
++                                None,
++                            )
++                            .copy_descriptor()
++                        }
++                    }
+                 }
+-            };
+-            core_text::font::new_from_CGFont(&cg_font, 0.).copy_descriptor()
++            }
+         } else {
+             core_text::font_descriptor::new_from_postscript_name(&cf_name)
+         };

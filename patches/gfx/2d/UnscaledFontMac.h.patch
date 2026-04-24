@@ -1,0 +1,15 @@
+diff --git a/gfx/2d/UnscaledFontMac.h b/gfx/2d/UnscaledFontMac.h
+index ea3a8902d28f..c1749d9192db 100644
+--- a/gfx/2d/UnscaledFontMac.h
++++ b/gfx/2d/UnscaledFontMac.h
+@@ -50,6 +50,10 @@ class UnscaledFontMac final : public UnscaledFont {
+ 
+   CGFontRef GetFont() const { return mFont; }
+ 
++  // REYNARD: Expose the preserved CoreText descriptor so shaping and metrics
++  // can reuse the original Apple system font identity.
++  CTFontDescriptorRef GetFontDescriptorRef() const { return mFontDesc; }
++
+   bool GetFontFileData(FontFileDataOutput aDataCallback, void* aBaton) override;
+ 
+   bool IsDataFont() const { return mIsDataFont; }

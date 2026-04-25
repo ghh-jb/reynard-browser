@@ -16,7 +16,7 @@ For the best performance and automatic JIT enablement, it is recommended to side
 
 If TrollStore is not available, you should use [AltStore](https://altstore.io/) or [SideStore](https://sidestore.io/) to sideload the `Reynard.ipa` build instead. Please note that you must select the **Keep App Extensions** option during installation, as Reynard relies on its extensions to function and will not work without them. After sideloading, you may want to enable JIT by following [this guide](https://github.com/minh-ton/reynard-browser/wiki/2.-Enabling-JIT).
 
-You can also [click here](https://stikstore.app/altdirect/?url=https://github.com/minh-ton/reynard-browser/releases/download/0.0.1-a1/source.json&exclude=livecontainer) to add the AltStore Source for Reynard in AltStore or SideStore.
+You can also [click here](https://stikstore.app/altdirect/?url=https://github.com/minh-ton/reynard-browser/releases/download/0.0.1-a1/source.json&exclude=livecontainer,stikstore,trollapps,feather) to add the AltStore Source for Reynard in AltStore or SideStore.
 
 > [!WARNING]
 > - **LiveContainer is not supported**, as it does not support extensions or launch apps in a way that is compatible with Reynard.

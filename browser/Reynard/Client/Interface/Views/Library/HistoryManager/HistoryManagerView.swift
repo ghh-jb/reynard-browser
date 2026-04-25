@@ -143,7 +143,7 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
             searchBar.topAnchor.constraint(equalTo: headerContainerView.layoutMarginsGuide.topAnchor),
             searchBar.leadingAnchor.constraint(equalTo: headerContainerView.layoutMarginsGuide.leadingAnchor),
             searchBar.trailingAnchor.constraint(equalTo: headerContainerView.layoutMarginsGuide.trailingAnchor),
-            searchBar.bottomAnchor.constraint(equalTo: headerContainerView.layoutMarginsGuide.bottomAnchor)
+            searchBar.bottomAnchor.constraint(equalTo: headerContainerView.bottomAnchor)
         ])
         
         let targetWidth = bounds.width > 0 ? bounds.width : UIScreen.main.bounds.width

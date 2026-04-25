@@ -15,12 +15,13 @@ extension Notification.Name {
 }
 
 struct DownloadStoreSummary {
+    let totalCount: Int
     let activeCount: Int
     let aggregateProgress: Float
     let hasUnviewedCompletedDownloads: Bool
     
     var showsToolbarButton: Bool {
-        activeCount > 0 || hasUnviewedCompletedDownloads
+        activeCount > 0 || (hasUnviewedCompletedDownloads && totalCount > 0)
     }
 }
 
@@ -366,6 +367,7 @@ final class DownloadStore: NSObject {
         }
         
         return DownloadStoreSummary(
+            totalCount: persistedDownloads.count + activeItems.count,
             activeCount: activeItems.count,
             aggregateProgress: min(max(aggregateProgress, 0), 1),
             hasUnviewedCompletedDownloads: hasUnviewedCompletedDownloads

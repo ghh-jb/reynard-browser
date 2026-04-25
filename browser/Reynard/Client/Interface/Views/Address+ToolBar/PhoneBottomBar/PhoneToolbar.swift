@@ -18,8 +18,6 @@ protocol PhoneToolbarDelegate: AnyObject {
 
 final class PhoneToolbar: UIView {
     weak var delegate: PhoneToolbarDelegate?
-    let downloadHaptic = UINotificationFeedbackGenerator()
-    var downloadHapticPlayed = false
     
     private lazy var backButton: UIButton = {
         MakeButtons.makeToolbarButton(target: self, imageName: "chevron.backward", action: #selector(backButtonClicked))
@@ -49,7 +47,6 @@ final class PhoneToolbar: UIView {
         backgroundColor = .clear
         shareButton.isEnabled = false
         downloadButton.isHidden = true
-        downloadHaptic.prepare()
         
         let stack = UIStackView(arrangedSubviews: [backButton, forwardButton, shareButton, menuButton, downloadButton, tabsButton])
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -87,17 +84,6 @@ final class PhoneToolbar: UIView {
     func updateDownloadButton(summary: DownloadStoreSummary) {
         downloadButton.apply(summary: summary)
         downloadButton.isHidden = !downloadButton.isShowingDownloads
-        
-        if downloadButton.isShowingDownloads && !downloadHapticPlayed {
-            downloadHaptic.notificationOccurred(.success)
-            downloadHaptic.prepare()
-            downloadHapticPlayed = true
-        }
-        
-        if !downloadButton.isShowingDownloads && downloadHapticPlayed {
-            downloadHaptic.prepare()
-            downloadHapticPlayed = false
-        }
     }
     
     @objc func backButtonClicked() {

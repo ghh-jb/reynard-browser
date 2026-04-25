@@ -34,6 +34,8 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     var isSearchFocused = false
     private var pendingSelectionAnimation = false
     
+    let downloadHaptic = UINotificationFeedbackGenerator()
+    
     var isLibrarySidebarVisible: Bool {
         (splitViewController as? BrowserSplitViewController)?.isLibrarySidebarVisible ?? false
     }
@@ -580,6 +582,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     private func presentNextDownloadConfirmationIfNeeded() {
+        downloadHaptic.prepare()
         guard !isPresentingDownloadConfirmation,
               let download = pendingDownloadConfirmations.first,
               let presenter = topPresentedViewController else {
@@ -597,6 +600,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             self?.finishDownloadConfirmation(startDownload: false)
         })
         alert.addAction(UIAlertAction(title: "Download", style: .default) { [weak self] _ in
+            self?.downloadHaptic.notificationOccurred(.success)
             self?.finishDownloadConfirmation(startDownload: true)
         })
         

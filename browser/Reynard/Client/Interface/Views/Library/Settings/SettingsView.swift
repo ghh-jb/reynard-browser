@@ -234,7 +234,7 @@ final class SettingsRootViewController: SettingsTableViewController {
         case .updates, .jit, .search, .tab: return nil
         case .compatibility:
             return preferences.useAndroidUserAgent
-            ? "To maximize compatibility, the browser will use the Firefox for Android user agent for navigating the web. As a result, these websites may identify your device as an Android device."
+            ? "To maximize compatibility, the browser will use the Firefox for Android user agent for navigating the web. As a result, websites may identify your device as an Android device."
             : "If you encounter issues such as sign-in failures, human verification challenges, or other incorrect site behavior, adding the site's URL to this user agent override list may help resolve the problem."
         case .about:
             let info = Bundle.main.infoDictionary

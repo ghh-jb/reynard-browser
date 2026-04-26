@@ -1,5 +1,5 @@
 diff --git a/gfx/webrender_bindings/src/moz2d_renderer.rs b/gfx/webrender_bindings/src/moz2d_renderer.rs
-index c885ba051ebd..73cf8c659417 100644
+index c885ba051ebd..0fd966d0f605 100644
 --- a/gfx/webrender_bindings/src/moz2d_renderer.rs
 +++ b/gfx/webrender_bindings/src/moz2d_renderer.rs
 @@ -27,11 +27,15 @@ use std::mem;
@@ -27,30 +27,31 @@ index c885ba051ebd..73cf8c659417 100644
          fn process_native_font_handle(key: FontKey, handle: &NativeFontHandle) {
              let font = match CGFont::from_name(&CFString::new(&handle.name)) {
                  Ok(font) => font,
-@@ -856,6 +860,30 @@ impl Moz2dBlobImageHandler {
+@@ -856,6 +860,31 @@ impl Moz2dBlobImageHandler {
              unsafe { AddNativeFontHandle(key, font.as_ptr() as *mut c_void, 0) };
          }
  
 +        #[cfg(target_os = "ios")]
 +        fn process_native_font_handle(key: FontKey, handle: &NativeFontHandle) {
-+            let font = match CGFont::from_name(&CFString::new(&handle.name)) {
-+                Ok(font) => font,
-+                Err(_) => {
-+                    let system_font = new_ui_font_for_language(kCTFontSystemFontType, 0.0, None);
-+                    let system_font = if handle.name.starts_with('.') {
-+                        let (trait_value, trait_mask) = hidden_system_font_traits(&handle.name);
-+                        if trait_mask != 0 {
-+                            system_font
-+                                .clone_with_symbolic_traits(trait_value, trait_mask)
-+                                .unwrap_or(system_font)
-+                        } else {
-+                            system_font
-+                        }
-+                    } else {
-+                        system_font
-+                    };
-+                    system_font.copy_to_CGFont()
-+                },
++            let font = if handle.name.starts_with('.') {
++                let system_font = new_ui_font_for_language(kCTFontSystemFontType, 0.0, None);
++                let (trait_value, trait_mask) = hidden_system_font_traits(&handle.name);
++                let system_font = if trait_mask != 0 {
++                    system_font
++                        .clone_with_symbolic_traits(trait_value, trait_mask)
++                        .unwrap_or(system_font)
++                } else {
++                    system_font
++                };
++                system_font.copy_to_CGFont()
++            } else {
++                match CGFont::from_name(&CFString::new(&handle.name)) {
++                    Ok(font) => font,
++                    Err(_) => {
++                        let system_font = new_ui_font_for_language(kCTFontSystemFontType, 0.0, None);
++                        system_font.copy_to_CGFont()
++                    },
++                }
 +            };
 +            unsafe { AddNativeFontHandle(key, font.as_ptr() as *mut c_void, 0) };
 +        }

@@ -519,7 +519,19 @@
 					"$(PROJECT_DIR)/Reynard/JIT",
 				);
 				MARKETING_VERSION = "$(CURRENT_VERSION)";
-				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"$(GECKO_DIST)/bin/XUL",
+					"-lmozglue",
+					"-lnss3",
+					"-lfreebl3",
+					"-lsoftokn3",
+					"-llgpllibs",
+					"-lmozavcodec",
+					"-lmozavutil",
+					"-lgkcodecs",
+					"-lmozinference",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.Reynard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -572,7 +584,19 @@
 					"$(PROJECT_DIR)/Reynard/JIT",
 				);
 				MARKETING_VERSION = "$(CURRENT_VERSION)";
-				OTHER_LDFLAGS = "$(inherited)";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"$(GECKO_DIST)/bin/XUL",
+					"-lmozglue",
+					"-lnss3",
+					"-lfreebl3",
+					"-lsoftokn3",
+					"-llgpllibs",
+					"-lmozavcodec",
+					"-lmozavutil",
+					"-lgkcodecs",
+					"-lmozinference",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.Reynard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -737,6 +761,19 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"$(GECKO_DIST)/bin/XUL",
+					"-lmozglue",
+					"-lnss3",
+					"-lfreebl3",
+					"-lsoftokn3",
+					"-llgpllibs",
+					"-lmozavcodec",
+					"-lmozavutil",
+					"-lgkcodecs",
+					"-lmozinference",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.GeckoView";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -781,6 +818,19 @@
 					"@loader_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"$(GECKO_DIST)/bin/XUL",
+					"-lmozglue",
+					"-lnss3",
+					"-lfreebl3",
+					"-lsoftokn3",
+					"-llgpllibs",
+					"-lmozavcodec",
+					"-lmozavutil",
+					"-lgkcodecs",
+					"-lmozinference",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.GeckoView";
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -824,6 +874,16 @@
 				MARKETING_VERSION = "$(CURRENT_VERSION)";
 				OTHER_LDFLAGS = (
 					"$(inherited)",
+					"$(GECKO_DIST)/bin/XUL",
+					"-lmozglue",
+					"-lnss3",
+					"-lfreebl3",
+					"-lsoftokn3",
+					"-llgpllibs",
+					"-lmozavcodec",
+					"-lmozavutil",
+					"-lgkcodecs",
+					"-lmozinference",
 					"-Wl,-u,_NSExtensionMain",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.Reynard.Helper";
@@ -862,6 +922,16 @@
 				MARKETING_VERSION = "$(CURRENT_VERSION)";
 				OTHER_LDFLAGS = (
 					"$(inherited)",
+					"$(GECKO_DIST)/bin/XUL",
+					"-lmozglue",
+					"-lnss3",
+					"-lfreebl3",
+					"-lsoftokn3",
+					"-llgpllibs",
+					"-lmozavcodec",
+					"-lmozavutil",
+					"-lgkcodecs",
+					"-lmozinference",
 					"-Wl,-u,_NSExtensionMain",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "com.minh-ton.Reynard.Helper";

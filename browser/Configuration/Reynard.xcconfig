@@ -14,7 +14,4 @@ HEADER_SEARCH_PATHS = $(inherited) $(GECKO_DIST)/include $(GECKO_DIST)/include/G
 LIBRARY_SEARCH_PATHS = $(inherited) $(GECKO_DIST)/bin
 FRAMEWORK_SEARCH_PATHS = $(inherited) $(BUILT_PRODUCTS_DIR)
 LD_RUNPATH_SEARCH_PATHS = $(inherited) @executable_path/Frameworks @loader_path/Frameworks
-
-OTHER_LDFLAGS = $(inherited) $(GECKO_DIST)/bin/XUL -lmozglue -lnss3 -lfreebl3 -lsoftokn3 -llgpllibs -lmozavcodec -lmozavutil -lgkcodecs -lmozinference
-
 SWIFT_OBJC_BRIDGING_HEADER = $(SRCROOT)/Reynard/Bridging/Reynard-Bridging-Header.h

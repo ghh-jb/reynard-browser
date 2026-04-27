@@ -197,7 +197,6 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         coordinator.animate { _ in
             self.syncBrowserNavigationChrome(animated: false)
             self.syncPadSidebarButtonItem()
-            self.browserLayout.applyChromeLayout(animated: false)
             self.browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
             self.browserUI.padTabBar.collectionView.collectionViewLayout.invalidateLayout()
         } completion: { _ in
@@ -205,9 +204,13 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             self.syncPadSidebarButtonItem()
             self.browserUI.geckoView.transform = .identity
             self.addressBarGestures.resetHorizontalTransition()
-            self.browserLayout.applyChromeLayout(animated: false)
             self.tabOverviewPresentation.refreshForCurrentOrientation()
-            self.view.layoutIfNeeded()
+            DispatchQueue.main.async {
+                guard self.isViewLoaded, self.view.window != nil else {
+                    return
+                }
+                self.browserLayout.applyChromeLayout(animated: false)
+            }
         }
     }
     

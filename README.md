@@ -18,9 +18,10 @@ If TrollStore is not available, you should use [AltStore](https://altstore.io/) 
 
 You can also [click here](https://stikstore.app/altdirect/?url=https://github.com/minh-ton/reynard-browser/releases/download/0.0.1-a1/source.json&exclude=livecontainer,stikstore,trollapps,feather) to add the AltStore Source for Reynard in AltStore or SideStore.
 
-> [!WARNING]
-> - **LiveContainer is not supported**, as it does not support extensions or launch apps in a way that is compatible with Reynard.
+> [!IMPORTANT]
+> - **LiveContainer is not supported** due to its own limitations.
 > - Compatibility with other sideloading methods is currently unknown.
+> - On **iOS 17.0**, the TrollStore build does not work correctly, so sideload the ‎`Reynard.ipa` build instead.
 
 This project is still in an early experimental state, so expect bugs and missing features. If you encounter issues, check the [Issues & FAQ](https://github.com/minh-ton/reynard-browser/wiki/3.-Issues-&-FAQ) page before opening a new issue.
 

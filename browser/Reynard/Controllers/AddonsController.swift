@@ -254,7 +254,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
     }
     
     private func presentModalPopup(url: String, title: String) {
-        DispatchQueue.main.async { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self else { return }
             
             let popupViewController = AddonPopupViewController(

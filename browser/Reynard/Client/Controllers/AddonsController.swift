@@ -15,6 +15,10 @@ struct AddonMenuItem {
     let title: String
 }
 
+extension Notification.Name {
+    static let OpenAddonPopup = Notification.Name("me.minh-ton.reynard.open-addon-popup")
+}
+
 final class AddonsController: NSObject, AddonEmbedderDelegate {
     private weak var controller: BrowserViewController?
     private var sessionBrowserActions: [ObjectIdentifier: [String: AddonAction]] = [:]
@@ -34,6 +38,23 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
             _ = try? await AddonsRuntimeController.shared.list()
             self.controller?.refreshAddressBar()
         }
+        
+        // Using a notification is more reliable than calling
+        // presentModalPopup directly is still a mystery to me...
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(handlePopupOpenNotification(_:)),
+            name: .OpenAddonPopup, object: nil
+        )
+    }
+    
+    @objc func handlePopupOpenNotification(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let url = userInfo["url"] as? String,
+              let title = userInfo["title"] as? String else {
+            return
+        }
+        
+        presentModalPopup(url: url, title: title)
     }
     
     func handleExternalResponse(_ response: ExternalResponseInfo) -> Bool {
@@ -111,7 +132,10 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
             do {
                 if let popupURL = try await AddonsRuntimeController.shared.clickAction(kind: item.action.kind, addon: item.addon),
                    !popupURL.isEmpty {
-                    self.presentModalPopup(url: popupURL, title: item.title)
+                    NotificationCenter.default.post(name: .OpenAddonPopup, object: nil, userInfo: [
+                        "url": popupURL,
+                        "title": item.title
+                    ])
                 }
             } catch {
                 self.presentAlert(title: "Extension Error", message: "\(error)")
@@ -151,7 +175,10 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
     }
     
     func addonsController(_ controller: AddonsRuntimeController, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?) {
-        presentModalPopup(url: popupURL, title: action.title ?? addon.metaData.name ?? "Extension")
+        NotificationCenter.default.post(name: .OpenAddonPopup, object: nil, userInfo: [
+            "url": popupURL,
+            "title": action.title ?? addon.metaData.name ?? "Extension"
+        ])
     }
     
     func addonsController(_ controller: AddonsRuntimeController, didRequestOpenOptionsPageFor addon: Addon) {

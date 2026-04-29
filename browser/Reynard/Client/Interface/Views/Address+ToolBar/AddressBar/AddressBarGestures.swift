@@ -131,7 +131,9 @@ final class AddressBarGestures: NSObject {
     
     private func createAddressBarPreview(for tab: Tab) -> UIView {
         let container = UIView()
-        container.backgroundColor = .secondarySystemBackground
+        container.backgroundColor = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark ? .tertiarySystemBackground : .systemBackground
+        }
         container.layer.cornerRadius = 16
         container.layer.cornerCurve = .continuous
         container.layer.shadowColor = UIColor.black.cgColor
@@ -140,16 +142,21 @@ final class AddressBarGestures: NSObject {
         container.layer.shadowOffset = CGSize(width: 0, height: 2)
         container.clipsToBounds = false
         
-        let iconView = UIImageView(image: UIImage(systemName: "magnifyingglass"))
+        let iconView = AddressBarButton(type: .system)
         iconView.translatesAutoresizingMaskIntoConstraints = false
-        iconView.tintColor = .secondaryLabel
+        iconView.tintColor = tab.url != nil ? .label : .secondaryLabel
+        iconView.showsMenuAsPrimaryAction = true
+        iconView.isUserInteractionEnabled = false
+        iconView.setImage(UIImage(systemName: tab.url != nil ? "list.bullet.below.rectangle" : "magnifyingglass"), for: .normal)
         
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = .systemFont(ofSize: 17, weight: .regular)
-        label.textColor = .secondaryLabel
-        label.text = tab.url ?? "Search or enter website name"
+        label.textAlignment = .left
+        label.textColor = .label
+        label.numberOfLines = 1
         label.lineBreakMode = .byTruncatingTail
+        label.attributedText = previewText(for: tab)
         
         container.addSubview(iconView)
         container.addSubview(label)
@@ -166,6 +173,49 @@ final class AddressBarGestures: NSObject {
         ])
         
         return container
+    }
+    
+    private func previewText(for tab: Tab) -> NSAttributedString {
+        let trimmedTitle = tab.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let urlText = tab.url?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !urlText.isEmpty else {
+            return placeholderPreviewText()
+        }
+        
+        guard let host = URL(string: urlText)?.host,
+              !host.isEmpty else {
+            return NSAttributedString(
+                string: urlText,
+                attributes: [.foregroundColor: UIColor.label]
+            )
+        }
+        
+        let attributedText = NSMutableAttributedString(
+            string: host,
+            attributes: [.foregroundColor: UIColor.label]
+        )
+        attributedText.append(
+            NSAttributedString(
+                string: " / ",
+                attributes: [.foregroundColor: UIColor.secondaryLabel]
+            )
+        )
+        if !trimmedTitle.isEmpty {
+            attributedText.append(
+                NSAttributedString(
+                    string: trimmedTitle,
+                    attributes: [.foregroundColor: UIColor.secondaryLabel]
+                )
+            )
+        }
+        return attributedText
+    }
+    
+    private func placeholderPreviewText() -> NSAttributedString {
+        NSAttributedString(
+            string: AddressBar.placeholderText,
+            attributes: [.foregroundColor: UIColor.placeholderText]
+        )
     }
     
     private func createContentPreview(for tab: Tab) -> UIView {

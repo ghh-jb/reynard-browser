@@ -460,8 +460,9 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         if !browserUI.addressBar.isEditingText {
             browserUI.addressBar.setText(
                 displayedText,
-                isCommittedLocation: !hasPendingDisplayText && selectedURL?.isEmpty == false,
-                canDisplayHostOnly: !hasPendingDisplayText && displayedSearchQuery == nil && selectedURL?.isEmpty == false
+                locationText: selectedURL,
+                locationTitle: selectedTab?.title,
+                isCommittedLocation: !hasPendingDisplayText && selectedURL?.isEmpty == false
             )
         }
         addonsController.prepareVisibleAddonIcons()

@@ -14,18 +14,20 @@ protocol AddressBarDelegate: AnyObject {
 }
 
 final class AddressBar: UIView {
+    static let placeholderText = "Search or enter website name"
+    
     private weak var delegate: AddressBarDelegate?
     private var shadowEnabled = true
     private var showsSearchIconWhenPlaceholder = true
     private var currentText: String?
+    private var currentLocationText: String?
+    private var currentLocationTitle: String?
     private var currentTextIsCommittedLocation = false
-    private var canDisplayHostOnly = false
     private var addonsMenu: UIMenu?
     private var urlFieldLeadingToIconConstraint: NSLayoutConstraint!
     private var urlFieldLeadingToBarConstraint: NSLayoutConstraint!
     private var displayLabelLeadingToIconConstraint: NSLayoutConstraint!
     private var displayLabelLeadingToBarConstraint: NSLayoutConstraint!
-    private var displayLabelTrailingToIconConstraint: NSLayoutConstraint!
     private var displayLabelTrailingToBarConstraint: NSLayoutConstraint!
     
     private let backgroundFillView: UIView = {
@@ -54,7 +56,7 @@ final class AddressBar: UIView {
         field.translatesAutoresizingMaskIntoConstraints = false
         field.borderStyle = .none
         field.backgroundColor = .clear
-        field.placeholder = "Search or enter website name"
+        field.placeholder = AddressBar.placeholderText
         field.keyboardType = .default
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
@@ -67,10 +69,11 @@ final class AddressBar: UIView {
     private let displayLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.textAlignment = .center
+        label.textAlignment = .left
         label.textColor = .label
         label.font = .systemFont(ofSize: 17)
-        label.lineBreakMode = .byTruncatingMiddle
+        label.lineBreakMode = .byTruncatingTail
+        label.numberOfLines = 1
         label.isUserInteractionEnabled = false
         return label
     }()
@@ -107,10 +110,16 @@ final class AddressBar: UIView {
         urlField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
     }
     
-    func setText(_ text: String?, isCommittedLocation: Bool = false, canDisplayHostOnly: Bool = false) {
+    func setText(
+        _ text: String?,
+        locationText: String? = nil,
+        locationTitle: String? = nil,
+        isCommittedLocation: Bool = false
+    ) {
         currentText = text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        currentLocationText = locationText?.trimmingCharacters(in: .whitespacesAndNewlines)
+        currentLocationTitle = locationTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
         currentTextIsCommittedLocation = isCommittedLocation
-        self.canDisplayHostOnly = canDisplayHostOnly
         if !urlField.isFirstResponder {
             urlField.text = currentText
         }
@@ -205,9 +214,8 @@ final class AddressBar: UIView {
         urlFieldLeadingToBarConstraint = urlField.leadingAnchor.constraint(equalTo: backgroundFillView.leadingAnchor, constant: 12)
         displayLabelLeadingToIconConstraint = displayLabel.leadingAnchor.constraint(equalTo: leadingButton.trailingAnchor, constant: 8)
         displayLabelLeadingToBarConstraint = displayLabel.leadingAnchor.constraint(equalTo: backgroundFillView.leadingAnchor, constant: 12)
-        displayLabelTrailingToIconConstraint = displayLabel.trailingAnchor.constraint(equalTo: backgroundFillView.trailingAnchor, constant: -38)
         displayLabelTrailingToBarConstraint = displayLabel.trailingAnchor.constraint(equalTo: backgroundFillView.trailingAnchor, constant: -12)
-        urlFieldLeadingToIconConstraint.isActive = true
+        urlFieldLeadingToBarConstraint.isActive = true
         displayLabelLeadingToBarConstraint.isActive = true
         displayLabelTrailingToBarConstraint.isActive = true
         
@@ -218,83 +226,88 @@ final class AddressBar: UIView {
         let hasText = !(currentText?.isEmpty ?? true)
         let isEditing = urlField.isFirstResponder
         let hasVisibleTypedText = !(urlField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
-        let isEditingCommittedLocation = currentTextIsCommittedLocation && isEditing
         let isShowingPlaceholder = isEditing ? !hasVisibleTypedText : !hasText
+        let shouldShowCommittedIcon = currentTextIsCommittedLocation && !isEditing
+        let shouldShowPlaceholderIcon = showsSearchIconWhenPlaceholder && !isEditing && isShowingPlaceholder
+        let shouldShowLeadingIcon = shouldShowCommittedIcon || shouldShowPlaceholderIcon
+        let displayText = displayAttributedText()
         
-        if !isEditing {
-            displayLabel.text = displayedText(hasText: hasText)
-            displayLabel.isHidden = !hasText
-            urlField.isHidden = hasText
-            urlField.textAlignment = .natural
-        } else {
+        if isEditing {
             displayLabel.isHidden = true
             urlField.isHidden = false
-            urlField.textAlignment = .natural
+            urlField.textAlignment = .left
+        } else {
+            displayLabel.attributedText = displayText
+            displayLabel.isHidden = displayText == nil
+            urlField.isHidden = hasText
+            urlField.textAlignment = .left
         }
         
-        if currentTextIsCommittedLocation && !isEditing {
+        if shouldShowLeadingIcon {
             leadingButton.isHidden = false
-            leadingButton.tintColor = .label
-            leadingButton.setImage(UIImage(systemName: "list.bullet.below.rectangle"), for: .normal)
-            leadingButton.menu = addonsMenu
-            leadingButton.isUserInteractionEnabled = addonsMenu != nil
-            urlFieldLeadingToIconConstraint.isActive = false
-            urlFieldLeadingToBarConstraint.isActive = true
-            displayLabelLeadingToBarConstraint.isActive = false
-            displayLabelTrailingToBarConstraint.isActive = false
-            displayLabelLeadingToIconConstraint.isActive = true
-            displayLabelTrailingToIconConstraint.isActive = true
-        } else if isEditingCommittedLocation {
-            leadingButton.isHidden = true
-            leadingButton.menu = nil
-            leadingButton.isUserInteractionEnabled = false
-            urlFieldLeadingToIconConstraint.isActive = false
-            urlFieldLeadingToBarConstraint.isActive = true
-            displayLabelLeadingToIconConstraint.isActive = false
-            displayLabelTrailingToIconConstraint.isActive = false
-            displayLabelLeadingToBarConstraint.isActive = true
-            displayLabelTrailingToBarConstraint.isActive = true
-        } else if showsSearchIconWhenPlaceholder && !isEditing && isShowingPlaceholder {
-            leadingButton.isHidden = false
-            leadingButton.tintColor = .secondaryLabel
-            leadingButton.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
-            leadingButton.menu = nil
-            leadingButton.isUserInteractionEnabled = false
-            urlFieldLeadingToBarConstraint.isActive = false
-            urlFieldLeadingToIconConstraint.isActive = true
-            displayLabelLeadingToIconConstraint.isActive = false
-            displayLabelTrailingToIconConstraint.isActive = false
-            displayLabelLeadingToBarConstraint.isActive = true
-            displayLabelTrailingToBarConstraint.isActive = true
+            leadingButton.tintColor = shouldShowCommittedIcon ? .label : .secondaryLabel
+            leadingButton.setImage(
+                UIImage(systemName: shouldShowCommittedIcon ? "list.bullet.below.rectangle" : "magnifyingglass"),
+                for: .normal
+            )
+            leadingButton.menu = shouldShowCommittedIcon ? addonsMenu : nil
+            leadingButton.isUserInteractionEnabled = shouldShowCommittedIcon && addonsMenu != nil
         } else {
             leadingButton.isHidden = true
             leadingButton.menu = nil
             leadingButton.isUserInteractionEnabled = false
-            urlFieldLeadingToIconConstraint.isActive = false
-            urlFieldLeadingToBarConstraint.isActive = true
-            displayLabelLeadingToIconConstraint.isActive = false
-            displayLabelTrailingToIconConstraint.isActive = false
-            displayLabelLeadingToBarConstraint.isActive = true
-            displayLabelTrailingToBarConstraint.isActive = true
         }
+        
+        urlFieldLeadingToIconConstraint.isActive = shouldShowLeadingIcon
+        urlFieldLeadingToBarConstraint.isActive = !shouldShowLeadingIcon
+        displayLabelLeadingToIconConstraint.isActive = shouldShowCommittedIcon
+        displayLabelLeadingToBarConstraint.isActive = !shouldShowCommittedIcon
+        displayLabelTrailingToBarConstraint.isActive = true
     }
     
-    private func displayedText(hasText: Bool) -> String? {
-        guard hasText else {
+    private func displayAttributedText() -> NSAttributedString? {
+        guard let currentText, !currentText.isEmpty else {
             return nil
         }
         
-        guard let currentText else {
+        guard currentTextIsCommittedLocation,
+              let host = committedLocationHost() else {
+            return NSAttributedString(
+                string: currentText,
+                attributes: [.foregroundColor: UIColor.label]
+            )
+        }
+        
+        let attributedText = NSMutableAttributedString(
+            string: host,
+            attributes: [.foregroundColor: UIColor.label]
+        )
+        attributedText.append(
+            NSAttributedString(
+                string: " / ",
+                attributes: [.foregroundColor: UIColor.secondaryLabel]
+            )
+        )
+        if let title = currentLocationTitle,
+           !title.isEmpty {
+            attributedText.append(
+                NSAttributedString(
+                    string: title,
+                    attributes: [.foregroundColor: UIColor.secondaryLabel]
+                )
+            )
+        }
+        return attributedText
+    }
+    
+    private func committedLocationHost() -> String? {
+        let sourceText = currentLocationText ?? currentText
+        guard let sourceText,
+              let host = URL(string: sourceText)?.host,
+              !host.isEmpty else {
             return nil
         }
-        
-        if canDisplayHostOnly,
-           let host = URL(string: currentText)?.host,
-           !host.isEmpty {
-            return host
-        }
-        
-        return currentText
+        return host
     }
     
     @objc
@@ -346,8 +359,9 @@ extension AddressBar: UITextFieldDelegate {
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         currentText = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        currentLocationText = nil
+        currentLocationTitle = nil
         currentTextIsCommittedLocation = false
-        canDisplayHostOnly = false
         updateDisplayState()
         delegate?.addressBarDidEndEditing(self)
     }

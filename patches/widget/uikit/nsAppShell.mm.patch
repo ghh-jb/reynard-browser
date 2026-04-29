@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/nsAppShell.mm b/widget/uikit/nsAppShell.mm
-index 4441c8faf625..eb217decbd70 100644
+index 4441c8faf625..d86068d1cba6 100644
 --- a/widget/uikit/nsAppShell.mm
 +++ b/widget/uikit/nsAppShell.mm
 @@ -25,9 +25,11 @@
@@ -14,7 +14,40 @@ index 4441c8faf625..eb217decbd70 100644
  #include "HeadlessScreenHelper.h"
  #include "nsWindow.h"
  #include "nsXREDirProvider.h"
-@@ -281,7 +283,12 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -42,6 +44,15 @@
+   fprintf(stderr, "\n")
+ 
+ static void ApplicationWillTerminate(bool aCallExit);
++static bool sDidSendInitialForeground = false;
++
++static void NotifyObserverTopic(const char* aTopic) {
++  nsCOMPtr<nsIObserverService> obsServ =
++      mozilla::services::GetObserverService();
++  if (obsServ) {
++    obsServ->NotifyObservers(nullptr, aTopic, nullptr);
++  }
++}
+ 
+ // AppShellDelegate
+ //
+@@ -68,10 +79,16 @@ - (void)applicationWillTerminate:(UIApplication*)application {
+ 
+ - (void)applicationDidBecomeActive:(UIApplication*)application {
+   ALOG("[AppShellDelegate applicationDidBecomeActive:]");
++  if (!sDidSendInitialForeground) {
++    NotifyObserverTopic("geckoview-initial-foreground");
++    sDidSendInitialForeground = true;
++  }
++  NotifyObserverTopic("application-foreground");
+ }
+ 
+ - (void)applicationWillResignActive:(UIApplication*)application {
+   ALOG("[AppShellDelegate applicationWillResignActive:]");
++  NotifyObserverTopic("application-background");
+ }
+ 
+ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -281,7 +298,12 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
    ALOG("nsAppShell::Run");
  
    nsresult rv = NS_OK;
@@ -28,7 +61,7 @@ index 4441c8faf625..eb217decbd70 100644
      char argv[1][4] = {"app"};
      UIApplicationMain(1, (char**)argv, nil, @"AppShellDelegate");
      // UIApplicationMain doesn't exit. :-(
-@@ -298,7 +305,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
+@@ -298,7 +320,10 @@ - (void)applicationDidReceiveMemoryWarning:(UIApplication*)application {
  
    mTerminated = true;
  
@@ -40,7 +73,7 @@ index 4441c8faf625..eb217decbd70 100644
      // Dispatch a native event to the main queue to terminate. XPCOM doesn't
      // like being shut down from within an XPCOM runnable, so we cannot use
      // `NS_DispatchToMainThread` here.
-@@ -318,6 +328,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -318,6 +343,11 @@ static void ApplicationWillTerminate(bool aCallExit) {
      return;
    }
  
@@ -52,7 +85,7 @@ index 4441c8faf625..eb217decbd70 100644
    // Perform the steps which would normally happen after nsAppShell::Run, such
    // as `~ScopedXPCOMStartup`, as UIApplicationMain will never shutdown.
    if (nsCOMPtr<nsIAppStartup> appStartup = components::AppStartup::Service()) {
-@@ -331,12 +346,20 @@ static void ApplicationWillTerminate(bool aCallExit) {
+@@ -331,12 +361,20 @@ static void ApplicationWillTerminate(bool aCallExit) {
  
    gDirServiceProvider->DoShutdown();
  

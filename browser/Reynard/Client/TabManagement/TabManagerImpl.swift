@@ -308,6 +308,8 @@ final class TabManagerImplementation: NSObject, TabManager {
         }
         
         tab.suppressInitialNavigation = false
+        tab.didResolveURL = false
+        tab.pendingDisplayText = trimmedValue
         
         let fullRange = NSRange(location: 0, length: (trimmedValue as NSString).length)
         let isURL = isURLLenient.firstMatch(in: trimmedValue, range: fullRange) != nil
@@ -319,7 +321,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         }
         
         tab.session.updateUserAgent(nil)
-        tab.session.load(BrowserPreferences.shared.searchURL(for: trimmedValue))
+        tab.session.load(searchURL(for: trimmedValue))
     }
     
     func tabIndex(for session: GeckoSession) -> Int? {
@@ -431,6 +433,9 @@ extension TabManagerImplementation: ContentDelegate {
     func onCookieBannerHandled(session: GeckoSession) {}
     
     func onExternalResponse(session: GeckoSession, response: ExternalResponseInfo) {
+        if delegate?.tabManager(self, shouldHandleExternalResponse: response, for: session) == true {
+            return
+        }
         guard let download = DownloadStore.shared.prepareDownload(from: response) else {
             return
         }
@@ -470,6 +475,8 @@ extension TabManagerImplementation: NavigationDelegate {
         }
         
         tabs[index].url = url
+        tabs[index].pendingDisplayText = nil
+        tabs[index].didResolveURL = false
         tabs[index].favicon = nil
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
         scheduleFaviconUpdate(forTabAt: index)
@@ -552,6 +559,7 @@ extension TabManagerImplementation: ProgressDelegate {
         }
         
         tabs[index].isLoading = true
+        tabs[index].didResolveURL = false
         tabs[index].progress = 0
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .loading)
     }
@@ -562,6 +570,7 @@ extension TabManagerImplementation: ProgressDelegate {
         }
         
         tabs[index].isLoading = false
+        tabs[index].didResolveURL = success
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .loading)
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .thumbnail)
     }

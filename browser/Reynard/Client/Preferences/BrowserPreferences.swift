@@ -161,38 +161,6 @@ final class BrowserPreferences {
         searchEngine.displayName
     }
     
-    func searchURL(for query: String) -> String {
-        let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        
-        let template: String
-        switch searchEngine {
-        case .custom where isCustomSearchTemplateValid:
-            template = customSearchTemplate
-        case let engine:
-            template = engine.searchTemplate ?? SearchEngine.google.searchTemplate!
-        }
-        
-        return template.replacingOccurrences(of: "%s", with: encodedQuery)
-    }
-    
-    func isValidCustomSearchTemplate(_ value: String) -> Bool {
-        let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmedValue.contains("%s") else {
-            return false
-        }
-        
-        let candidate = trimmedValue.replacingOccurrences(of: "%s", with: "reynard")
-        guard let components = URLComponents(string: candidate),
-              let scheme = components.scheme?.lowercased(),
-              ["http", "https"].contains(scheme),
-              let host = components.host,
-              !host.isEmpty else {
-            return false
-        }
-        
-        return true
-    }
-    
     func installPairingFile(from sourceURL: URL) throws {
         let destinationURL = pairingFileURL
         try fileManager.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)

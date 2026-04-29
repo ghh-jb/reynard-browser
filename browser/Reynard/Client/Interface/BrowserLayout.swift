@@ -339,12 +339,13 @@ final class BrowserLayout {
         ui.addressBarPadCenterYConstraint.isActive = pad
         ui.addressBarPadHeightConstraint.isActive = pad
         
-        ui.phoneToolbarTopConstraint.isActive = !pad
+        ui.phoneToolbarTopConstraint.isActive = !pad && !compactPad
         ui.phoneToolbarCompactPadTopConstraint.isActive = compactPad
         ui.keyboardDismissButton.centerYConstraint.isActive = !pad
         
         ui.keyboardDismissButton.button.isHidden = !showDismissButton
         ui.addressBar.setShadowEnabled(!pad)
+        ui.addressBar.setShowsSearchIconWhenPlaceholder(!controller.usesPadChromeLayout)
         
         controller.updateNavigationButtons()
     }

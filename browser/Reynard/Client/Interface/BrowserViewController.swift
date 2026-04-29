@@ -30,6 +30,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     lazy var browserLayout = BrowserLayout(controller: self)
     lazy var addressBarGestures = AddressBarGestures(controller: self)
     lazy var tabOverviewPresentation = TabOverviewPresentation(controller: self)
+    lazy var addonsController = AddonsController(controller: self)
     
     var isSearchFocused = false
     private var pendingSelectionAnimation = false
@@ -57,6 +58,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         }
         return view.bounds.width > view.bounds.height
     }
+    
     
     var usesPhoneTopAddressBarLayout: Bool {
         guard !isPadLayout else { return false }
@@ -139,6 +141,9 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         }
         
         tabManager.createInitialTab()
+        tabManager.selectedTab?.session.setAddonTabActive(true)
+        addonsController.start()
+        refreshAddressBar()
         browserLayout.applyChromeLayout(animated: false)
     }
     
@@ -182,6 +187,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         }
         syncBrowserNavigationChrome(animated: false)
         syncPadSidebarButtonItem()
+        refreshAddressBar()
         browserLayout.applyChromeLayout(animated: false)
         browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
         browserUI.padTabBar.collectionView.collectionViewLayout.invalidateLayout()
@@ -444,6 +450,24 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         browserUI.addressBar.setLoadingProgress(progress, isLoading: isLoading)
     }
     
+    func refreshAddressBar() {
+        let selectedTab = tabManager.selectedTab
+        let pendingDisplayText = selectedTab?.pendingDisplayText?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasPendingDisplayText = !(pendingDisplayText?.isEmpty ?? true)
+        let selectedURL = selectedTab?.url
+        let displayedSearchQuery = hasPendingDisplayText ? nil : searchQuery(forSearchURL: selectedURL)
+        let displayedText = hasPendingDisplayText ? pendingDisplayText : (displayedSearchQuery ?? selectedURL)
+        if !browserUI.addressBar.isEditingText {
+            browserUI.addressBar.setText(
+                displayedText,
+                isCommittedLocation: !hasPendingDisplayText && selectedURL?.isEmpty == false,
+                canDisplayHostOnly: !hasPendingDisplayText && displayedSearchQuery == nil && selectedURL?.isEmpty == false
+            )
+        }
+        addonsController.prepareVisibleAddonIcons()
+        browserUI.addressBar.setAddonsMenu(AddressBarMenu.makeMenu(addonsController: addonsController))
+    }
+    
     func tabManagerDidChangeTabs(_ tabManager: TabManager) {
         if let selectedTab = tabManager.selectedTab {
             if browserUI.geckoView.session !== selectedTab.session {
@@ -452,6 +476,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         } else {
             browserUI.geckoView.session = nil
         }
+        refreshAddressBar()
         
         browserUI.tabOverviewCollection.collectionView.reloadData()
         browserUI.padTabBar.collectionView.reloadData()
@@ -469,13 +494,10 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         
         let selectedTab = tabManager.tabs[index]
         browserUI.geckoView.session = selectedTab.session
+        addonsController.handleTabSelectionChange(selectedIndex: index, previousIndex: previousIndex)
         
         syncAddressBarLoadingState(progress: selectedTab.progress, isLoading: selectedTab.isLoading)
-        
-        if !browserUI.addressBar.isEditingText {
-            let value = selectedTab.url ?? ""
-            browserUI.addressBar.setText(value)
-        }
+        refreshAddressBar()
         
         updateNavigationButtons()
         browserUI.tabOverviewCollection.collectionView.reloadData()
@@ -498,11 +520,8 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             browserUI.tabOverviewCollection.collectionView.reloadData()
             
         case .location:
-            if index == tabManager.selectedTabIndex,
-               !browserUI.addressBar.isEditingText {
-                browserUI.addressBar.setText(tabManager.tabs[index].url)
-            }
             if index == tabManager.selectedTabIndex {
+                refreshAddressBar()
                 updateNavigationButtons()
             }
             
@@ -545,6 +564,10 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         }
     }
     
+    func tabManager(_ tabManager: TabManager, shouldHandleExternalResponse response: ExternalResponseInfo, for session: GeckoSession) -> Bool {
+        return addonsController.handleExternalResponse(response)
+    }
+    
     func backButtonClicked() {
         browserActions.goBack()
     }
@@ -575,10 +598,12 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     func addressBarDidBeginEditing(_ addressBar: AddressBar) {
+        refreshAddressBar()
         setSearchFocused(true, animated: true)
     }
     
     func addressBarDidEndEditing(_ addressBar: AddressBar) {
+        refreshAddressBar()
         if !browserUI.addressBar.isEditingText {
             setSearchFocused(false, animated: true)
         }

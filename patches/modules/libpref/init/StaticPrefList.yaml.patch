@@ -1,5 +1,5 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index f36788f33221..9ad41fcaeacf 100644
+index f36788f33221..e75b2b847fe3 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
 @@ -5749,7 +5749,7 @@
@@ -47,6 +47,15 @@ index f36788f33221..9ad41fcaeacf 100644
    value: true
  #else
    value: false
+@@ -6291,7 +6291,7 @@
+ # or the parent/main process (false)
+ - name: extensions.webextensions.remote
+   type: RelaxedAtomicBool
+-  value: false
++  value: true
+   mirror: always
+ 
+ # Whether to expose the MockExtensionAPI test interface in tests.
 @@ -6899,6 +6899,8 @@
    type: bool
  #if defined(XP_MACOSX) || defined(XP_LINUX) && !defined(ANDROID)

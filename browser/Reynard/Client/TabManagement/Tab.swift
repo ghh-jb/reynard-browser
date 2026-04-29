@@ -15,10 +15,12 @@ final class Tab {
     var url: String?
     var favicon: UIImage?
     var pendingRestoreURL: String?
+    var pendingDisplayText: String?
     var suppressInitialNavigation = true
     var canGoBack = false
     var canGoForward = false
     var isLoading = false
+    var didResolveURL = false
     var progress: Float = 0
     var thumbnail: UIImage?
     var nowPlayingController: NowPlayingController?

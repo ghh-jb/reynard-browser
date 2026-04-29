@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/ExternalAppService.mm b/widget/uikit/ExternalAppService.mm
 new file mode 100644
-index 000000000000..c3e81f7ab349
+index 000000000000..3ed49bcc5d6e
 --- /dev/null
 +++ b/widget/uikit/ExternalAppService.mm
-@@ -0,0 +1,425 @@
+@@ -0,0 +1,534 @@
 +/* -*- Mode: c++; c-basic-offset: 2; tab-width: 2; indent-tabs-mode: nil; -*-
 + * This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -23,14 +23,17 @@ index 000000000000..c3e81f7ab349
 +#include "mozilla/widget/EventDispatcher.h"
 +#include "mozilla/widget/nsWindow.h"
 +#include "nsContentSecurityUtils.h"
++#include "nsDirectoryServiceDefs.h"
 +#include "nsIAsyncVerifyRedirectCallback.h"
 +#include "nsIChannel.h"
 +#include "nsIChannelEventSink.h"
++#include "nsIFile.h"
 +#include "nsIHttpChannel.h"
 +#include "nsIHttpHeaderVisitor.h"
 +#include "nsIInputStream.h"
 +#include "nsIInterfaceRequestor.h"
 +#include "nsILoadInfo.h"
++#include "nsIOutputStream.h"
 +#include "nsIRequest.h"
 +#include "nsIStreamListener.h"
 +#include "nsITransfer.h"
@@ -164,9 +167,15 @@ index 000000000000..c3e81f7ab349
 + private:
 +  ~ExternalResponseListener() = default;
 +
++  nsresult BeginCapturingResponseBody();
++  void CleanupCapturedResponseBody();
++  bool ShouldCaptureResponseBody(nsIChannel* aChannel);
 +  nsresult DispatchExternalResponse(nsIChannel* aChannel);
 +
 +  RefPtr<nsWindow> mWindow;
++  nsCOMPtr<nsIFile> mCapturedResponseFile;
++  nsCOMPtr<nsIOutputStream> mCapturedResponseStream;
++  bool mIsCapturingResponseBody = false;
 +};
 +
 +NS_IMPL_ISUPPORTS(ExternalResponseListener, nsIStreamListener,
@@ -190,6 +199,10 @@ index 000000000000..c3e81f7ab349
 +    return NS_OK;
 +  }
 +
++  if (ShouldCaptureResponseBody(channel)) {
++    return BeginCapturingResponseBody();
++  }
++
 +  nsresult rv = DispatchExternalResponse(channel);
 +  if (NS_FAILED(rv)) {
 +    return rv;
@@ -201,12 +214,48 @@ index 000000000000..c3e81f7ab349
 +
 +NS_IMETHODIMP ExternalResponseListener::OnStopRequest(nsIRequest* aRequest,
 +                                                      nsresult aStatusCode) {
-+  return NS_OK;
++  if (!mIsCapturingResponseBody) {
++    return NS_OK;
++  }
++
++  if (mCapturedResponseStream) {
++    mCapturedResponseStream->Close();
++    mCapturedResponseStream = nullptr;
++  }
++
++  if (NS_FAILED(aStatusCode)) {
++    mIsCapturingResponseBody = false;
++    CleanupCapturedResponseBody();
++    return NS_OK;
++  }
++
++  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
++  if (!channel) {
++    mIsCapturingResponseBody = false;
++    CleanupCapturedResponseBody();
++    return NS_OK;
++  }
++
++  nsresult rv = DispatchExternalResponse(channel);
++  mIsCapturingResponseBody = false;
++  if (NS_SUCCEEDED(rv)) {
++    mCapturedResponseFile = nullptr;
++  } else {
++    CleanupCapturedResponseBody();
++  }
++
++  return rv;
 +}
 +
 +NS_IMETHODIMP ExternalResponseListener::OnDataAvailable(
 +    nsIRequest* aRequest, nsIInputStream* aInputStream, uint64_t aOffset,
 +    uint32_t aCount) {
++  if (mIsCapturingResponseBody && mCapturedResponseStream) {
++    uint32_t written = 0;
++    return aInputStream->ReadSegments(
++        NS_CopySegmentToStream, mCapturedResponseStream, aCount, &written);
++  }
++
 +  uint32_t discarded = 0;
 +  return aInputStream->ReadSegments(NS_DiscardSegment, nullptr, aCount,
 +                                    &discarded);
@@ -228,6 +277,57 @@ index 000000000000..c3e81f7ab349
 +    nsIAsyncVerifyRedirectCallback* aCallback) {
 +  aCallback->OnRedirectVerifyCallback(NS_OK);
 +  return NS_OK;
++}
++
++nsresult ExternalResponseListener::BeginCapturingResponseBody() {
++  nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR,
++                                       getter_AddRefs(mCapturedResponseFile));
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  mCapturedResponseFile->AppendNative("reynard-download.tmp"_ns);
++  rv = mCapturedResponseFile->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0600);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  rv = NS_NewLocalFileOutputStream(getter_AddRefs(mCapturedResponseStream),
++                                   mCapturedResponseFile);
++  NS_ENSURE_SUCCESS(rv, rv);
++
++  mIsCapturingResponseBody = true;
++  return NS_OK;
++}
++
++void ExternalResponseListener::CleanupCapturedResponseBody() {
++  if (mCapturedResponseStream) {
++    mCapturedResponseStream->Close();
++    mCapturedResponseStream = nullptr;
++  }
++
++  if (mCapturedResponseFile) {
++    nsresult rv = mCapturedResponseFile->Remove(false);
++    if (NS_FAILED(rv)) {
++      NS_WARNING("Failed to remove captured external response file");
++    }
++    mCapturedResponseFile = nullptr;
++  }
++}
++
++bool ExternalResponseListener::ShouldCaptureResponseBody(nsIChannel* aChannel) {
++  nsCOMPtr<nsIURI> uri;
++  if (NS_FAILED(aChannel->GetURI(getter_AddRefs(uri))) || !uri) {
++    return false;
++  }
++
++  bool isHttp = false;
++  if (NS_SUCCEEDED(uri->SchemeIs("http", &isHttp)) && isHttp) {
++    return false;
++  }
++
++  bool isHttps = false;
++  if (NS_SUCCEEDED(uri->SchemeIs("https", &isHttps)) && isHttps) {
++    return false;
++  }
++
++  return true;
 +}
 +
 +nsresult ExternalResponseListener::DispatchExternalResponse(
@@ -264,6 +364,15 @@ index 000000000000..c3e81f7ab349
 +
 +  NS_ENSURE_TRUE(DefineUTF8StringProperty(cx, payload, "url", uriSpec),
 +                 NS_ERROR_FAILURE);
++
++  if (mCapturedResponseFile) {
++    nsAutoString localFilePath;
++    rv = mCapturedResponseFile->GetPath(localFilePath);
++    NS_ENSURE_SUCCESS(rv, rv);
++    NS_ENSURE_TRUE(
++        DefineUTF16StringProperty(cx, payload, "localFilePath", localFilePath),
++        NS_ERROR_FAILURE);
++  }
 +
 +  nsString filename;
 +  if (NS_SUCCEEDED(aChannel->GetContentDispositionFilename(filename)) &&

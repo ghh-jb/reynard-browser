@@ -57,6 +57,12 @@ final class DownloadStore: NSObject {
         fileprivate let startHandler: () -> Void
     }
     
+    struct ImportedDownload {
+        let fileURL: URL
+        let mimeType: String?
+        let fileSize: Int64
+    }
+    
     private struct StorageURLs {
         let downloadsDirectoryURL: URL
         let appDataDirectoryURL: URL
@@ -175,6 +181,30 @@ final class DownloadStore: NSObject {
     }
     
     func prepareDownload(from response: ExternalResponseInfo) -> PendingDownload? {
+        if let localFilePath = response.localFilePath,
+           !localFilePath.isEmpty,
+           let sourceURL = URL(string: response.url) {
+            let fileURL = URL(fileURLWithPath: localFilePath)
+            return PendingDownload(
+                fileName: resolvedFileName(
+                    suggestedFileName: response.filename,
+                    sourceURL: sourceURL,
+                    mimeType: response.mimeType
+                ),
+                startHandler: { [weak self] in
+                    guard let self else {
+                        return
+                    }
+                    _ = self.importDownloadedFile(
+                        from: fileURL,
+                        sourceURL: sourceURL,
+                        suggestedFileName: response.filename,
+                        mimeType: response.mimeType
+                    )
+                }
+            )
+        }
+        
         guard let sourceURL = URL(string: response.url), isSupportedDownloadURL(sourceURL) else {
             return nil
         }
@@ -231,6 +261,49 @@ final class DownloadStore: NSObject {
     
     func startDownload(_ download: PendingDownload) {
         download.startHandler()
+    }
+    
+    func importDownloadedFile(
+        from sourceFileURL: URL,
+        sourceURL: URL,
+        suggestedFileName: String?,
+        mimeType: String?
+    ) -> ImportedDownload? {
+        stateQueue.sync {
+            prepareStorageLocked()
+            
+            let fileName = resolvedFileName(
+                suggestedFileName: suggestedFileName,
+                sourceURL: sourceURL,
+                mimeType: mimeType
+            )
+            let destinationURL = makeUniqueDestinationURLLocked(for: fileName)
+            
+            guard importFileLocked(from: sourceFileURL, to: destinationURL) else {
+                return nil
+            }
+            
+            let fileSize = resolvedFileSize(at: destinationURL) ?? 0
+            persistedDownloads.insert(
+                PersistedDownloadEntry(
+                    id: UUID(),
+                    fileName: destinationURL.lastPathComponent,
+                    relativePath: destinationURL.lastPathComponent,
+                    sourceURLString: sourceURL.absoluteString,
+                    originalURLString: nil,
+                    mimeType: mimeType,
+                    fileSize: fileSize,
+                    addedAt: Date()
+                ),
+                at: 0
+            )
+            savePersistedDownloadsLocked()
+            hasUnviewedCompletedDownloads = true
+            postDidStartDownload()
+            postDidChange()
+            
+            return ImportedDownload(fileURL: destinationURL, mimeType: mimeType, fileSize: fileSize)
+        }
     }
     
     func cancelDownload(id: UUID) {
@@ -496,6 +569,30 @@ final class DownloadStore: NSObject {
         }
         
         return scheme == "http" || scheme == "https"
+    }
+    
+    private func importFileLocked(from sourceURL: URL, to destinationURL: URL) -> Bool {
+        guard fileManager.fileExists(atPath: sourceURL.path) else {
+            return false
+        }
+        
+        do {
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                try fileManager.removeItem(at: destinationURL)
+            }
+            
+            do {
+                try fileManager.moveItem(at: sourceURL, to: destinationURL)
+            } catch {
+                try fileManager.copyItem(at: sourceURL, to: destinationURL)
+                try? fileManager.removeItem(at: sourceURL)
+            }
+            
+            return true
+        } catch {
+            try? fileManager.removeItem(at: destinationURL)
+            return false
+        }
     }
     
     private func completeDownload(taskIdentifier: Int, temporaryLocation: URL) {

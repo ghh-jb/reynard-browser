@@ -17,6 +17,8 @@ public class GeckoSession {
     let dispatcher: GeckoEventDispatcherWrapper = GeckoEventDispatcherWrapper()
     var window: GeckoViewWindow?
     var id: String?
+    public var isAddonPopup = false
+    lazy var addonSessionListener = AddonSessionListener(session: self)
     public var userAgentOverride: String?
     
     public func updateUserAgent(_ ua: String?) {
@@ -76,6 +78,8 @@ public class GeckoSession {
                 dispatcher.addListener(type: type, listener: sessionHandler)
             }
         }
+        
+        AddonsRuntimeController.shared.register(sessionListener: addonSessionListener)
     }
     
     public func open(windowId: String? = nil) {
@@ -96,7 +100,7 @@ public class GeckoSession {
             "suspendMediaWhenInactive": false,
             "allowJavascript": true,
             "fullAccessibilityTree": false,
-            "isPopup": false,
+            "isExtensionPopup": isAddonPopup,
             "sessionContextId": nil,
             "unsafeSessionContextId": nil,
         ]

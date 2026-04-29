@@ -31,6 +31,7 @@ public enum SlowScriptResponse {
 
 public struct ExternalResponseInfo {
     public let url: String
+    public let localFilePath: String?
     public let filename: String?
     public let mimeType: String?
     public let contentLength: Int64?
@@ -210,6 +211,7 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler {
                 session: session,
                 response: ExternalResponseInfo(
                     url: message?["url"] as? String ?? "",
+                    localFilePath: message?["localFilePath"] as? String,
                     filename: message?["filename"] as? String,
                     mimeType: message?["mimeType"] as? String,
                     contentLength: parseInt64(message?["contentLength"]),

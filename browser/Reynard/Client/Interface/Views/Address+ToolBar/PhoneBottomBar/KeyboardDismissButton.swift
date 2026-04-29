@@ -24,9 +24,9 @@ final class KeyboardDismissButton {
         button.layer.shadowRadius = 12
         button.layer.shadowOffset = CGSize(width: 0, height: 4)
         button.layer.masksToBounds = false
-        button.setImage(UIImage(systemName: "keyboard.chevron.compact.down"), for: .normal)
+        button.setImage(UIImage(systemName: "xmark"), for: .normal)
         button.setPreferredSymbolConfiguration(
-            UIImage.SymbolConfiguration(pointSize: 17, weight: .regular),
+            UIImage.SymbolConfiguration(pointSize: 20, weight: .regular),
             forImageIn: .normal
         )
         return button

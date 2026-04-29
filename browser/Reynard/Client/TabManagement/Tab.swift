@@ -20,7 +20,6 @@ final class Tab {
     var canGoBack = false
     var canGoForward = false
     var isLoading = false
-    var didResolveURL = false
     var progress: Float = 0
     var thumbnail: UIImage?
     var nowPlayingController: NowPlayingController?
@@ -28,7 +27,7 @@ final class Tab {
     init(
         id: UUID = UUID(),
         session: GeckoSession,
-        title: String = "Homepage",
+        title: String = "",
         url: String? = nil,
         favicon: UIImage? = nil,
         thumbnail: UIImage? = nil

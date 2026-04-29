@@ -308,7 +308,6 @@ final class TabManagerImplementation: NSObject, TabManager {
         }
         
         tab.suppressInitialNavigation = false
-        tab.didResolveURL = false
         tab.pendingDisplayText = trimmedValue
         
         let fullRange = NSRange(location: 0, length: (trimmedValue as NSString).length)
@@ -366,7 +365,7 @@ extension TabManagerImplementation: ContentDelegate {
             return
         }
         
-        tabs[index].title = title.isEmpty ? "Homepage" : title
+        tabs[index].title = title
         if let url = remoteURL(from: tabs[index].url) {
             historyStore.updateTitle(for: url, title: title)
         }
@@ -476,7 +475,6 @@ extension TabManagerImplementation: NavigationDelegate {
         
         tabs[index].url = url
         tabs[index].pendingDisplayText = nil
-        tabs[index].didResolveURL = false
         tabs[index].favicon = nil
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
         scheduleFaviconUpdate(forTabAt: index)
@@ -486,8 +484,7 @@ extension TabManagerImplementation: NavigationDelegate {
             return
         }
         
-        let title = tabs[index].title == "Homepage" ? "" : tabs[index].title
-        historyStore.recordVisit(url: url, title: title)
+        historyStore.recordVisit(url: url, title: tabs[index].title)
     }
     
     func onCanGoBack(session: GeckoSession, canGoBack: Bool) {
@@ -559,7 +556,6 @@ extension TabManagerImplementation: ProgressDelegate {
         }
         
         tabs[index].isLoading = true
-        tabs[index].didResolveURL = false
         tabs[index].progress = 0
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .loading)
     }
@@ -570,7 +566,6 @@ extension TabManagerImplementation: ProgressDelegate {
         }
         
         tabs[index].isLoading = false
-        tabs[index].didResolveURL = success
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .loading)
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .thumbnail)
     }

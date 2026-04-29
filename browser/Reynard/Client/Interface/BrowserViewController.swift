@@ -455,8 +455,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         let pendingDisplayText = selectedTab?.pendingDisplayText?.trimmingCharacters(in: .whitespacesAndNewlines)
         let hasPendingDisplayText = !(pendingDisplayText?.isEmpty ?? true)
         let selectedURL = selectedTab?.url
-        let displayedSearchQuery = hasPendingDisplayText ? nil : searchQuery(forSearchURL: selectedURL)
-        let displayedText = hasPendingDisplayText ? pendingDisplayText : (displayedSearchQuery ?? selectedURL)
+        let displayedText = hasPendingDisplayText ? pendingDisplayText : selectedURL
         if !browserUI.addressBar.isEditingText {
             browserUI.addressBar.setText(
                 displayedText,

@@ -345,17 +345,35 @@ extension AddressBar: UITextFieldDelegate {
         updateDisplayState()
         delegate?.addressBarDidBeginEditing(self)
         
-        guard let value = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else {
+        guard let value = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.isEmpty else {
             return
         }
         
         DispatchQueue.main.async {
-            guard textField.isFirstResponder else {
-                return
+            guard textField.isFirstResponder,
+                  let text = textField.text,
+                  !text.isEmpty else { return }
+            
+            let start = textField.beginningOfDocument
+            if let caretRange = textField.textRange(from: start, to: start) {
+                textField.selectedTextRange = caretRange
             }
-            textField.selectAll(nil)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                guard textField.isFirstResponder,
+                      let text = textField.text,
+                      !text.isEmpty else { return }
+                
+                let start = textField.beginningOfDocument
+                let end = textField.endOfDocument
+                if let range = textField.textRange(from: start, to: end) {
+                    textField.selectedTextRange = range
+                }
+            }
         }
     }
+    
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         currentText = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines)

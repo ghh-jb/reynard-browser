@@ -140,10 +140,16 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             applyUpdateMenuButtonBadge()
         }
         
-        tabManager.createInitialTab()
-        tabManager.selectedTab?.session.setAddonTabActive(true)
-        addonsController.start()
-        refreshAddressBar()
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            
+            await self.addonsController.start()
+            self.tabManager.createInitialTab()
+            self.tabManager.selectedTab?.session.setAddonTabActive(true)
+            self.refreshAddressBar()
+        }
         browserLayout.applyChromeLayout(animated: false)
     }
     

@@ -28,12 +28,10 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         iconCache.countLimit = 64
     }
     
-    func start() {
+    func start() async {
         AddonsRuntimeController.shared.delegate = self
-        Task { @MainActor in
-            _ = try? await AddonsRuntimeController.shared.list()
-            self.controller?.refreshAddressBar()
-        }
+        _ = try? await AddonsRuntimeController.shared.list()
+        controller?.refreshAddressBar()
     }
     
     func handleExternalResponse(_ response: ExternalResponseInfo) -> Bool {

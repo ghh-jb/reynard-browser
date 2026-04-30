@@ -11,6 +11,7 @@ final class AddressBarButton: UIButton {
     var hitArea: CGFloat = 2
     private var isMenuVisible = false
     private var pendingMenuAfterDismissal: UIMenu?
+    private var pendingMenuDismissalHandlers: [() -> Void] = []
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -45,6 +46,15 @@ final class AddressBarButton: UIButton {
         }
         pendingMenuAfterDismissal = nil
         self.menu = menu
+    }
+    
+    func performAfterMenuDismissal(_ action: @escaping () -> Void) {
+        guard isMenuVisible else {
+            action()
+            return
+        }
+        
+        pendingMenuDismissalHandlers.append(action)
     }
     
     private func replacementMenu(for visibleMenu: UIMenu, in rootMenu: UIMenu) -> UIMenu? {
@@ -85,10 +95,27 @@ final class AddressBarButton: UIButton {
     ) {
         super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
         isMenuVisible = false
-        if let pendingMenuAfterDismissal {
-            menu = pendingMenuAfterDismissal
-            self.pendingMenuAfterDismissal = nil
+        let finalizeDismissal = { [weak self] in
+            guard let self else {
+                return
+            }
+            
+            if let pendingMenuAfterDismissal {
+                self.menu = pendingMenuAfterDismissal
+                self.pendingMenuAfterDismissal = nil
+            }
+            
+            let handlers = self.pendingMenuDismissalHandlers
+            self.pendingMenuDismissalHandlers.removeAll()
+            handlers.forEach { $0() }
         }
+        
+        if let animator {
+            animator.addCompletion(finalizeDismissal)
+            return
+        }
+        
+        finalizeDismissal()
     }
     
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {

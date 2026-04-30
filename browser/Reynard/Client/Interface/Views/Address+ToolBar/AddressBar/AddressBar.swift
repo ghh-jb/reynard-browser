@@ -167,6 +167,10 @@ final class AddressBar: UIView {
         updateDisplayState()
     }
     
+    func performAfterMenuDismissal(_ action: @escaping () -> Void) {
+        leadingButton.performAfterMenuDismissal(action)
+    }
+    
     var isEditingText: Bool {
         urlField.isFirstResponder
     }

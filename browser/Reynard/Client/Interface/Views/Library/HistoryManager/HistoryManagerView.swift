@@ -54,8 +54,8 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
     private let emptyStateLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "No history yet"
-        label.font = .systemFont(ofSize: 18, weight: .semibold)
+        label.text = "Your browsing history appears here"
+        label.font = .systemFont(ofSize: 16, weight: .medium)
         label.textColor = .secondaryLabel
         label.textAlignment = .center
         return label
@@ -378,7 +378,7 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
     
     private func updateBackgroundView() {
         let hasHistory = !sections.isEmpty
-        emptyStateLabel.text = currentSearchTerm.isEmpty ? "No history yet" : "No matching history"
+        emptyStateLabel.text = currentSearchTerm.isEmpty ? "Your browsing history appears here" : "No matching history"
         tableView.backgroundView = hasHistory ? nil : emptyStateView
     }
     
@@ -547,12 +547,33 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
         return cell
     }
     
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         guard sections.indices.contains(section) else {
             return nil
         }
         
-        return sections[section].title
+        let container = UIView()
+        container.backgroundColor = .systemGroupedBackground
+        
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 15, weight: .semibold)
+        label.textColor = .secondaryLabel
+        label.text = sections[section].title
+        
+        container.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 24),
+            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            label.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -6),
+            label.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
+        ])
+        
+        return container
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        34
     }
     
     func tableView(

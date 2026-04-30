@@ -20,15 +20,6 @@ final class DownloadItemCell: UITableViewCell {
         return formatter
     }()
     
-    private let iconContainerView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .secondarySystemGroupedBackground
-        view.layer.cornerRadius = 12
-        view.layer.cornerCurve = .continuous
-        return view
-    }()
-    
     private let iconView: UIImageView = {
         let view = UIImageView()
         view.translatesAutoresizingMaskIntoConstraints = false
@@ -40,7 +31,7 @@ final class DownloadItemCell: UITableViewCell {
     private let fileNameLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 16, weight: .regular)
+        label.font = .preferredFont(forTextStyle: .body)
         label.textColor = .label
         label.numberOfLines = 1
         return label
@@ -49,7 +40,7 @@ final class DownloadItemCell: UITableViewCell {
     private let detailsLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 13, weight: .regular)
+        label.font = .preferredFont(forTextStyle: .subheadline)
         label.textColor = .secondaryLabel
         label.numberOfLines = 2
         return label
@@ -71,42 +62,50 @@ final class DownloadItemCell: UITableViewCell {
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         selectionStyle = .none
-        backgroundColor = .clear
         
         let labelsStack = UIStackView(arrangedSubviews: [fileNameLabel, detailsLabel, progressView])
         labelsStack.translatesAutoresizingMaskIntoConstraints = false
         labelsStack.axis = .vertical
         labelsStack.alignment = .fill
-        labelsStack.spacing = 1
-        labelsStack.setCustomSpacing(4, after: detailsLabel)
+        labelsStack.spacing = 4
         
-        contentView.addSubview(iconContainerView)
-        iconContainerView.addSubview(iconView)
+        contentView.addSubview(iconView)
         contentView.addSubview(labelsStack)
         
         NSLayoutConstraint.activate([
-            iconContainerView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-            iconContainerView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            iconContainerView.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 12),
-            iconContainerView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -12),
-            iconContainerView.widthAnchor.constraint(equalToConstant: 56),
-            iconContainerView.heightAnchor.constraint(equalToConstant: 56),
+            iconView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+            iconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            iconView.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 8),
+            iconView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -8),
+            iconView.widthAnchor.constraint(equalToConstant: 44),
+            iconView.heightAnchor.constraint(equalToConstant: 44),
             
-            iconView.centerXAnchor.constraint(equalTo: iconContainerView.centerXAnchor),
-            iconView.centerYAnchor.constraint(equalTo: iconContainerView.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 52),
-            iconView.heightAnchor.constraint(equalToConstant: 52),
-            
-            labelsStack.leadingAnchor.constraint(equalTo: iconContainerView.trailingAnchor, constant: 12),
+            labelsStack.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 13),
             labelsStack.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
             labelsStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            labelsStack.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 12),
-            labelsStack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -12),
+            labelsStack.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 13),
+            labelsStack.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -13),
         ])
+        
+        separatorInset.left = 73
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        contentView.layoutIfNeeded()
+        let guideFrameInContent = contentView.layoutMarginsGuide.layoutFrame
+        let guideFrameInCell = convert(guideFrameInContent, from: contentView)
+        let rightInset = bounds.width - guideFrameInCell.maxX
+        separatorInset = UIEdgeInsets(
+            top: separatorInset.top,
+            left: separatorInset.left,
+            bottom: separatorInset.bottom,
+            right: rightInset
+        )
     }
     
     override func prepareForReuse() {
@@ -117,7 +116,6 @@ final class DownloadItemCell: UITableViewCell {
         iconView.image = nil
         iconView.transform = .identity
         iconView.tintColor = .label
-        iconContainerView.backgroundColor = .secondarySystemGroupedBackground
     }
     
     func apply(item: DownloadItemSnapshot) {
@@ -160,7 +158,6 @@ final class DownloadItemCell: UITableViewCell {
             iconView.image = placeholderIcon
             iconView.transform = .identity
             iconView.tintColor = placeholderIcon == nil ? .label : nil
-            iconContainerView.backgroundColor = placeholderIcon == nil ? .secondarySystemGroupedBackground : .clear
             
         case .completed:
             representedItemID = item.id
@@ -170,7 +167,6 @@ final class DownloadItemCell: UITableViewCell {
             progressView.progress = 0
             iconView.transform = .identity
             iconView.tintColor = nil
-            iconContainerView.backgroundColor = .clear
             representedFileURL = item.fileURL
             iconView.image = item.fileURL.flatMap { Self.iconProvider.cachedIcon(for: $0) } ?? Self.iconProvider.genericPlaceholderIcon()
             

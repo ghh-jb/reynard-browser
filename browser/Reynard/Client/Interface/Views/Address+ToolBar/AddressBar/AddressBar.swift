@@ -276,18 +276,18 @@ final class AddressBar: UIView {
             if shouldShowPlaceholderIcon {
                 leadingButton.tintColor = .secondaryLabel
                 leadingButton.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
-                leadingButton.menu = nil
+                leadingButton.setMenuPreservingPresentation(nil)
                 leadingButton.isUserInteractionEnabled = false
             } else {
                 leadingButton.tintColor = shouldShowCommittedIcon ? .label : .secondaryLabel
                 leadingButton.setImage(UIImage(systemName: "list.bullet.below.rectangle"), for: .normal)
-                leadingButton.menu = shouldShowCommittedIcon ? addonsMenu : nil
+                leadingButton.setMenuPreservingPresentation(shouldShowCommittedIcon ? addonsMenu : nil)
                 leadingButton.isUserInteractionEnabled = shouldShowCommittedIcon && addonsMenu != nil
             }
         } else {
             leadingButton.isHidden = true
             leadingButton.setImage(nil, for: .normal)
-            leadingButton.menu = nil
+            leadingButton.setMenuPreservingPresentation(nil)
             leadingButton.isUserInteractionEnabled = false
         }
         
@@ -300,14 +300,23 @@ final class AddressBar: UIView {
             trailingButton.isUserInteractionEnabled = false
         }
         
-        urlFieldLeadingToIconConstraint.isActive = shouldShowLeadingButton
-        urlFieldLeadingToBarConstraint.isActive = !shouldShowLeadingButton
-        urlFieldTrailingToButtonConstraint.isActive = shouldShowTrailingButton
-        urlFieldTrailingToBarConstraint.isActive = !shouldShowTrailingButton
-        displayLabelLeadingToIconConstraint.isActive = shouldShowLeadingButton
-        displayLabelLeadingToBarConstraint.isActive = !shouldShowLeadingButton
-        displayLabelTrailingToButtonConstraint.isActive = shouldShowTrailingButton
-        displayLabelTrailingToBarConstraint.isActive = !shouldShowTrailingButton
+        NSLayoutConstraint.deactivate([
+            urlFieldLeadingToIconConstraint,
+            urlFieldLeadingToBarConstraint,
+            urlFieldTrailingToButtonConstraint,
+            urlFieldTrailingToBarConstraint,
+            displayLabelLeadingToIconConstraint,
+            displayLabelLeadingToBarConstraint,
+            displayLabelTrailingToButtonConstraint,
+            displayLabelTrailingToBarConstraint,
+        ])
+        
+        NSLayoutConstraint.activate([
+            shouldShowLeadingButton ? urlFieldLeadingToIconConstraint : urlFieldLeadingToBarConstraint,
+            shouldShowTrailingButton ? urlFieldTrailingToButtonConstraint : urlFieldTrailingToBarConstraint,
+            shouldShowLeadingButton ? displayLabelLeadingToIconConstraint : displayLabelLeadingToBarConstraint,
+            shouldShowTrailingButton ? displayLabelTrailingToButtonConstraint : displayLabelTrailingToBarConstraint,
+        ])
     }
     
     private func displayAttributedText() -> NSAttributedString? {

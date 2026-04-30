@@ -8,6 +8,9 @@
 import UIKit
 
 enum AddressBarMenu {
+    private static let rootIdentifier = UIMenu.Identifier("me.minh-ton.reynard.address-bar-menu")
+    private static let manageAddonsIdentifier = UIMenu.Identifier("me.minh-ton.reynard.address-bar-menu.manage-addons")
+    
     static func makeMenu(addonsController: AddonsController) -> UIMenu? {
         let addBookmarkAction = UIAction(
             title: "Add Bookmark",
@@ -38,9 +41,16 @@ enum AddressBarMenu {
         let manageAddonsMenu = UIMenu(
             title: "Manage Add-ons",
             image: UIImage(systemName: "puzzlepiece.extension"),
+            identifier: manageAddonsIdentifier,
             children: manageAddonsChildren
         )
         
-        return UIMenu(children: [addBookmarkAction, manageAddonsMenu])
+        return UIMenu(
+            title: "",
+            image: nil,
+            identifier: rootIdentifier,
+            options: [],
+            children: [addBookmarkAction, manageAddonsMenu]
+        )
     }
 }

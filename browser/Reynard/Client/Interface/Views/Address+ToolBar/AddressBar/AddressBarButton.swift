@@ -9,6 +9,8 @@ import UIKit
 
 final class AddressBarButton: UIButton {
     var hitArea: CGFloat = 2
+    private var isMenuVisible = false
+    private var pendingMenuAfterDismissal: UIMenu?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -26,6 +28,67 @@ final class AddressBarButton: UIButton {
         contentVerticalAlignment = .fill
         contentEdgeInsets = .zero
         setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .regular), forImageIn: .normal)
+    }
+    
+    func setMenuPreservingPresentation(_ menu: UIMenu?) {
+        if isMenuVisible,
+           let menu,
+           let contextMenuInteraction {
+            pendingMenuAfterDismissal = menu
+            contextMenuInteraction.updateVisibleMenu { visibleMenu in
+                if let replacementMenu = self.replacementMenu(for: visibleMenu, in: menu) {
+                    return replacementMenu
+                }
+                return menu
+            }
+            return
+        }
+        pendingMenuAfterDismissal = nil
+        self.menu = menu
+    }
+    
+    private func replacementMenu(for visibleMenu: UIMenu, in rootMenu: UIMenu) -> UIMenu? {
+        if visibleMenu.identifier == rootMenu.identifier {
+            return rootMenu
+        }
+        
+        for child in rootMenu.children {
+            guard let childMenu = child as? UIMenu else {
+                continue
+            }
+            
+            if childMenu.identifier == visibleMenu.identifier {
+                return childMenu
+            }
+            
+            if let nestedReplacement = replacementMenu(for: visibleMenu, in: childMenu) {
+                return nestedReplacement
+            }
+        }
+        
+        return nil
+    }
+    
+    override func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        willDisplayMenuFor configuration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimating?
+    ) {
+        super.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: animator)
+        isMenuVisible = true
+    }
+    
+    override func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        willEndFor configuration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimating?
+    ) {
+        super.contextMenuInteraction(interaction, willEndFor: configuration, animator: animator)
+        isMenuVisible = false
+        if let pendingMenuAfterDismissal {
+            menu = pendingMenuAfterDismissal
+            self.pendingMenuAfterDismissal = nil
+        }
     }
     
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {

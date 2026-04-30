@@ -10,6 +10,24 @@ import UIKit
 final class AddressBarButton: UIButton {
     var hitArea: CGFloat = 2
     
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        configureAppearance()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configureAppearance()
+    }
+    
+    private func configureAppearance() {
+        imageView?.contentMode = .scaleAspectFit
+        contentHorizontalAlignment = .fill
+        contentVerticalAlignment = .fill
+        contentEdgeInsets = .zero
+        setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .regular), forImageIn: .normal)
+    }
+    
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
         guard isUserInteractionEnabled, !isHidden, alpha > 0 else {
             return false

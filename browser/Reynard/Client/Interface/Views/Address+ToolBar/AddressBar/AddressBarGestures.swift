@@ -142,12 +142,18 @@ final class AddressBarGestures: NSObject {
         container.layer.shadowOffset = CGSize(width: 0, height: 2)
         container.clipsToBounds = false
         
-        let iconView = AddressBarButton(type: .system)
-        iconView.translatesAutoresizingMaskIntoConstraints = false
-        iconView.tintColor = tab.url != nil ? .label : .secondaryLabel
-        iconView.showsMenuAsPrimaryAction = true
-        iconView.isUserInteractionEnabled = false
-        iconView.setImage(UIImage(systemName: tab.url != nil ? "list.bullet.below.rectangle" : "magnifyingglass"), for: .normal)
+        let leadingButton = AddressBarButton(type: .system)
+        leadingButton.translatesAutoresizingMaskIntoConstraints = false
+        leadingButton.tintColor = tab.url != nil ? .label : .secondaryLabel
+        leadingButton.showsMenuAsPrimaryAction = true
+        leadingButton.isUserInteractionEnabled = false
+        leadingButton.setImage(UIImage(systemName: tab.url != nil ? "list.bullet.below.rectangle" : "magnifyingglass"), for: .normal)
+        
+        let trailingButton = AddressBarButton(type: .system)
+        trailingButton.translatesAutoresizingMaskIntoConstraints = false
+        trailingButton.tintColor = .label
+        trailingButton.isUserInteractionEnabled = false
+        trailingButton.setImage(UIImage(systemName: tab.isLoading ? "xmark" : "arrow.clockwise"), for: .normal)
         
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -158,17 +164,23 @@ final class AddressBarGestures: NSObject {
         label.lineBreakMode = .byTruncatingTail
         label.attributedText = previewText(for: tab)
         
-        container.addSubview(iconView)
+        container.addSubview(leadingButton)
         container.addSubview(label)
+        container.addSubview(trailingButton)
         
         NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
-            iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 18),
-            iconView.heightAnchor.constraint(equalToConstant: 18),
+            leadingButton.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+            leadingButton.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            leadingButton.widthAnchor.constraint(equalToConstant: 18),
+            leadingButton.heightAnchor.constraint(equalToConstant: 18),
             
-            label.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 8),
-            label.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            trailingButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            trailingButton.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            trailingButton.widthAnchor.constraint(equalToConstant: 18),
+            trailingButton.heightAnchor.constraint(equalToConstant: 18),
+            
+            label.leadingAnchor.constraint(equalTo: leadingButton.trailingAnchor, constant: 8),
+            label.trailingAnchor.constraint(equalTo: trailingButton.leadingAnchor, constant: -8),
             label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
         ])
         

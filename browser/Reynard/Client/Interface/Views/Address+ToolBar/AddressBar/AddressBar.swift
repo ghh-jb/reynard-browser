@@ -11,6 +11,7 @@ protocol AddressBarDelegate: AnyObject {
     func addressBarDidSubmit(_ searchTerm: String)
     func addressBarDidBeginEditing(_ addressBar: AddressBar)
     func addressBarDidEndEditing(_ addressBar: AddressBar)
+    func addressBarDidTapTrailingButton(_ addressBar: AddressBar)
 }
 
 final class AddressBar: UIView {
@@ -23,11 +24,15 @@ final class AddressBar: UIView {
     private var currentLocationText: String?
     private var currentLocationTitle: String?
     private var currentTextIsCommittedLocation = false
+    private var isLoading = false
     private var addonsMenu: UIMenu?
     private var urlFieldLeadingToIconConstraint: NSLayoutConstraint!
     private var urlFieldLeadingToBarConstraint: NSLayoutConstraint!
+    private var urlFieldTrailingToButtonConstraint: NSLayoutConstraint!
+    private var urlFieldTrailingToBarConstraint: NSLayoutConstraint!
     private var displayLabelLeadingToIconConstraint: NSLayoutConstraint!
     private var displayLabelLeadingToBarConstraint: NSLayoutConstraint!
+    private var displayLabelTrailingToButtonConstraint: NSLayoutConstraint!
     private var displayLabelTrailingToBarConstraint: NSLayoutConstraint!
     
     private let backgroundFillView: UIView = {
@@ -47,6 +52,15 @@ final class AddressBar: UIView {
         button.translatesAutoresizingMaskIntoConstraints = false
         button.tintColor = .secondaryLabel
         button.showsMenuAsPrimaryAction = true
+        button.isUserInteractionEnabled = false
+        return button
+    }()
+    
+    private let trailingButton: AddressBarButton = {
+        let button = AddressBarButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = .label
+        button.isHidden = true
         button.isUserInteractionEnabled = false
         return button
     }()
@@ -149,6 +163,8 @@ final class AddressBar: UIView {
     func setLoadingProgress(_ progress: Float, isLoading: Bool) {
         progressView.progress = progress
         progressView.isHidden = !isLoading
+        self.isLoading = isLoading
+        updateDisplayState()
     }
     
     var isEditingText: Bool {
@@ -182,6 +198,7 @@ final class AddressBar: UIView {
         
         addSubview(backgroundFillView)
         backgroundFillView.addSubview(leadingButton)
+        backgroundFillView.addSubview(trailingButton)
         backgroundFillView.addSubview(urlField)
         backgroundFillView.addSubview(displayLabel)
         backgroundFillView.addSubview(progressView)
@@ -197,9 +214,13 @@ final class AddressBar: UIView {
             leadingButton.widthAnchor.constraint(equalToConstant: 18),
             leadingButton.heightAnchor.constraint(equalToConstant: 18),
             
+            trailingButton.trailingAnchor.constraint(equalTo: backgroundFillView.trailingAnchor, constant: -12),
+            trailingButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            trailingButton.widthAnchor.constraint(equalToConstant: 18),
+            trailingButton.heightAnchor.constraint(equalToConstant: 18),
+            
             urlField.topAnchor.constraint(equalTo: backgroundFillView.topAnchor),
             urlField.bottomAnchor.constraint(equalTo: backgroundFillView.bottomAnchor),
-            urlField.trailingAnchor.constraint(equalTo: backgroundFillView.trailingAnchor, constant: -12),
             
             displayLabel.topAnchor.constraint(equalTo: backgroundFillView.topAnchor),
             displayLabel.bottomAnchor.constraint(equalTo: backgroundFillView.bottomAnchor),
@@ -212,12 +233,18 @@ final class AddressBar: UIView {
         
         urlFieldLeadingToIconConstraint = urlField.leadingAnchor.constraint(equalTo: leadingButton.trailingAnchor, constant: 8)
         urlFieldLeadingToBarConstraint = urlField.leadingAnchor.constraint(equalTo: backgroundFillView.leadingAnchor, constant: 12)
+        urlFieldTrailingToButtonConstraint = urlField.trailingAnchor.constraint(equalTo: trailingButton.leadingAnchor, constant: -8)
+        urlFieldTrailingToBarConstraint = urlField.trailingAnchor.constraint(equalTo: backgroundFillView.trailingAnchor, constant: -12)
         displayLabelLeadingToIconConstraint = displayLabel.leadingAnchor.constraint(equalTo: leadingButton.trailingAnchor, constant: 8)
         displayLabelLeadingToBarConstraint = displayLabel.leadingAnchor.constraint(equalTo: backgroundFillView.leadingAnchor, constant: 12)
+        displayLabelTrailingToButtonConstraint = displayLabel.trailingAnchor.constraint(equalTo: trailingButton.leadingAnchor, constant: -8)
         displayLabelTrailingToBarConstraint = displayLabel.trailingAnchor.constraint(equalTo: backgroundFillView.trailingAnchor, constant: -12)
         urlFieldLeadingToBarConstraint.isActive = true
+        urlFieldTrailingToBarConstraint.isActive = true
         displayLabelLeadingToBarConstraint.isActive = true
         displayLabelTrailingToBarConstraint.isActive = true
+        
+        trailingButton.addTarget(self, action: #selector(handleTrailingButtonTap), for: .touchUpInside)
         
         updateDisplayState()
     }
@@ -229,7 +256,8 @@ final class AddressBar: UIView {
         let isShowingPlaceholder = isEditing ? !hasVisibleTypedText : !hasText
         let shouldShowCommittedIcon = currentTextIsCommittedLocation && !isEditing
         let shouldShowPlaceholderIcon = showsSearchIconWhenPlaceholder && !isEditing && isShowingPlaceholder
-        let shouldShowLeadingIcon = shouldShowCommittedIcon || shouldShowPlaceholderIcon
+        let shouldShowTrailingButton = !isEditing && (hasText || isLoading)
+        let shouldShowLeadingButton = !isEditing
         let displayText = displayAttributedText()
         
         if isEditing {
@@ -243,26 +271,43 @@ final class AddressBar: UIView {
             urlField.textAlignment = .left
         }
         
-        if shouldShowLeadingIcon {
+        if shouldShowLeadingButton {
             leadingButton.isHidden = false
-            leadingButton.tintColor = shouldShowCommittedIcon ? .label : .secondaryLabel
-            leadingButton.setImage(
-                UIImage(systemName: shouldShowCommittedIcon ? "list.bullet.below.rectangle" : "magnifyingglass"),
-                for: .normal
-            )
-            leadingButton.menu = shouldShowCommittedIcon ? addonsMenu : nil
-            leadingButton.isUserInteractionEnabled = shouldShowCommittedIcon && addonsMenu != nil
+            if shouldShowPlaceholderIcon {
+                leadingButton.tintColor = .secondaryLabel
+                leadingButton.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
+                leadingButton.menu = nil
+                leadingButton.isUserInteractionEnabled = false
+            } else {
+                leadingButton.tintColor = shouldShowCommittedIcon ? .label : .secondaryLabel
+                leadingButton.setImage(UIImage(systemName: "list.bullet.below.rectangle"), for: .normal)
+                leadingButton.menu = shouldShowCommittedIcon ? addonsMenu : nil
+                leadingButton.isUserInteractionEnabled = shouldShowCommittedIcon && addonsMenu != nil
+            }
         } else {
             leadingButton.isHidden = true
+            leadingButton.setImage(nil, for: .normal)
             leadingButton.menu = nil
             leadingButton.isUserInteractionEnabled = false
         }
         
-        urlFieldLeadingToIconConstraint.isActive = shouldShowLeadingIcon
-        urlFieldLeadingToBarConstraint.isActive = !shouldShowLeadingIcon
-        displayLabelLeadingToIconConstraint.isActive = shouldShowCommittedIcon
-        displayLabelLeadingToBarConstraint.isActive = !shouldShowCommittedIcon
-        displayLabelTrailingToBarConstraint.isActive = true
+        if shouldShowTrailingButton {
+            trailingButton.isHidden = false
+            trailingButton.setImage(UIImage(systemName: isLoading ? "xmark" : "arrow.clockwise"), for: .normal)
+            trailingButton.isUserInteractionEnabled = true
+        } else {
+            trailingButton.isHidden = true
+            trailingButton.isUserInteractionEnabled = false
+        }
+        
+        urlFieldLeadingToIconConstraint.isActive = shouldShowLeadingButton
+        urlFieldLeadingToBarConstraint.isActive = !shouldShowLeadingButton
+        urlFieldTrailingToButtonConstraint.isActive = shouldShowTrailingButton
+        urlFieldTrailingToBarConstraint.isActive = !shouldShowTrailingButton
+        displayLabelLeadingToIconConstraint.isActive = shouldShowLeadingButton
+        displayLabelLeadingToBarConstraint.isActive = !shouldShowLeadingButton
+        displayLabelTrailingToButtonConstraint.isActive = shouldShowTrailingButton
+        displayLabelTrailingToBarConstraint.isActive = !shouldShowTrailingButton
     }
     
     private func displayAttributedText() -> NSAttributedString? {
@@ -324,6 +369,11 @@ final class AddressBar: UIView {
         if urlField.isFirstResponder {
             updateDisplayState()
         }
+    }
+    
+    @objc
+    private func handleTrailingButtonTap() {
+        delegate?.addressBarDidTapTrailingButton(self)
     }
 }
 
@@ -388,6 +438,10 @@ extension AddressBar: UITextFieldDelegate {
 extension AddressBar: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         if touch.view?.isDescendant(of: leadingButton) == true {
+            return false
+        }
+        
+        if touch.view?.isDescendant(of: trailingButton) == true {
             return false
         }
         

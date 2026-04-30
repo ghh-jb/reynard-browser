@@ -464,6 +464,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
                 isCommittedLocation: !hasPendingDisplayText && selectedURL?.isEmpty == false
             )
         }
+        browserUI.addressBar.setLoadingProgress(selectedTab?.progress ?? 0, isLoading: selectedTab?.isLoading ?? false)
         addonsController.prepareVisibleAddonIcons()
         browserUI.addressBar.setAddonsMenu(AddressBarMenu.makeMenu(addonsController: addonsController))
     }
@@ -607,6 +608,19 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         if !browserUI.addressBar.isEditingText {
             setSearchFocused(false, animated: true)
         }
+    }
+    
+    func addressBarDidTapTrailingButton(_ addressBar: AddressBar) {
+        guard let selectedTab = tabManager.selectedTab else {
+            return
+        }
+        
+        if selectedTab.isLoading {
+            selectedTab.session.stop()
+            return
+        }
+        
+        selectedTab.session.reload()
     }
     
     private func presentNextDownloadConfirmationIfNeeded() {

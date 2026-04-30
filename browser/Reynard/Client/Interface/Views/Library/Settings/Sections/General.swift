@@ -77,7 +77,7 @@ final class AddonsSettingsViewController: SettingsTableViewController {
             cell.textLabel?.text = addon.metaData.name ?? addon.id
             cell.accessoryType = .disclosureIndicator
             cell.imageView?.image = Self.sharedIconCache.object(forKey: addon.id as NSString) ?? UIImage(systemName: "puzzlepiece.extension")
-            loadIconIfNeeded(for: addon, at: indexPath)
+            loadIconIfNeeded(for: addon)
             return cell
         case .more:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
@@ -94,14 +94,11 @@ final class AddonsSettingsViewController: SettingsTableViewController {
         
         switch Section(rawValue: indexPath.section) {
         case .installed:
-            guard !addons.isEmpty else {
-                return
-            }
-            guard addons.indices.contains(indexPath.row) else {
+            guard let addon = installedAddon(at: indexPath) else {
                 return
             }
             navigationController?.pushViewController(
-                AddonSettingsDetailViewController(addonID: addons[indexPath.row].id),
+                AddonSettingsDetailViewController(addonID: addon.id),
                 animated: true
             )
         case .more:
@@ -153,7 +150,16 @@ final class AddonsSettingsViewController: SettingsTableViewController {
         }
     }
     
-    private func loadIconIfNeeded(for addon: Addon, at indexPath: IndexPath) {
+    private func installedAddon(at indexPath: IndexPath) -> Addon? {
+        guard Section(rawValue: indexPath.section) == .installed,
+              !addons.isEmpty,
+              addons.indices.contains(indexPath.row) else {
+            return nil
+        }
+        return addons[indexPath.row]
+    }
+    
+    private func loadIconIfNeeded(for addon: Addon) {
         let cacheKey = addon.id as NSString
         guard Self.sharedIconCache.object(forKey: cacheKey) == nil,
               iconLoadingIDs.contains(addon.id) == false,
@@ -175,13 +181,17 @@ final class AddonsSettingsViewController: SettingsTableViewController {
                     Self.sharedIconCache.setObject(image, forKey: cacheKey)
                 }
                 
-                guard self.addons.indices.contains(indexPath.row),
-                      self.addons[indexPath.row].id == addon.id,
-                      self.tableView.indexPathsForVisibleRows?.contains(indexPath) == true else {
+                guard let currentRow = self.addons.firstIndex(where: { $0.id == addon.id }) else {
                     return
                 }
                 
-                self.tableView.reloadRows(at: [indexPath], with: .none)
+                let currentIndexPath = IndexPath(row: currentRow, section: Section.installed.rawValue)
+                guard let cell = self.tableView.cellForRow(at: currentIndexPath) else {
+                    return
+                }
+                
+                cell.imageView?.image = image ?? UIImage(systemName: "puzzlepiece.extension")
+                cell.setNeedsLayout()
             }
         }
     }

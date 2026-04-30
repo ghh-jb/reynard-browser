@@ -87,6 +87,10 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
     }
     
     func visibleActions(for addon: Addon, session: GeckoSession) -> [AddonAction] {
+        guard addon.metaData.enabled else {
+            return []
+        }
+        
         var actions: [AddonAction] = []
         
         if let action = mergedBrowserAction(for: addon, session: session),
@@ -121,6 +125,9 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
     
     func addonsController(_ controller: AddonsRuntimeController, didUpdate addon: Addon) {
         _ = addon
+        if addon.metaData.enabled == false || AddonsRuntimeController.shared.installedAddons.contains(where: { $0.id == addon.id }) == false {
+            clearCachedActions(for: addon.id)
+        }
         self.controller?.refreshAddressBar()
     }
     
@@ -228,6 +235,24 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
     
     private func currentSession() -> GeckoSession? {
         controller?.tabManager.selectedTab?.session
+    }
+    
+    private func clearCachedActions(for addonID: String) {
+        sessionBrowserActions = sessionBrowserActions.reduce(into: [:]) { result, entry in
+            var actions = entry.value
+            actions.removeValue(forKey: addonID)
+            if !actions.isEmpty {
+                result[entry.key] = actions
+            }
+        }
+        
+        sessionPageActions = sessionPageActions.reduce(into: [:]) { result, entry in
+            var actions = entry.value
+            actions.removeValue(forKey: addonID)
+            if !actions.isEmpty {
+                result[entry.key] = actions
+            }
+        }
     }
     
     private func mergedBrowserAction(for addon: Addon, session: GeckoSession) -> AddonAction? {
@@ -582,7 +607,7 @@ private final class AddonPopupViewController: UIViewController, ContentDelegate,
     }
 }
 
-private enum AddonIconLoader {
+enum AddonIconLoader {
     static func loadImage(from iconURLString: String?, targetSize: CGSize) -> UIImage? {
         guard let iconURLString,
               let url = URL(string: iconURLString),

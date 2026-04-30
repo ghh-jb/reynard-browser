@@ -24,6 +24,7 @@ final class SettingsRootViewController: SettingsTableViewController {
     enum Section: Int, CaseIterable {
         case updates
         case jit
+        case general
         case search
         case tab
         case compatibility
@@ -104,6 +105,7 @@ final class SettingsRootViewController: SettingsTableViewController {
         switch visibleSections[section] {
         case .updates: return 2
         case .jit: return 2
+        case .general: return 1
         case .search: return 1
         case .compatibility: return preferences.useAndroidUserAgent ? 1 : 2
         case .tab: return 2
@@ -136,6 +138,11 @@ final class SettingsRootViewController: SettingsTableViewController {
                     cell.isUserInteractionEnabled = false
                 }
             }
+            return cell
+        case .general:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = "Add-ons"
+            cell.accessoryType = .disclosureIndicator
             return cell
         case .search:
             let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
@@ -194,6 +201,8 @@ final class SettingsRootViewController: SettingsTableViewController {
             if indexPath.row == 1 { presentUpdateAlert() }
         case .jit where indexPath.row == 1:
             presentPairingFilePicker()
+        case .general:
+            navigationController?.pushViewController(AddonsSettingsViewController(), animated: true)
         case .search:
             navigationController?.pushViewController(SearchEngineSettingsViewController(), animated: true)
         case .compatibility:
@@ -221,6 +230,7 @@ final class SettingsRootViewController: SettingsTableViewController {
         switch visibleSections[section] {
         case .updates: return "Update Available"
         case .jit: return "JIT"
+        case .general: return "General"
         case .search: return "Search"
         case .tab: return "Tabs"
         case .compatibility: return "Compatibility"
@@ -231,7 +241,7 @@ final class SettingsRootViewController: SettingsTableViewController {
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
         guard visibleSections.indices.contains(section) else { return nil }
         switch visibleSections[section] {
-        case .updates, .jit, .search, .tab: return nil
+        case .updates, .jit, .general, .search, .tab: return nil
         case .compatibility:
             return preferences.useAndroidUserAgent
             ? "To maximize compatibility, the browser will use the Firefox for Android user agent for navigating the web. As a result, websites may identify your device as an Android device."

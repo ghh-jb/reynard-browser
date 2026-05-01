@@ -1,8 +1,8 @@
 diff --git a/mobile/shared/actors/GeckoViewContentChild.sys.mjs b/mobile/shared/actors/GeckoViewContentChild.sys.mjs
-index 9ca6e15bed3e..2437b06b5718 100644
+index 9ca6e15bed3e..2e7831c3da85 100644
 --- a/mobile/shared/actors/GeckoViewContentChild.sys.mjs
 +++ b/mobile/shared/actors/GeckoViewContentChild.sys.mjs
-@@ -67,6 +67,71 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
+@@ -67,6 +67,100 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
      return windowUtils.SCROLL_MODE_SMOOTH;
    }
  
@@ -20,9 +20,38 @@ index 9ca6e15bed3e..2437b06b5718 100644
 +    );
 +  }
 +
-+  getFocusedInputMetrics() {
++  getFocusedInputBounds(focusedElement, viewportHeight) {
++    let bounds = focusedElement.getBoundingClientRect();
++    let ancestor = focusedElement.parentElement;
++
++    while (ancestor) {
++      const ancestorBounds = ancestor.getBoundingClientRect();
++      if (
++        ancestorBounds.top <= bounds.top &&
++        ancestorBounds.bottom >= bounds.bottom &&
++        ancestorBounds.height > bounds.height + 8 &&
++        ancestorBounds.height <= viewportHeight * 0.4
++      ) {
++        bounds = ancestorBounds;
++      }
++      ancestor = ancestor.parentElement;
++    }
++
++    return bounds;
++  }
++
++  async getFocusedInputMetrics() {
++    const { contentWindow } = this;
++    if (contentWindow) {
++      await new contentWindow.Promise(resolve => {
++        contentWindow.requestAnimationFrame(() => {
++          contentWindow.requestAnimationFrame(resolve);
++        });
++      });
++    }
++
 +    const focusedElement =
-+      Services.focus.focusedElement || this.contentWindow?.document?.activeElement;
++      Services.focus.focusedElement || contentWindow?.document?.activeElement;
 +    if (!this.isFocusedEditableElement(focusedElement)) {
 +      return null;
 +    }
@@ -34,7 +63,7 @@ index 9ca6e15bed3e..2437b06b5718 100644
 +      return null;
 +    }
 +
-+    const bounds = focusedElement.getBoundingClientRect();
++    const bounds = this.getFocusedInputBounds(focusedElement, viewportHeight);
 +    return {
 +      bottomRatio: Math.max(0, Math.min(2, bounds.bottom / viewportHeight)),
 +    };
@@ -74,7 +103,7 @@ index 9ca6e15bed3e..2437b06b5718 100644
    orientation() {
      const currentOrientationType = this.contentWindow?.screen.orientation.type;
      if (!currentOrientationType) {
-@@ -184,6 +249,9 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
+@@ -184,6 +278,9 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
        case "ContainsFormData": {
          return this.containsFormData();
        }

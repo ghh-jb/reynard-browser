@@ -263,8 +263,7 @@ final class BrowserLayout {
         && controller.isSearchFocused
         && !controller.tabOverviewPresentation.isVisible
         let geckoPhoneOffset = resolvedGeckoPhoneVerticalOffset(
-            shouldShowGeckoBehindKeyboard: shouldShowGeckoBehindKeyboard,
-            isPad: pad
+            shouldShowGeckoBehindKeyboard: shouldShowGeckoBehindKeyboard
         )
         let isLandscape: Bool
         if let orientation = controller.view.window?.windowScene?.interfaceOrientation {
@@ -273,10 +272,13 @@ final class BrowserLayout {
             isLandscape = controller.view.bounds.width > controller.view.bounds.height
         }
         
-        ui.geckoTopPhoneConstraint.constant = -geckoPhoneOffset
-        ui.geckoBottomPhoneConstraint.constant = -geckoPhoneOffset
+        ui.geckoTopPhoneConstraint.constant = !pad ? -geckoPhoneOffset : 0
+        ui.geckoBottomPhoneConstraint.constant = !pad ? -geckoPhoneOffset : 0
         ui.geckoBottomPhoneSearchPinnedConstraint.constant = -94
         ui.geckoBottomPhoneKeyboardOverlayConstraint.constant = 0
+        ui.geckoTopPadConstraint.constant = pad ? -geckoPhoneOffset : 0
+        ui.geckoBottomCompactPadConstraint.constant = pad && compactPad ? -geckoPhoneOffset : 0
+        ui.geckoBottomPadConstraint.constant = pad && !compactPad ? -geckoPhoneOffset : 0
         
         ui.geckoTopPhoneConstraint.isActive = !pad
         ui.geckoBottomPhoneConstraint.isActive = !pad && !shouldPinSearchFocusedGeckoFrame && !shouldShowGeckoBehindKeyboard
@@ -422,23 +424,20 @@ final class BrowserLayout {
     }
     
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
-        guard !controller.usesPadChromeLayout,
-              let info = notification.userInfo,
+        guard let info = notification.userInfo,
               let frameValue = info[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {
             return
         }
         
         let ui = controller.browserUI
-        keyboardFrame = controller.view.convert(frameValue.cgRectValue, from: nil)
-        let overlap = max(0, controller.view.bounds.maxY - keyboardFrame.minY)
-        let safeBottom = controller.view.safeAreaInsets.bottom
-        keyboardHeight = max(0, overlap - safeBottom)
+        updateKeyboardState(screenFrame: frameValue.cgRectValue)
         let duration = info[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0.25
         let curveRaw = info[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt ?? 7
         let curve = UIView.AnimationOptions(rawValue: curveRaw << 16)
         requestFocusedInputMetricsIfNeeded(duration: duration, curve: curve)
         
-        let shouldDockChromeToKeyboard = controller.isSearchFocused
+        let shouldDockChromeToKeyboard = !controller.usesPadChromeLayout
+        && controller.isSearchFocused
         && !controller.tabOverviewPresentation.isVisible
         && keyboardHeight > 0
         ui.phoneChromeBottomConstraint.constant = shouldDockChromeToKeyboard ? -keyboardHeight : 0
@@ -451,10 +450,6 @@ final class BrowserLayout {
     }
     
     @objc private func keyboardWillHide(_ notification: Notification) {
-        guard !controller.usesPadChromeLayout else {
-            return
-        }
-        
         let ui = controller.browserUI
         
         keyboardHeight = 0
@@ -479,6 +474,13 @@ final class BrowserLayout {
             return
         }
         button.layer.shadowPath = UIBezierPath(roundedRect: button.bounds, cornerRadius: button.layer.cornerRadius).cgPath
+    }
+    
+    private func updateKeyboardState(screenFrame: CGRect) {
+        keyboardFrame = controller.view.convert(screenFrame, from: nil)
+        let overlap = max(0, controller.view.bounds.maxY - keyboardFrame.minY)
+        let safeBottom = controller.view.safeAreaInsets.bottom
+        keyboardHeight = max(0, overlap - safeBottom)
     }
     
     private func setAddressBarHost(isPad: Bool) {
@@ -522,8 +524,7 @@ final class BrowserLayout {
     
     private func applyFocusedInputRelocation(duration: TimeInterval, curve: UIView.AnimationOptions) {
         let nextOffset = resolvedGeckoPhoneVerticalOffset(
-            shouldShowGeckoBehindKeyboard: false,
-            isPad: controller.usesPadChromeLayout
+            shouldShowGeckoBehindKeyboard: false
         )
         guard abs(nextOffset - geckoPhoneVerticalOffset) > 0.5 else {
             return
@@ -545,11 +546,9 @@ final class BrowserLayout {
     }
     
     private func resolvedGeckoPhoneVerticalOffset(
-        shouldShowGeckoBehindKeyboard: Bool,
-        isPad: Bool
+        shouldShowGeckoBehindKeyboard: Bool
     ) -> CGFloat {
-        guard !isPad,
-              !controller.isSearchFocused,
+        guard !controller.isSearchFocused,
               !controller.tabOverviewPresentation.isVisible,
               !shouldShowGeckoBehindKeyboard,
               keyboardHeight > 0,
@@ -563,8 +562,14 @@ final class BrowserLayout {
             return 0
         }
         
-        let safeAreaTop = controller.view.safeAreaLayoutGuide.layoutFrame.minY
-        let currentGeckoShift = max(0, safeAreaTop - geckoFrame.minY)
+        let unshiftedGeckoMinY: CGFloat
+        if controller.usesPadChromeLayout {
+            unshiftedGeckoMinY = controller.browserUI.topBar.barView.frame.maxY
+        } else {
+            unshiftedGeckoMinY = controller.view.safeAreaLayoutGuide.layoutFrame.minY
+        }
+        
+        let currentGeckoShift = max(0, unshiftedGeckoMinY - geckoFrame.minY)
         let unshiftedGeckoMaxY = geckoFrame.maxY + currentGeckoShift
         let keyboardOverlap = max(0, unshiftedGeckoMaxY - keyboardFrame.minY)
         guard keyboardOverlap > 0 else {
@@ -573,6 +578,6 @@ final class BrowserLayout {
         
         let focusBottom = geckoFrame.height * bottomRatio
         let visibleBottom = max(0, geckoFrame.height - keyboardOverlap - 12)
-        return focusBottom > visibleBottom ? keyboardOverlap : 0
+        return min(keyboardOverlap, max(0, focusBottom - visibleBottom))
     }
 }

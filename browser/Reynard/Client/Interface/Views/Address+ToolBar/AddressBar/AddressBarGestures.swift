@@ -154,6 +154,7 @@ final class AddressBarGestures: NSObject {
         trailingButton.tintColor = .label
         trailingButton.isUserInteractionEnabled = false
         trailingButton.setImage(UIImage(systemName: tab.isLoading ? "xmark" : "arrow.clockwise"), for: .normal)
+        trailingButton.isHidden = !tab.isLoading && tab.url == nil
         
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false

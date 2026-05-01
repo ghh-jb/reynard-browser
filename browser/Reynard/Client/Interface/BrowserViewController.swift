@@ -479,7 +479,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
                 displayedText,
                 locationText: selectedURL,
                 locationTitle: selectedTab?.title,
-                isCommittedLocation: !hasPendingDisplayText && selectedURL?.isEmpty == false
+                showsBarMenu: !hasPendingDisplayText && selectedURL?.isEmpty == false
             )
         }
         browserUI.addressBar.setLoadingProgress(selectedTab?.progress ?? 0, isLoading: selectedTab?.isLoading ?? false)

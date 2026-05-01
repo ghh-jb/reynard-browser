@@ -19,11 +19,11 @@ final class AddressBar: UIView {
     
     private weak var delegate: AddressBarDelegate?
     private var shadowEnabled = true
-    private var showsSearchIconWhenPlaceholder = true
+    private var hidePlaceholderIcon = false
     private var currentText: String?
     private var currentLocationText: String?
     private var currentLocationTitle: String?
-    private var currentTextIsCommittedLocation = false
+    private var canShowBarMenu = false
     private var isLoading = false
     private var addonsMenu: UIMenu?
     private var urlFieldLeadingToIconConstraint: NSLayoutConstraint!
@@ -128,12 +128,12 @@ final class AddressBar: UIView {
         _ text: String?,
         locationText: String? = nil,
         locationTitle: String? = nil,
-        isCommittedLocation: Bool = false
+        showsBarMenu: Bool = false
     ) {
         currentText = text?.trimmingCharacters(in: .whitespacesAndNewlines)
         currentLocationText = locationText?.trimmingCharacters(in: .whitespacesAndNewlines)
         currentLocationTitle = locationTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
-        currentTextIsCommittedLocation = isCommittedLocation
+        canShowBarMenu = showsBarMenu
         if !urlField.isFirstResponder {
             urlField.text = currentText
         }
@@ -145,8 +145,8 @@ final class AddressBar: UIView {
         updateDisplayState()
     }
     
-    func setShowsSearchIconWhenPlaceholder(_ showsSearchIconWhenPlaceholder: Bool) {
-        self.showsSearchIconWhenPlaceholder = showsSearchIconWhenPlaceholder
+    func setHidePlaceholderIcon(_ hide: Bool) {
+        hidePlaceholderIcon = hide
         updateDisplayState()
     }
     
@@ -254,55 +254,23 @@ final class AddressBar: UIView {
     }
     
     private func updateDisplayState() {
-        let hasText = !(currentText?.isEmpty ?? true)
         let isEditing = urlField.isFirstResponder
-        let hasVisibleTypedText = !(urlField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
-        let isShowingPlaceholder = isEditing ? !hasVisibleTypedText : !hasText
-        let shouldShowCommittedIcon = currentTextIsCommittedLocation && !isEditing
-        let shouldShowPlaceholderIcon = showsSearchIconWhenPlaceholder && !isEditing && isShowingPlaceholder
-        let shouldShowTrailingButton = !isEditing && (hasText || isLoading)
-        let shouldShowLeadingButton = !isEditing
+        let hasCommittedText = !(currentText?.isEmpty ?? true)
+        let hasTypedText = !(urlField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        let isPlaceholderMode = isEditing ? !hasTypedText : !hasCommittedText
+        let leadingButtonVisible = !isEditing && !(hidePlaceholderIcon && isPlaceholderMode)
+        let trailingButtonVisible = !isEditing && (hasCommittedText || isLoading)
+        let leadingButtonShowsSearchIcon = !hidePlaceholderIcon && !isEditing && isPlaceholderMode
+        let leadingButtonShowsMenu = canShowBarMenu && !isEditing
         let displayText = displayAttributedText()
         
-        if isEditing {
-            displayLabel.isHidden = true
-            urlField.isHidden = false
-            urlField.textAlignment = .left
-        } else {
-            displayLabel.attributedText = displayText
-            displayLabel.isHidden = displayText == nil
-            urlField.isHidden = hasText
-            urlField.textAlignment = .left
-        }
-        
-        if shouldShowLeadingButton {
-            leadingButton.isHidden = false
-            if shouldShowPlaceholderIcon {
-                leadingButton.tintColor = .secondaryLabel
-                leadingButton.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
-                leadingButton.setMenuPreservingPresentation(nil)
-                leadingButton.isUserInteractionEnabled = false
-            } else {
-                leadingButton.tintColor = shouldShowCommittedIcon ? .label : .secondaryLabel
-                leadingButton.setImage(UIImage(systemName: "list.bullet.below.rectangle"), for: .normal)
-                leadingButton.setMenuPreservingPresentation(shouldShowCommittedIcon ? addonsMenu : nil)
-                leadingButton.isUserInteractionEnabled = shouldShowCommittedIcon && addonsMenu != nil
-            }
-        } else {
-            leadingButton.isHidden = true
-            leadingButton.setImage(nil, for: .normal)
-            leadingButton.setMenuPreservingPresentation(nil)
-            leadingButton.isUserInteractionEnabled = false
-        }
-        
-        if shouldShowTrailingButton {
-            trailingButton.isHidden = false
-            trailingButton.setImage(UIImage(systemName: isLoading ? "xmark" : "arrow.clockwise"), for: .normal)
-            trailingButton.isUserInteractionEnabled = true
-        } else {
-            trailingButton.isHidden = true
-            trailingButton.isUserInteractionEnabled = false
-        }
+        updateTextVisibility(isEditing: isEditing, hasCommittedText: hasCommittedText, displayText: displayText)
+        updateLeadingButton(
+            leadingButtonVisible: leadingButtonVisible,
+            leadingButtonShowsSearchIcon: leadingButtonShowsSearchIcon,
+            leadingButtonShowsMenu: leadingButtonShowsMenu
+        )
+        updateTrailingButton(trailingButtonVisible: trailingButtonVisible, isLoading: isLoading)
         
         NSLayoutConstraint.deactivate([
             urlFieldLeadingToIconConstraint,
@@ -316,11 +284,60 @@ final class AddressBar: UIView {
         ])
         
         NSLayoutConstraint.activate([
-            shouldShowLeadingButton ? urlFieldLeadingToIconConstraint : urlFieldLeadingToBarConstraint,
-            shouldShowTrailingButton ? urlFieldTrailingToButtonConstraint : urlFieldTrailingToBarConstraint,
-            shouldShowLeadingButton ? displayLabelLeadingToIconConstraint : displayLabelLeadingToBarConstraint,
-            shouldShowTrailingButton ? displayLabelTrailingToButtonConstraint : displayLabelTrailingToBarConstraint,
+            leadingButtonVisible ? urlFieldLeadingToIconConstraint : urlFieldLeadingToBarConstraint,
+            trailingButtonVisible ? urlFieldTrailingToButtonConstraint : urlFieldTrailingToBarConstraint,
+            leadingButtonVisible ? displayLabelLeadingToIconConstraint : displayLabelLeadingToBarConstraint,
+            trailingButtonVisible ? displayLabelTrailingToButtonConstraint : displayLabelTrailingToBarConstraint,
         ])
+    }
+    
+    private func updateTextVisibility(isEditing: Bool, hasCommittedText: Bool, displayText: NSAttributedString?) {
+        if isEditing {
+            displayLabel.isHidden = true
+            urlField.isHidden = false
+        } else {
+            displayLabel.attributedText = displayText
+            displayLabel.isHidden = displayText == nil
+            urlField.isHidden = hasCommittedText
+        }
+        urlField.textAlignment = .left
+    }
+    
+    private func updateLeadingButton(
+        leadingButtonVisible: Bool,
+        leadingButtonShowsSearchIcon: Bool,
+        leadingButtonShowsMenu: Bool
+    ) {
+        guard leadingButtonVisible else {
+            leadingButton.isHidden = true
+            leadingButton.setImage(nil, for: .normal)
+            leadingButton.setMenuPreservingPresentation(nil)
+            leadingButton.isUserInteractionEnabled = false
+            return
+        }
+        
+        leadingButton.isHidden = false
+        if leadingButtonShowsSearchIcon {
+            leadingButton.tintColor = .secondaryLabel
+            leadingButton.setImage(UIImage(systemName: "magnifyingglass"), for: .normal)
+            leadingButton.setMenuPreservingPresentation(nil)
+            leadingButton.isUserInteractionEnabled = false
+            return
+        }
+        
+        leadingButton.tintColor = leadingButtonShowsMenu ? .label : .secondaryLabel
+        leadingButton.setImage(UIImage(systemName: "list.bullet.below.rectangle"), for: .normal)
+        leadingButton.setMenuPreservingPresentation(leadingButtonShowsMenu ? addonsMenu : nil)
+        leadingButton.isUserInteractionEnabled = leadingButtonShowsMenu && addonsMenu != nil
+    }
+    
+    private func updateTrailingButton(trailingButtonVisible: Bool, isLoading: Bool) {
+        trailingButton.isHidden = !trailingButtonVisible
+        trailingButton.isUserInteractionEnabled = trailingButtonVisible
+        guard trailingButtonVisible else {
+            return
+        }
+        trailingButton.setImage(UIImage(systemName: isLoading ? "xmark" : "arrow.clockwise"), for: .normal)
     }
     
     private func displayAttributedText() -> NSAttributedString? {
@@ -328,8 +345,8 @@ final class AddressBar: UIView {
             return nil
         }
         
-        guard currentTextIsCommittedLocation,
-              let host = committedLocationHost() else {
+        guard canShowBarMenu,
+              let host = locationHost() else {
             return NSAttributedString(
                 string: currentText,
                 attributes: [.foregroundColor: UIColor.label]
@@ -358,7 +375,7 @@ final class AddressBar: UIView {
         return attributedText
     }
     
-    private func committedLocationHost() -> String? {
+    private func locationHost() -> String? {
         let sourceText = currentLocationText ?? currentText
         guard let sourceText,
               let host = URL(string: sourceText)?.host,
@@ -442,7 +459,7 @@ extension AddressBar: UITextFieldDelegate {
         currentText = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
         currentLocationText = nil
         currentLocationTitle = nil
-        currentTextIsCommittedLocation = false
+        canShowBarMenu = false
         updateDisplayState()
         delegate?.addressBarDidEndEditing(self)
     }

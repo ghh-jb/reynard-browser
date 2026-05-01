@@ -347,7 +347,7 @@ final class BrowserLayout {
         
         ui.keyboardDismissButton.button.isHidden = !showDismissButton
         ui.addressBar.setShadowEnabled(!pad)
-        ui.addressBar.setShowsSearchIconWhenPlaceholder(!controller.usesPadChromeLayout)
+        ui.addressBar.setHidePlaceholderIcon(controller.usesPhoneTopAddressBarLayout || controller.usesPadChromeLayout)
         
         controller.updateNavigationButtons()
     }

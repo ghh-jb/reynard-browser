@@ -35,7 +35,6 @@ final class BrowserLayout {
         view.addSubview(ui.topBar.safeAreaFillView)
         ui.chromeContainer.containerView.addSubview(ui.addressBar)
         
-        ui.chromeContainer.containerView.addSubview(ui.keyboardDismissButton.button)
         ui.chromeContainer.containerView.addSubview(ui.toolbarView)
         
         view.addSubview(ui.topBar.barView)
@@ -44,6 +43,7 @@ final class BrowserLayout {
         ui.topBar.contentView.addSubview(ui.padTopBarButtons.rightStack)
         
         setAddressBarHost(isPad: controller.usesPadChromeLayout)
+        setKeyboardDismissButtonHost(isPad: controller.usesPadChromeLayout)
         
         ui.topBar.barView.addSubview(ui.padTabBar.collectionView)
         
@@ -75,7 +75,7 @@ final class BrowserLayout {
         
         ui.addressBarPhoneLeadingConstraint = ui.addressBar.leadingAnchor.constraint(equalTo: ui.chromeContainer.containerView.leadingAnchor, constant: 12)
         ui.addressBarPhoneTrailingFullConstraint = ui.addressBar.trailingAnchor.constraint(equalTo: ui.chromeContainer.containerView.trailingAnchor, constant: -12)
-        ui.addressBarPhoneTrailingFocusedConstraint = ui.addressBar.trailingAnchor.constraint(equalTo: ui.keyboardDismissButton.button.leadingAnchor, constant: -8)
+        ui.addressBarPhoneTrailingFocusedConstraint = ui.addressBar.trailingAnchor.constraint(equalTo: ui.keyboardDismissButton.button.leadingAnchor, constant: -9)
         ui.addressBarPhoneTopConstraint = ui.addressBar.topAnchor.constraint(equalTo: ui.chromeContainer.containerView.topAnchor, constant: 8)
         ui.addressBarPhoneHeightConstraint = ui.addressBar.heightAnchor.constraint(equalToConstant: 42)
         
@@ -86,7 +86,9 @@ final class BrowserLayout {
         ui.addressBarPadCenterYConstraint = ui.addressBar.centerYAnchor.constraint(equalTo: ui.topBar.contentView.centerYAnchor)
         ui.addressBarPadHeightConstraint = ui.addressBar.heightAnchor.constraint(equalToConstant: 38)
         
-        ui.keyboardDismissButton.trailingConstraint = ui.keyboardDismissButton.button.trailingAnchor.constraint(equalTo: ui.chromeContainer.containerView.trailingAnchor, constant: -12)
+        ui.keyboardDismissButton.trailingPhoneConstraint = ui.keyboardDismissButton.button.trailingAnchor.constraint(equalTo: ui.chromeContainer.containerView.trailingAnchor, constant: -12)
+        ui.keyboardDismissButton.trailingPadConstraint = ui.keyboardDismissButton.button.trailingAnchor.constraint(equalTo: ui.padTopBarButtons.rightStack.leadingAnchor, constant: -12)
+        ui.keyboardDismissButton.trailingCompactPadConstraint = ui.keyboardDismissButton.button.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -12)
         ui.keyboardDismissButton.centerYConstraint = ui.keyboardDismissButton.button.centerYAnchor.constraint(equalTo: ui.addressBar.centerYAnchor)
         ui.keyboardDismissButton.widthConstraint = ui.keyboardDismissButton.button.widthAnchor.constraint(equalToConstant: 42)
         ui.keyboardDismissButton.heightConstraint = ui.keyboardDismissButton.button.heightAnchor.constraint(equalToConstant: 42)
@@ -134,7 +136,7 @@ final class BrowserLayout {
             ui.addressBarPhoneTopConstraint,
             ui.addressBarPhoneHeightConstraint,
             
-            ui.keyboardDismissButton.trailingConstraint,
+            ui.keyboardDismissButton.trailingPhoneConstraint,
             ui.keyboardDismissButton.centerYConstraint,
             ui.keyboardDismissButton.widthConstraint,
             ui.keyboardDismissButton.heightConstraint,
@@ -215,6 +217,8 @@ final class BrowserLayout {
         ui.tabOverviewCollection.topPadConstraint.isActive = false
         ui.tabOverviewCollection.bottomPadConstraint.isActive = false
         ui.geckoBottomCompactPadConstraint.isActive = false
+        ui.keyboardDismissButton.trailingPadConstraint.isActive = false
+        ui.keyboardDismissButton.trailingCompactPadConstraint.isActive = false
         
         view.sendSubviewToBack(ui.chromeContainer.bottomSafeAreaFillView)
     }
@@ -254,6 +258,7 @@ final class BrowserLayout {
         let pad = controller.usesPadChromeLayout
         let compactPad = controller.usesCompactPadChromeMode
         setAddressBarHost(isPad: pad)
+        setKeyboardDismissButtonHost(isPad: pad)
         ui.topBar.topConstraint.constant = resolvedPadTopInset()
         let shouldShowGeckoBehindKeyboard = !pad
         && controller.isSearchFocused
@@ -327,25 +332,33 @@ final class BrowserLayout {
         )
         ui.padTopBarButtons.rightWidthConstraint.constant = compactPad ? 0 : 126
         
-        let showDismissButton = !pad && controller.isSearchFocused
+        let showDismissButton = controller.isSearchFocused && !controller.tabOverviewPresentation.isVisible
         ui.addressBarPhoneLeadingConstraint.isActive = !pad
         ui.addressBarPhoneTopConstraint.isActive = !pad
         ui.addressBarPhoneHeightConstraint.isActive = !pad
         ui.addressBarPhoneTrailingFullConstraint.isActive = !pad && !showDismissButton
-        ui.addressBarPhoneTrailingFocusedConstraint.isActive = !pad && showDismissButton
+        ui.addressBarPhoneTrailingFocusedConstraint.isActive = showDismissButton
         
         ui.addressBarPadLeadingConstraint.isActive = pad && !compactPad
-        ui.addressBarPadTrailingConstraint.isActive = pad && !compactPad
+        ui.addressBarPadTrailingConstraint.isActive = pad && !compactPad && !showDismissButton
         ui.addressBarCompactPadLeadingConstraint.isActive = pad && compactPad
-        ui.addressBarCompactPadTrailingConstraint.isActive = pad && compactPad
+        ui.addressBarCompactPadTrailingConstraint.isActive = pad && compactPad && !showDismissButton
         ui.addressBarPadCenterYConstraint.isActive = pad
         ui.addressBarPadHeightConstraint.isActive = pad
+        ui.keyboardDismissButton.trailingPhoneConstraint.isActive = !pad
+        ui.keyboardDismissButton.trailingPadConstraint.isActive = pad && !compactPad
+        ui.keyboardDismissButton.trailingCompactPadConstraint.isActive = pad && compactPad
         
         ui.phoneToolbarTopConstraint.isActive = !pad && !compactPad
         ui.phoneToolbarCompactPadTopConstraint.isActive = compactPad
-        ui.keyboardDismissButton.centerYConstraint.isActive = !pad
+        ui.keyboardDismissButton.centerYConstraint.isActive = true
         
         ui.keyboardDismissButton.button.isHidden = !showDismissButton
+        let dismissButtonSize = pad ? ui.addressBarPadHeightConstraint.constant : ui.addressBarPhoneHeightConstraint.constant
+        ui.keyboardDismissButton.widthConstraint.constant = dismissButtonSize
+        ui.keyboardDismissButton.heightConstraint.constant = dismissButtonSize
+        ui.keyboardDismissButton.button.layer.cornerRadius = dismissButtonSize / 2
+        ui.keyboardDismissButton.button.layer.shadowOpacity = pad ? 0 : 0.2
         ui.addressBar.setShadowEnabled(!pad)
         ui.addressBar.setHidePlaceholderIcon(controller.usesPhoneTopAddressBarLayout || controller.usesPadChromeLayout)
         
@@ -378,24 +391,20 @@ final class BrowserLayout {
     }
     
     func setSearchFocused(_ focused: Bool, animated: Bool) {
-        guard !controller.usesPadChromeLayout else {
-            return
-        }
-        
         let ui = controller.browserUI
+        let usesPadChromeLayout = controller.usesPadChromeLayout
         
         controller.isSearchFocused = focused
         if focused {
             resetFocusedInputRelocation()
         }
-        ui.phoneToolbarHeightConstraint.constant = focused ? 0 : 30
-        ui.phoneChromeHeightConstraint.constant = focused ? 58 : 94
-        ui.chromeContainer.containerView.backgroundColor = focused ? .clear : .systemGray6
-        ui.chromeContainer.bottomSafeAreaFillView.backgroundColor = focused ? .clear : .systemGray6
+        if !usesPadChromeLayout {
+            ui.phoneToolbarHeightConstraint.constant = focused ? 0 : 30
+            ui.phoneChromeHeightConstraint.constant = focused ? 58 : 94
+            ui.chromeContainer.containerView.backgroundColor = focused ? .clear : .systemGray6
+            ui.chromeContainer.bottomSafeAreaFillView.backgroundColor = focused ? .clear : .systemGray6
+        }
         updateChromeLayoutState()
-        
-        ui.addressBarPhoneTrailingFullConstraint.isActive = !focused
-        ui.addressBarPhoneTrailingFocusedConstraint.isActive = focused
         
         let dismissButtonTargetAlpha: CGFloat = focused ? 1 : 0
         if focused {
@@ -403,7 +412,9 @@ final class BrowserLayout {
         }
         
         let animations = {
-            ui.toolbarView.alpha = focused ? 0 : 1
+            if !usesPadChromeLayout {
+                ui.toolbarView.alpha = focused ? 0 : 1
+            }
             ui.keyboardDismissButton.button.alpha = dismissButtonTargetAlpha
             self.controller.view.layoutIfNeeded()
             self.updatePhoneDismissKeyboardButtonShadowPath()
@@ -469,6 +480,10 @@ final class BrowserLayout {
     
     private func updatePhoneDismissKeyboardButtonShadowPath() {
         let button = controller.browserUI.keyboardDismissButton.button
+        guard !controller.usesPadChromeLayout else {
+            button.layer.shadowPath = nil
+            return
+        }
         guard button.bounds.width > 1, button.bounds.height > 1 else {
             button.layer.shadowPath = nil
             return
@@ -492,6 +507,17 @@ final class BrowserLayout {
         
         ui.addressBar.removeFromSuperview()
         targetHost.addSubview(ui.addressBar)
+    }
+    
+    private func setKeyboardDismissButtonHost(isPad: Bool) {
+        let ui = controller.browserUI
+        let targetHost = isPad ? ui.topBar.contentView : ui.chromeContainer.containerView
+        guard ui.keyboardDismissButton.button.superview !== targetHost else {
+            return
+        }
+        
+        ui.keyboardDismissButton.button.removeFromSuperview()
+        targetHost.addSubview(ui.keyboardDismissButton.button)
     }
     
     private func requestFocusedInputMetricsIfNeeded(duration: TimeInterval, curve: UIView.AnimationOptions) {

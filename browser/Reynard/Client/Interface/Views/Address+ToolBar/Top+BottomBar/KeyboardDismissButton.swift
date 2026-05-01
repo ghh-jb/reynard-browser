@@ -32,7 +32,9 @@ final class KeyboardDismissButton {
         return button
     }()
     
-    var trailingConstraint: NSLayoutConstraint!
+    var trailingPhoneConstraint: NSLayoutConstraint!
+    var trailingPadConstraint: NSLayoutConstraint!
+    var trailingCompactPadConstraint: NSLayoutConstraint!
     var centerYConstraint: NSLayoutConstraint!
     var widthConstraint: NSLayoutConstraint!
     var heightConstraint: NSLayoutConstraint!

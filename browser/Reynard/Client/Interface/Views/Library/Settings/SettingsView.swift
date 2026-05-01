@@ -105,7 +105,7 @@ final class SettingsRootViewController: SettingsTableViewController {
         switch visibleSections[section] {
         case .updates: return 2
         case .jit: return 2
-        case .general: return 1
+        case .general: return 2
         case .search: return 1
         case .compatibility: return preferences.useAndroidUserAgent ? 1 : 2
         case .tab: return 2
@@ -141,7 +141,7 @@ final class SettingsRootViewController: SettingsTableViewController {
             return cell
         case .general:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = "Add-ons"
+            cell.textLabel?.text = indexPath.row == 0 ? "Add-ons" : "Request Desktop Website"
             cell.accessoryType = .disclosureIndicator
             return cell
         case .search:
@@ -202,7 +202,11 @@ final class SettingsRootViewController: SettingsTableViewController {
         case .jit where indexPath.row == 1:
             presentPairingFilePicker()
         case .general:
-            navigationController?.pushViewController(AddonsSettingsViewController(), animated: true)
+            if indexPath.row == 0 {
+                navigationController?.pushViewController(AddonsSettingsViewController(), animated: true)
+            } else {
+                navigationController?.pushViewController(RequestDesktopWebsiteViewController(), animated: true)
+            }
         case .search:
             navigationController?.pushViewController(SearchEngineSettingsViewController(), animated: true)
         case .compatibility:
@@ -243,9 +247,13 @@ final class SettingsRootViewController: SettingsTableViewController {
         switch visibleSections[section] {
         case .updates, .jit, .general, .search, .tab: return nil
         case .compatibility:
-            return preferences.useAndroidUserAgent
-            ? "To maximize compatibility, the browser will use the Firefox for Android user agent for navigating the web. As a result, websites may identify your device as an Android device."
-            : "If you encounter issues such as sign-in failures, human verification challenges, or other incorrect site behavior, adding the site's URL to this user agent override list may help resolve the problem."
+            if preferences.useAndroidUserAgent {
+                return preferences.requestDesktopWebsite
+                ? "The browser will use a desktop Firefox user agent for navigating the web."
+                : "To maximize compatibility, the browser will use the Firefox for Android user agent for navigating the web. As a result, websites may identify your device as an Android device."
+            }
+            
+            return "If you encounter issues such as sign-in failures, human verification challenges, or other incorrect site behavior, adding the site's URL to this user agent override list may help resolve the problem."
         case .about:
             let info = Bundle.main.infoDictionary
             let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"

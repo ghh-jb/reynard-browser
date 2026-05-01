@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 final class BrowserPreferences {
     enum SearchEngine: String, CaseIterable {
@@ -67,6 +68,7 @@ final class BrowserPreferences {
         static let jitEnabled = "BrowserPreferences.jitEnabled"
         static let androidUserAgentDomains = "BrowserPreferences.androidUserAgentDomains"
         static let useAndroidUserAgent = "BrowserPreferences.useAndroidUserAgent"
+        static let requestDesktopWebsite = "BrowserPreferences.requestDesktopWebsite"
         static let addressBarPosition = "BrowserPreferences.addressBarPosition"
         static let showsLandscapeTabBar = "BrowserPreferences.showsLandscapeTabBar"
     }
@@ -134,6 +136,11 @@ final class BrowserPreferences {
         set { defaults.set(newValue, forKey: Keys.useAndroidUserAgent) }
     }
     
+    var requestDesktopWebsite: Bool {
+        get { defaults.bool(forKey: Keys.requestDesktopWebsite) }
+        set { defaults.set(newValue, forKey: Keys.requestDesktopWebsite) }
+    }
+    
     var addressBarPosition: AddressBarPosition {
         get {
             let rawValue = defaults.string(forKey: Keys.addressBarPosition) ?? AddressBarPosition.bottom.rawValue
@@ -192,6 +199,7 @@ final class BrowserPreferences {
             Keys.jitEnabled: false,
             Keys.androidUserAgentDomains: [],
             Keys.useAndroidUserAgent: true,
+            Keys.requestDesktopWebsite: UIDevice.current.userInterfaceIdiom == .pad,
             Keys.addressBarPosition: AddressBarPosition.bottom.rawValue,
             Keys.showsLandscapeTabBar: true,
         ])

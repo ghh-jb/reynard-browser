@@ -55,6 +55,11 @@ final class TabManagerImplementation: NSObject, TabManager {
         store.saveTabs(tabs, selectedTabID: selectedTab?.id)
     }
     
+    private func loadURL(_ url: String, in session: GeckoSession) {
+        session.updateUserAgent(UserAgentController.shared.userAgent(for: url))
+        session.load(url)
+    }
+    
     private func makeTab(windowId: String?) -> Tab {
         let tab = Tab(session: createSession(windowId: windowId))
         let controller = NowPlayingController(session: tab.session)
@@ -192,8 +197,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         
         tab.pendingRestoreURL = nil
         tab.suppressInitialNavigation = false
-        tab.session.updateUserAgent(UAOverride.shared.userAgent(for: url))
-        tab.session.load(url)
+        loadURL(url, in: tab.session)
     }
     
     func createInitialTab() {
@@ -314,13 +318,12 @@ final class TabManagerImplementation: NSObject, TabManager {
         let isURL = isURLLenient.firstMatch(in: trimmedValue, range: fullRange) != nil
         
         if isURL {
-            tab.session.updateUserAgent(UAOverride.shared.userAgent(for: trimmedValue))
-            tab.session.load(trimmedValue)
+            loadURL(trimmedValue, in: tab.session)
             return
         }
         
-        tab.session.updateUserAgent(nil)
-        tab.session.load(searchURL(for: trimmedValue))
+        let searchTarget = searchURL(for: trimmedValue)
+        loadURL(searchTarget, in: tab.session)
     }
     
     func tabIndex(for session: GeckoSession) -> Int? {
@@ -470,7 +473,7 @@ extension TabManagerImplementation: NavigationDelegate {
         }
         
         if let url {
-            session.updateUserAgent(UAOverride.shared.userAgent(for: url))
+            session.updateUserAgent(UserAgentController.shared.userAgent(for: url))
         }
         
         tabs[index].url = url
@@ -515,7 +518,7 @@ extension TabManagerImplementation: NavigationDelegate {
     
     func onNewSession(session: GeckoSession, uri: String, windowId: String) async -> GeckoSession? {
         let newSession = GeckoSession()
-        newSession.userAgentOverride = UAOverride.shared.userAgent(for: uri)
+        newSession.userAgentOverride = UserAgentController.shared.userAgent(for: uri)
         newSession.contentDelegate = self
         newSession.progressDelegate = self
         newSession.navigationDelegate = self
@@ -553,6 +556,17 @@ extension TabManagerImplementation: ProgressDelegate {
     func onPageStart(session: GeckoSession, url: String) {
         guard let index = tabIndex(for: session) else {
             return
+        }
+        
+        let currentHost = tabs[index].url.flatMap { UserAgentController.shared.extractHost(from: $0) }
+        let requestedHost = UserAgentController.shared.extractHost(from: url)
+        let desiredUserAgent = UserAgentController.shared.userAgent(for: url)
+        
+        if currentHost != nil,
+           requestedHost != nil,
+           currentHost != requestedHost,
+           desiredUserAgent != session.userAgentOverride {
+            loadURL(url, in: session)
         }
         
         tabs[index].isLoading = true

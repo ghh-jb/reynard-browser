@@ -468,6 +468,7 @@ private final class AddonPopupViewController: UIViewController, ContentDelegate,
         session.isAddonPopup = true
         session.contentDelegate = self
         session.navigationDelegate = self
+        session.updateUserAgent(UserAgentController.shared.userAgent(for: popupURL))
         session.open()
     }
     

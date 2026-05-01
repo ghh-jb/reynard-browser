@@ -34,6 +34,11 @@ final class UserAgentController {
             return androidMobileUserAgent
         }
         
+        // Addon setting pages also require the Android user agent to work properly.
+        if urlString.starts(with: "moz-extension://") {
+            return androidMobileUserAgent
+        }
+        
         // I have so many people reporting broken UI issues, login
         // issues, etc on Google services, so this is a compatibility
         // hack stolen from the Google Search Fixer extension.

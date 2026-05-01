@@ -55,9 +55,9 @@ final class TabManagerImplementation: NSObject, TabManager {
         store.saveTabs(tabs, selectedTabID: selectedTab?.id)
     }
     
-    private func loadURL(_ url: String, in session: GeckoSession) {
-        session.updateUserAgent(UserAgentController.shared.userAgent(for: url))
-        session.load(url)
+    private func loadURL(_ url: String, in tab: Tab) {
+        tab.session.updateUserAgent(UserAgentController.shared.userAgent(for: url, tabID: tab.id))
+        tab.session.load(url)
     }
     
     private func makeTab(windowId: String?) -> Tab {
@@ -197,7 +197,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         
         tab.pendingRestoreURL = nil
         tab.suppressInitialNavigation = false
-        loadURL(url, in: tab.session)
+        loadURL(url, in: tab)
     }
     
     func createInitialTab() {
@@ -256,6 +256,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         let wasSelected = index == selectedTabIndex
         let removedTab = tabs.remove(at: index)
         cancelFaviconTask(for: removedTab.id)
+        UserAgentController.shared.clearOverrides(forTabID: removedTab.id)
         
         if tabs.isEmpty {
             selectedTabIndex = -1
@@ -291,6 +292,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         let removedTabs = tabs
         tabs.removeAll(keepingCapacity: true)
         removedTabs.forEach { cancelFaviconTask(for: $0.id) }
+        removedTabs.forEach { UserAgentController.shared.clearOverrides(forTabID: $0.id) }
         selectedTabIndex = -1
         delegate?.tabManagerDidChangeTabs(self)
         addTab(selecting: true, windowId: nil)
@@ -318,12 +320,12 @@ final class TabManagerImplementation: NSObject, TabManager {
         let isURL = isURLLenient.firstMatch(in: trimmedValue, range: fullRange) != nil
         
         if isURL {
-            loadURL(trimmedValue, in: tab.session)
+            loadURL(trimmedValue, in: tab)
             return
         }
         
         let searchTarget = searchURL(for: trimmedValue)
-        loadURL(searchTarget, in: tab.session)
+        loadURL(searchTarget, in: tab)
     }
     
     func tabIndex(for session: GeckoSession) -> Int? {
@@ -473,7 +475,7 @@ extension TabManagerImplementation: NavigationDelegate {
         }
         
         if let url {
-            session.updateUserAgent(UserAgentController.shared.userAgent(for: url))
+            session.updateUserAgent(UserAgentController.shared.userAgent(for: url, tabID: tabs[index].id))
         }
         
         tabs[index].url = url
@@ -518,12 +520,12 @@ extension TabManagerImplementation: NavigationDelegate {
     
     func onNewSession(session: GeckoSession, uri: String, windowId: String) async -> GeckoSession? {
         let newSession = GeckoSession()
-        newSession.userAgentOverride = UserAgentController.shared.userAgent(for: uri)
         newSession.contentDelegate = self
         newSession.progressDelegate = self
         newSession.navigationDelegate = self
         
         let newTab = Tab(session: newSession)
+        newSession.userAgentOverride = UserAgentController.shared.userAgent(for: uri, tabID: newTab.id)
         let controller = NowPlayingController(session: newSession)
         newSession.mediaSessionDelegate = controller
         newTab.nowPlayingController = controller
@@ -560,13 +562,13 @@ extension TabManagerImplementation: ProgressDelegate {
         
         let currentHost = tabs[index].url.flatMap { UserAgentController.shared.extractHost(from: $0) }
         let requestedHost = UserAgentController.shared.extractHost(from: url)
-        let desiredUserAgent = UserAgentController.shared.userAgent(for: url)
+        let desiredUserAgent = UserAgentController.shared.userAgent(for: url, tabID: tabs[index].id)
         
         if currentHost != nil,
            requestedHost != nil,
            currentHost != requestedHost,
            desiredUserAgent != session.userAgentOverride {
-            loadURL(url, in: session)
+            loadURL(url, in: tabs[index])
         }
         
         tabs[index].isLoading = true

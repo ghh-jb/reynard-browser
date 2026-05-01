@@ -9,12 +9,17 @@ import Foundation
 
 final class UserAgentController {
     static let shared = UserAgentController()
+    private var tabHostDesktopOverrides: [UUID: [String: Bool]] = [:]
     
     private init() {}
     
+    func userAgent(for urlString: String) -> String? {
+        userAgent(for: urlString, tabID: nil)
+    }
+    
     // It's sad to have this function, because Gecko + iOS
     // is a super weird combination that websites don't expect!
-    func userAgent(for urlString: String) -> String? {
+    func userAgent(for urlString: String, tabID: UUID?) -> String? {
         let host = extractHost(from: urlString)
         
         let geckoVersion = Bundle.main.object(forInfoDictionaryKey: "GeckoVersion") as? String ?? ""
@@ -28,6 +33,15 @@ final class UserAgentController {
         let googleMobileUserAgent = "Mozilla/5.0 (Linux; Android 15; Nexus 5 Build/MRA58N) FxQuantum/\(geckoMajorVersion).0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/\(chromeMajorVersion).0.0.0 Mobile Safari/537.36"
         
         let prefs = BrowserPreferences.shared
+        let requestDesktopWebsite = tabID.flatMap { tabID in
+            host.flatMap { host in
+                let overrides = tabHostDesktopOverrides[tabID]
+                return overrides?[host] ?? overrides?.first(where: {
+                    domainMatches(host: host, domain: $0.key) || domainMatches(host: $0.key, domain: host)
+                })?.value
+            }
+        } ?? prefs.requestDesktopWebsite
+        
         // Always use the Android mobile user agent for AMO to
         // allow addons installation.
         if host == "addons.mozilla.org" {
@@ -42,7 +56,7 @@ final class UserAgentController {
         // I have so many people reporting broken UI issues, login
         // issues, etc on Google services, so this is a compatibility
         // hack stolen from the Google Search Fixer extension.
-        if prefs.useAndroidUserAgent && !prefs.requestDesktopWebsite,
+        if prefs.useAndroidUserAgent && !requestDesktopWebsite,
            host?.split(separator: ".").contains("google") == true {
             return googleMobileUserAgent
         }
@@ -51,7 +65,7 @@ final class UserAgentController {
             prefs.androidUserAgentDomains.contains { domainMatches(host: host, domain: $0) }
         } ?? false)
         
-        switch (shouldUseAndroidUserAgent, prefs.requestDesktopWebsite) {
+        switch (shouldUseAndroidUserAgent, requestDesktopWebsite) {
         case (true, true):
             return androidDesktopUserAgent
         case (true, false):
@@ -61,6 +75,42 @@ final class UserAgentController {
         default:
             return defaultMobileUserAgent
         }
+    }
+    
+    func isDesktopMode(for urlString: String, tabID: UUID) -> Bool? {
+        guard let host = extractHost(from: urlString),
+              urlString.starts(with: "moz-extension://") == false,
+              host != "addons.mozilla.org" else {
+            return nil
+        }
+        
+        let overrides = tabHostDesktopOverrides[tabID]
+        return overrides?[host] ?? overrides?.first(where: {
+            domainMatches(host: host, domain: $0.key) || domainMatches(host: $0.key, domain: host)
+        })?.value ?? BrowserPreferences.shared.requestDesktopWebsite
+    }
+    
+    func changeWebsiteMode(for urlString: String, tabID: UUID) {
+        guard let host = extractHost(from: urlString),
+              let isDesktop = isDesktopMode(for: urlString, tabID: tabID) else {
+            return
+        }
+        
+        let newSetting = !isDesktop
+        if newSetting == BrowserPreferences.shared.requestDesktopWebsite {
+            tabHostDesktopOverrides[tabID]?.removeValue(forKey: host)
+            if tabHostDesktopOverrides[tabID]?.isEmpty == true {
+                tabHostDesktopOverrides.removeValue(forKey: tabID)
+            }
+        } else {
+            var overrides = tabHostDesktopOverrides[tabID] ?? [:]
+            overrides[host] = newSetting
+            tabHostDesktopOverrides[tabID] = overrides
+        }
+    }
+    
+    func clearOverrides(forTabID tabID: UUID) {
+        tabHostDesktopOverrides.removeValue(forKey: tabID)
     }
     
     func extractHost(from urlString: String) -> String? {

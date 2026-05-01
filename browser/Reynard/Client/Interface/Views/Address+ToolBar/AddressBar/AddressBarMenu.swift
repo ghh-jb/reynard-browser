@@ -8,19 +8,36 @@
 import UIKit
 
 enum AddressBarMenu {
+    struct AddonItem {
+        let menuItem: AddonMenuItem
+        let image: UIImage?
+    }
+    
     private static let rootIdentifier = UIMenu.Identifier("me.minh-ton.reynard.address-bar-menu")
     private static let manageAddonsIdentifier = UIMenu.Identifier("me.minh-ton.reynard.address-bar-menu.manage-addons")
+    static let presentAddonSettingsNotification = Notification.Name("me.minh-ton.reynard.address-bar-menu.present-addon-settings")
+    static let changeWebsiteModeNotification = Notification.Name("me.minh-ton.reynard.address-bar-menu.toggle-website-mode")
     
-    static func makeMenu(addonsController: AddonsController) -> UIMenu? {
-        let addBookmarkAction = UIAction(
-            title: "Add Bookmark",
-            image: UIImage(systemName: "book")
-        ) { _ in }
+    static func makeMenu(
+        selectedTab: Tab?,
+        selectedURL: String?,
+        addonItems: [AddonItem]
+    ) -> UIMenu? {
+        var children: [UIMenuElement] = []
         
-        let addonItems = addonsController.visibleMenuItemsForCurrentSite()
-        let manageAddonsChildren: [UIMenuElement]
+        if let selectedTab,
+           let selectedURL,
+           let isDesktop = UserAgentController.shared.isDesktopMode(for: selectedURL, tabID: selectedTab.id) {
+            let title = isDesktop ? "Request Mobile Website" : "Request Desktop Website"
+            let imageName = isDesktop ? "iphone" : "desktopcomputer"
+            children.append(UIAction(title: title, image: UIImage(systemName: imageName)) { _ in
+                NotificationCenter.default.post(name: changeWebsiteModeNotification, object: nil)
+            })
+        }
+        
+        let addonsChildren: [UIMenuElement]
         if addonItems.isEmpty {
-            manageAddonsChildren = [
+            addonsChildren = [
                 UIAction(
                     title: "No Add-ons",
                     image: UIImage(systemName: "puzzlepiece.extension"),
@@ -28,29 +45,30 @@ enum AddressBarMenu {
                 ) { _ in }
             ]
         } else {
-            manageAddonsChildren = addonItems.map { item in
-                UIAction(
-                    title: item.title,
-                    image: addonsController.iconImage(for: item.addon)
-                ) { _ in
-                    addonsController.presentCurrentSiteSettings(for: item)
+            addonsChildren = addonItems.map { item in
+                UIAction(title: item.menuItem.title, image: item.image) { _ in
+                    NotificationCenter.default.post(
+                        name: presentAddonSettingsNotification,
+                        object: nil,
+                        userInfo: ["addonItem": item.menuItem]
+                    )
                 }
             }
         }
         
-        let manageAddonsMenu = UIMenu(
-            title: "Manage Add-ons",
-            image: UIImage(systemName: "puzzlepiece.extension"),
-            identifier: manageAddonsIdentifier,
-            children: manageAddonsChildren
+        children.append(
+            UIMenu(
+                title: "Manage Add-ons",
+                image: UIImage(systemName: "puzzlepiece.extension"),
+                identifier: manageAddonsIdentifier,
+                children: addonsChildren
+            )
         )
         
-        return UIMenu(
-            title: "",
-            image: nil,
-            identifier: rootIdentifier,
-            options: [],
-            children: [addBookmarkAction, manageAddonsMenu]
-        )
+        guard !children.isEmpty else {
+            return nil
+        }
+        
+        return UIMenu(title: "", image: nil, identifier: rootIdentifier, options: [], children: children)
     }
 }

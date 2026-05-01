@@ -67,4 +67,16 @@ final class BrowserActions {
     func goForward() {
         controller.tabManager.selectedTab?.session.goForward()
     }
+    
+    func changeWebsiteMode() {
+        guard let tab = controller.tabManager.selectedTab,
+              let url = tab.url else {
+            return
+        }
+        
+        UserAgentController.shared.changeWebsiteMode(for: url, tabID: tab.id)
+        tab.session.updateUserAgent(UserAgentController.shared.userAgent(for: url, tabID: tab.id))
+        tab.session.reload()
+        controller.refreshAddressBar()
+    }
 }

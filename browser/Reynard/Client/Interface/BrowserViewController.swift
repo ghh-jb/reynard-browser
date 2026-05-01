@@ -123,6 +123,18 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             name: Notification.Name("landscapeTabBarChanged"),
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(changeWebsiteModeRequested),
+            name: AddressBarMenu.changeWebsiteModeNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(presentAddonSettingsRequested(_:)),
+            name: AddressBarMenu.presentAddonSettingsNotification,
+            object: nil
+        )
         
         browserLayout.configureLayout()
         syncBrowserNavigationChrome(animated: false)
@@ -472,7 +484,28 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         }
         browserUI.addressBar.setLoadingProgress(selectedTab?.progress ?? 0, isLoading: selectedTab?.isLoading ?? false)
         addonsController.prepareVisibleAddonIcons()
-        browserUI.addressBar.setAddonsMenu(AddressBarMenu.makeMenu(addonsController: addonsController))
+        let addonItems = addonsController.visibleMenuItemsForCurrentSite().map { item in
+            AddressBarMenu.AddonItem(menuItem: item, image: addonsController.iconImage(for: item.addon))
+        }
+        browserUI.addressBar.setAddonsMenu(
+            AddressBarMenu.makeMenu(
+                selectedTab: selectedTab,
+                selectedURL: selectedURL,
+                addonItems: addonItems
+            )
+        )
+    }
+    
+    @objc private func changeWebsiteModeRequested() {
+        browserActions.changeWebsiteMode()
+    }
+    
+    @objc private func presentAddonSettingsRequested(_ notification: Notification) {
+        guard let item = notification.userInfo?["addonItem"] as? AddonMenuItem else {
+            return
+        }
+        
+        addonsController.presentCurrentSiteSettings(for: item)
     }
     
     func tabManagerDidChangeTabs(_ tabManager: TabManager) {

@@ -317,6 +317,7 @@ final class AddonSettingsDetailViewController: SettingsTableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        enableSwitch.isEnabled = false
         enableSwitch.addTarget(self, action: #selector(enableSwitchChanged(_:)), for: .valueChanged)
     }
     
@@ -371,6 +372,9 @@ final class AddonSettingsDetailViewController: SettingsTableViewController {
             }
             openLinkInBrowser(optionsPageURL)
         case .remove:
+            guard case enableSwitch.isEnabled = true else {
+                return
+            }
             presentRemoveConfirmation()
         }
     }
@@ -440,6 +444,7 @@ final class AddonSettingsDetailViewController: SettingsTableViewController {
         self.addon = addon
         title = addon.metaData.name ?? addon.id
         enableSwitch.isOn = addon.metaData.enabled
+        enableSwitch.isEnabled = true
         tableView.reloadData()
     }
     
@@ -462,7 +467,7 @@ final class AddonSettingsDetailViewController: SettingsTableViewController {
             cell.textLabel?.textColor = view.tintColor
         case .remove:
             cell.textLabel?.text = "Remove Add-on..."
-            cell.textLabel?.textColor = .systemRed
+            cell.textLabel?.textColor = enableSwitch.isEnabled ? .systemRed : .secondaryLabel
         }
         
         return cell

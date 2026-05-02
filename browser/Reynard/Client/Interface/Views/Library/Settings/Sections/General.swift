@@ -466,7 +466,7 @@ final class AddonSettingsDetailViewController: SettingsTableViewController {
             cell.textLabel?.text = "Add-on Settings"
             cell.textLabel?.textColor = view.tintColor
         case .remove:
-            cell.textLabel?.text = "Remove Add-on..."
+            cell.textLabel?.text = enableSwitch.isEnabled ? "Remove Add-on..." : "Loading..."
             cell.textLabel?.textColor = enableSwitch.isEnabled ? .systemRed : .secondaryLabel
         }
         

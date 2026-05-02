@@ -34,12 +34,7 @@ final class UserAgentController {
         
         let prefs = BrowserPreferences.shared
         let requestDesktopWebsite = tabID.flatMap { tabID in
-            host.flatMap { host in
-                let overrides = tabHostDesktopOverrides[tabID]
-                return overrides?[host] ?? overrides?.first(where: {
-                    domainMatches(host: host, domain: $0.key) || domainMatches(host: $0.key, domain: host)
-                })?.value
-            }
+            isDesktopMode(for: urlString, tabID: tabID)
         } ?? prefs.requestDesktopWebsite
         
         // Always use the Android mobile user agent for AMO to

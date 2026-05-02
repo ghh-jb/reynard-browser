@@ -297,6 +297,9 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
             },
             createNewSessionTab: { [weak self] url, windowId in
                 self?.createPopupSessionTab(url: url, windowId: windowId)
+            },
+            onDismiss: { [weak self] in
+                self?.restoreBrowserTabInteraction()
             }
         )
         
@@ -425,6 +428,19 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         return presentedViewController
     }
     
+    private func restoreBrowserTabInteraction() {
+        DispatchQueue.main.async { [weak self] in
+            guard let controller = self?.controller,
+                  let session = controller.tabManager.selectedTab?.session else {
+                return
+            }
+            
+            controller.browserUI.geckoView.session = session
+            session.setActive(true)
+            session.setFocused(true)
+        }
+    }
+    
     func prepareVisibleAddonIcons() {
         guard let session = currentSession() else {
             return
@@ -450,6 +466,7 @@ private final class AddonPopupViewController: UIViewController, ContentDelegate,
     private let popupTitle: String
     private let openURLInTab: (String) -> Void
     private let createNewSessionTab: (String, String) -> GeckoSession?
+    private let onDismiss: () -> Void
     private let geckoView = GeckoView()
     private let session = GeckoSession()
     private var hasClosedSession = false
@@ -458,12 +475,14 @@ private final class AddonPopupViewController: UIViewController, ContentDelegate,
         url: String,
         title: String,
         openURLInTab: @escaping (String) -> Void,
-        createNewSessionTab: @escaping (String, String) -> GeckoSession?
+        createNewSessionTab: @escaping (String, String) -> GeckoSession?,
+        onDismiss: @escaping () -> Void
     ) {
         popupURL = url
         popupTitle = title
         self.openURLInTab = openURLInTab
         self.createNewSessionTab = createNewSessionTab
+        self.onDismiss = onDismiss
         super.init(nibName: nil, bundle: nil)
         session.isAddonPopup = true
         session.contentDelegate = self
@@ -567,6 +586,7 @@ private final class AddonPopupViewController: UIViewController, ContentDelegate,
         super.viewDidDisappear(animated)
         if isBeingDismissed || isMovingFromParent || navigationController?.isBeingDismissed == true {
             closeSessionIfNeeded()
+            onDismiss()
         }
     }
     

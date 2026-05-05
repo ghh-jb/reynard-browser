@@ -71,7 +71,7 @@ final class AddressBar: UIView {
         field.borderStyle = .none
         field.backgroundColor = .clear
         field.placeholder = AddressBar.placeholderText
-        field.keyboardType = .default
+        field.keyboardType = .webSearch
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
         field.textContentType = .none

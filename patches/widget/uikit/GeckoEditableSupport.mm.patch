@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..46c1a0fb6149
+index 000000000000..1959769ddc3e
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,2623 @@
+@@ -0,0 +1,2711 @@
 +/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=2 sw=2 et tw=80: */
 +/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -134,6 +134,11 @@ index 000000000000..46c1a0fb6149
 +bool TextInputHandler::SelectedRange(NSRange& aRange) {
 +  aRange = NSMakeRange(NSNotFound, 0);
 +
++  if (mSelectedRangeOverride.isSome()) {
++    aRange = *mSelectedRangeOverride;
++    return true;
++  }
++
 +  if (Destroyed()) {
 +    return false;
 +  }
@@ -149,6 +154,11 @@ index 000000000000..46c1a0fb6149
 +  const uint32_t length = query.mReply->DataRef().Length();
 +  aRange = NSMakeRange(offset, length);
 +  return true;
++}
++
++bool TextInputHandler::MarkedRange(NSRange& aRange) {
++  aRange = HasMarkedText() ? mMarkedRange : NSMakeRange(NSNotFound, 0);
++  return HasMarkedText();
 +}
 +
 +// Updates Gecko's selection range.
@@ -186,6 +196,15 @@ index 000000000000..46c1a0fb6149
 +
 +  if (Destroyed() || aRange.location == NSNotFound) {
 +    return false;
++  }
++
++  if (HasMarkedText() && aRange.location >= mMarkedRange.location &&
++      aRange.length <= mMarkedRange.length) {
++    const NSUInteger relativeStart = aRange.location - mMarkedRange.location;
++    if (relativeStart <= mMarkedRange.length - aRange.length) {
++      aText.Assign(Substring(mMarkedText, relativeStart, aRange.length));
++      return true;
++    }
 +  }
 +
 +  if (aRange.location > UINT32_MAX || aRange.length > UINT32_MAX) {
@@ -357,6 +376,7 @@ index 000000000000..46c1a0fb6149
 +- (NSUInteger)documentLength;
 +- (ChildViewTextPosition*)textPosForPosition:(UITextPosition*)aPosition;
 +- (ChildViewTextRange*)textRangeForTextRange:(UITextRange*)aRange;
++- (ChildViewTextRange*)textRangeForExactRange:(NSRange)aRange;
 +- (ChildViewTextRange*)textRangeForRange:(NSRange)aRange;
 +- (NSRange)rangeForTextRange:(UITextRange*)aRange;
 +- (void)resetHandleState;
@@ -534,6 +554,23 @@ index 000000000000..46c1a0fb6149
 +  }
 +
 +  return [ChildViewTextRange rangeWithStart:start end:end];
++}
++
++- (ChildViewTextRange*)textRangeForExactRange:(NSRange)aRange {
++  if (aRange.location == NSNotFound) {
++    return nil;
++  }
++
++  NSUInteger end = aRange.location;
++  if (aRange.location <= NSUIntegerMax - aRange.length) {
++    end = aRange.location + aRange.length;
++  }
++
++  ChildViewTextPosition* startPosition =
++      [ChildViewTextPosition positionWithOffset:aRange.location];
++  ChildViewTextPosition* endPosition =
++      [ChildViewTextPosition positionWithOffset:end];
++  return [ChildViewTextRange rangeWithStart:startPosition end:endPosition];
 +}
 +
 +- (ChildViewTextRange*)textRangeForRange:(NSRange)aRange {
@@ -1957,7 +1994,17 @@ index 000000000000..46c1a0fb6149
 +}
 +
 +- (UITextRange*)markedTextRange {
-+  return nil;
++  widget::TextInputHandler* handler = [self textHandler];
++  if (!handler) {
++    return nil;
++  }
++
++  NSRange range = NSMakeRange(NSNotFound, 0);
++  if (!handler->MarkedRange(range) || range.location == NSNotFound) {
++    return nil;
++  }
++
++  return [self textRangeForExactRange:range];
 +}
 +
 +- (NSDictionary*)markedTextStyle {
@@ -1974,14 +2021,33 @@ index 000000000000..46c1a0fb6149
 +
 +- (void)setMarkedText:(NSString*)aMarkedText
 +        selectedRange:(NSRange)aSelectedRange {
-+  UITextRange* targetRange = [self selectedTextRange];
-+  if (!targetRange) {
++  widget::TextInputHandler* handler = [self textHandler];
++  if (!handler) {
 +    return;
 +  }
-+  [self replaceRange:targetRange withText:aMarkedText ?: @""];
++
++  mEditable.mCaretMenuActive = NO;
++  [mEditable.mTextInputDelegate textWillChange:self];
++  [mEditable.mTextInputDelegate selectionWillChange:self];
++  handler->SetMarkedText(aMarkedText ?: @"", aSelectedRange);
++  [mEditable.mTextInputDelegate textDidChange:self];
++  [mEditable.mTextInputDelegate selectionDidChange:self];
++  [self scheduleEditSelectionUpdate];
 +}
 +
 +- (void)unmarkText {
++  widget::TextInputHandler* handler = [self textHandler];
++  if (!handler) {
++    return;
++  }
++
++  mEditable.mCaretMenuActive = NO;
++  [mEditable.mTextInputDelegate textWillChange:self];
++  [mEditable.mTextInputDelegate selectionWillChange:self];
++  handler->UnmarkText();
++  [mEditable.mTextInputDelegate textDidChange:self];
++  [mEditable.mTextInputDelegate selectionDidChange:self];
++  [self scheduleEditSelectionUpdate];
 +}
 +
 +- (UITextPosition*)beginningOfDocument {
@@ -2214,7 +2280,17 @@ index 000000000000..46c1a0fb6149
 +// Lets UIKit text interactions begin and seeds handle tracking.
 +- (BOOL)interactionShouldBegin:(UITextInteraction*)aInteraction
 +                       atPoint:(CGPoint)aPoint {
-+  (void)aInteraction;
++  // Somehow there's a non-owned UITextSelectionInteraction subclass causing
++  // overlapping duplicated selections on modern path CJK. So we allow only our
++  // owned interactions to trigger handle tracking.
++  const BOOL isOwnedInteraction =
++      aInteraction == mEditable.mEditableTextInteraction ||
++      aInteraction == mEditable.mNonEditableTextInteraction;
++
++  if (mEditable.mSelectionDisplayInteraction != nil && !isOwnedInteraction) {
++    return NO;
++  }
++
 +  [self startHandleTrackingAtPoint:aPoint
 +                             range:[self selectedRange]
 +                           handler:[self textHandler]];
@@ -2293,12 +2369,24 @@ index 000000000000..46c1a0fb6149
 +    return;
 +  }
 +
-+  if (mEditable.mEditableTextInteraction.view == self) {
-+    [self removeInteraction:mEditable.mEditableTextInteraction];
++  const bool keyboardDisabled =
++      mGeckoChild && mGeckoChild->IsVirtualKeyboardDisabled();
++  if (keyboardDisabled) {
++    if (mEditable.mEditableTextInteraction.view == self) {
++      [self removeInteraction:mEditable.mEditableTextInteraction];
++    }
++    if (mEditable.mNonEditableTextInteraction.view != self) {
++      [self addInteraction:mEditable.mNonEditableTextInteraction];
++    }
++  } else {
++    if (mEditable.mNonEditableTextInteraction.view == self) {
++      [self removeInteraction:mEditable.mNonEditableTextInteraction];
++    }
++    if (mEditable.mEditableTextInteraction.view != self) {
++      [self addInteraction:mEditable.mEditableTextInteraction];
++    }
 +  }
-+  if (mEditable.mNonEditableTextInteraction.view == self) {
-+    [self removeInteraction:mEditable.mNonEditableTextInteraction];
-+  }
++
 +  [self updateSelectionActivation];
 +}
 +

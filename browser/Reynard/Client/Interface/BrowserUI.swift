@@ -54,6 +54,8 @@ final class BrowserUI {
     var geckoTrailingPhoneConstraint: NSLayoutConstraint!
     var geckoLeadingPadConstraint: NSLayoutConstraint!
     var geckoTrailingPadConstraint: NSLayoutConstraint!
+    var geckoTopFullscreenConstraint: NSLayoutConstraint!
+    var geckoBottomFullscreenConstraint: NSLayoutConstraint!
     
     var phoneChromeBottomConstraint: NSLayoutConstraint!
     var phoneChromeHeightConstraint: NSLayoutConstraint!

@@ -66,6 +66,8 @@ final class BrowserLayout {
         ui.geckoTrailingPhoneConstraint = ui.geckoView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ui.geckoLeadingPadConstraint = ui.geckoView.leadingAnchor.constraint(equalTo: view.leadingAnchor)
         ui.geckoTrailingPadConstraint = ui.geckoView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ui.geckoTopFullscreenConstraint = ui.geckoView.topAnchor.constraint(equalTo: view.topAnchor)
+        ui.geckoBottomFullscreenConstraint = ui.geckoView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         
         ui.phoneChromeBottomConstraint = ui.chromeContainer.containerView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ui.phoneChromeHeightConstraint = ui.chromeContainer.containerView.heightAnchor.constraint(equalToConstant: 94)
@@ -257,6 +259,14 @@ final class BrowserLayout {
         let ui = controller.browserUI
         let pad = controller.usesPadChromeLayout
         let compactPad = controller.usesCompactPadChromeMode
+        let isMediaFullscreen = controller.isMediaFullscreen
+        
+        if isMediaFullscreen {
+            applyMediaFullscreenLayoutState()
+            controller.updateNavigationButtons()
+            return
+        }
+        
         setAddressBarHost(isPad: pad)
         setKeyboardDismissButtonHost(isPad: pad)
         ui.topBar.topConstraint.constant = resolvedPadTopInset()
@@ -296,6 +306,8 @@ final class BrowserLayout {
         ui.geckoBottomCompactPadConstraint.isActive = compactPad
         ui.geckoLeadingPadConstraint.isActive = pad
         ui.geckoTrailingPadConstraint.isActive = pad
+        ui.geckoTopFullscreenConstraint.isActive = false
+        ui.geckoBottomFullscreenConstraint.isActive = false
         
         let phoneOverview = controller.usesPhoneBottomOverviewLayout
         ui.tabOverviewCollection.topPhoneConstraint.isActive = phoneOverview
@@ -303,7 +315,7 @@ final class BrowserLayout {
         ui.tabOverviewCollection.topPadConstraint.isActive = !phoneOverview
         ui.tabOverviewCollection.bottomPadConstraint.isActive = !phoneOverview
         
-        let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPadLayout ? BrowserPreferences.shared.showsLandscapeTabBar && isLandscape : true)
+        let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPadDevice ? BrowserPreferences.shared.showsLandscapeTabBar && isLandscape : true)
         let showsCompactPadBottomToolbar = compactPad && !controller.tabOverviewPresentation.isVisible
         ui.topBar.barView.isHidden = !pad
         ui.topBar.safeAreaFillView.isHidden = !pad
@@ -322,11 +334,11 @@ final class BrowserLayout {
         ui.tabOverviewBottomBar.barView.isHidden = !phoneOverview
         ui.tabOverviewBottomBar.safeAreaFillView.isHidden = true
         ui.tabOverviewBarButtons.attach(to: phoneOverview ? ui.tabOverviewBottomBar.barView : ui.tabOverviewTopBar.barView)
-        ui.padTopBarButtons.updateLayout(isPadLayout: controller.isPadLayout, showsCompactPadChrome: compactPad, sidebarVisible: controller.isLibrarySidebarVisible)
+        ui.padTopBarButtons.updateLayout(isPadLayout: controller.isPadDevice, showsCompactPadChrome: compactPad, sidebarVisible: controller.isLibrarySidebarVisible)
         ui.padTopBarButtons.leftStack.isHidden = compactPad
         ui.padTopBarButtons.rightStack.isHidden = compactPad
         ui.padTopBarButtons.leftWidthConstraint.constant = compactPad ? 0 : resolvedPadTopBarLeftWidth(
-            isPadLayout: controller.isPadLayout,
+            isPadLayout: controller.isPadDevice,
             sidebarVisible: controller.isLibrarySidebarVisible,
             showsDownloads: ui.padTopBarButtons.downloadButton.isShowingDownloads
         )
@@ -365,8 +377,74 @@ final class BrowserLayout {
         controller.updateNavigationButtons()
     }
     
+    private func applyMediaFullscreenLayoutState() {
+        let ui = controller.browserUI
+        let pad = controller.usesPadChromeLayout
+        
+        setAddressBarHost(isPad: pad)
+        setKeyboardDismissButtonHost(isPad: pad)
+        ui.topBar.topConstraint.constant = resolvedPadTopInset()
+        
+        ui.geckoTopPhoneConstraint.isActive = false
+        ui.geckoBottomPhoneConstraint.isActive = false
+        ui.geckoBottomPhoneSearchPinnedConstraint.isActive = false
+        ui.geckoBottomPhoneKeyboardOverlayConstraint.isActive = false
+        ui.geckoTopPadConstraint.isActive = false
+        ui.geckoBottomPadConstraint.isActive = false
+        ui.geckoBottomCompactPadConstraint.isActive = false
+        ui.geckoLeadingPhoneConstraint.isActive = !pad
+        ui.geckoTrailingPhoneConstraint.isActive = !pad
+        ui.geckoLeadingPadConstraint.isActive = pad
+        ui.geckoTrailingPadConstraint.isActive = pad
+        ui.geckoTopFullscreenConstraint.isActive = true
+        ui.geckoBottomFullscreenConstraint.isActive = true
+        
+        ui.topBar.barView.isHidden = true
+        ui.topBar.safeAreaFillView.isHidden = true
+        ui.padTabBar.collectionView.isHidden = true
+        ui.topBar.heightConstraint.constant = 52
+        ui.padTabBar.heightConstraint.constant = 0
+        
+        ui.chromeContainer.containerView.isHidden = true
+        ui.chromeContainer.bottomSafeAreaFillView.isHidden = true
+        ui.phoneChromeBottomConstraint.constant = 0
+        ui.chromeContainer.containerView.backgroundColor = .systemGray6
+        ui.chromeContainer.bottomSafeAreaFillView.backgroundColor = .systemGray6
+        
+        ui.keyboardDismissButton.button.isHidden = true
+        ui.keyboardDismissButton.button.alpha = 0
+        ui.keyboardDismissButton.centerYConstraint.isActive = true
+        ui.keyboardDismissButton.trailingPhoneConstraint.isActive = !pad
+        ui.keyboardDismissButton.trailingPadConstraint.isActive = pad && !controller.usesCompactPadChromeMode
+        ui.keyboardDismissButton.trailingCompactPadConstraint.isActive = pad && controller.usesCompactPadChromeMode
+        
+        ui.addressBarPhoneLeadingConstraint.isActive = !pad
+        ui.addressBarPhoneTopConstraint.isActive = !pad
+        ui.addressBarPhoneHeightConstraint.isActive = !pad
+        ui.addressBarPhoneTrailingFullConstraint.isActive = !pad
+        ui.addressBarPhoneTrailingFocusedConstraint.isActive = false
+        ui.addressBarPadLeadingConstraint.isActive = pad && !controller.usesCompactPadChromeMode
+        ui.addressBarPadTrailingConstraint.isActive = pad && !controller.usesCompactPadChromeMode
+        ui.addressBarCompactPadLeadingConstraint.isActive = pad && controller.usesCompactPadChromeMode
+        ui.addressBarCompactPadTrailingConstraint.isActive = pad && controller.usesCompactPadChromeMode
+        ui.addressBarPadCenterYConstraint.isActive = pad
+        ui.addressBarPadHeightConstraint.isActive = pad
+        
+        ui.tabOverviewTopBar.barView.isHidden = controller.usesPhoneBottomOverviewLayout
+        ui.tabOverviewBottomBar.barView.isHidden = !controller.usesPhoneBottomOverviewLayout
+        ui.tabOverviewBottomBar.safeAreaFillView.isHidden = true
+        ui.padTopBarButtons.leftStack.isHidden = controller.usesCompactPadChromeMode
+        ui.padTopBarButtons.rightStack.isHidden = controller.usesCompactPadChromeMode
+        ui.phoneToolbarTopConstraint.isActive = !pad && !controller.usesCompactPadChromeMode
+        ui.phoneToolbarCompactPadTopConstraint.isActive = controller.usesCompactPadChromeMode
+        
+        ui.toolbarView.alpha = 1
+        ui.addressBar.setShadowEnabled(!pad)
+        ui.addressBar.setHidePlaceholderIcon(controller.usesPhoneTopAddressBarLayout || controller.usesPadChromeLayout)
+    }
+    
     private func resolvedPadTopInset() -> CGFloat {
-        guard controller.isPadLayout,
+        guard controller.isPadDevice,
               controller.splitViewController is BrowserSplitViewController else {
             return controller.view.safeAreaInsets.top
         }

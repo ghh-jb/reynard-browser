@@ -396,7 +396,13 @@ extension TabManagerImplementation: ContentDelegate {
         removeTab(at: index)
     }
     
-    func onFullScreen(session: GeckoSession, fullScreen: Bool) {}
+    func onFullScreen(session: GeckoSession, fullScreen: Bool) {
+        guard selectedTab?.session === session else {
+            return
+        }
+        
+        delegate?.tabManager(self, didChangeFullscreen: fullScreen, for: session)
+    }
     
     func onMetaViewportFitChange(session: GeckoSession, viewportFit: String) {}
     

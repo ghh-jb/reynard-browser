@@ -15,6 +15,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     private var embeddedSplitController: BrowserSplitViewController?
     private var pendingDownloadConfirmations: [DownloadStore.PendingDownload] = []
     private var isPresentingDownloadConfirmation = false
+    private weak var activeFullscreenSession: GeckoSession?
     
     lazy var tabCollectionCoordinator = TabCollectionCoordinator(controller: self)
     
@@ -33,6 +34,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     lazy var addonsController = AddonsController(controller: self)
     
     var isSearchFocused = false
+    private(set) var isMediaFullscreen = false
     private var pendingSelectionAnimation = false
     
     let downloadHaptic = UINotificationFeedbackGenerator()
@@ -41,17 +43,17 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         (splitViewController as? BrowserSplitViewController)?.isLibrarySidebarVisible ?? false
     }
     
-    var isPadLayout: Bool {
-        traitCollection.userInterfaceIdiom == .pad
+    var isPadDevice: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
     }
     
     var usesCompactPadChromeMode: Bool {
-        if isPadLayout && traitCollection.horizontalSizeClass == .compact { return true }
+        if isPadDevice && traitCollection.horizontalSizeClass == .compact { return true }
         return usesPhoneTopAddressBarLayout
     }
     
     var usesPadChromeLayout: Bool {
-        if isPadLayout { return true }
+        if isPadDevice { return true }
         if usesPhoneTopAddressBarLayout { return true }
         if let orientation = view.window?.windowScene?.interfaceOrientation {
             return orientation.isLandscape
@@ -61,7 +63,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     
     
     var usesPhoneTopAddressBarLayout: Bool {
-        guard !isPadLayout else { return false }
+        guard !isPadDevice else { return false }
         let isLandscape: Bool
         if let orientation = view.window?.windowScene?.interfaceOrientation {
             isLandscape = orientation.isLandscape
@@ -73,7 +75,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     var usesPhoneBottomOverviewLayout: Bool {
-        guard !isPadLayout else { return false }
+        guard !isPadDevice else { return false }
         return usesPhoneTopAddressBarLayout || !usesPadChromeLayout
     }
     
@@ -184,6 +186,22 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             return
         }
         view.endEditing(true)
+    }
+    
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        if isMediaFullscreen && !isPadDevice {
+            return .landscape
+        }
+        
+        return isPadDevice ? .all : .allButUpsideDown
+    }
+    
+    override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
+        if isMediaFullscreen && !isPadDevice {
+            return .landscapeRight
+        }
+        
+        return .portrait
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -348,7 +366,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         let showsPadDownloads = browserUI.padTopBarButtons.downloadButton.isShowingDownloads
         
         if !usesEmbeddedSplitRoot,
-           isPadLayout,
+           isPadDevice,
            !usesCompactPadChromeMode,
            previousPadShowsDownloads != showsPadDownloads {
             browserLayout.applyChromeLayout(animated: false)
@@ -387,7 +405,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     func setLibrarySidebarVisible(_ visible: Bool, animated: Bool) {
-        guard isPadLayout else {
+        guard isPadDevice else {
             return
         }
         
@@ -401,7 +419,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             return 0
         }
         
-        if !isPadLayout {
+        if !isPadDevice {
             guard BrowserPreferences.shared.showsLandscapeTabBar else {
                 return 0
             }
@@ -546,7 +564,19 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         if usesPadChromeLayout {
             centerSelectedPadTab(animated: pendingSelectionAnimation)
         }
+        
+        if isMediaFullscreen,
+           activeFullscreenSession !== selectedTab.session {
+            applyFullscreenState(false, for: activeFullscreenSession)
+        }
         pendingSelectionAnimation = false
+    }
+    
+    func tabManager(_ tabManager: TabManager, didChangeFullscreen fullScreen: Bool, for session: GeckoSession) {
+        guard tabManager.selectedTab?.session === session else {
+            return
+        }
+        applyFullscreenState(fullScreen, for: session)
     }
     
     func tabManager(_ tabManager: TabManager, didUpdateTabAt index: Int, reason: TabManagerUpdateReason) {
@@ -762,7 +792,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     
     private func presentDownloadsFromToolbar() {
         DownloadStore.shared.markCompletedDownloadsViewed()
-        if isPadLayout,
+        if isPadDevice,
            !usesCompactPadChromeMode,
            let splitViewController = splitViewController as? BrowserSplitViewController {
             splitViewController.showLibrarySection(.downloads)
@@ -770,6 +800,72 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         }
         
         browserActions.presentMenuSheet(initialSection: .downloads)
+    }
+    
+    private func applyFullscreenState(_ fullScreen: Bool, for session: GeckoSession?) {
+        if fullScreen {
+            activeFullscreenSession = session
+        } else if activeFullscreenSession === session || session == nil {
+            activeFullscreenSession = nil
+        }
+        
+        guard isMediaFullscreen != fullScreen else {
+            return
+        }
+        
+        if fullScreen {
+            if tabOverviewPresentation.isVisible {
+                tabOverviewPresentation.setVisible(false, animated: false)
+            }
+            setSearchFocused(false, animated: false)
+            view.endEditing(true)
+        }
+        
+        isMediaFullscreen = fullScreen
+        browserLayout.applyChromeLayout(animated: true)
+        updateFullscreenOrientation(fullScreen)
+    }
+    
+    private func updateFullscreenOrientation(_ fullScreen: Bool) {
+        guard !isPadDevice else {
+            return
+        }
+        
+        if #available(iOS 16.0, *) {
+            setNeedsUpdateOfSupportedInterfaceOrientations()
+        }
+        
+        if fullScreen {
+            let targetOrientation: UIInterfaceOrientation
+            if let currentOrientation = view.window?.windowScene?.interfaceOrientation,
+               currentOrientation.isLandscape {
+                targetOrientation = currentOrientation
+            } else {
+                targetOrientation = .landscapeRight
+            }
+            forceInterfaceOrientation(targetOrientation)
+        } else {
+            forceInterfaceOrientation(.portrait)
+        }
+    }
+    
+    private func forceInterfaceOrientation(_ orientation: UIInterfaceOrientation) {
+        let deviceOrientation: UIDeviceOrientation
+        switch orientation {
+        case .portrait:
+            deviceOrientation = .portrait
+        case .portraitUpsideDown:
+            deviceOrientation = .portraitUpsideDown
+        case .landscapeLeft:
+            deviceOrientation = .landscapeLeft
+        case .landscapeRight:
+            deviceOrientation = .landscapeRight
+        default:
+            return
+        }
+        
+        UIDevice.current.setValue(deviceOrientation.rawValue, forKey: "orientation")
+        UIViewController.attemptRotationToDeviceOrientation()
     }
     
 }

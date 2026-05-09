@@ -1,0 +1,13 @@
+diff --git a/layout/style/res/accessiblecaret.css b/layout/style/res/accessiblecaret.css
+index 5ffab8c4e9e1..498062226192 100644
+--- a/layout/style/res/accessiblecaret.css
++++ b/layout/style/res/accessiblecaret.css
+@@ -5,7 +5,7 @@
+ :host {
+   /* Add transition effect to make caret size changing smoother. */
+   transition-property: width, height, margin-left;
+-
++  opacity: 0; /* REYNARD: Hide selection/caret grabber since we have UIKit's own implementation. */
+   position: absolute;
+   z-index: 2147483647;
+ }

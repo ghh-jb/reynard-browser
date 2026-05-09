@@ -45,6 +45,140 @@ private var activeDateTimePickers: [String: DateTimePicker] = [:]
 @MainActor
 private var activeFilePickers: [String: FilePicker] = [:]
 
+@MainActor
+private func resolvePromptPresenter(session: GeckoSession) -> UIViewController? {
+    guard let childView = session.window?.view(),
+          let geckoView = childView.superview else {
+        return nil
+    }
+    return geckoView.nearestViewController()?.topPresentedController()
+}
+
+@MainActor
+private func presentAlertPrompt(
+    session: GeckoSession,
+    title: String,
+    message: String
+) async {
+    guard let presenter = resolvePromptPresenter(session: session) else {
+        return
+    }
+    
+    await withCheckedContinuation { continuation in
+        let alert = UIAlertController(
+            title: title.isEmpty ? nil : title,
+            message: message.isEmpty ? nil : message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
+            continuation.resume()
+        })
+        presenter.present(alert, animated: true)
+    }
+}
+
+@MainActor
+private func presentButtonPrompt(
+    session: GeckoSession,
+    title: String,
+    message: String,
+    buttonTitles: [String],
+    customButtonTitles: [String]
+) async -> [String: Any]? {
+    guard let presenter = resolvePromptPresenter(session: session) else {
+        return nil
+    }
+    
+    func resolvedTitle(at index: Int) -> String {
+        let label = (index < buttonTitles.count) ? buttonTitles[index] : ""
+        let customLabel = (index < customButtonTitles.count) ? customButtonTitles[index] : ""
+        
+        switch label {
+        case "ok":
+            return "OK"
+        case "cancel":
+            return "Cancel"
+        case "yes":
+            return "Yes"
+        case "no":
+            return "No"
+        case "custom":
+            return customLabel.isEmpty ? "OK" : customLabel
+        default:
+            return ""
+        }
+    }
+    
+    return await withCheckedContinuation { continuation in
+        let alert = UIAlertController(
+            title: title.isEmpty ? nil : title,
+            message: message.isEmpty ? nil : message,
+            preferredStyle: .alert
+        )
+        
+        let positiveTitle = resolvedTitle(at: 0)
+        if !positiveTitle.isEmpty {
+            alert.addAction(UIAlertAction(title: positiveTitle, style: .default) { _ in
+                continuation.resume(returning: ["button": 0])
+            })
+        }
+        
+        let neutralTitle = resolvedTitle(at: 1)
+        if !neutralTitle.isEmpty {
+            alert.addAction(UIAlertAction(title: neutralTitle, style: .default) { _ in
+                continuation.resume(returning: ["button": 1])
+            })
+        }
+        
+        let negativeTitle = resolvedTitle(at: 2)
+        if !negativeTitle.isEmpty {
+            let style: UIAlertAction.Style = (buttonTitles.count > 2 && buttonTitles[2] == "cancel") ? .cancel : .default
+            alert.addAction(UIAlertAction(title: negativeTitle, style: style) { _ in
+                continuation.resume(returning: ["button": 2])
+            })
+        }
+        
+        if alert.actions.isEmpty {
+            alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
+                continuation.resume(returning: ["button": 0])
+            })
+        }
+        
+        presenter.present(alert, animated: true)
+    }
+}
+
+@MainActor
+private func presentTextPrompt(
+    session: GeckoSession,
+    title: String,
+    message: String,
+    value: String
+) async -> [String: Any]? {
+    guard let presenter = resolvePromptPresenter(session: session) else {
+        return nil
+    }
+    
+    return await withCheckedContinuation { continuation in
+        let alert = UIAlertController(
+            title: title.isEmpty ? nil : title,
+            message: message.isEmpty ? nil : message,
+            preferredStyle: .alert
+        )
+        alert.addTextField { textField in
+            textField.text = value
+        }
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+            continuation.resume(returning: nil)
+        })
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
+            let text = alert.textFields?.first?.text ?? ""
+            continuation.resume(returning: ["text": text])
+        })
+        presenter.present(alert, animated: true)
+    }
+}
+
 private func resolvePromptAnchor(
     from promptData: [String: Any],
     session: GeckoSession
@@ -84,6 +218,39 @@ func newPromptHandler(_ session: GeckoSession) -> GeckoSessionHandler {
             
             let promptType = promptData["type"] as? String ?? ""
             let promptId = promptData["id"] as? String ?? ""
+            
+            if promptType == "alert" {
+                let title = promptData["title"] as? String ?? ""
+                let promptMessage = promptData["msg"] as? String ?? ""
+                await presentAlertPrompt(session: session, title: title, message: promptMessage)
+                return nil
+            }
+            
+            if promptType == "button" {
+                let title = promptData["title"] as? String ?? ""
+                let promptMessage = promptData["msg"] as? String ?? ""
+                let buttonTitles = (promptData["btnTitle"] as? [Any])?.map { $0 as? String ?? "" } ?? []
+                let customButtonTitles = (promptData["btnCustomTitle"] as? [Any])?.map { $0 as? String ?? "" } ?? []
+                return await presentButtonPrompt(
+                    session: session,
+                    title: title,
+                    message: promptMessage,
+                    buttonTitles: buttonTitles,
+                    customButtonTitles: customButtonTitles
+                )
+            }
+            
+            if promptType == "text" {
+                let title = promptData["title"] as? String ?? ""
+                let promptMessage = promptData["msg"] as? String ?? ""
+                let value = promptData["value"] as? String ?? ""
+                return await presentTextPrompt(
+                    session: session,
+                    title: title,
+                    message: promptMessage,
+                    value: value
+                )
+            }
             
             if promptType == "color" {
                 let colorValue = promptData["value"] as? String ?? "#000000"
@@ -208,6 +375,16 @@ extension UIView {
             responder = next
         }
         return nil
+    }
+}
+
+extension UIViewController {
+    func topPresentedController() -> UIViewController {
+        var controller: UIViewController = self
+        while let presented = controller.presentedViewController {
+            controller = presented
+        }
+        return controller
     }
 }
 

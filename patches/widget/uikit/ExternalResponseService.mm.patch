@@ -1,15 +1,15 @@
-diff --git a/widget/uikit/ExternalAppService.mm b/widget/uikit/ExternalAppService.mm
+diff --git a/widget/uikit/ExternalResponseService.mm b/widget/uikit/ExternalResponseService.mm
 new file mode 100644
-index 000000000000..3ed49bcc5d6e
+index 000000000000..b32c43cffe3d
 --- /dev/null
-+++ b/widget/uikit/ExternalAppService.mm
-@@ -0,0 +1,534 @@
++++ b/widget/uikit/ExternalResponseService.mm
+@@ -0,0 +1,538 @@
 +/* -*- Mode: c++; c-basic-offset: 2; tab-width: 2; indent-tabs-mode: nil; -*-
 + * This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 +
-+#include "ExternalAppService.h"
++#include "ExternalResponseService.h"
 +
 +#include "js/Object.h"
 +#include "js/PropertyAndElement.h"
@@ -332,6 +332,8 @@ index 000000000000..3ed49bcc5d6e
 +
 +nsresult ExternalResponseListener::DispatchExternalResponse(
 +    nsIChannel* aChannel) {
++  AssertIsOnMainThread();
++
 +  if (!mWindow || mWindow->Destroyed()) {
 +    return NS_ERROR_ABORT;
 +  }
@@ -472,22 +474,24 @@ index 000000000000..3ed49bcc5d6e
 +
 +}  // namespace
 +
-+mozilla::StaticRefPtr<ExternalAppService> ExternalAppService::sService;
++mozilla::StaticRefPtr<ExternalResponseService>
++    ExternalResponseService::sService;
 +
-+already_AddRefed<ExternalAppService> ExternalAppService::GetSingleton() {
++already_AddRefed<ExternalResponseService>
++ExternalResponseService::GetSingleton() {
 +  if (!sService) {
-+    sService = new ExternalAppService();
++    sService = new ExternalResponseService();
 +  }
 +
-+  RefPtr<ExternalAppService> service = sService;
++  RefPtr<ExternalResponseService> service = sService;
 +  return service.forget();
 +}
 +
-+ExternalAppService::ExternalAppService() = default;
++ExternalResponseService::ExternalResponseService() = default;
 +
-+NS_IMPL_ISUPPORTS(ExternalAppService, nsIExternalHelperAppService)
++NS_IMPL_ISUPPORTS(ExternalResponseService, nsIExternalHelperAppService)
 +
-+NS_IMETHODIMP ExternalAppService::DoContent(
++NS_IMETHODIMP ExternalResponseService::DoContent(
 +    const nsACString& aMimeContentType, nsIChannel* aChannel,
 +    nsIInterfaceRequestor* aContentContext, bool aForceSave,
 +    nsIInterfaceRequestor* aWindowContext,
@@ -495,7 +499,7 @@ index 000000000000..3ed49bcc5d6e
 +  return NS_ERROR_FAILURE;
 +}
 +
-+NS_IMETHODIMP ExternalAppService::CreateListener(
++NS_IMETHODIMP ExternalResponseService::CreateListener(
 +    const nsACString& aMimeContentType, nsIChannel* aChannel,
 +    mozilla::dom::BrowsingContext* aContentContext, bool aForceSave,
 +    nsIInterfaceRequestor* aWindowContext,
@@ -525,14 +529,14 @@ index 000000000000..3ed49bcc5d6e
 +  return NS_OK;
 +}
 +
-+NS_IMETHODIMP ExternalAppService::ApplyDecodingForExtension(
++NS_IMETHODIMP ExternalResponseService::ApplyDecodingForExtension(
 +    const nsACString& aExtension, const nsACString& aEncodingType,
 +    bool* aApplyDecoding) {
 +  *aApplyDecoding = true;
 +  return NS_OK;
 +}
 +
-+NS_IMETHODIMP ExternalAppService::GetPreferredDownloadsDirectory(
++NS_IMETHODIMP ExternalResponseService::GetPreferredDownloadsDirectory(
 +    nsIFile** aResult) {
 +  NS_ENSURE_ARG_POINTER(aResult);
 +  *aResult = nullptr;

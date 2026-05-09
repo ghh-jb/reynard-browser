@@ -1,0 +1,33 @@
+diff --git a/widget/uikit/ExternalResponseService.h b/widget/uikit/ExternalResponseService.h
+new file mode 100644
+index 000000000000..7d9081cf6c1a
+--- /dev/null
++++ b/widget/uikit/ExternalResponseService.h
+@@ -0,0 +1,27 @@
++/* -*- Mode: c++; c-basic-offset: 2; tab-width: 2; indent-tabs-mode: nil; -*-
++ * This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef ExternalResponseService_h_
++#define ExternalResponseService_h_
++
++#include "mozilla/StaticPtr.h"
++#include "nsIExternalHelperAppService.h"
++
++class ExternalResponseService : public nsIExternalHelperAppService {
++ public:
++  NS_DECL_ISUPPORTS
++  NS_DECL_NSIEXTERNALHELPERAPPSERVICE
++
++  ExternalResponseService();
++
++  static already_AddRefed<ExternalResponseService> GetSingleton();
++
++ private:
++  virtual ~ExternalResponseService() = default;
++
++  static mozilla::StaticRefPtr<ExternalResponseService> sService;
++};
++
++#endif  // ExternalResponseService_h_

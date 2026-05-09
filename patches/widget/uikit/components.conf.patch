@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/components.conf b/widget/uikit/components.conf
-index e8f65c05c3e0..ef09aab0adcf 100644
+index e8f65c05c3e0..d804e0aa2253 100644
 --- a/widget/uikit/components.conf
 +++ b/widget/uikit/components.conf
 @@ -31,6 +31,15 @@ Classes = [
@@ -10,9 +10,9 @@ index e8f65c05c3e0..ef09aab0adcf 100644
 +        'cid': '{f0cd2511-0911-4684-bdc6-117bc98f66c8}',
 +        'contract_ids': ['@mozilla.org/uriloader/external-helper-app-service;1'],
 +        'interfaces': ['nsIExternalHelperAppService'],
-+        'type': 'ExternalAppService',
-+        'headers': ['/widget/uikit/ExternalAppService.h'],
-+        'constructor': 'ExternalAppService::GetSingleton',
++        'type': 'ExternalResponseService',
++        'headers': ['/widget/uikit/ExternalResponseService.h'],
++        'constructor': 'ExternalResponseService::GetSingleton',
 +        'processes': ProcessSelector.MAIN_PROCESS_ONLY,
 +    },
      {

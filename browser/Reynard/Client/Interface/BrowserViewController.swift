@@ -16,6 +16,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     private var pendingDownloadConfirmations: [DownloadStore.PendingDownload] = []
     private var isPresentingDownloadConfirmation = false
     private weak var activeFullscreenSession: GeckoSession?
+    private var orientationBeforeFullscreen: UIInterfaceOrientation?
     
     lazy var tabCollectionCoordinator = TabCollectionCoordinator(controller: self)
     
@@ -836,6 +837,11 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         }
         
         if fullScreen {
+            if let currentOrientation = view.window?.windowScene?.interfaceOrientation,
+               currentOrientation != .unknown {
+                orientationBeforeFullscreen = currentOrientation
+            }
+            
             let targetOrientation: UIInterfaceOrientation
             if let currentOrientation = view.window?.windowScene?.interfaceOrientation,
                currentOrientation.isLandscape {
@@ -845,7 +851,9 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             }
             forceInterfaceOrientation(targetOrientation)
         } else {
-            forceInterfaceOrientation(.portrait)
+            let targetOrientation = orientationBeforeFullscreen ?? .portrait
+            forceInterfaceOrientation(targetOrientation)
+            orientationBeforeFullscreen = nil
         }
     }
     
@@ -857,9 +865,9 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         case .portraitUpsideDown:
             deviceOrientation = .portraitUpsideDown
         case .landscapeLeft:
-            deviceOrientation = .landscapeLeft
-        case .landscapeRight:
             deviceOrientation = .landscapeRight
+        case .landscapeRight:
+            deviceOrientation = .landscapeLeft
         default:
             return
         }

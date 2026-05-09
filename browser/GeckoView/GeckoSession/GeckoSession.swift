@@ -79,7 +79,7 @@ public class GeckoSession {
             }
         }
         
-        AddonsRuntimeController.shared.register(sessionListener: addonSessionListener)
+        AddonsRuntime.shared.register(sessionListener: addonSessionListener)
     }
     
     public func open(windowId: String? = nil) {

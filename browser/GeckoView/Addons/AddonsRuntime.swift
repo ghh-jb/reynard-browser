@@ -1,5 +1,5 @@
 //
-//  AddonsRuntimeController.swift
+//  AddonsRuntime.swift
 //  Reynard
 //
 //  Created by Minh Ton on 28/4/26.
@@ -238,25 +238,25 @@ public struct AddonInstallFailure: Error {
 }
 
 public protocol AddonEmbedderDelegate: AnyObject {
-    func addonsController(_ controller: AddonsRuntimeController, didUpdate addon: Addon)
-    func addonsController(_ controller: AddonsRuntimeController, didFailInstall failure: AddonInstallFailure)
-    func addonsController(_ controller: AddonsRuntimeController, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?)
-    func addonsController(_ controller: AddonsRuntimeController, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?)
-    func addonsController(_ controller: AddonsRuntimeController, didRequestOpenOptionsPageFor addon: Addon)
-    func addonsController(_ controller: AddonsRuntimeController, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool
-    func addonsController(_ controller: AddonsRuntimeController, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny
-    func addonsController(_ controller: AddonsRuntimeController, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny
+    func addonsController(_ controller: AddonsRuntime, didUpdate addon: Addon)
+    func addonsController(_ controller: AddonsRuntime, didFailInstall failure: AddonInstallFailure)
+    func addonsController(_ controller: AddonsRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?)
+    func addonsController(_ controller: AddonsRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?)
+    func addonsController(_ controller: AddonsRuntime, didRequestOpenOptionsPageFor addon: Addon)
+    func addonsController(_ controller: AddonsRuntime, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool
+    func addonsController(_ controller: AddonsRuntime, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny
+    func addonsController(_ controller: AddonsRuntime, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny
 }
 
 public extension AddonEmbedderDelegate {
-    func addonsController(_ controller: AddonsRuntimeController, didUpdate addon: Addon) {}
-    func addonsController(_ controller: AddonsRuntimeController, didFailInstall failure: AddonInstallFailure) {}
-    func addonsController(_ controller: AddonsRuntimeController, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?) {}
-    func addonsController(_ controller: AddonsRuntimeController, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?) {}
-    func addonsController(_ controller: AddonsRuntimeController, didRequestOpenOptionsPageFor addon: Addon) {}
-    func addonsController(_ controller: AddonsRuntimeController, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool { false }
-    func addonsController(_ controller: AddonsRuntimeController, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny { .deny }
-    func addonsController(_ controller: AddonsRuntimeController, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny { .deny }
+    func addonsController(_ controller: AddonsRuntime, didUpdate addon: Addon) {}
+    func addonsController(_ controller: AddonsRuntime, didFailInstall failure: AddonInstallFailure) {}
+    func addonsController(_ controller: AddonsRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?) {}
+    func addonsController(_ controller: AddonsRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?) {}
+    func addonsController(_ controller: AddonsRuntime, didRequestOpenOptionsPageFor addon: Addon) {}
+    func addonsController(_ controller: AddonsRuntime, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool { false }
+    func addonsController(_ controller: AddonsRuntime, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny { .deny }
+    func addonsController(_ controller: AddonsRuntime, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny { .deny }
 }
 
 enum AddonRuntimeEvent: String, CaseIterable {
@@ -305,7 +305,7 @@ final class AddonSessionListener: GeckoEventListenerInternal {
         guard let session else {
             throw GeckoHandlerError("session has been destroyed")
         }
-        return try await AddonsRuntimeController.shared.handleSessionEvent(
+        return try await AddonsRuntime.shared.handleSessionEvent(
             type: type,
             message: message,
             session: session
@@ -313,8 +313,8 @@ final class AddonSessionListener: GeckoEventListenerInternal {
     }
 }
 
-public final class AddonsRuntimeController: NSObject, GeckoEventListenerInternal {
-    public static let shared = AddonsRuntimeController()
+public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
+    public static let shared = AddonsRuntime()
     
     public weak var delegate: AddonEmbedderDelegate? {
         didSet {

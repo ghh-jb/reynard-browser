@@ -165,7 +165,7 @@ final class AddonsSettingsViewController: SettingsTableViewController {
     }
     
     private func syncAddonsFromCache() {
-        addons = AddonsRuntimeController.shared.installedAddons
+        addons = AddonsRuntime.shared.installedAddons
         if addons.isEmpty && !Self.hasLoadedInstalledAddons {
             guard !isLoadingAddons else {
                 return
@@ -185,9 +185,9 @@ final class AddonsSettingsViewController: SettingsTableViewController {
     private func reloadAddonsFromRuntime() async {
         let refreshedAddons: [Addon]
         do {
-            refreshedAddons = try await AddonsRuntimeController.shared.list()
+            refreshedAddons = try await AddonsRuntime.shared.list()
         } catch {
-            refreshedAddons = AddonsRuntimeController.shared.installedAddons
+            refreshedAddons = AddonsRuntime.shared.installedAddons
         }
         
         await MainActor.run {
@@ -405,8 +405,8 @@ final class AddonSettingsDetailViewController: SettingsTableViewController {
             
             do {
                 let updatedAddon = try await (desiredState
-                                              ? AddonsRuntimeController.shared.enable(addon)
-                                              : AddonsRuntimeController.shared.disable(addon))
+                                              ? AddonsRuntime.shared.enable(addon)
+                                              : AddonsRuntime.shared.disable(addon))
                 
                 await MainActor.run {
                     self.apply(addon: updatedAddon)
@@ -424,7 +424,7 @@ final class AddonSettingsDetailViewController: SettingsTableViewController {
     
     private func reloadAddon() async {
         do {
-            let refreshedAddon = try await AddonsRuntimeController.shared.addon(byID: addonID)
+            let refreshedAddon = try await AddonsRuntime.shared.addon(byID: addonID)
             await MainActor.run {
                 guard let refreshedAddon else {
                     self.navigationController?.popViewController(animated: true)
@@ -510,7 +510,7 @@ final class AddonSettingsDetailViewController: SettingsTableViewController {
             }
             
             do {
-                try await AddonsRuntimeController.shared.uninstall(addon)
+                try await AddonsRuntime.shared.uninstall(addon)
                 await MainActor.run {
                     self.navigationController?.popViewController(animated: true)
                 }

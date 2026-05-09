@@ -1,8 +1,8 @@
 diff --git a/media/libcubeb/src/cubeb_resampler_internal.h b/media/libcubeb/src/cubeb_resampler_internal.h
-index 08e019c610f6..91467b0533d8 100644
+index dfc93f15b488..fb38db9cbcc3 100644
 --- a/media/libcubeb/src/cubeb_resampler_internal.h
 +++ b/media/libcubeb/src/cubeb_resampler_internal.h
-@@ -559,6 +559,11 @@ cubeb_resampler_create_internal(cubeb_stream * stream,
+@@ -561,6 +561,11 @@ cubeb_resampler_create_internal(cubeb_stream * stream,
    /* Determine if we need to resampler one or both directions, and create the
       resamplers. */
    if (output_params && (output_params->rate != target_rate)) {
@@ -14,7 +14,7 @@ index 08e019c610f6..91467b0533d8 100644
      output_resampler.reset(new cubeb_resampler_speex_one_way<T>(
          output_params->channels, target_rate, output_params->rate,
          to_speex_quality(quality)));
-@@ -568,6 +573,11 @@ cubeb_resampler_create_internal(cubeb_stream * stream,
+@@ -570,6 +575,11 @@ cubeb_resampler_create_internal(cubeb_stream * stream,
    }
  
    if (input_params && (input_params->rate != target_rate)) {

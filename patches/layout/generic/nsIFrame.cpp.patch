@@ -1,5 +1,5 @@
 diff --git a/layout/generic/nsIFrame.cpp b/layout/generic/nsIFrame.cpp
-index e87d38ccd4cf..8e159c9ca52f 100644
+index 98076600be43..99f1dcf74869 100644
 --- a/layout/generic/nsIFrame.cpp
 +++ b/layout/generic/nsIFrame.cpp
 @@ -4946,6 +4946,12 @@ bool nsIFrame::IsSelectable(StyleUserSelect* aSelectStyle) const {

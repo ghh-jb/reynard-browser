@@ -1,5 +1,5 @@
 diff --git a/dom/ipc/ContentParent.cpp b/dom/ipc/ContentParent.cpp
-index 3f0d3ff15d66..62391a3981a3 100644
+index f324f3cbefc1..4f8729595e60 100644
 --- a/dom/ipc/ContentParent.cpp
 +++ b/dom/ipc/ContentParent.cpp
 @@ -2957,14 +2957,15 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
@@ -40,7 +40,7 @@ index 3f0d3ff15d66..62391a3981a3 100644
  }
  
  void ContentParent::OnCompositorDeviceReset() {
-@@ -7964,6 +7966,17 @@ IPCResult ContentParent::RecvKillGPUProcess() {
+@@ -7966,6 +7968,17 @@ IPCResult ContentParent::RecvKillGPUProcess() {
  }
  #endif
  

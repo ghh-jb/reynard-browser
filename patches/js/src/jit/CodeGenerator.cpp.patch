@@ -1,5 +1,5 @@
 diff --git a/js/src/jit/CodeGenerator.cpp b/js/src/jit/CodeGenerator.cpp
-index a8a8f8022b67..6d102ee7e643 100644
+index 6e4047808a78..47cb39ab4266 100644
 --- a/js/src/jit/CodeGenerator.cpp
 +++ b/js/src/jit/CodeGenerator.cpp
 @@ -4890,7 +4890,9 @@ void CodeGenerator::visitMegamorphicLoadSlotPermissive(

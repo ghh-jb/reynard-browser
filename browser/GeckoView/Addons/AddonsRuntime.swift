@@ -571,13 +571,15 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
                 newSessionID: newSessionID
             ) ?? false
         case .installPrompt:
+            // TODO: Implement a proper prompt UI and return the user's choice
             return [
                 "allow": true,
                 "privateBrowsingAllowed": false,
                 "isTechnicalAndInteractionDataGranted": false,
             ]
         case .optionalPrompt, .updatePrompt:
-            return ["allow": false]
+            // TODO: Implement a proper prompt UI and return the user's choice
+            return ["allow": true]
         case .installationFailed:
             let failure = AddonInstallFailure(
                 code: stringValue(message?["error"]),

@@ -1,13 +1,13 @@
 diff --git a/gfx/layers/ipc/CompositorBridgeChild.h b/gfx/layers/ipc/CompositorBridgeChild.h
-index 3d82a00d958b..0ff282baa755 100644
+index c32bb9e39ab1..88e20d7f0dd4 100644
 --- a/gfx/layers/ipc/CompositorBridgeChild.h
 +++ b/gfx/layers/ipc/CompositorBridgeChild.h
-@@ -58,7 +58,7 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
+@@ -62,7 +62,7 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
    /**
     * Initialize the singleton compositor bridge for a content process.
     */
 -  void InitForContent(uint32_t aNamespace);
 +  void InitForContent(uint32_t aNamespace, uint64_t aProcessToken);
  
-   void InitForWidget(uint64_t aProcessToken,
-                      WebRenderLayerManager* aLayerManager, uint32_t aNamespace);
+   void InitForWidget(uint64_t aProcessToken, uint32_t aNamespace);
+ 

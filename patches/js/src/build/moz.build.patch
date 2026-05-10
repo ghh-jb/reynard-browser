@@ -1,8 +1,8 @@
 diff --git a/js/src/build/moz.build b/js/src/build/moz.build
-index e84541c30ad8..abded4df37b6 100644
+index 2d5343a58ef4..9a2e42e146a3 100644
 --- a/js/src/build/moz.build
 +++ b/js/src/build/moz.build
-@@ -92,9 +92,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
+@@ -90,9 +90,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
  
  OS_LIBS += CONFIG["LIBATOMIC_LIBS"]
  

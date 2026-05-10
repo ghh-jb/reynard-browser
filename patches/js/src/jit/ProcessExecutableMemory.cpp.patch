@@ -1,8 +1,8 @@
 diff --git a/js/src/jit/ProcessExecutableMemory.cpp b/js/src/jit/ProcessExecutableMemory.cpp
-index 315958ac692b..b5472e8cdffa 100644
+index cea7d764ca96..53724a5c6348 100644
 --- a/js/src/jit/ProcessExecutableMemory.cpp
 +++ b/js/src/jit/ProcessExecutableMemory.cpp
-@@ -15,6 +15,9 @@
+@@ -13,6 +13,9 @@
  #include "mozilla/XorShift128PlusRNG.h"
  
  #include <errno.h>
@@ -12,7 +12,7 @@ index 315958ac692b..b5472e8cdffa 100644
  
  #include "jsfriendapi.h"
  
-@@ -49,6 +52,118 @@
+@@ -47,6 +50,118 @@
  using namespace js;
  using namespace js::jit;
  
@@ -131,7 +131,7 @@ index 315958ac692b..b5472e8cdffa 100644
  #ifdef XP_WIN
  #  if defined(HAVE_64BIT_BUILD)
  #    define NEED_JIT_UNWIND_HANDLING
-@@ -465,64 +580,14 @@ static void* ComputeRandomAllocationAddress() {
+@@ -463,64 +578,14 @@ static void* ComputeRandomAllocationAddress() {
  static void DecommitPages(void* addr, size_t bytes);
  
  static void* ReserveProcessExecutableMemory(size_t bytes) {
@@ -197,7 +197,7 @@ index 315958ac692b..b5472e8cdffa 100644
    return p;
  }
  
-@@ -563,55 +628,57 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
+@@ -561,55 +626,57 @@ static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
  
  [[nodiscard]] static bool CommitPages(void* addr, size_t bytes,
                                        ProtectionSetting protection) {
@@ -298,7 +298,7 @@ index 315958ac692b..b5472e8cdffa 100644
  }
  #endif
  
-@@ -724,7 +791,29 @@ class ProcessExecutableMemory {
+@@ -722,7 +789,29 @@ class ProcessExecutableMemory {
        return false;
      }
  
@@ -328,7 +328,7 @@ index 315958ac692b..b5472e8cdffa 100644
  
      mozilla::Array<uint64_t, 2> seed;
      GenerateXorShift128PlusSeed(seed);
-@@ -745,6 +834,15 @@ class ProcessExecutableMemory {
+@@ -743,6 +832,15 @@ class ProcessExecutableMemory {
      MOZ_ASSERT(initialized());
      MOZ_ASSERT(pages_.empty());
      MOZ_ASSERT(pagesAllocated_ == 0);
@@ -344,7 +344,7 @@ index 315958ac692b..b5472e8cdffa 100644
      DeallocateProcessExecutableMemory(base_, MaxCodeBytesPerProcess);
      base_ = nullptr;
      rng_.reset();
-@@ -903,6 +1001,8 @@ bool js::jit::InitProcessExecutableMemory() { return execMemory.init(); }
+@@ -901,6 +999,8 @@ bool js::jit::InitProcessExecutableMemory() { return execMemory.init(); }
  
  void js::jit::ReleaseProcessExecutableMemory() { execMemory.release(); }
  
@@ -353,7 +353,7 @@ index 315958ac692b..b5472e8cdffa 100644
  size_t js::jit::LikelyAvailableExecutableMemory() {
    // Round down available memory to the closest MB.
    return MaxCodeBytesPerProcess -
-@@ -922,6 +1022,14 @@ bool js::jit::AddressIsInExecutableMemory(const void* p) {
+@@ -920,6 +1020,14 @@ bool js::jit::AddressIsInExecutableMemory(const void* p) {
    return execMemory.containsAddress(p);
  }
  
@@ -368,7 +368,7 @@ index 315958ac692b..b5472e8cdffa 100644
  bool js::jit::ReprotectRegion(void* start, size_t size,
                                ProtectionSetting protection,
                                MustFlushICache flushICache) {
-@@ -971,7 +1079,23 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
+@@ -969,7 +1077,23 @@ bool js::jit::ReprotectRegion(void* start, size_t size,
      return true;
    }
  

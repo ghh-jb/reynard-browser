@@ -1,8 +1,8 @@
 diff --git a/js/src/jit/ProcessExecutableMemory.h b/js/src/jit/ProcessExecutableMemory.h
-index d312da312350..4225e4e4c582 100644
+index 4a08d4a6238f..bc9791b275d4 100644
 --- a/js/src/jit/ProcessExecutableMemory.h
 +++ b/js/src/jit/ProcessExecutableMemory.h
-@@ -9,16 +9,16 @@
+@@ -7,16 +7,16 @@
  
  #include "util/Poison.h"
  
@@ -24,7 +24,7 @@ index d312da312350..4225e4e4c582 100644
  static const size_t MaxCodeBytesPerProcess = 140 * 1024 * 1024;
  #else
  // This is the largest number which satisfies various alignment static
-@@ -79,10 +79,26 @@ enum class MustFlushICache { No, Yes };
+@@ -77,10 +77,26 @@ enum class MustFlushICache { No, Yes };
                                            ProtectionSetting protection,
                                            MustFlushICache flushICache);
  
@@ -51,7 +51,7 @@ index d312da312350..4225e4e4c582 100644
  
  // Allocate/deallocate executable pages.
  extern void* AllocateExecutableMemory(size_t bytes,
-@@ -125,22 +141,14 @@ class MOZ_RAII AutoMarkJitCodeWritableForThread {
+@@ -123,22 +139,14 @@ class MOZ_RAII AutoMarkJitCodeWritableForThread {
  
   public:
    MOZ_ALWAYS_INLINE_EVEN_DEBUG AutoMarkJitCodeWritableForThread() {

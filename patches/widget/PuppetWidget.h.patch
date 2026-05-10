@@ -1,8 +1,8 @@
 diff --git a/widget/PuppetWidget.h b/widget/PuppetWidget.h
-index 8df600ec265a..4ded4a36cb70 100644
+index e036af1e43c1..4d6f88569957 100644
 --- a/widget/PuppetWidget.h
 +++ b/widget/PuppetWidget.h
-@@ -296,8 +296,14 @@ class PuppetWidget final : public nsIWidget,
+@@ -302,8 +302,14 @@ class PuppetWidget final : public nsIWidget,
    void OnMemoryPressure(layers::MemoryPressureReason aWhy) override;
  
    void PerformHapticFeedback(mozilla::HapticFeedbackType aType) override;

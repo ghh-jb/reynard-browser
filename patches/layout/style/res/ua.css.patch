@@ -1,8 +1,8 @@
 diff --git a/layout/style/res/ua.css b/layout/style/res/ua.css
-index 0f6b81655941..9405141907a6 100644
+index 00e45b6ddc63..343965c4cee1 100644
 --- a/layout/style/res/ua.css
 +++ b/layout/style/res/ua.css
-@@ -10,6 +10,11 @@
+@@ -9,6 +9,11 @@
              them
  */
  

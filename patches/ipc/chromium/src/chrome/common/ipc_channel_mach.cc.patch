@@ -1,5 +1,5 @@
 diff --git a/ipc/chromium/src/chrome/common/ipc_channel_mach.cc b/ipc/chromium/src/chrome/common/ipc_channel_mach.cc
-index 6563d3bb1593..95a7668d2bf9 100644
+index 68d1b07ba51d..77d783ee0db3 100644
 --- a/ipc/chromium/src/chrome/common/ipc_channel_mach.cc
 +++ b/ipc/chromium/src/chrome/common/ipc_channel_mach.cc
 @@ -756,8 +756,7 @@ bool ChannelMach::IsValidHandle(const ChannelHandle& handle) {

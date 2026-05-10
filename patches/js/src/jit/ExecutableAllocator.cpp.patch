@@ -1,8 +1,8 @@
 diff --git a/js/src/jit/ExecutableAllocator.cpp b/js/src/jit/ExecutableAllocator.cpp
-index ad2936d5bff6..384674d0ae5a 100644
+index 340a63964b52..bc227311c43c 100644
 --- a/js/src/jit/ExecutableAllocator.cpp
 +++ b/js/src/jit/ExecutableAllocator.cpp
-@@ -26,6 +26,7 @@
+@@ -24,6 +24,7 @@
   */
  
  #include "jit/ExecutableAllocator.h"
@@ -10,7 +10,7 @@ index ad2936d5bff6..384674d0ae5a 100644
  
  #include "js/MemoryMetrics.h"
  #include "util/Poison.h"
-@@ -303,7 +304,11 @@ void ExecutableAllocator::poisonCode(JSRuntime* rt,
+@@ -301,7 +302,11 @@ void ExecutableAllocator::poisonCode(JSRuntime* rt,
        // Note: we use memset instead of js::Poison because we want to poison
        // JIT code in release builds too. Furthermore, we don't want the
        // invalid-ObjectValue poisoning js::Poison does in debug builds.

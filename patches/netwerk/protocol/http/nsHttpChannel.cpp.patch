@@ -1,5 +1,5 @@
 diff --git a/netwerk/protocol/http/nsHttpChannel.cpp b/netwerk/protocol/http/nsHttpChannel.cpp
-index 5041de0a9ef4..876eaf23d9e0 100644
+index 6d6381581bab..a67469f7bc4b 100644
 --- a/netwerk/protocol/http/nsHttpChannel.cpp
 +++ b/netwerk/protocol/http/nsHttpChannel.cpp
 @@ -1215,9 +1215,10 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,

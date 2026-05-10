@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/ipc/CompositorBridgeChild.cpp b/gfx/layers/ipc/CompositorBridgeChild.cpp
-index 736aadc58964..12c3bae76e06 100644
+index 5753b34b927f..2265a91e40d1 100644
 --- a/gfx/layers/ipc/CompositorBridgeChild.cpp
 +++ b/gfx/layers/ipc/CompositorBridgeChild.cpp
 @@ -204,7 +204,8 @@ void CompositorBridgeChild::ShutDown() {
@@ -20,7 +20,7 @@ index 736aadc58964..12c3bae76e06 100644
  
    sCompositorBridge = this;
  }
-@@ -296,6 +298,15 @@ void CompositorBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
+@@ -305,6 +307,15 @@ void CompositorBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
      // false.
      gfxCriticalNote << "CompositorBridgeChild receives IPC close with "
                         "reason=AbnormalShutdown";

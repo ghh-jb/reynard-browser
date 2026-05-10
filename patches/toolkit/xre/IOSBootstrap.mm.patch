@@ -1,8 +1,8 @@
 diff --git a/toolkit/xre/IOSBootstrap.mm b/toolkit/xre/IOSBootstrap.mm
-index 1b7353a06393..c226eaefabb9 100644
+index 264320aed775..755b11eeaa97 100644
 --- a/toolkit/xre/IOSBootstrap.mm
 +++ b/toolkit/xre/IOSBootstrap.mm
-@@ -12,13 +12,24 @@
+@@ -8,13 +8,24 @@
  #include "mozilla/Bootstrap.h"
  #include "mozilla/DarwinObjectPtr.h"
  #include "mozilla/GeckoArgs.h"
@@ -27,7 +27,7 @@ index 1b7353a06393..c226eaefabb9 100644
  static id<SwiftGeckoViewRuntime> gRuntime;
  
  id<SwiftGeckoViewRuntime> mozilla::widget::GetSwiftRuntime() {
-@@ -26,11 +37,77 @@
+@@ -22,11 +33,77 @@
  }
  
  static id<GeckoProcessExtension> gCurrentProcessExtension;
@@ -105,7 +105,7 @@ index 1b7353a06393..c226eaefabb9 100644
  int MainProcessInit(int aArgc, char** aArgv,
                      id<SwiftGeckoViewRuntime> aRuntime) {
    auto bootstrap = mozilla::GetBootstrap();
-@@ -89,6 +166,12 @@ void ChildProcessInit(xpc_connection_t aXpcConnection,
+@@ -85,6 +162,12 @@ void ChildProcessInit(xpc_connection_t aXpcConnection,
    xpc_connection_activate(aXpcConnection);
  }
  
@@ -118,7 +118,7 @@ index 1b7353a06393..c226eaefabb9 100644
  static int ChildProcessInitImpl(int aArgc, char** aArgv) {
    auto bootstrap = mozilla::GetBootstrap();
    if (bootstrap.isErr()) {
-@@ -115,12 +198,77 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
+@@ -111,12 +194,77 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
        /* aRandomizeSmall */ !XRE_IsContentProcess());
  #endif
  
@@ -196,7 +196,7 @@ index 1b7353a06393..c226eaefabb9 100644
  void HandleBootstrapMessage(xpc_object_t aEvent) {
    // Set up stdout and stderr if they were provided.
    int fd = xpc_dictionary_dup_fd(aEvent, "stdout");
-@@ -136,6 +284,11 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+@@ -132,6 +280,11 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
      close(fd);
    }
  
@@ -208,7 +208,7 @@ index 1b7353a06393..c226eaefabb9 100644
    // Immediately send a reply with our pid
    auto reply = mozilla::AdoptDarwinObject(xpc_dictionary_create_reply(aEvent));
    xpc_dictionary_set_int64(reply.get(), "pid", getpid());
-@@ -202,6 +355,18 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+@@ -198,6 +351,18 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
    }
    argv[argc] = nullptr;
  

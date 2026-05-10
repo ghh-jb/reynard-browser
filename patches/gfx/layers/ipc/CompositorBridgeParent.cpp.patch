@@ -1,8 +1,8 @@
 diff --git a/gfx/layers/ipc/CompositorBridgeParent.cpp b/gfx/layers/ipc/CompositorBridgeParent.cpp
-index 02c8ad183f41..4b7dac60a180 100644
+index 236396830191..10fae0bb3084 100644
 --- a/gfx/layers/ipc/CompositorBridgeParent.cpp
 +++ b/gfx/layers/ipc/CompositorBridgeParent.cpp
-@@ -1490,7 +1490,7 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
+@@ -1494,7 +1494,7 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
  #endif
  }
  
@@ -11,7 +11,7 @@ index 02c8ad183f41..4b7dac60a180 100644
  mozilla::ipc::IPCResult
  CompositorBridgeParent::RecvPCompositorWidgetConstructor(
      PCompositorWidgetParent* actor, CompositorWidgetInitData&& aInitData) {
-@@ -1499,6 +1499,8 @@ CompositorBridgeParent::RecvPCompositorWidgetConstructor(
+@@ -1503,6 +1503,8 @@ CompositorBridgeParent::RecvPCompositorWidgetConstructor(
    // with move semantics, because IPDL can't generate move semantics
    // in the constructor. The macOS-specific aInitData contains an
    // Endpoint, so it *must* use move semantics.

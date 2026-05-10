@@ -1,8 +1,8 @@
 diff --git a/parser/htmlparser/nsExpatDriver.cpp b/parser/htmlparser/nsExpatDriver.cpp
-index f354ea629775..89b0fe232d95 100644
+index 40ed11243087..67cc9a332113 100644
 --- a/parser/htmlparser/nsExpatDriver.cpp
 +++ b/parser/htmlparser/nsExpatDriver.cpp
-@@ -1447,7 +1447,8 @@ RLBoxExpatSandboxPool::CreateSandboxData(uint64_t aSize) {
+@@ -1449,7 +1449,8 @@ RLBoxExpatSandboxPool::CreateSandboxData(uint64_t aSize) {
    // Create expat sandbox
    auto sandbox = mozilla::MakeUnique<rlbox_sandbox_expat>();
  

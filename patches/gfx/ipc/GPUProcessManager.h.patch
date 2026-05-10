@@ -1,8 +1,8 @@
 diff --git a/gfx/ipc/GPUProcessManager.h b/gfx/ipc/GPUProcessManager.h
-index a4825699fbaa..19ac1a5a1824 100644
+index b2e3e5e01127..7b6b22af3b6c 100644
 --- a/gfx/ipc/GPUProcessManager.h
 +++ b/gfx/ipc/GPUProcessManager.h
-@@ -126,7 +126,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
+@@ -123,7 +123,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
        mozilla::ipc::Endpoint<PImageBridgeChild>* aOutImageBridge,
        mozilla::ipc::Endpoint<PVRManagerChild>* aOutVRBridge,
        mozilla::ipc::Endpoint<PRemoteMediaManagerChild>* aOutVideoManager,

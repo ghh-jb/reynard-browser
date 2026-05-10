@@ -1,8 +1,8 @@
 diff --git a/js/src/jit/JitFrames.cpp b/js/src/jit/JitFrames.cpp
-index f7a27add0c72..b28e5e7655c8 100644
+index e22a41994f38..f18d091c703b 100644
 --- a/js/src/jit/JitFrames.cpp
 +++ b/js/src/jit/JitFrames.cpp
-@@ -16,7 +16,9 @@
+@@ -14,7 +14,9 @@
  #include "jit/BaselineFrame.h"
  #include "jit/BaselineIC.h"
  #include "jit/BaselineJIT.h"
@@ -12,7 +12,7 @@ index f7a27add0c72..b28e5e7655c8 100644
  #include "jit/IonScript.h"
  #include "jit/JitRuntime.h"
  #include "jit/JitSpewer.h"
-@@ -1197,7 +1199,14 @@ static void TraceBaselineStubFrame(JSTracer* trc, const JSJitFrameIter& frame) {
+@@ -1195,7 +1197,14 @@ static void TraceBaselineStubFrame(JSTracer* trc, const JSJitFrameIter& frame) {
        MOZ_ASSERT(stub->usesTrampolineCode());
      } else {
        MOZ_ASSERT(stub->toCacheIRStub()->makesGCCalls());
@@ -28,7 +28,7 @@ index f7a27add0c72..b28e5e7655c8 100644
  
  #ifndef ENABLE_PORTABLE_BASELINE_INTERP
        for (int i = 0; i < stub->jitCode()->localTracingSlots(); ++i) {
-@@ -1217,7 +1226,20 @@ static void TraceWeakBaselineStubFrame(JSTracer* trc,
+@@ -1215,7 +1224,20 @@ static void TraceWeakBaselineStubFrame(JSTracer* trc,
    if (ICStub* stub = layout->maybeStubPtr()) {
      if (!stub->isFallback()) {
        MOZ_ASSERT(stub->toCacheIRStub()->makesGCCalls());
@@ -50,7 +50,7 @@ index f7a27add0c72..b28e5e7655c8 100644
      }
    }
  }
-@@ -1227,6 +1249,21 @@ static void TraceIonICCallFrame(JSTracer* trc, const JSJitFrameIter& frame) {
+@@ -1225,6 +1247,21 @@ static void TraceIonICCallFrame(JSTracer* trc, const JSJitFrameIter& frame) {
    IonICCallFrameLayout* layout = (IonICCallFrameLayout*)frame.fp();
    TraceRoot(trc, layout->stubCode(), "ion-ic-call-code");
  

@@ -1,8 +1,8 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index 21af964202b1..cc7e3679dd6c 100644
+index 782f7392d744..2f6a9f102eda 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
-@@ -5764,7 +5764,7 @@
+@@ -5805,7 +5805,7 @@
  # on aarch64 (Apple Silicon) MacOS.
  - name: dom.webgpu.enabled
    type: RelaxedAtomicBool
@@ -11,7 +11,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: true
  #else
    value: @IS_EARLY_BETA_OR_EARLIER@
-@@ -5775,7 +5775,7 @@
+@@ -5816,7 +5816,7 @@
  # on a platform that supports the GPU process, else true.
  - name: dom.webgpu.allow-in-parent
    type: bool
@@ -20,7 +20,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: false
  #else
    value: true
-@@ -5785,7 +5785,7 @@
+@@ -5826,7 +5826,7 @@
  # Is support for the Web GPU API enabled on service workers?
  - name: dom.webgpu.service-workers.enabled
    type: RelaxedAtomicBool
@@ -29,7 +29,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: true
  #else
    value: @IS_EARLY_BETA_OR_EARLIER@
-@@ -5812,7 +5812,7 @@
+@@ -5853,7 +5853,7 @@
  
  - name: dom.webgpu.allow-present-without-readback
    type: RelaxedAtomicBool
@@ -38,7 +38,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: true
  #else
    value: false
-@@ -5822,7 +5822,7 @@
+@@ -5863,7 +5863,7 @@
  # Whether WebGPU's GPUExternalTexture API is enabled.
  - name: dom.webgpu.external-texture.enabled
    type: bool
@@ -47,7 +47,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: true
  #else
    value: false
-@@ -6313,7 +6313,7 @@
+@@ -6377,7 +6377,7 @@
  # or the parent/main process (false)
  - name: extensions.webextensions.remote
    type: RelaxedAtomicBool
@@ -56,7 +56,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    mirror: always
  
  # Whether to expose the MockExtensionAPI test interface in tests.
-@@ -6921,6 +6921,8 @@
+@@ -6996,6 +6996,8 @@
    type: bool
  #if defined(XP_MACOSX) || defined(XP_LINUX) && !defined(ANDROID)
    value: true
@@ -65,7 +65,7 @@ index 21af964202b1..cc7e3679dd6c 100644
  #elif defined(MOZ_WIDGET_ANDROID)
    value: true
  #elif defined(XP_WIN)
-@@ -6932,7 +6934,7 @@
+@@ -7007,7 +7009,7 @@
  
  - name: gfx.canvas.accelerated.allow-in-parent
    type: bool
@@ -74,7 +74,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: false
  #else
    value: true
-@@ -7470,7 +7472,13 @@
+@@ -7541,7 +7543,13 @@
    # backend.
  -   name: gfx.font_rendering.coretext.enabled
      type: RelaxedAtomicBool
@@ -88,7 +88,7 @@ index 21af964202b1..cc7e3679dd6c 100644
      mirror: always
  #endif
  
-@@ -9705,7 +9713,7 @@
+@@ -9757,7 +9765,7 @@
  # or executable but never both at the same time. OpenBSD defaults to W^X.
  - name: javascript.options.content_process_write_protect_code
    type: bool
@@ -97,7 +97,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: true
  #else
    value: false
-@@ -9880,7 +9888,9 @@
+@@ -9932,7 +9940,9 @@
  
  - name: layers.gpu-process.enabled
    type: bool
@@ -108,7 +108,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: true
  #elif defined(MOZ_X11)
    value: false  # we'd like this to be @IS_NIGHTLY_BUILD@, see Bug 1927058
-@@ -11620,7 +11630,7 @@
+@@ -11656,7 +11666,7 @@
  - name: media.cubeb.sandbox
    type: bool
    mirror: always
@@ -117,7 +117,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: true
  #else
    value: false
-@@ -11974,6 +11984,8 @@
+@@ -12010,6 +12020,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -126,7 +126,7 @@ index 21af964202b1..cc7e3679dd6c 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12018,6 +12030,8 @@
+@@ -12054,6 +12066,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -135,7 +135,7 @@ index 21af964202b1..cc7e3679dd6c 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12051,6 +12065,8 @@
+@@ -12087,6 +12101,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -144,7 +144,7 @@ index 21af964202b1..cc7e3679dd6c 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12070,6 +12086,8 @@
+@@ -12106,6 +12122,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -153,7 +153,7 @@ index 21af964202b1..cc7e3679dd6c 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12089,6 +12107,8 @@
+@@ -12125,6 +12143,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -162,7 +162,7 @@ index 21af964202b1..cc7e3679dd6c 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12108,6 +12128,8 @@
+@@ -12144,6 +12164,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -171,7 +171,7 @@ index 21af964202b1..cc7e3679dd6c 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12134,7 +12156,7 @@
+@@ -12170,7 +12192,7 @@
    type: RelaxedAtomicBool
  #if defined(XP_WIN)
    value: true
@@ -180,7 +180,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: true
  #elif defined(XP_LINUX) || defined(ANDROID)
    value: true
-@@ -12205,7 +12227,7 @@
+@@ -12241,7 +12263,7 @@
  #ifdef MOZ_FFMPEG
  -   name: media.ffmpeg.enabled
      type: RelaxedAtomicBool
@@ -189,7 +189,7 @@ index 21af964202b1..cc7e3679dd6c 100644
      value: false
    #else
      value: true
-@@ -14593,7 +14615,10 @@
+@@ -14612,7 +14634,10 @@
  - name: network.process.enabled
    type: RelaxedAtomicBool
    mirror: always
@@ -201,7 +201,7 @@ index 21af964202b1..cc7e3679dd6c 100644
    value: false # see bug 1641427
  #else
    value: true
-@@ -14642,7 +14667,13 @@
+@@ -14661,7 +14686,13 @@
  - name: network.http.network_access_on_socket_process.enabled
    type: RelaxedAtomicBool
    mirror: always
@@ -215,7 +215,7 @@ index 21af964202b1..cc7e3679dd6c 100644
  
  # Telemetry of traffic categories. Whether or not to enable HttpTrafficAnalyzer.
  - name: network.traffic_analyzer.enabled
-@@ -19344,14 +19375,16 @@
+@@ -19368,14 +19399,16 @@
  # on a platform that supports the GPU process, else true.
  - name: webgl.allow-in-parent
    type: bool

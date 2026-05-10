@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/nsWindow.mm b/widget/uikit/nsWindow.mm
-index a6edb082d7f0..e32dd4d84534 100644
+index a6edb082d7f0..8fc98d1d804b 100644
 --- a/widget/uikit/nsWindow.mm
 +++ b/widget/uikit/nsWindow.mm
 @@ -26,6 +26,7 @@
@@ -621,7 +621,35 @@ index a6edb082d7f0..e32dd4d84534 100644
  void nsWindow::Move(const DesktopPoint& aPoint) {
    if (!mNativeView || (mBounds.x == aPoint.x && mBounds.y == aPoint.y)) {
      return;
-@@ -982,6 +1078,10 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -940,6 +1036,27 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+   ReportSizeModeEvent(aMode);
+ }
+ 
++nsresult nsWindow::MakeFullScreen(bool aFullScreen) {
++  MOZ_ASSERT(NS_IsMainThread());
++  EnteredFullScreen(aFullScreen);
++  return NS_OK;
++}
++
++void nsWindow::EnteredFullScreen(bool aFullScreen) {
++  MOZ_ASSERT(NS_IsMainThread());
++
++  if (EventDispatcher* dispatcher = GetEventDispatcher()) {
++    dispatcher->Dispatch(aFullScreen ? u"GeckoView:FullScreenEnter"_ns
++                                     : u"GeckoView:FullScreenExit"_ns,
++                         JS::NullHandleValue);
++  }
++
++  if (nsIWidgetListener* listener = GetWidgetListener()) {
++    mSizeMode = aFullScreen ? nsSizeMode_Fullscreen : nsSizeMode_Normal;
++    listener->SizeModeChanged(mSizeMode);
++  }
++}
++
+ void nsWindow::Invalidate(const LayoutDeviceIntRect& aRect) {
+   if (!mNativeView || !mVisible) return;
+ 
+@@ -982,6 +1099,10 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
  void nsWindow::ReportSizeEvent() {
    LayoutDeviceIntRect innerBounds = GetClientBounds();
  
@@ -632,7 +660,7 @@ index a6edb082d7f0..e32dd4d84534 100644
    if (mWidgetListener) {
      mWidgetListener->WindowResized(this, innerBounds.Size());
    }
-@@ -1020,17 +1120,60 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -1020,17 +1141,60 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
  
    const bool changingEnabledState =
        aContext.IsInputAttributeChanged(mInputContext);
@@ -677,8 +705,7 @@ index a6edb082d7f0..e32dd4d84534 100644
 +    [mNativeView scheduleResponderBlur];
 +    return;
 +  }
- 
--  if (aAction.UserMightRequestOpenVKB() || changingEnabledState) {
++
 +  // REYNARD: Prevent page-load autofocus from opening the software keyboard
 +  // unless focus is clearly user-driven.
 +  const bool shouldBecomeFirstResponder =
@@ -690,13 +717,14 @@ index a6edb082d7f0..e32dd4d84534 100644
 +    [mNativeView cancelResponderBlur];
 +    [mNativeView becomeFirstResponder];
 +  }
-+
+ 
+-  if (aAction.UserMightRequestOpenVKB() || changingEnabledState) {
 +  if ((aAction.UserMightRequestOpenVKB() || changingEnabledState) &&
 +      (hadFirstResponder || shouldBecomeFirstResponder)) {
      // TODO(m_kato):
      // It is unnecessary to call reloadInputViews with changingEnabledState if
      // virtual keyboard is disappeared.
-@@ -1050,6 +1193,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -1050,6 +1214,25 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
    return mInputContext;
  }
  
@@ -722,7 +750,7 @@ index a6edb082d7f0..e32dd4d84534 100644
  widget::TextEventDispatcherListener*
  nsWindow::GetNativeTextEventDispatcherListener() {
    return mTextInputHandler;
-@@ -1121,6 +1283,85 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
+@@ -1121,6 +1304,85 @@ - (UIAccessibilityContainerType)accessibilityContainerType {
    return mNativeLayerRoot;
  }
  
@@ -808,7 +836,7 @@ index a6edb082d7f0..e32dd4d84534 100644
  void nsWindow::HandleMainThreadCATransaction() {
    // Trigger a synchronous OMTC composite. This will call NextSurface and
    // NotifySurfaceReady on the compositor thread to update mNativeLayerRoot's
-@@ -1275,6 +1516,7 @@ - (void)close {
+@@ -1275,6 +1537,7 @@ - (void)close {
  
    nsAutoCString url;
    nsresult rv = Preferences::GetCString("toolkit.defaultChromeURI", url);

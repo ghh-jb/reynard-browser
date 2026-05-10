@@ -94,6 +94,7 @@ final class TabOverviewPresentation {
             applyOverviewProgress(0)
         }
         controller.applyChromeLayout(animated: false)
+        controller.refreshPadTabStripLayout()
     }
     
     func applyOverviewProgress(_ progress: CGFloat) {
@@ -269,6 +270,7 @@ final class TabOverviewPresentation {
             self.isVisible = false
             self.currentOverviewProgress = 0
             self.controller.applyChromeLayout(animated: false)
+            self.controller.refreshPadTabStripLayout()
             self.isTransitionRunning = false
         }
     }
@@ -435,6 +437,7 @@ final class TabOverviewPresentation {
             self.isVisible = false
             self.currentOverviewProgress = 0
             self.controller.applyChromeLayout(animated: false)
+            self.controller.refreshPadTabStripLayout()
             self.isTransitionRunning = false
         }
     }

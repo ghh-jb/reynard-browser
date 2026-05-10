@@ -8,7 +8,14 @@
 import UIKit
 
 final class PadTabCell: UICollectionViewCell {
+    enum LayoutMode {
+        case expanded
+        case faviconOnly
+    }
+    
     static let reuseIdentifier = "PadTabCell"
+    static let expandedMinimumWidth: CGFloat = 220
+    static let collapsedMinimumWidth: CGFloat = 96
     
     private static let fallbackFavicon = UIImage(systemName: "globe")
     
@@ -63,6 +70,12 @@ final class PadTabCell: UICollectionViewCell {
         return stackView
     }()
     
+    private var titleStackExpandedTrailingConstraint: NSLayoutConstraint!
+    private var titleStackCollapsedTrailingConstraint: NSLayoutConstraint!
+    private var titleStackExpandedLeadingConstraint: NSLayoutConstraint!
+    private var titleStackCollapsedLeadingConstraint: NSLayoutConstraint!
+    private var titleLabelExpandedWidthConstraint: NSLayoutConstraint!
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -74,18 +87,28 @@ final class PadTabCell: UICollectionViewCell {
         contentView.addSubview(closeButton)
         contentView.addSubview(separatorView)
         
+        faviconImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        faviconImageView.setContentCompressionResistancePriority(.required, for: .vertical)
+        faviconImageView.setContentHuggingPriority(.required, for: .horizontal)
+        
         closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        
+        titleStackExpandedTrailingConstraint = titleStackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -34)
+        titleStackCollapsedTrailingConstraint = titleStackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -8)
+        titleStackExpandedLeadingConstraint = titleStackView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 10)
+        titleStackCollapsedLeadingConstraint = titleStackView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 8)
+        titleLabelExpandedWidthConstraint = titleLabel.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, constant: -58)
         
         NSLayoutConstraint.activate([
             titleStackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             titleStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            titleStackView.leadingAnchor.constraint(greaterThanOrEqualTo: contentView.leadingAnchor, constant: 10),
-            titleStackView.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -34),
+            titleStackExpandedLeadingConstraint,
+            titleStackExpandedTrailingConstraint,
             
             faviconImageView.widthAnchor.constraint(equalToConstant: 16),
             faviconImageView.heightAnchor.constraint(equalToConstant: 16),
             
-            titleLabel.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, constant: -58),
+            titleLabelExpandedWidthConstraint,
             
             closeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -6),
             closeButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
@@ -106,16 +129,37 @@ final class PadTabCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         faviconImageView.image = Self.fallbackFavicon
+        titleLabel.isHidden = false
+        titleStackView.spacing = 6
+        titleStackExpandedLeadingConstraint.isActive = true
+        titleStackCollapsedLeadingConstraint.isActive = false
+        titleStackExpandedTrailingConstraint.isActive = true
+        titleStackCollapsedTrailingConstraint.isActive = false
+        titleLabelExpandedWidthConstraint.isActive = true
         onClose = nil
     }
     
-    func configure(tab: Tab, selected: Bool) {
-        titleLabel.text = tab.title.isEmpty ? "Homepage" : tab.title
+    func configure(tab: Tab, selected: Bool, layoutMode: LayoutMode, itemWidth: CGFloat) {
+        let displayTitle = tab.title.isEmpty ? "Homepage" : tab.title
+        titleLabel.text = displayTitle
         faviconImageView.image = tab.favicon ?? Self.fallbackFavicon
         contentView.backgroundColor = selected ? .systemGray6 : .systemGray5
         titleLabel.textColor = selected ? .label : .secondaryLabel
         faviconImageView.tintColor = selected ? .label : .secondaryLabel
-        closeButton.isHidden = !selected
+        let minimumVisibleTitle = "WWWWW" as NSString
+        let minimumTitleWidth = minimumVisibleTitle.size(withAttributes: [.font: titleLabel.font as Any]).width
+        let estimatedTitleBudget = itemWidth - 58
+        let isTooNarrowForTitle = estimatedTitleBudget < minimumTitleWidth
+        let isCollapsed = layoutMode == .faviconOnly || isTooNarrowForTitle
+        
+        titleLabel.isHidden = isCollapsed
+        titleStackView.spacing = isCollapsed ? 0 : 6
+        titleStackExpandedLeadingConstraint.isActive = !isCollapsed
+        titleStackCollapsedLeadingConstraint.isActive = isCollapsed
+        titleStackExpandedTrailingConstraint.isActive = !isCollapsed
+        titleStackCollapsedTrailingConstraint.isActive = isCollapsed
+        titleLabelExpandedWidthConstraint.isActive = !isCollapsed
+        closeButton.isHidden = isCollapsed || !selected
         separatorView.isHidden = selected
     }
     

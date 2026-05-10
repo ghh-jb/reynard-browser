@@ -37,6 +37,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     var isSearchFocused = false
     private(set) var isMediaFullscreen = false
     private var pendingSelectionAnimation = false
+    private var pendingExpandedPadTabIndex: Int?
     
     let downloadHaptic = UINotificationFeedbackGenerator()
     
@@ -259,7 +260,9 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     
     @discardableResult
     func createTab(selecting: Bool, windowId: String? = nil, at index: Int? = nil) -> Int {
-        tabManager.addTab(selecting: selecting, windowId: windowId, at: index)
+        let createdIndex = tabManager.addTab(selecting: selecting, windowId: windowId, at: index)
+        pendingExpandedPadTabIndex = selecting ? createdIndex : nil
+        return createdIndex
     }
     
     func selectTab(at index: Int, animated: Bool) {
@@ -268,11 +271,17 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     func closeTab(at index: Int) {
+        pendingExpandedPadTabIndex = nil
         tabManager.removeTab(at: index)
     }
     
     func clearAllTabs() {
+        pendingExpandedPadTabIndex = nil
         tabManager.removeAllTabs()
+    }
+    
+    func usesExpandedPadTabWidth(at index: Int) -> Bool {
+        index == tabManager.selectedTabIndex || index == pendingExpandedPadTabIndex
     }
     
     func setTabOverviewVisible(_ visible: Bool, animated: Bool) {
@@ -285,6 +294,46 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     
     func applyChromeLayout(animated: Bool) {
         browserLayout.applyChromeLayout(animated: animated)
+    }
+    
+    func refreshPadTabStripLayout() {
+        let cv = browserUI.padTabBar.collectionView
+        let insets = cv.adjustedContentInset.left + cv.adjustedContentInset.right
+        let width = cv.bounds.width > 1 ? cv.bounds.width : view.bounds.width
+        let stripWidth = max(0, width - insets)
+        let tabs = tabManager.tabs.count
+        
+        let shouldScroll: Bool = {
+            guard tabs > 1 else {
+                return false
+            }
+            
+            let equalWidth = floor(stripWidth / CGFloat(tabs))
+            guard equalWidth < PadTabCell.expandedMinimumWidth else {
+                return false
+            }
+            
+            let hasPendingExpanded = pendingExpandedPadTabIndex != nil
+            && pendingExpandedPadTabIndex != tabManager.selectedTabIndex
+            && tabManager.tabs.indices.contains(pendingExpandedPadTabIndex ?? -1)
+            let expandedCount = hasPendingExpanded ? 2 : 1
+            let otherCount = tabs - expandedCount
+            guard otherCount > 0 else {
+                return false
+            }
+            
+            let remainingWidth = stripWidth - (PadTabCell.expandedMinimumWidth * CGFloat(expandedCount))
+            let otherWidth = floor(remainingWidth / CGFloat(otherCount))
+            return otherWidth <= PadTabCell.collapsedMinimumWidth
+        }()
+        
+        cv.isScrollEnabled = shouldScroll
+        cv.collectionViewLayout.invalidateLayout()
+        guard !cv.isHidden else {
+            return
+        }
+        
+        cv.layoutIfNeeded()
     }
     
     func centerSelectedPadTab(animated: Bool) {
@@ -528,6 +577,11 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     func tabManagerDidChangeTabs(_ tabManager: TabManager) {
+        if let pendingExpandedPadTabIndex,
+           !tabManager.tabs.indices.contains(pendingExpandedPadTabIndex) {
+            self.pendingExpandedPadTabIndex = nil
+        }
+        
         if let selectedTab = tabManager.selectedTab {
             if browserUI.geckoView.session !== selectedTab.session {
                 browserUI.geckoView.session = selectedTab.session
@@ -540,9 +594,11 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         browserUI.tabOverviewCollection.collectionView.reloadData()
         browserUI.padTabBar.collectionView.reloadData()
         browserLayout.applyChromeLayout(animated: false)
+        refreshPadTabStripLayout()
     }
     
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?) {
+        pendingExpandedPadTabIndex = nil
         if let previousIndex {
             captureThumbnail(for: previousIndex)
         }
@@ -561,6 +617,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         updateNavigationButtons()
         browserUI.tabOverviewCollection.collectionView.reloadData()
         browserUI.padTabBar.collectionView.reloadData()
+        refreshPadTabStripLayout()
         
         if usesPadChromeLayout {
             centerSelectedPadTab(animated: pendingSelectionAnimation)

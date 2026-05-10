@@ -9,6 +9,7 @@ import UIKit
 
 extension SettingsRootViewController {
     var sourceCodeURL: URL? { URL(string: "https://github.com/minh-ton/reynard-browser") }
+    var discordServerURL: URL? { URL(string: "https://discord.gg/gy4YRm6X9E") }
     var githubProfileURL: URL? { URL(string: "https://github.com/minh-ton") }
     var redditProfileURL: URL? { URL(string: "https://www.reddit.com/user/Minh-Ton/") }
 }

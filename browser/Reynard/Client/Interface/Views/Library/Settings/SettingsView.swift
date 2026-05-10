@@ -183,8 +183,8 @@ final class SettingsRootViewController: SettingsTableViewController {
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
             switch indexPath.row {
             case 0: cell.textLabel?.text = "View Source Code"
-            case 1: cell.textLabel?.text = "GitHub - @minh-ton"
-            case 2: cell.textLabel?.text = "Reddit - u/Minh-Ton"
+            case 1: cell.textLabel?.text = "Join Discord Server"
+            case 2: cell.textLabel?.text = "GitHub - @minh-ton"
             default: cell.textLabel?.text = nil
             }
             cell.textLabel?.textColor = .systemBlue
@@ -218,8 +218,8 @@ final class SettingsRootViewController: SettingsTableViewController {
             let url: URL?
             switch indexPath.row {
             case 0: url = sourceCodeURL
-            case 1: url = githubProfileURL
-            case 2: url = redditProfileURL
+            case 1: url = discordServerURL
+            case 2: url = githubProfileURL
             default: url = nil
             }
             guard let url else { return }
@@ -259,7 +259,7 @@ final class SettingsRootViewController: SettingsTableViewController {
             let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"
             let build = info?["CFBundleVersion"] as? String ?? "Unknown"
             let geckoTag = info?["GeckoVersion"] as? String ?? "Unknown"
-            return "App Version: \(version) (\(build))\nGecko Release Tag: \(geckoTag)"
+            return "Version \(version) (\(build))\nGecko Engine Version \(geckoTag)"
         }
     }
     

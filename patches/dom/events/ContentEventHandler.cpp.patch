@@ -1,5 +1,5 @@
 diff --git a/dom/events/ContentEventHandler.cpp b/dom/events/ContentEventHandler.cpp
-index a9973e2d0648..4540a8130c82 100644
+index a9973e2d0648..ad4194bbbbb3 100644
 --- a/dom/events/ContentEventHandler.cpp
 +++ b/dom/events/ContentEventHandler.cpp
 @@ -6,6 +6,7 @@
@@ -57,7 +57,7 @@ index a9973e2d0648..4540a8130c82 100644
    // Returning empty rect may cause native IME confused, let's make sure to
    // return non-empty rect.
    EnsureNonEmptyRect(aEvent->mReply->mRect);
-@@ -586,6 +603,52 @@ nsresult ContentEventHandler::QueryContentRect(
+@@ -586,6 +603,53 @@ nsresult ContentEventHandler::QueryContentRect(
    return NS_OK;
  }
  
@@ -79,7 +79,8 @@ index a9973e2d0648..4540a8130c82 100644
 +      aRootElement->GetClosestNativeAnonymousSubtreeRootParentOrHost());
 +  nsTextControlFrame* textControlFrame = do_QueryFrame(
 +      textControlElement ? textControlElement->GetPrimaryFrame() : nullptr);
-+  if (!textControlFrame || textControlFrame->GetRootNode() != aRootElement) {
++  if (!textControlFrame ||
++      textControlFrame->ControlElement()->GetTextEditorRoot() != aRootElement) {
 +    return nullptr;
 +  }
 +
@@ -110,7 +111,7 @@ index a9973e2d0648..4540a8130c82 100644
  // Editor places a padding <br> element under its root content if the editor
  // doesn't have any text. This happens even for single line editors.
  // When we get text content and when we change the selection,
-@@ -2528,6 +2591,48 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
+@@ -2528,6 +2592,48 @@ nsresult ContentEventHandler::OnQueryTextRect(WidgetQueryContentEvent* aEvent) {
    }
    DOMRangeAndAdjustedOffsetInFlattenedText domRangeAndAdjustedOffset =
        domRangeAndAdjustedOffsetOrError.unwrap();
@@ -159,7 +160,7 @@ index a9973e2d0648..4540a8130c82 100644
    nsString string;
    if (NS_WARN_IF(NS_FAILED(GenerateFlatTextContent(
            domRangeAndAdjustedOffset.mRange, string, lineBreakType)))) {
-@@ -2847,6 +2952,76 @@ nsresult ContentEventHandler::OnQueryEditorRect(
+@@ -2847,6 +2953,76 @@ nsresult ContentEventHandler::OnQueryEditorRect(
      return rv;
    }
  
@@ -202,7 +203,7 @@ index a9973e2d0648..4540a8130c82 100644
 +        editorFrame, nsLayoutUtils::SCROLLABLE_SAME_DOC |
 +                         nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
 +    if (scf) {
-+      nsPresContext* presContext = scf-> PresContext();
++      nsPresContext* presContext = scf->PresContext();
 +      // Skip the root scroll container: its scroll port is just the viewport
 +      // which is already handled by ChildView bounds clipping on the native
 +      // side.

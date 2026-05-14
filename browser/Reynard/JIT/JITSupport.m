@@ -118,7 +118,7 @@ static void startHeartbeat(DeviceProvider *provider) {
     provider->heartbeatRunning = YES;
     
     dispatch_async(heartbeatQueue, ^{
-        uint64_t currentInterval = 15;
+        uint64_t currentInterval = 2;
         while (provider->heartbeatRunning) {
             uint64_t newInterval = 0;
             IdeviceFfiError *ffiError = heartbeat_get_marco(provider->heartbeatClient, currentInterval, &newInterval);
@@ -134,9 +134,7 @@ static void startHeartbeat(DeviceProvider *provider) {
             if (ffiError) {
                 idevice_error_free(ffiError);
                 break;
-            }
-            
-            currentInterval = (newInterval > 0) ? (newInterval + 5) : 15;
+            }    
         }
     });
 }
@@ -445,7 +443,7 @@ DeviceProvider *createDeviceProvider(NSString *pairingFilePath, NSString *target
         }
         
         uint64_t nextInterval = 0;
-        ffiError = heartbeat_get_marco(heartbeatClient, 15, &nextInterval);
+        ffiError = heartbeat_get_marco(heartbeatClient, 2, &nextInterval);
         if (!ffiError) ffiError = heartbeat_send_polo(heartbeatClient);
         
         DeviceProvider *provider = calloc(1, sizeof(*provider));

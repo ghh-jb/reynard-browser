@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..20f460c3b17e
+index 000000000000..8dc6b96d479d
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,2716 @@
+@@ -0,0 +1,2715 @@
 +/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 +/* vim: set ts=2 sw=2 et tw=80: */
 +/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -2295,12 +2295,6 @@ index 000000000000..20f460c3b17e
 +}
 +
 +- (void)interactionWillBegin:(UITextInteraction*)aInteraction {
-+  if (aInteraction != mEditable.mEditableTextInteraction &&
-+      aInteraction != mEditable.mNonEditableTextInteraction) {
-+    return;
-+  }
-+
-+  // Prevent ChildView from replaying this touch as a Gecko tap.
 +  mEditable.mTextInteractionInProgress = YES;
 +  [[UIMenuController sharedMenuController] hideMenuFromView:self];
 +  [self becomeFirstResponder];
@@ -2309,15 +2303,15 @@ index 000000000000..20f460c3b17e
 +  } else {
 +    [self setLegacyGrabbersHidden:NO];
 +  }
-+}
 +
-+// Cleans up state after a UIKit text interaction finishes.
-+- (void)interactionDidEnd:(UITextInteraction*)aInteraction {
 +  if (aInteraction != mEditable.mEditableTextInteraction &&
 +      aInteraction != mEditable.mNonEditableTextInteraction) {
 +    return;
 +  }
++}
 +
++// Cleans up state after a UIKit text interaction finishes.
++- (void)interactionDidEnd:(UITextInteraction*)aInteraction {
 +  mEditable.mTextInteractionInProgress = NO;
 +  if (mEditable.mSelectionDisplayInteraction != nil) {
 +    [self updateHandleVisibility];
@@ -2327,6 +2321,11 @@ index 000000000000..20f460c3b17e
 +  }
 +  [self resetHandleState];
 +  [self updateEditMenu];
++
++  if (aInteraction != mEditable.mEditableTextInteraction &&
++      aInteraction != mEditable.mNonEditableTextInteraction) {
++    return;
++  }
 +}
 +
 +@end

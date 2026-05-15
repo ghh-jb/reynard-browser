@@ -25,10 +25,15 @@ final class SettingsRootViewController: SettingsTableViewController {
         case updates
         case jit
         case general
-        case search
-        case tab
-        case compatibility
         case about
+    }
+    
+    enum GeneralRow: CaseIterable {
+        case addons
+        case browsing
+        case search
+        case appearance
+        case compatibility
     }
     
     var visibleSections: [Section] {
@@ -36,10 +41,6 @@ final class SettingsRootViewController: SettingsTableViewController {
         
         if !AppUpdates.shared.hasUpdate {
             hiddenSections.insert(.updates)
-        }
-        
-        if UIDevice.current.userInterfaceIdiom == .pad {
-            hiddenSections.insert(.tab)
         }
         
         // if using Trollstore or jailbroken, hide JIT section
@@ -51,8 +52,6 @@ final class SettingsRootViewController: SettingsTableViewController {
     }
     
     let jitSwitch = UISwitch()
-    let landscapeTabBarSwitch = UISwitch()
-    let androidUASwitch = UISwitch()
     let backgroundQueue = DispatchQueue(label: "me.minh-ton.reynard.settings.backgroundqueue", qos: .userInitiated)
     var isJITLessModeActive = false
     var activeDDIDownloadToken: UUID?
@@ -71,8 +70,6 @@ final class SettingsRootViewController: SettingsTableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         jitSwitch.addTarget(self, action: #selector(jitSwitchChanged(_:)), for: .valueChanged)
-        landscapeTabBarSwitch.addTarget(self, action: #selector(landscapeTabBarSwitchChanged), for: .valueChanged)
-        androidUASwitch.addTarget(self, action: #selector(androidUASwitchChanged), for: .valueChanged)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleJITLessModeActivated(_:)),
@@ -91,8 +88,6 @@ final class SettingsRootViewController: SettingsTableViewController {
     func refreshControls() {
         jitSwitch.isEnabled = preferences.hasPairingFile
         jitSwitch.isOn = preferences.isJITEnabled
-        landscapeTabBarSwitch.isOn = preferences.showsLandscapeTabBar
-        androidUASwitch.isOn = preferences.useAndroidUserAgent
         isJITLessModeActive = JITController.shared.isJITLessModeActive
     }
     
@@ -105,11 +100,8 @@ final class SettingsRootViewController: SettingsTableViewController {
         switch visibleSections[section] {
         case .updates: return 2
         case .jit: return 2
-        case .general: return 2
-        case .search: return 1
-        case .compatibility: return preferences.useAndroidUserAgent ? 1 : 2
-        case .tab: return 2
-        case .about: return 3
+        case .general: return GeneralRow.allCases.count
+        case .about: return 5
         }
     }
     
@@ -140,51 +132,32 @@ final class SettingsRootViewController: SettingsTableViewController {
             }
             return cell
         case .general:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = indexPath.row == 0 ? "Add-ons" : "Request Desktop Website"
-            cell.accessoryType = .disclosureIndicator
-            return cell
-        case .search:
-            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
-            cell.textLabel?.text = "Search Engine"
-            cell.detailTextLabel?.text = preferences.searchEngineSummary
-            cell.detailTextLabel?.textColor = .secondaryLabel
-            cell.accessoryType = .disclosureIndicator
-            return cell
-        case .tab:
-            if indexPath.row == 0 {
-                let cell = AddressBarPositionPickerCell(style: .default, reuseIdentifier: nil)
-                cell.configure(selectedPosition: preferences.addressBarPosition)
-                cell.onSelectionChanged = { [weak self] position in
-                    self?.preferences.addressBarPosition = position
-                }
-                return cell
-            } else {
-                let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-                cell.textLabel?.text = "Landscape Tab Bar"
-                cell.selectionStyle = .none
-                cell.accessoryView = landscapeTabBarSwitch
-                return cell
-            }
-        case .compatibility:
-            if indexPath.row == 0 {
-                let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-                cell.textLabel?.text = "Use Android User Agent"
-                cell.selectionStyle = .none
-                cell.accessoryView = androidUASwitch
-                return cell
-            } else {
-                let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-                cell.textLabel?.text = "User Agent Overrides"
-                cell.accessoryType = .disclosureIndicator
-                return cell
-            }
+            return makeGeneralCell(for: indexPath)
         case .about:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
             switch indexPath.row {
-            case 0: cell.textLabel?.text = "View Source Code"
-            case 1: cell.textLabel?.text = "Join Discord Server"
-            case 2: cell.textLabel?.text = "GitHub - @minh-ton"
+            case 0:
+                let info = Bundle.main.infoDictionary
+                let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"
+                let build = info?["CFBundleVersion"] as? String ?? "Unknown"
+                cell.textLabel?.text = "Reynard Browser"
+                cell.detailTextLabel?.text = "\(version) (\(build))"
+                cell.detailTextLabel?.textColor = .secondaryLabel
+                cell.selectionStyle = .none
+                cell.accessoryType = .none
+                return cell
+            case 1:
+                cell.textLabel?.text = "Engine Version"
+                let info = Bundle.main.infoDictionary
+                let geckoTag = info?["GeckoVersion"] as? String ?? "Unknown"
+                cell.detailTextLabel?.text = geckoTag
+                cell.detailTextLabel?.textColor = .secondaryLabel
+                cell.selectionStyle = .none
+                cell.accessoryType = .none
+                return cell
+            case 2: cell.textLabel?.text = "View Source Code"
+            case 3: cell.textLabel?.text = "Support The Project"
+            case 4: cell.textLabel?.text = "GitHub - @minh-ton"
             default: cell.textLabel?.text = nil
             }
             cell.textLabel?.textColor = .systemBlue
@@ -202,24 +175,13 @@ final class SettingsRootViewController: SettingsTableViewController {
         case .jit where indexPath.row == 1:
             presentPairingFilePicker()
         case .general:
-            if indexPath.row == 0 {
-                navigationController?.pushViewController(AddonsSettingsViewController(), animated: true)
-            } else {
-                navigationController?.pushViewController(RequestDesktopWebsiteViewController(), animated: true)
-            }
-        case .search:
-            navigationController?.pushViewController(SearchEngineSettingsViewController(), animated: true)
-        case .compatibility:
-            guard !preferences.useAndroidUserAgent, indexPath.row == 1 else { break }
-            navigationController?.pushViewController(UserAgentOverrideViewController(), animated: true)
-        case .tab:
-            break
+            handleGeneralSelection(at: indexPath)
         case .about:
             let url: URL?
             switch indexPath.row {
-            case 0: url = sourceCodeURL
-            case 1: url = discordServerURL
-            case 2: url = githubProfileURL
+            case 2: url = sourceCodeURL
+            case 3: url = supportProjectURL
+            case 4: url = githubProfileURL
             default: url = nil
             }
             guard let url else { return }
@@ -235,37 +197,72 @@ final class SettingsRootViewController: SettingsTableViewController {
         case .updates: return "Update Available"
         case .jit: return "JIT"
         case .general: return "General"
-        case .search: return "Search"
-        case .tab: return "Tabs"
-        case .compatibility: return "Compatibility"
         case .about: return "About"
-        }
-    }
-    
-    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
-        guard visibleSections.indices.contains(section) else { return nil }
-        switch visibleSections[section] {
-        case .updates, .jit, .general, .search, .tab: return nil
-        case .compatibility:
-            if preferences.useAndroidUserAgent {
-                return preferences.requestDesktopWebsite
-                ? "The browser will use a desktop Firefox user agent for navigating the web."
-                : "To maximize compatibility, the browser will use the Firefox for Android user agent for navigating the web. As a result, websites may identify your device as an Android device."
-            }
-            
-            return "If you encounter issues such as sign-in failures, human verification challenges, or other incorrect site behavior, adding the site's URL to this user agent override list may help resolve the problem."
-        case .about:
-            let info = Bundle.main.infoDictionary
-            let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"
-            let build = info?["CFBundleVersion"] as? String ?? "Unknown"
-            let geckoTag = info?["GeckoVersion"] as? String ?? "Unknown"
-            return "Version \(version) (\(build))\nGecko Engine Version \(geckoTag)"
         }
     }
     
     override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
         guard visibleSections.indices.contains(section), visibleSections[section] == .jit else { return nil }
         return makeJITFooterView()
+    }
+}
+
+private extension SettingsRootViewController {
+    func makeGeneralCell(for indexPath: IndexPath) -> UITableViewCell {
+        let rows = GeneralRow.allCases
+        guard rows.indices.contains(indexPath.row) else {
+            return UITableViewCell()
+        }
+        
+        let row = rows[indexPath.row]
+        switch row {
+        case .addons:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = "Add-ons"
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        case .browsing:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = "Browsing"
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        case .search:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = "Search"
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        case .appearance:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = "Appearance"
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        case .compatibility:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = "Compatibility"
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        }
+    }
+    
+    func handleGeneralSelection(at indexPath: IndexPath) {
+        let rows = GeneralRow.allCases
+        guard rows.indices.contains(indexPath.row) else {
+            return
+        }
+        
+        let row = rows[indexPath.row]
+        switch row {
+        case .addons:
+            navigationController?.pushViewController(AddonsPreferencesViewController(), animated: true)
+        case .browsing:
+            navigationController?.pushViewController(BrowsingPreferencesViewController(), animated: true)
+        case .search:
+            navigationController?.pushViewController(SearchPreferencesViewController(), animated: true)
+        case .appearance:
+            navigationController?.pushViewController(AppearancePreferencesViewController(), animated: true)
+        case .compatibility:
+            navigationController?.pushViewController(CompatibilityPreferencesViewController(), animated: true)
+        }
     }
 }
 

@@ -7,6 +7,35 @@
 
 import UIKit
 
+final class SearchPreferencesViewController: SettingsTableViewController {
+    init() {
+        super.init(style: .insetGrouped)
+        title = "Search"
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        1
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+        cell.textLabel?.text = "Search Engine"
+        cell.detailTextLabel?.text = preferences.searchEngineSummary
+        cell.detailTextLabel?.textColor = .secondaryLabel
+        cell.accessoryType = .disclosureIndicator
+        return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        defer { tableView.deselectRow(at: indexPath, animated: true) }
+        navigationController?.pushViewController(SearchEnginePreferencesViewController(), animated: true)
+    }
+}
+
 final class SettingsTextFieldCell: UITableViewCell {
     let textField = UITextField()
     
@@ -33,7 +62,7 @@ final class SettingsTextFieldCell: UITableViewCell {
     }
 }
 
-final class SearchEngineSettingsViewController: SettingsTableViewController, UITextFieldDelegate {
+final class SearchEnginePreferencesViewController: SettingsTableViewController, UITextFieldDelegate {
     init() {
         super.init(style: .insetGrouped)
         title = "Search Engine"

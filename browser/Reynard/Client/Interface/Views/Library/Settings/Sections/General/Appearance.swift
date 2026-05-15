@@ -132,8 +132,75 @@ final class AddressBarPositionPickerCell: UITableViewCell {
     }
 }
 
-extension SettingsRootViewController {
-    @objc func landscapeTabBarSwitchChanged() {
+final class AppearancePreferencesViewController: SettingsTableViewController {
+    private let landscapeTabBarSwitch = UISwitch()
+    
+    private var showsTabsSection: Bool {
+        UIDevice.current.userInterfaceIdiom != .pad
+    }
+    
+    init() {
+        super.init(style: .insetGrouped)
+        title = "Appearance"
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        landscapeTabBarSwitch.addTarget(self, action: #selector(landscapeTabBarSwitchChanged), for: .valueChanged)
+        refreshControls()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshControls()
+        tableView.reloadData()
+    }
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        showsTabsSection ? 1 : 0
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        guard showsTabsSection else {
+            return 0
+        }
+        return 2
+    }
+    
+    override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        showsTabsSection ? "Tabs" : nil
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard showsTabsSection else {
+            return UITableViewCell()
+        }
+        
+        if indexPath.row == 0 {
+            let cell = AddressBarPositionPickerCell(style: .default, reuseIdentifier: nil)
+            cell.configure(selectedPosition: preferences.addressBarPosition)
+            cell.onSelectionChanged = { [weak self] position in
+                self?.preferences.addressBarPosition = position
+            }
+            return cell
+        }
+        
+        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        cell.textLabel?.text = "Landscape Tab Bar"
+        cell.selectionStyle = .none
+        cell.accessoryView = landscapeTabBarSwitch
+        return cell
+    }
+    
+    private func refreshControls() {
+        landscapeTabBarSwitch.isOn = preferences.showsLandscapeTabBar
+    }
+    
+    @objc private func landscapeTabBarSwitchChanged() {
         preferences.showsLandscapeTabBar = landscapeTabBarSwitch.isOn
     }
 }

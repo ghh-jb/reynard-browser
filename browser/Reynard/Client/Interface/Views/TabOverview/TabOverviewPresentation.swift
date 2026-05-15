@@ -27,7 +27,7 @@ final class TabOverviewPresentation {
         let availableWidth = collectionView.bounds.width - horizontalInsets
         let tabViewAspectRatio = max(0.4, controller.tabPreviewAspectRatio())
         
-        let targetWidth: CGFloat = controller.usesPadChromeLayout ? 250 : 170
+        let targetWidth: CGFloat = controller.usesPadChrome ? 250 : 170
         let computedColumns = Int((availableWidth + controller.overviewSpacing) / (targetWidth + controller.overviewSpacing))
         let columns = max(2, computedColumns)
         
@@ -64,7 +64,7 @@ final class TabOverviewPresentation {
         }
         
         if animated {
-            if controller.usesPadChromeLayout {
+            if controller.usesPadChrome {
                 visible ? animatePadOverviewPresentation() : animatePadOverviewDismissal()
             } else {
                 visible ? animatePhoneOverviewPresentation() : animatePhoneOverviewDismissal()
@@ -109,7 +109,7 @@ final class TabOverviewPresentation {
         let pageScale = 1 - (0.08 * clamped)
         controller.browserUI.geckoView.transform = CGAffineTransform(scaleX: pageScale, y: pageScale)
         
-        if controller.usesPadChromeLayout {
+        if controller.usesPadChrome {
             controller.browserUI.topBar.barView.alpha = 1 - clamped
             controller.browserUI.topBar.safeAreaFillView.alpha = 1 - clamped
         } else {
@@ -282,7 +282,7 @@ final class TabOverviewPresentation {
         controller.captureThumbnail(for: selectedIndex)
         controller.browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
         controller.browserUI.tabOverviewCollection.collectionView.reloadData()
-        let isPhoneTopPresentation = controller.usesPhoneBottomOverviewLayout
+        let isPhoneTopPresentation = controller.usesBottomPhoneOverview
         controller.browserUI.tabOverview.containerView.isHidden = false
         controller.browserUI.tabOverview.containerView.alpha = 0
         controller.browserUI.tabOverview.blurView.alpha = 0
@@ -350,7 +350,7 @@ final class TabOverviewPresentation {
         isTransitionRunning = true
         let overviewIndex = overviewAnimationIndex()
         
-        let isPhoneTopDismissal = controller.usesPhoneBottomOverviewLayout
+        let isPhoneTopDismissal = controller.usesBottomPhoneOverview
         controller.browserUI.tabOverview.containerView.isHidden = false
         controller.browserUI.tabOverview.containerView.alpha = 1
         controller.browserUI.tabOverview.blurView.alpha = 1

@@ -59,7 +59,7 @@ final class AddressBarGestures: NSObject {
     }
     
     func animateAutomaticNewTabTransition(completion: @escaping () -> Void) {
-        guard !controller.usesPadChromeLayout,
+        guard !controller.usesPadChrome,
               !controller.tabOverviewPresentation.isVisible,
               !controller.tabOverviewPresentation.isTransitionRunning else {
             completion()
@@ -86,7 +86,7 @@ final class AddressBarGestures: NSObject {
     }
     
     func animateAutomaticNewTabTransition(to tab: Tab, completion: @escaping () -> Void) {
-        guard !controller.usesPadChromeLayout,
+        guard !controller.usesPadChrome,
               !controller.tabOverviewPresentation.isVisible,
               !controller.tabOverviewPresentation.isTransitionRunning else {
             completion()
@@ -295,7 +295,7 @@ final class AddressBarGestures: NSObject {
     private func finishHorizontalTabInteraction(translationX: CGFloat, velocityX: CGFloat) {
         let width = controller.browserUI.geckoView.bounds.width
         let shouldSwitch = horizontalTargetIndex != nil && (abs(translationX) > width * 0.28 || abs(velocityX) > 700)
-        let shouldCreateNewTab = !controller.usesPadChromeLayout
+        let shouldCreateNewTab = !controller.usesPadChrome
         && horizontalTargetIndex == nil
         && controller.tabManager.selectedTabIndex == controller.tabManager.tabs.count - 1
         && horizontalDirection == 1
@@ -331,7 +331,7 @@ final class AddressBarGestures: NSObject {
     }
     
     @objc private func handleSearchPan(_ recognizer: UIPanGestureRecognizer) {
-        if controller.usesPadChromeLayout {
+        if controller.usesPadChrome {
             resetHorizontalTransition()
             searchPanMode = .blocked
             return
@@ -386,7 +386,7 @@ final class AddressBarGestures: NSObject {
     
     @objc private func handleSearchSwipeUp(_ recognizer: UISwipeGestureRecognizer) {
         guard recognizer.state == .ended,
-              !controller.usesPadChromeLayout,
+              !controller.usesPadChrome,
               !controller.isSearchFocused,
               !controller.tabOverviewPresentation.isVisible,
               !controller.tabOverviewPresentation.isTransitionRunning else {

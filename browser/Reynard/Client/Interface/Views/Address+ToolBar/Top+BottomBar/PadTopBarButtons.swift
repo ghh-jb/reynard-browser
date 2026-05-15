@@ -70,6 +70,6 @@ final class PadTopBarButtons {
     
     func updateDownloadButton(summary: DownloadStoreSummary) {
         downloadButton.apply(summary: summary)
-        downloadButton.isHidden = controller.usesCompactPadChromeMode || !downloadButton.isShowingDownloads
+        downloadButton.isHidden = controller.usesCompactPadChrome || !downloadButton.isShowingDownloads
     }
 }

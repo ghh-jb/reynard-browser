@@ -1,23 +1,448 @@
 //
-//  BrowserLayout.swift
+//  BrowserViewController+UI.swift
 //  Reynard
 //
-//  Created by Minh Ton on 5/3/26.
+//  Created by Minh Ton on 15/5/26.
 //
 
+import ObjectiveC
 import GeckoView
 import UIKit
 
-final class BrowserLayout {
+private enum UIAssociatedKeys {
+    static var tabCollectionCoordinator = 0
+    static var browserUI = 0
+    static var addressBarGestures = 0
+    static var isSearchFocused = 0
+}
+
+extension BrowserViewController {
+    var overviewInset: CGFloat {
+        16
+    }
+    
+    var overviewSpacing: CGFloat {
+        16
+    }
+    
+    var tabCollectionCoordinator: TabCollectionCoordinator {
+        get {
+            if let coordinator = objc_getAssociatedObject(self, &UIAssociatedKeys.tabCollectionCoordinator) as? TabCollectionCoordinator {
+                return coordinator
+            }
+            
+            let coordinator = TabCollectionCoordinator(controller: self)
+            objc_setAssociatedObject(self, &UIAssociatedKeys.tabCollectionCoordinator, coordinator, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            return coordinator
+        }
+        set {
+            objc_setAssociatedObject(self, &UIAssociatedKeys.tabCollectionCoordinator, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    
+    var browserUI: BrowserUI {
+        get {
+            if let ui = objc_getAssociatedObject(self, &UIAssociatedKeys.browserUI) as? BrowserUI {
+                return ui
+            }
+            
+            let ui = BrowserUI(controller: self, tabCollectionHandler: tabCollectionCoordinator)
+            objc_setAssociatedObject(self, &UIAssociatedKeys.browserUI, ui, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            return ui
+        }
+        set {
+            objc_setAssociatedObject(self, &UIAssociatedKeys.browserUI, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    
+    var addressBarGestures: AddressBarGestures {
+        get {
+            if let gestures = objc_getAssociatedObject(self, &UIAssociatedKeys.addressBarGestures) as? AddressBarGestures {
+                return gestures
+            }
+            
+            let gestures = AddressBarGestures(controller: self)
+            objc_setAssociatedObject(self, &UIAssociatedKeys.addressBarGestures, gestures, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            return gestures
+        }
+        set {
+            objc_setAssociatedObject(self, &UIAssociatedKeys.addressBarGestures, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    
+    var isSearchFocused: Bool {
+        get {
+            (objc_getAssociatedObject(self, &UIAssociatedKeys.isSearchFocused) as? NSNumber)?.boolValue ?? false
+        }
+        set {
+            objc_setAssociatedObject(self, &UIAssociatedKeys.isSearchFocused, NSNumber(value: newValue), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    
+    var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+    
+    var usesCompactPadChrome: Bool {
+        if isPad && traitCollection.horizontalSizeClass == .compact { return true }
+        return usesTopPhoneAddressBar
+    }
+    
+    var usesPadChrome: Bool {
+        if isPad { return true }
+        if usesTopPhoneAddressBar { return true }
+        if let orientation = view.window?.windowScene?.interfaceOrientation {
+            return orientation.isLandscape
+        }
+        return view.bounds.width > view.bounds.height
+    }
+    
+    var usesTopPhoneAddressBar: Bool {
+        guard !isPad else { return false }
+        let isLandscape: Bool
+        if let orientation = view.window?.windowScene?.interfaceOrientation {
+            isLandscape = orientation.isLandscape
+        } else {
+            isLandscape = view.bounds.width > view.bounds.height
+        }
+        guard !isLandscape else { return false }
+        return BrowserPreferences.shared.addressBarPosition == .top
+    }
+    
+    var usesBottomPhoneOverview: Bool {
+        guard !isPad else { return false }
+        return usesTopPhoneAddressBar || !usesPadChrome
+    }
+    
+    var activeAddressBar: AddressBar {
+        browserUI.addressBar
+    }
+    
+    @objc func applyUpdateMenuButtonBadge() {
+        browserUI.toolbarView.setMenuButtonIndicatesUpdate(true)
+        browserUI.padTopBarButtons.setMenuButtonIndicatesUpdate(true)
+    }
+    
+    func setSearchFocused(_ focused: Bool, animated: Bool) {
+        browserUI.setSearchFocused(focused, animated: animated)
+    }
+    
+    func applyChromeLayout(animated: Bool) {
+        browserUI.applyChromeLayout(animated: animated)
+    }
+    
+    func refreshPadTabStripLayout() {
+        let cv = browserUI.padTabBar.collectionView
+        let insets = cv.adjustedContentInset.left + cv.adjustedContentInset.right
+        let width = cv.bounds.width > 1 ? cv.bounds.width : view.bounds.width
+        let stripWidth = max(0, width - insets)
+        let tabs = tabManager.tabs.count
+        
+        let shouldScroll: Bool = {
+            guard tabs > 1 else {
+                return false
+            }
+            
+            let equalWidth = floor(stripWidth / CGFloat(tabs))
+            guard equalWidth < PadTabCell.expandedMinimumWidth else {
+                return false
+            }
+            
+            let hasPendingExpanded = pendingExpandedPadTabIndex != nil
+            && pendingExpandedPadTabIndex != tabManager.selectedTabIndex
+            && tabManager.tabs.indices.contains(pendingExpandedPadTabIndex ?? -1)
+            let expandedCount = hasPendingExpanded ? 2 : 1
+            let otherCount = tabs - expandedCount
+            guard otherCount > 0 else {
+                return false
+            }
+            
+            let remainingWidth = stripWidth - (PadTabCell.expandedMinimumWidth * CGFloat(expandedCount))
+            let otherWidth = floor(remainingWidth / CGFloat(otherCount))
+            return otherWidth <= PadTabCell.collapsedMinimumWidth
+        }()
+        
+        cv.isScrollEnabled = shouldScroll
+        cv.collectionViewLayout.invalidateLayout()
+        guard !cv.isHidden else {
+            return
+        }
+        
+        cv.layoutIfNeeded()
+    }
+    
+    func centerSelectedPadTab(animated: Bool) {
+        guard usesPadChrome, tabManager.tabs.indices.contains(tabManager.selectedTabIndex) else {
+            return
+        }
+        
+        let indexPath = IndexPath(item: tabManager.selectedTabIndex, section: 0)
+        browserUI.padTabBar.collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: animated)
+    }
+    
+    func updateNavigationButtons() {
+        guard let tab = tabManager.selectedTab else {
+            return
+        }
+        
+        browserUI.toolbarView.updateBackButton(canGoBack: tab.canGoBack)
+        browserUI.toolbarView.updateForwardButton(canGoForward: tab.canGoForward)
+        let shareEnabled = tabManager.shareableURL(for: tab) != nil
+        browserUI.toolbarView.updateShareButton(isEnabled: shareEnabled)
+        browserUI.padTopBarButtons.shareButton.isEnabled = shareEnabled
+        browserUI.padTopBarButtons.backButton.isEnabled = tab.canGoBack
+        browserUI.padTopBarButtons.forwardButton.isEnabled = tab.canGoForward
+    }
+    
+    @objc func addressBarPositionDidChange() {
+        browserUI.applyChromeLayout(animated: true)
+    }
+    
+    @objc func landscapeTabBarDidChange() {
+        browserUI.applyChromeLayout(animated: true)
+    }
+    
+    func syncBrowserNavigationChrome(animated: Bool) {
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+        navigationItem.leftItemsSupplementBackButton = false
+        navigationItem.hidesBackButton = true
+        navigationItem.leftBarButtonItems = []
+        navigationItem.leftBarButtonItem = nil
+    }
+    
+    private func activeTabStripHeight() -> CGFloat {
+        guard usesPadChrome,
+              tabManager.tabs.count > 1 else {
+            return 0
+        }
+        
+        if !isPad {
+            guard BrowserPreferences.shared.showsLandscapeTabBar else {
+                return 0
+            }
+            let isLandscape: Bool
+            if let orientation = view.window?.windowScene?.interfaceOrientation {
+                isLandscape = orientation.isLandscape
+            } else {
+                isLandscape = view.bounds.width > view.bounds.height
+            }
+            guard isLandscape else {
+                return 0
+            }
+        }
+        
+        return 36
+    }
+    
+    func tabPreviewAspectRatio() -> CGFloat {
+        let bounds = browserUI.geckoView.bounds
+        let width = max(bounds.width, 1)
+        let height = max(bounds.height + activeTabStripHeight(), 1)
+        return height / width
+    }
+    
+    func captureThumbnail(for index: Int) {
+        guard !browserUI.geckoView.isHidden,
+              let tab = tabManager.tabs[safe: index],
+              browserUI.geckoView.session === tab.session else {
+            return
+        }
+        
+        let bounds = browserUI.geckoView.bounds
+        guard bounds.width > 1, bounds.height > 1 else {
+            return
+        }
+        
+        browserUI.geckoView.layoutIfNeeded()
+        
+        let renderer = UIGraphicsImageRenderer(size: bounds.size)
+        let image = renderer.image { context in
+            browserUI.geckoView.layer.render(in: context.cgContext)
+        }
+        tabManager.updateThumbnail(image, forTabAt: index)
+    }
+    
+    func dismissalContentFrame() -> CGRect {
+        let frame = browserUI.geckoView.frame
+        let stripHeight = activeTabStripHeight()
+        guard stripHeight > 0,
+              usesPadChrome,
+              tabOverviewPresentation.isVisible else {
+            return frame
+        }
+        
+        return CGRect(
+            x: frame.minX,
+            y: frame.minY + stripHeight,
+            width: frame.width,
+            height: max(1, frame.height - stripHeight)
+        )
+    }
+    
+    func syncAddressBarLoadingState(progress: Float, isLoading: Bool) {
+        browserUI.addressBar.setLoadingProgress(progress, isLoading: isLoading)
+    }
+    
+    func refreshAddressBar() {
+        let selectedTab = tabManager.selectedTab
+        let pendingDisplayText = selectedTab?.pendingDisplayText?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasPendingDisplayText = !(pendingDisplayText?.isEmpty ?? true)
+        let selectedURL = selectedTab?.url
+        let displayedText = hasPendingDisplayText ? pendingDisplayText : selectedURL
+        if !browserUI.addressBar.isEditingText {
+            browserUI.addressBar.setText(
+                displayedText,
+                locationText: selectedURL,
+                locationTitle: selectedTab?.title,
+                showsBarMenu: !hasPendingDisplayText && selectedURL?.isEmpty == false
+            )
+        }
+        browserUI.addressBar.setLoadingProgress(selectedTab?.progress ?? 0, isLoading: selectedTab?.isLoading ?? false)
+        addonsController.prepareVisibleAddonIcons()
+        let addonItems = addonsController.visibleMenuItemsForCurrentSite().map { item in
+            AddressBarMenu.AddonItem(menuItem: item, image: addonsController.iconImage(for: item.addon))
+        }
+        browserUI.addressBar.setAddonsMenu(
+            AddressBarMenu.makeMenu(
+                selectedTab: selectedTab,
+                selectedURL: selectedURL,
+                addonItems: addonItems
+            )
+        )
+    }
+    
+    @objc func presentAddonSettingsRequested(_ notification: Notification) {
+        guard let item = notification.userInfo?["addonItem"] as? AddonMenuItem else {
+            return
+        }
+        
+        addonsController.presentCurrentSiteSettings(for: item)
+    }
+    
+    func addressBarDidSubmit(_ searchTerm: String) {
+        browse(to: searchTerm)
+        view.endEditing(true)
+    }
+    
+    func addressBarDidBeginEditing(_ addressBar: AddressBar) {
+        refreshAddressBar()
+        setSearchFocused(true, animated: true)
+    }
+    
+    func addressBarDidEndEditing(_ addressBar: AddressBar) {
+        refreshAddressBar()
+        if !browserUI.addressBar.isEditingText {
+            setSearchFocused(false, animated: true)
+        }
+    }
+    
+    func addressBarDidTapTrailingButton(_ addressBar: AddressBar) {
+        guard let selectedTab = tabManager.selectedTab else {
+            return
+        }
+        
+        if selectedTab.isLoading {
+            selectedTab.session.stop()
+            return
+        }
+        
+        selectedTab.session.reload()
+    }
+}
+
+final class BrowserUI {
+    typealias TabCollectionHandler = UICollectionViewDataSource & UICollectionViewDelegate & UICollectionViewDelegateFlowLayout
+    
+    let geckoView: GeckoView = {
+        let view = GeckoView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    let chromeContainer = ChromeContainer()
+    
+    let addressBar: AddressBar = {
+        let bar = AddressBar()
+        bar.translatesAutoresizingMaskIntoConstraints = false
+        return bar
+    }()
+    
+    let keyboardDismissButton = KeyboardDismissButton()
+    
+    let toolbarView: PhoneToolbar = {
+        let bar = PhoneToolbar()
+        bar.translatesAutoresizingMaskIntoConstraints = false
+        return bar
+    }()
+    
+    let topBar = PadTopBar()
+    let padTopBarButtons: PadTopBarButtons
+    let padTabBar: PadTabBar
+    
+    let tabOverview = TabOverview()
+    let tabOverviewCollection: TabOverviewCollection
+    let tabOverviewBottomBar = TabOverviewBottomBar()
+    let tabOverviewTopBar = TabOverviewTopBar()
+    let tabOverviewBarButtons: TabOverviewBarButtons
+    
+    var geckoTopPhoneConstraint: NSLayoutConstraint!
+    var geckoTopPadConstraint: NSLayoutConstraint!
+    var geckoBottomPhoneConstraint: NSLayoutConstraint!
+    var geckoBottomPhoneSearchPinnedConstraint: NSLayoutConstraint!
+    var geckoBottomPhoneKeyboardOverlayConstraint: NSLayoutConstraint!
+    var geckoBottomPadConstraint: NSLayoutConstraint!
+    var geckoBottomCompactPadConstraint: NSLayoutConstraint!
+    var geckoLeadingPhoneConstraint: NSLayoutConstraint!
+    var geckoTrailingPhoneConstraint: NSLayoutConstraint!
+    var geckoLeadingPadConstraint: NSLayoutConstraint!
+    var geckoTrailingPadConstraint: NSLayoutConstraint!
+    var geckoTopFullscreenConstraint: NSLayoutConstraint!
+    var geckoBottomFullscreenConstraint: NSLayoutConstraint!
+    
+    var phoneChromeBottomConstraint: NSLayoutConstraint!
+    var phoneChromeHeightConstraint: NSLayoutConstraint!
+    var phoneToolbarHeightConstraint: NSLayoutConstraint!
+    var phoneToolbarTopConstraint: NSLayoutConstraint!
+    var phoneToolbarCompactPadTopConstraint: NSLayoutConstraint!
+    var addressBarPhoneLeadingConstraint: NSLayoutConstraint!
+    var addressBarPhoneTrailingFullConstraint: NSLayoutConstraint!
+    var addressBarPhoneTrailingFocusedConstraint: NSLayoutConstraint!
+    var addressBarPhoneTopConstraint: NSLayoutConstraint!
+    var addressBarPhoneHeightConstraint: NSLayoutConstraint!
+    var addressBarPadLeadingConstraint: NSLayoutConstraint!
+    var addressBarPadTrailingConstraint: NSLayoutConstraint!
+    var addressBarCompactPadLeadingConstraint: NSLayoutConstraint!
+    var addressBarCompactPadTrailingConstraint: NSLayoutConstraint!
+    var addressBarPadCenterYConstraint: NSLayoutConstraint!
+    var addressBarPadHeightConstraint: NSLayoutConstraint!
+    
     private unowned let controller: BrowserViewController
+    private let tabCollectionHandler: TabCollectionHandler
     private var keyboardHeight: CGFloat = 0
     private var keyboardFrame: CGRect = .zero
     private var focusedInputBottomRatio: CGFloat?
     private var geckoPhoneVerticalOffset: CGFloat = 0
     private var focusedInputMetricsTask: Task<Void, Never>?
     
-    init(controller: BrowserViewController) {
+    init(
+        controller: BrowserViewController,
+        tabCollectionHandler: TabCollectionHandler
+    ) {
         self.controller = controller
+        self.tabCollectionHandler = tabCollectionHandler
+        
+        padTopBarButtons = PadTopBarButtons(controller: controller)
+        padTabBar = PadTabBar(tabCollectionHandler: tabCollectionHandler)
+        tabOverviewCollection = TabOverviewCollection(
+            overviewInset: controller.overviewInset,
+            overviewSpacing: controller.overviewSpacing,
+            tabCollectionHandler: tabCollectionHandler
+        )
+        tabOverviewBarButtons = TabOverviewBarButtons(controller: controller)
+        
+        addressBar.configure(delegate: controller)
+        keyboardDismissButton.button.addTarget(controller, action: #selector(BrowserViewController.dismissKeyboardTapped), for: .touchUpInside)
+        toolbarView.delegate = controller
     }
     
     deinit {
@@ -42,8 +467,8 @@ final class BrowserLayout {
         ui.topBar.contentView.addSubview(ui.padTopBarButtons.leftStack)
         ui.topBar.contentView.addSubview(ui.padTopBarButtons.rightStack)
         
-        setAddressBarHost(isPad: controller.usesPadChromeLayout)
-        setKeyboardDismissButtonHost(isPad: controller.usesPadChromeLayout)
+        setAddressBarHost(isPad: controller.usesPadChrome)
+        setKeyboardDismissButtonHost(isPad: controller.usesPadChrome)
         
         ui.topBar.barView.addSubview(ui.padTabBar.collectionView)
         
@@ -257,11 +682,11 @@ final class BrowserLayout {
     
     private func updateChromeLayoutState() {
         let ui = controller.browserUI
-        let pad = controller.usesPadChromeLayout
-        let compactPad = controller.usesCompactPadChromeMode
-        let isMediaFullscreen = controller.isMediaFullscreen
+        let pad = controller.usesPadChrome
+        let compactPad = controller.usesCompactPadChrome
+        let isInFullscreenMedia = controller.isInFullscreenMedia
         
-        if isMediaFullscreen {
+        if isInFullscreenMedia {
             applyMediaFullscreenLayoutState()
             controller.updateNavigationButtons()
             return
@@ -309,13 +734,13 @@ final class BrowserLayout {
         ui.geckoTopFullscreenConstraint.isActive = false
         ui.geckoBottomFullscreenConstraint.isActive = false
         
-        let phoneOverview = controller.usesPhoneBottomOverviewLayout
+        let phoneOverview = controller.usesBottomPhoneOverview
         ui.tabOverviewCollection.topPhoneConstraint.isActive = phoneOverview
         ui.tabOverviewCollection.bottomPhoneConstraint.isActive = phoneOverview
         ui.tabOverviewCollection.topPadConstraint.isActive = !phoneOverview
         ui.tabOverviewCollection.bottomPadConstraint.isActive = !phoneOverview
         
-        let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPadDevice ? BrowserPreferences.shared.showsLandscapeTabBar && isLandscape : true)
+        let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPad ? BrowserPreferences.shared.showsLandscapeTabBar && isLandscape : true)
         let showsCompactPadBottomToolbar = compactPad && !controller.tabOverviewPresentation.isVisible
         ui.topBar.barView.isHidden = !pad
         ui.topBar.safeAreaFillView.isHidden = !pad
@@ -334,11 +759,11 @@ final class BrowserLayout {
         ui.tabOverviewBottomBar.barView.isHidden = !phoneOverview
         ui.tabOverviewBottomBar.safeAreaFillView.isHidden = true
         ui.tabOverviewBarButtons.attach(to: phoneOverview ? ui.tabOverviewBottomBar.barView : ui.tabOverviewTopBar.barView)
-        ui.padTopBarButtons.updateLayout(isPadLayout: controller.isPadDevice, showsCompactPadChrome: compactPad, sidebarVisible: controller.isLibrarySidebarVisible)
+        ui.padTopBarButtons.updateLayout(isPadLayout: controller.isPad, showsCompactPadChrome: compactPad, sidebarVisible: controller.isLibrarySidebarVisible)
         ui.padTopBarButtons.leftStack.isHidden = compactPad
         ui.padTopBarButtons.rightStack.isHidden = compactPad
         ui.padTopBarButtons.leftWidthConstraint.constant = compactPad ? 0 : resolvedPadTopBarLeftWidth(
-            isPadLayout: controller.isPadDevice,
+            isPadLayout: controller.isPad,
             sidebarVisible: controller.isLibrarySidebarVisible,
             showsDownloads: ui.padTopBarButtons.downloadButton.isShowingDownloads
         )
@@ -372,14 +797,14 @@ final class BrowserLayout {
         ui.keyboardDismissButton.button.layer.cornerRadius = dismissButtonSize / 2
         ui.keyboardDismissButton.button.layer.shadowOpacity = pad ? 0 : 0.2
         ui.addressBar.setShadowEnabled(!pad)
-        ui.addressBar.setHidePlaceholderIcon(controller.usesPhoneTopAddressBarLayout || controller.usesPadChromeLayout)
+        ui.addressBar.setHidePlaceholderIcon(controller.usesTopPhoneAddressBar || controller.usesPadChrome)
         
         controller.updateNavigationButtons()
     }
     
     private func applyMediaFullscreenLayoutState() {
         let ui = controller.browserUI
-        let pad = controller.usesPadChromeLayout
+        let pad = controller.usesPadChrome
         
         setAddressBarHost(isPad: pad)
         setKeyboardDismissButtonHost(isPad: pad)
@@ -415,36 +840,36 @@ final class BrowserLayout {
         ui.keyboardDismissButton.button.alpha = 0
         ui.keyboardDismissButton.centerYConstraint.isActive = true
         ui.keyboardDismissButton.trailingPhoneConstraint.isActive = !pad
-        ui.keyboardDismissButton.trailingPadConstraint.isActive = pad && !controller.usesCompactPadChromeMode
-        ui.keyboardDismissButton.trailingCompactPadConstraint.isActive = pad && controller.usesCompactPadChromeMode
+        ui.keyboardDismissButton.trailingPadConstraint.isActive = pad && !controller.usesCompactPadChrome
+        ui.keyboardDismissButton.trailingCompactPadConstraint.isActive = pad && controller.usesCompactPadChrome
         
         ui.addressBarPhoneLeadingConstraint.isActive = !pad
         ui.addressBarPhoneTopConstraint.isActive = !pad
         ui.addressBarPhoneHeightConstraint.isActive = !pad
         ui.addressBarPhoneTrailingFullConstraint.isActive = !pad
         ui.addressBarPhoneTrailingFocusedConstraint.isActive = false
-        ui.addressBarPadLeadingConstraint.isActive = pad && !controller.usesCompactPadChromeMode
-        ui.addressBarPadTrailingConstraint.isActive = pad && !controller.usesCompactPadChromeMode
-        ui.addressBarCompactPadLeadingConstraint.isActive = pad && controller.usesCompactPadChromeMode
-        ui.addressBarCompactPadTrailingConstraint.isActive = pad && controller.usesCompactPadChromeMode
+        ui.addressBarPadLeadingConstraint.isActive = pad && !controller.usesCompactPadChrome
+        ui.addressBarPadTrailingConstraint.isActive = pad && !controller.usesCompactPadChrome
+        ui.addressBarCompactPadLeadingConstraint.isActive = pad && controller.usesCompactPadChrome
+        ui.addressBarCompactPadTrailingConstraint.isActive = pad && controller.usesCompactPadChrome
         ui.addressBarPadCenterYConstraint.isActive = pad
         ui.addressBarPadHeightConstraint.isActive = pad
         
-        ui.tabOverviewTopBar.barView.isHidden = controller.usesPhoneBottomOverviewLayout
-        ui.tabOverviewBottomBar.barView.isHidden = !controller.usesPhoneBottomOverviewLayout
+        ui.tabOverviewTopBar.barView.isHidden = controller.usesBottomPhoneOverview
+        ui.tabOverviewBottomBar.barView.isHidden = !controller.usesBottomPhoneOverview
         ui.tabOverviewBottomBar.safeAreaFillView.isHidden = true
-        ui.padTopBarButtons.leftStack.isHidden = controller.usesCompactPadChromeMode
-        ui.padTopBarButtons.rightStack.isHidden = controller.usesCompactPadChromeMode
-        ui.phoneToolbarTopConstraint.isActive = !pad && !controller.usesCompactPadChromeMode
-        ui.phoneToolbarCompactPadTopConstraint.isActive = controller.usesCompactPadChromeMode
+        ui.padTopBarButtons.leftStack.isHidden = controller.usesCompactPadChrome
+        ui.padTopBarButtons.rightStack.isHidden = controller.usesCompactPadChrome
+        ui.phoneToolbarTopConstraint.isActive = !pad && !controller.usesCompactPadChrome
+        ui.phoneToolbarCompactPadTopConstraint.isActive = controller.usesCompactPadChrome
         
         ui.toolbarView.alpha = 1
         ui.addressBar.setShadowEnabled(!pad)
-        ui.addressBar.setHidePlaceholderIcon(controller.usesPhoneTopAddressBarLayout || controller.usesPadChromeLayout)
+        ui.addressBar.setHidePlaceholderIcon(controller.usesTopPhoneAddressBar || controller.usesPadChrome)
     }
     
     private func resolvedPadTopInset() -> CGFloat {
-        guard controller.isPadDevice,
+        guard controller.isPad,
               controller.splitViewController is BrowserSplitViewController else {
             return controller.view.safeAreaInsets.top
         }
@@ -470,13 +895,13 @@ final class BrowserLayout {
     
     func setSearchFocused(_ focused: Bool, animated: Bool) {
         let ui = controller.browserUI
-        let usesPadChromeLayout = controller.usesPadChromeLayout
+        let usesPadChrome = controller.usesPadChrome
         
         controller.isSearchFocused = focused
         if focused {
             resetFocusedInputRelocation()
         }
-        if !usesPadChromeLayout {
+        if !usesPadChrome {
             ui.phoneToolbarHeightConstraint.constant = focused ? 0 : 30
             ui.phoneChromeHeightConstraint.constant = focused ? 58 : 94
             ui.chromeContainer.containerView.backgroundColor = focused ? .clear : .systemGray6
@@ -490,7 +915,7 @@ final class BrowserLayout {
         }
         
         let animations = {
-            if !usesPadChromeLayout {
+            if !usesPadChrome {
                 ui.toolbarView.alpha = focused ? 0 : 1
             }
             ui.keyboardDismissButton.button.alpha = dismissButtonTargetAlpha
@@ -525,7 +950,7 @@ final class BrowserLayout {
         let curve = UIView.AnimationOptions(rawValue: curveRaw << 16)
         requestFocusedInputMetricsIfNeeded(duration: duration, curve: curve)
         
-        let shouldDockChromeToKeyboard = !controller.usesPadChromeLayout
+        let shouldDockChromeToKeyboard = !controller.usesPadChrome
         && controller.isSearchFocused
         && !controller.tabOverviewPresentation.isVisible
         && keyboardHeight > 0
@@ -558,7 +983,7 @@ final class BrowserLayout {
     
     private func updatePhoneDismissKeyboardButtonShadowPath() {
         let button = controller.browserUI.keyboardDismissButton.button
-        guard !controller.usesPadChromeLayout else {
+        guard !controller.usesPadChrome else {
             button.layer.shadowPath = nil
             return
         }
@@ -667,7 +1092,7 @@ final class BrowserLayout {
         }
         
         let unshiftedGeckoMinY: CGFloat
-        if controller.usesPadChromeLayout {
+        if controller.usesPadChrome {
             unshiftedGeckoMinY = controller.browserUI.topBar.barView.frame.maxY
         } else {
             unshiftedGeckoMinY = controller.view.safeAreaLayoutGuide.layoutFrame.minY

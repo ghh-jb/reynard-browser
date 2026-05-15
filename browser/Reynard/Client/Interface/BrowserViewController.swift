@@ -333,4 +333,5 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         UIDevice.current.setValue(deviceOrientation.rawValue, forKey: "orientation")
         UIViewController.attemptRotationToDeviceOrientation()
     }
+    
 }

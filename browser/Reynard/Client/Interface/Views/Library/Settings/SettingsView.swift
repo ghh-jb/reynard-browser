@@ -49,6 +49,10 @@ final class SettingsRootViewController: SettingsTableViewController {
         return Section.allCases.filter { !hiddenSections.contains($0) }
     }
     
+    var hasEntitledJIT: Bool {
+        getEntitlementValue("com.apple.private.security.no-sandbox")
+    }
+    
     let jitSwitch = UISwitch()
     let backgroundQueue = DispatchQueue(label: "me.minh-ton.reynard.settings.backgroundqueue", qos: .userInitiated)
     var isJITLessModeActive = false

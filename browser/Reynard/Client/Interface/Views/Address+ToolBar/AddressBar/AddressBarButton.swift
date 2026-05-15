@@ -12,6 +12,8 @@ final class AddressBarButton: UIButton {
     private var isMenuVisible = false
     private var pendingMenuAfterDismissal: UIMenu?
     private var pendingMenuDismissalHandlers: [() -> Void] = []
+    private var contextMenuModel: UIMenu?
+    private var legacyMenuDelegate: LegacyContextMenuDelegate?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -29,23 +31,50 @@ final class AddressBarButton: UIButton {
         contentVerticalAlignment = .fill
         contentEdgeInsets = .zero
         setPreferredSymbolConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .regular), forImageIn: .normal)
+        if #available(iOS 13.0, *) {
+            if #unavailable(iOS 14.0) {
+                let delegate = LegacyContextMenuDelegate(owner: self)
+                addInteraction(UIContextMenuInteraction(delegate: delegate))
+                legacyMenuDelegate = delegate
+                addTarget(self, action: #selector(handleLegacyPrimaryTap), for: .touchUpInside)
+            }
+        }
+    }
+
+    @available(iOS 13.0, *)
+    @objc private func handleLegacyPrimaryTap() {
+        guard let interaction = interactions.compactMap({ $0 as? UIContextMenuInteraction }).first else {
+            return
+        }
+        let selector = NSSelectorFromString("_presentMenuAtLocation:")
+        guard interaction.responds(to: selector) else {
+            return
+        }
+        let center = NSValue(cgPoint: CGPoint(x: bounds.midX, y: bounds.midY))
+        _ = interaction.perform(selector, with: center)
     }
     
     func setMenuPreservingPresentation(_ menu: UIMenu?) {
-        if isMenuVisible,
-           let menu,
-           let contextMenuInteraction {
-            pendingMenuAfterDismissal = menu
-            contextMenuInteraction.updateVisibleMenu { visibleMenu in
-                if let replacementMenu = self.replacementMenu(for: visibleMenu, in: menu) {
-                    return replacementMenu
+        contextMenuModel = menu
+        legacyMenuDelegate?.menu = menu
+        if #available(iOS 14.0, *) {
+            if isMenuVisible,
+               let menu,
+               let contextMenuInteraction = self.contextMenuInteraction {
+                pendingMenuAfterDismissal = menu
+                contextMenuInteraction.updateVisibleMenu { visibleMenu in
+                    if let replacementMenu = self.replacementMenu(for: visibleMenu, in: menu) {
+                        return replacementMenu
+                    }
+                    return menu
                 }
-                return menu
+                return
             }
-            return
+            pendingMenuAfterDismissal = nil
+            self.menu = menu
+        } else {
+            pendingMenuAfterDismissal = nil
         }
-        pendingMenuAfterDismissal = nil
-        self.menu = menu
     }
     
     func performAfterMenuDismissal(_ action: @escaping () -> Void) {
@@ -79,6 +108,7 @@ final class AddressBarButton: UIButton {
         return nil
     }
     
+    @available(iOS 14.0, *)
     override func contextMenuInteraction(
         _ interaction: UIContextMenuInteraction,
         willDisplayMenuFor configuration: UIContextMenuConfiguration,
@@ -88,6 +118,7 @@ final class AddressBarButton: UIButton {
         isMenuVisible = true
     }
     
+    @available(iOS 14.0, *)
     override func contextMenuInteraction(
         _ interaction: UIContextMenuInteraction,
         willEndFor configuration: UIContextMenuConfiguration,
@@ -100,9 +131,36 @@ final class AddressBarButton: UIButton {
                 return
             }
             
-            if let pendingMenuAfterDismissal {
+            if #available(iOS 14.0, *),
+               let pendingMenuAfterDismissal {
                 self.menu = pendingMenuAfterDismissal
                 self.pendingMenuAfterDismissal = nil
+            }
+            
+            let handlers = self.pendingMenuDismissalHandlers
+            self.pendingMenuDismissalHandlers.removeAll()
+            handlers.forEach { $0() }
+        }
+        
+        if let animator {
+            animator.addCompletion(finalizeDismissal)
+            return
+        }
+        
+        finalizeDismissal()
+    }
+    
+    @available(iOS 13.0, *)
+    fileprivate func legacyContextMenuWillDisplay() {
+        isMenuVisible = true
+    }
+    
+    @available(iOS 13.0, *)
+    fileprivate func legacyContextMenuWillEnd(animator: UIContextMenuInteractionAnimating?) {
+        isMenuVisible = false
+        let finalizeDismissal = { [weak self] in
+            guard let self else {
+                return
             }
             
             let handlers = self.pendingMenuDismissalHandlers
@@ -129,5 +187,44 @@ final class AddressBarButton: UIButton {
         let hitFrame = bounds.insetBy(dx: -widthIncrease, dy: -heightIncrease)
         
         return hitFrame.contains(point)
+    }
+}
+
+@available(iOS 13.0, *)
+private final class LegacyContextMenuDelegate: NSObject, UIContextMenuInteractionDelegate {
+    weak var owner: AddressBarButton?
+    var menu: UIMenu?
+    
+    init(owner: AddressBarButton) {
+        self.owner = owner
+    }
+    
+    func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        configurationForMenuAtLocation location: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        guard let menu else {
+            return nil
+        }
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            menu
+        }
+    }
+    
+    func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        willDisplayMenuFor configuration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimating?
+    ) {
+        owner?.legacyContextMenuWillDisplay()
+    }
+    
+    func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        willEndFor configuration: UIContextMenuConfiguration,
+        animator: UIContextMenuInteractionAnimating?
+    ) {
+        owner?.legacyContextMenuWillEnd(animator: animator)
     }
 }

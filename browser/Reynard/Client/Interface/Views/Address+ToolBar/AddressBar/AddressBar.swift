@@ -482,3 +482,8 @@ extension AddressBar: UIGestureRecognizerDelegate {
         return true
     }
 }
+
+enum AddressBarPosition: String {
+    case bottom
+    case top
+}

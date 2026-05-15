@@ -8,8 +8,6 @@
 import UIKit
 
 class SettingsTableViewController: UITableViewController {
-    let preferences = BrowserPreferences.shared
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.alwaysBounceVertical = true
@@ -86,8 +84,8 @@ final class SettingsRootViewController: SettingsTableViewController {
     }
     
     func refreshControls() {
-        jitSwitch.isEnabled = preferences.hasPairingFile
-        jitSwitch.isOn = preferences.isJITEnabled
+        jitSwitch.isEnabled = Prefs.JITSettings.hasPairingFile
+        jitSwitch.isOn = Prefs.JITSettings.isJITEnabled
         isJITLessModeActive = JITController.shared.isJITLessModeActive
     }
     

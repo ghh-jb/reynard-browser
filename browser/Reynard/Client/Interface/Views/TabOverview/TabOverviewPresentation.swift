@@ -94,7 +94,12 @@ final class TabOverviewPresentation {
             applyOverviewProgress(0)
         }
         controller.applyChromeLayout(animated: false)
-        controller.refreshPadTabStripLayout()
+        controller.browserUI.tabBar.refreshLayout(
+            fallbackWidth: controller.view.bounds.width,
+            tabCount: controller.tabManager.tabs.count,
+            selectedIndex: controller.tabManager.selectedTabIndex,
+            pendingExpandedIndex: controller.pendingExpandedTabBarIndex
+        )
     }
     
     func applyOverviewProgress(_ progress: CGFloat) {
@@ -238,8 +243,19 @@ final class TabOverviewPresentation {
         controller.view.addSubview(pageSnapshot)
         controller.view.addSubview(bottomSnapshot)
         
-        controller.browserUI.chromeContainer.containerView.isHidden = false
+        applyPendingOverviewTabSelectionIfNeeded()
+        isVisible = false
+        currentOverviewProgress = 0
+        controller.applyChromeLayout(animated: false)
+        controller.browserUI.tabBar.refreshLayout(
+            fallbackWidth: controller.view.bounds.width,
+            tabCount: controller.tabManager.tabs.count,
+            selectedIndex: controller.tabManager.selectedTabIndex,
+            pendingExpandedIndex: controller.pendingExpandedTabBarIndex
+        )
+        
         controller.browserUI.chromeContainer.containerView.alpha = 0
+        controller.browserUI.chromeContainer.bottomSafeAreaFillView.alpha = 0
         controller.browserUI.geckoView.isHidden = true
         controller.browserUI.tabOverviewBottomBar.barView.alpha = 0
         
@@ -247,30 +263,24 @@ final class TabOverviewPresentation {
             pageSnapshot.frame = self.controller.dismissalContentFrame()
             pageSnapshot.layer.cornerRadius = 0
             bottomSnapshot.alpha = 0
+            self.controller.browserUI.tabOverview.containerView.alpha = 0
             self.controller.browserUI.tabOverview.blurView.alpha = 0
             self.controller.browserUI.tabOverviewCollection.collectionView.alpha = 0
             self.controller.browserUI.chromeContainer.containerView.alpha = 1
+            self.controller.browserUI.chromeContainer.bottomSafeAreaFillView.alpha = 1
             self.controller.browserUI.tabOverviewBottomBar.safeAreaFillView.alpha = 0
         } completion: { _ in
             pageSnapshot.removeFromSuperview()
             bottomSnapshot.removeFromSuperview()
             selectedCell.setTransitionHidden(false)
             
-            self.applyPendingOverviewTabSelectionIfNeeded()
-            
             self.controller.browserUI.geckoView.isHidden = false
             self.controller.browserUI.tabOverviewCollection.collectionView.alpha = 1
             self.controller.browserUI.tabOverviewCollection.collectionView.transform = .identity
-            self.controller.browserUI.tabOverview.containerView.alpha = 0
             self.controller.browserUI.tabOverview.containerView.isHidden = true
             self.controller.browserUI.tabOverview.blurView.alpha = 1
             self.controller.browserUI.tabOverviewBottomBar.barView.alpha = 1
             self.controller.browserUI.tabOverviewBottomBar.safeAreaFillView.alpha = 1
-            
-            self.isVisible = false
-            self.currentOverviewProgress = 0
-            self.controller.applyChromeLayout(animated: false)
-            self.controller.refreshPadTabStripLayout()
             self.isTransitionRunning = false
         }
     }
@@ -398,13 +408,27 @@ final class TabOverviewPresentation {
         
         controller.view.addSubview(pageSnapshot)
         
+        applyPendingOverviewTabSelectionIfNeeded()
+        isVisible = false
+        currentOverviewProgress = 0
+        controller.applyChromeLayout(animated: false)
+        controller.browserUI.tabBar.refreshLayout(
+            fallbackWidth: controller.view.bounds.width,
+            tabCount: controller.tabManager.tabs.count,
+            selectedIndex: controller.tabManager.selectedTabIndex,
+            pendingExpandedIndex: controller.pendingExpandedTabBarIndex
+        )
+        
         controller.browserUI.geckoView.isHidden = true
+        controller.browserUI.chromeContainer.bottomSafeAreaFillView.alpha = 0
         controller.browserUI.topBar.barView.alpha = 0
         controller.browserUI.topBar.safeAreaFillView.alpha = 0
+        controller.browserUI.tabBar.collectionView.alpha = 0
         
         UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseInOut]) {
             pageSnapshot.frame = self.controller.dismissalContentFrame()
             pageSnapshot.layer.cornerRadius = 0
+            self.controller.browserUI.tabOverview.containerView.alpha = 0
             self.controller.browserUI.tabOverview.blurView.alpha = 0
             self.controller.browserUI.tabOverviewCollection.collectionView.alpha = 0
             if isPhoneTopDismissal {
@@ -413,18 +437,17 @@ final class TabOverviewPresentation {
             } else {
                 self.controller.browserUI.tabOverviewTopBar.barView.alpha = 0
             }
+            self.controller.browserUI.chromeContainer.bottomSafeAreaFillView.alpha = 1
             self.controller.browserUI.topBar.barView.alpha = 1
             self.controller.browserUI.topBar.safeAreaFillView.alpha = 1
+            self.controller.browserUI.tabBar.collectionView.alpha = 1
         } completion: { _ in
             pageSnapshot.removeFromSuperview()
             selectedCell.setTransitionHidden(false)
             
-            self.applyPendingOverviewTabSelectionIfNeeded()
-            
             self.controller.browserUI.geckoView.isHidden = false
             self.controller.browserUI.tabOverviewCollection.collectionView.alpha = 1
             self.controller.browserUI.tabOverviewCollection.collectionView.transform = .identity
-            self.controller.browserUI.tabOverview.containerView.alpha = 0
             self.controller.browserUI.tabOverview.containerView.isHidden = true
             self.controller.browserUI.tabOverview.blurView.alpha = 1
             if isPhoneTopDismissal {
@@ -433,11 +456,6 @@ final class TabOverviewPresentation {
             } else {
                 self.controller.browserUI.tabOverviewTopBar.barView.alpha = 1
             }
-            
-            self.isVisible = false
-            self.currentOverviewProgress = 0
-            self.controller.applyChromeLayout(animated: false)
-            self.controller.refreshPadTabStripLayout()
             self.isTransitionRunning = false
         }
     }

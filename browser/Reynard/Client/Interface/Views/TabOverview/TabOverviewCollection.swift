@@ -42,11 +42,6 @@ final class TabOverviewCollection {
 }
 
 final class TabCollectionCoordinator: NSObject, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
-    private struct PadTabLayoutMetrics {
-        let width: CGFloat
-        let mode: PadTabCell.LayoutMode
-    }
-    
     private unowned let controller: BrowserViewController
     
     init(controller: BrowserViewController) {
@@ -75,14 +70,21 @@ final class TabCollectionCoordinator: NSObject, UICollectionViewDataSource, UICo
         }
         
         guard let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: PadTabCell.reuseIdentifier,
+            withReuseIdentifier: TabBarCell.reuseIdentifier,
             for: indexPath
-        ) as? PadTabCell else {
+        ) as? TabBarCell else {
             return UICollectionViewCell()
         }
         
         let tab = controller.tabManager.tabs[indexPath.item]
-        let metrics = padTabLayoutMetrics(for: collectionView, at: indexPath)
+        let metrics = controller.browserUI.tabBar.layoutMetrics(
+            for: indexPath.item,
+            fallbackWidth: controller.view.bounds.width,
+            tabCount: controller.tabManager.tabs.count,
+            usesExpandedWidth: { [unowned controller] index in
+                controller.usesExpandedTabBarWidth(at: index)
+            }
+        )
         cell.configure(
             tab: tab,
             selected: indexPath.item == controller.tabManager.selectedTabIndex,
@@ -131,8 +133,15 @@ final class TabCollectionCoordinator: NSObject, UICollectionViewDataSource, UICo
             return controller.tabOverviewPresentation.itemSize(for: collectionView)
         }
         
-        if collectionView === controller.browserUI.padTabBar.collectionView {
-            let metrics = padTabLayoutMetrics(for: collectionView, at: indexPath)
+        if collectionView === controller.browserUI.tabBar.collectionView {
+            let metrics = controller.browserUI.tabBar.layoutMetrics(
+                for: indexPath.item,
+                fallbackWidth: controller.view.bounds.width,
+                tabCount: controller.tabManager.tabs.count,
+                usesExpandedWidth: { [unowned controller] index in
+                    controller.usesExpandedTabBarWidth(at: index)
+                }
+            )
             return CGSize(width: metrics.width, height: collectionView.bounds.height)
         }
         
@@ -141,48 +150,4 @@ final class TabCollectionCoordinator: NSObject, UICollectionViewDataSource, UICo
         return CGSize(width: width, height: 30)
     }
     
-    private func padTabLayoutMetrics(for collectionView: UICollectionView, at indexPath: IndexPath) -> PadTabLayoutMetrics {
-        let horizontalInsets = collectionView.adjustedContentInset.left + collectionView.adjustedContentInset.right
-        let baseWidth = collectionView.bounds.width > 1 ? collectionView.bounds.width : controller.view.bounds.width
-        let availableWidth = max(0, baseWidth - horizontalInsets)
-        let tabCount = max(1, controller.tabManager.tabs.count)
-        let equalWidth = floor(availableWidth / CGFloat(tabCount))
-        
-        let needsExpandedClamp = equalWidth < PadTabCell.expandedMinimumWidth
-        if !needsExpandedClamp {
-            return PadTabLayoutMetrics(width: equalWidth, mode: .expanded)
-        }
-        
-        let usesExpandedWidth = controller.usesExpandedPadTabWidth(at: indexPath.item)
-        let expandedTabCount = max(1, controller.tabManager.tabs.indices.reduce(0) {
-            $0 + (controller.usesExpandedPadTabWidth(at: $1) ? 1 : 0)
-        })
-        let unselectedCount = max(0, tabCount - expandedTabCount)
-        
-        let hasReachedCollapsedThreshold: Bool
-        let widthForUnselected: CGFloat
-        if unselectedCount == 0 {
-            hasReachedCollapsedThreshold = false
-            widthForUnselected = availableWidth
-        } else {
-            let remainingWidth = availableWidth - (PadTabCell.expandedMinimumWidth * CGFloat(expandedTabCount))
-            widthForUnselected = floor(remainingWidth / CGFloat(unselectedCount))
-            hasReachedCollapsedThreshold = widthForUnselected <= PadTabCell.collapsedMinimumWidth
-        }
-        
-        let itemWidth: CGFloat
-        let mode: PadTabCell.LayoutMode
-        if usesExpandedWidth {
-            itemWidth = PadTabCell.expandedMinimumWidth
-            mode = .expanded
-        } else if hasReachedCollapsedThreshold {
-            itemWidth = PadTabCell.collapsedMinimumWidth
-            mode = .faviconOnly
-        } else {
-            itemWidth = max(0, widthForUnselected)
-            mode = .expanded
-        }
-        
-        return PadTabLayoutMetrics(width: itemWidth, mode: mode)
-    }
 }

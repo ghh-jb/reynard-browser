@@ -1,5 +1,5 @@
 //
-//  PadTabCell.swift
+//  TabBarCell.swift
 //  Reynard
 //
 //  Created by Minh Ton on 5/3/26.
@@ -7,13 +7,13 @@
 
 import UIKit
 
-final class PadTabCell: UICollectionViewCell {
+final class TabBarCell: UICollectionViewCell {
     enum LayoutMode {
         case expanded
         case faviconOnly
     }
     
-    static let reuseIdentifier = "PadTabCell"
+    static let reuseIdentifier = "TabBarCell"
     static let expandedMinimumWidth: CGFloat = 220
     static let collapsedMinimumWidth: CGFloat = 96
     

@@ -130,7 +130,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         refreshAddressBar()
         browserUI.applyChromeLayout(animated: false)
         browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
-        browserUI.padTabBar.collectionView.collectionViewLayout.invalidateLayout()
+        browserUI.tabBar.collectionView.collectionViewLayout.invalidateLayout()
         tabOverviewPresentation.refreshForCurrentOrientation()
     }
     
@@ -144,7 +144,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             self.syncBrowserNavigationChrome(animated: false)
             self.syncPadSidebarButtonItem()
             self.browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
-            self.browserUI.padTabBar.collectionView.collectionViewLayout.invalidateLayout()
+            self.browserUI.tabBar.collectionView.collectionViewLayout.invalidateLayout()
         } completion: { _ in
             self.syncBrowserNavigationChrome(animated: false)
             self.syncPadSidebarButtonItem()
@@ -163,7 +163,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     @discardableResult
     func createTab(selecting: Bool, windowId: String? = nil, at index: Int? = nil) -> Int {
         let createdIndex = tabManager.addTab(selecting: selecting, windowId: windowId, at: index)
-        pendingExpandedPadTabIndex = selecting ? createdIndex : nil
+        pendingExpandedTabBarIndex = selecting ? createdIndex : nil
         return createdIndex
     }
     
@@ -173,17 +173,17 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     func closeTab(at index: Int) {
-        pendingExpandedPadTabIndex = nil
+        pendingExpandedTabBarIndex = nil
         tabManager.removeTab(at: index)
     }
     
     func clearAllTabs() {
-        pendingExpandedPadTabIndex = nil
+        pendingExpandedTabBarIndex = nil
         tabManager.removeAllTabs()
     }
     
-    func usesExpandedPadTabWidth(at index: Int) -> Bool {
-        index == tabManager.selectedTabIndex || index == pendingExpandedPadTabIndex
+    func usesExpandedTabBarWidth(at index: Int) -> Bool {
+        index == tabManager.selectedTabIndex || index == pendingExpandedTabBarIndex
     }
     
     func setTabOverviewVisible(_ visible: Bool, animated: Bool) {

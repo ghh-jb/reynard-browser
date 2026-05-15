@@ -11,7 +11,7 @@ import UIKit
 
 private enum TabMgmtAssociatedKeys {
     static var pendingSelectionAnimation = 0
-    static var pendingExpandedPadTabIndex = 0
+    static var pendingExpandedTabBarIndex = 0
     static var activeFullscreenSession = 0
     static var tabOverviewPresentation = 0
 }
@@ -54,15 +54,15 @@ extension BrowserViewController {
         }
     }
     
-    var pendingExpandedPadTabIndex: Int? {
+    var pendingExpandedTabBarIndex: Int? {
         get {
-            (objc_getAssociatedObject(self, &TabMgmtAssociatedKeys.pendingExpandedPadTabIndex) as? NSNumber)?.intValue
+            (objc_getAssociatedObject(self, &TabMgmtAssociatedKeys.pendingExpandedTabBarIndex) as? NSNumber)?.intValue
         }
         set {
             let boxedValue = newValue.map { NSNumber(value: $0) }
             objc_setAssociatedObject(
                 self,
-                &TabMgmtAssociatedKeys.pendingExpandedPadTabIndex,
+                &TabMgmtAssociatedKeys.pendingExpandedTabBarIndex,
                 boxedValue,
                 .OBJC_ASSOCIATION_RETAIN_NONATOMIC
             )
@@ -87,9 +87,9 @@ extension BrowserViewController {
 
 extension BrowserViewController: TabManagerDelegate {
     func tabManagerDidChangeTabs(_ tabManager: TabManager) {
-        if let pendingExpandedPadTabIndex,
-           !tabManager.tabs.indices.contains(pendingExpandedPadTabIndex) {
-            self.pendingExpandedPadTabIndex = nil
+        if let pendingExpandedTabBarIndex,
+           !tabManager.tabs.indices.contains(pendingExpandedTabBarIndex) {
+            self.pendingExpandedTabBarIndex = nil
         }
         
         if let selectedTab = tabManager.selectedTab {
@@ -102,13 +102,18 @@ extension BrowserViewController: TabManagerDelegate {
         refreshAddressBar()
         
         browserUI.tabOverviewCollection.collectionView.reloadData()
-        browserUI.padTabBar.collectionView.reloadData()
+        browserUI.tabBar.collectionView.reloadData()
         browserUI.applyChromeLayout(animated: false)
-        refreshPadTabStripLayout()
+        browserUI.tabBar.refreshLayout(
+            fallbackWidth: view.bounds.width,
+            tabCount: tabManager.tabs.count,
+            selectedIndex: tabManager.selectedTabIndex,
+            pendingExpandedIndex: pendingExpandedTabBarIndex
+        )
     }
     
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?) {
-        pendingExpandedPadTabIndex = nil
+        pendingExpandedTabBarIndex = nil
         if let previousIndex {
             captureThumbnail(for: previousIndex)
         }
@@ -126,11 +131,20 @@ extension BrowserViewController: TabManagerDelegate {
         
         updateNavigationButtons()
         browserUI.tabOverviewCollection.collectionView.reloadData()
-        browserUI.padTabBar.collectionView.reloadData()
-        refreshPadTabStripLayout()
+        browserUI.tabBar.collectionView.reloadData()
+        browserUI.tabBar.refreshLayout(
+            fallbackWidth: view.bounds.width,
+            tabCount: tabManager.tabs.count,
+            selectedIndex: tabManager.selectedTabIndex,
+            pendingExpandedIndex: pendingExpandedTabBarIndex
+        )
         
         if usesPadChrome {
-            centerSelectedPadTab(animated: pendingSelectionAnimation)
+            browserUI.tabBar.centerSelectedTab(
+                selectedIndex: tabManager.selectedTabIndex,
+                isVisible: usesPadChrome && tabManager.tabs.indices.contains(tabManager.selectedTabIndex),
+                animated: pendingSelectionAnimation
+            )
         }
         
         if isInFullscreenMedia,
@@ -154,7 +168,7 @@ extension BrowserViewController: TabManagerDelegate {
         
         switch reason {
         case .title:
-            browserUI.padTabBar.collectionView.reloadData()
+            browserUI.tabBar.collectionView.reloadData()
             browserUI.tabOverviewCollection.collectionView.reloadData()
             
         case .location:
@@ -164,7 +178,7 @@ extension BrowserViewController: TabManagerDelegate {
             }
             
         case .favicon:
-            browserUI.padTabBar.collectionView.reloadData()
+            browserUI.tabBar.collectionView.reloadData()
             browserUI.tabOverviewCollection.collectionView.reloadData()
             
         case .navigationState:

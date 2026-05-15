@@ -131,55 +131,6 @@ extension BrowserViewController {
         browserUI.applyChromeLayout(animated: animated)
     }
     
-    func refreshPadTabStripLayout() {
-        let cv = browserUI.padTabBar.collectionView
-        let insets = cv.adjustedContentInset.left + cv.adjustedContentInset.right
-        let width = cv.bounds.width > 1 ? cv.bounds.width : view.bounds.width
-        let stripWidth = max(0, width - insets)
-        let tabs = tabManager.tabs.count
-        
-        let shouldScroll: Bool = {
-            guard tabs > 1 else {
-                return false
-            }
-            
-            let equalWidth = floor(stripWidth / CGFloat(tabs))
-            guard equalWidth < PadTabCell.expandedMinimumWidth else {
-                return false
-            }
-            
-            let hasPendingExpanded = pendingExpandedPadTabIndex != nil
-            && pendingExpandedPadTabIndex != tabManager.selectedTabIndex
-            && tabManager.tabs.indices.contains(pendingExpandedPadTabIndex ?? -1)
-            let expandedCount = hasPendingExpanded ? 2 : 1
-            let otherCount = tabs - expandedCount
-            guard otherCount > 0 else {
-                return false
-            }
-            
-            let remainingWidth = stripWidth - (PadTabCell.expandedMinimumWidth * CGFloat(expandedCount))
-            let otherWidth = floor(remainingWidth / CGFloat(otherCount))
-            return otherWidth <= PadTabCell.collapsedMinimumWidth
-        }()
-        
-        cv.isScrollEnabled = shouldScroll
-        cv.collectionViewLayout.invalidateLayout()
-        guard !cv.isHidden else {
-            return
-        }
-        
-        cv.layoutIfNeeded()
-    }
-    
-    func centerSelectedPadTab(animated: Bool) {
-        guard usesPadChrome, tabManager.tabs.indices.contains(tabManager.selectedTabIndex) else {
-            return
-        }
-        
-        let indexPath = IndexPath(item: tabManager.selectedTabIndex, section: 0)
-        browserUI.padTabBar.collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: animated)
-    }
-    
     func updateNavigationButtons() {
         guard let tab = tabManager.selectedTab else {
             return
@@ -210,7 +161,7 @@ extension BrowserViewController {
         navigationItem.leftBarButtonItem = nil
     }
     
-    private func activeTabStripHeight() -> CGFloat {
+    private func activeTabBarHeight() -> CGFloat {
         guard usesPadChrome,
               tabManager.tabs.count > 1 else {
             return 0
@@ -237,7 +188,7 @@ extension BrowserViewController {
     func tabPreviewAspectRatio() -> CGFloat {
         let bounds = browserUI.geckoView.bounds
         let width = max(bounds.width, 1)
-        let height = max(bounds.height + activeTabStripHeight(), 1)
+        let height = max(bounds.height + activeTabBarHeight(), 1)
         return height / width
     }
     
@@ -264,8 +215,8 @@ extension BrowserViewController {
     
     func dismissalContentFrame() -> CGRect {
         let frame = browserUI.geckoView.frame
-        let stripHeight = activeTabStripHeight()
-        guard stripHeight > 0,
+        let tabBarHeight = activeTabBarHeight()
+        guard tabBarHeight > 0,
               usesPadChrome,
               tabOverviewPresentation.isVisible else {
             return frame
@@ -273,9 +224,9 @@ extension BrowserViewController {
         
         return CGRect(
             x: frame.minX,
-            y: frame.minY + stripHeight,
+            y: frame.minY + tabBarHeight,
             width: frame.width,
-            height: max(1, frame.height - stripHeight)
+            height: max(1, frame.height - tabBarHeight)
         )
     }
     
@@ -377,7 +328,7 @@ final class BrowserUI {
     
     let topBar = PadTopBar()
     let padTopBarButtons: PadTopBarButtons
-    let padTabBar: PadTabBar
+    let tabBar: TabBar
     
     let tabOverview = TabOverview()
     let tabOverviewCollection: TabOverviewCollection
@@ -432,7 +383,7 @@ final class BrowserUI {
         self.tabCollectionHandler = tabCollectionHandler
         
         padTopBarButtons = PadTopBarButtons(controller: controller)
-        padTabBar = PadTabBar(tabCollectionHandler: tabCollectionHandler)
+        tabBar = TabBar(tabCollectionHandler: tabCollectionHandler)
         tabOverviewCollection = TabOverviewCollection(
             overviewInset: controller.overviewInset,
             overviewSpacing: controller.overviewSpacing,
@@ -470,7 +421,7 @@ final class BrowserUI {
         setAddressBarHost(isPad: controller.usesPadChrome)
         setKeyboardDismissButtonHost(isPad: controller.usesPadChrome)
         
-        ui.topBar.barView.addSubview(ui.padTabBar.collectionView)
+        ui.topBar.barView.addSubview(ui.tabBar.collectionView)
         
         view.addSubview(ui.tabOverview.containerView)
         ui.tabOverview.containerView.addSubview(ui.tabOverview.blurView)
@@ -531,7 +482,7 @@ final class BrowserUI {
         ui.padTopBarButtons.leftHeightConstraint = ui.padTopBarButtons.leftStack.heightAnchor.constraint(equalToConstant: 30)
         ui.padTopBarButtons.rightHeightConstraint = ui.padTopBarButtons.rightStack.heightAnchor.constraint(equalToConstant: 30)
         
-        ui.padTabBar.heightConstraint = ui.padTabBar.collectionView.heightAnchor.constraint(equalToConstant: 36)
+        ui.tabBar.heightConstraint = ui.tabBar.collectionView.heightAnchor.constraint(equalToConstant: 36)
         
         ui.tabOverviewCollection.topPhoneConstraint = ui.tabOverviewCollection.collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
         ui.tabOverviewCollection.bottomPhoneConstraint = ui.tabOverviewCollection.collectionView.bottomAnchor.constraint(equalTo: ui.tabOverviewBottomBar.barView.topAnchor)
@@ -598,10 +549,10 @@ final class BrowserUI {
             ui.padTopBarButtons.rightWidthConstraint,
             ui.padTopBarButtons.rightHeightConstraint,
             
-            ui.padTabBar.collectionView.leadingAnchor.constraint(equalTo: ui.topBar.barView.leadingAnchor),
-            ui.padTabBar.collectionView.trailingAnchor.constraint(equalTo: ui.topBar.barView.trailingAnchor),
-            ui.padTabBar.collectionView.topAnchor.constraint(equalTo: ui.topBar.contentView.bottomAnchor),
-            ui.padTabBar.heightConstraint,
+            ui.tabBar.collectionView.leadingAnchor.constraint(equalTo: ui.topBar.barView.leadingAnchor),
+            ui.tabBar.collectionView.trailingAnchor.constraint(equalTo: ui.topBar.barView.trailingAnchor),
+            ui.tabBar.collectionView.topAnchor.constraint(equalTo: ui.topBar.contentView.bottomAnchor),
+            ui.tabBar.heightConstraint,
             
             ui.tabOverview.containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             ui.tabOverview.containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -740,13 +691,13 @@ final class BrowserUI {
         ui.tabOverviewCollection.topPadConstraint.isActive = !phoneOverview
         ui.tabOverviewCollection.bottomPadConstraint.isActive = !phoneOverview
         
-        let showsPadTabStrip = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPad ? BrowserPreferences.shared.showsLandscapeTabBar && isLandscape : true)
+        let showsTabBar = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPad ? BrowserPreferences.shared.showsLandscapeTabBar && isLandscape : true)
         let showsCompactPadBottomToolbar = compactPad && !controller.tabOverviewPresentation.isVisible
         ui.topBar.barView.isHidden = !pad
         ui.topBar.safeAreaFillView.isHidden = !pad
-        ui.padTabBar.collectionView.isHidden = !showsPadTabStrip
-        ui.topBar.heightConstraint.constant = 52 + (showsPadTabStrip ? 36 : 0)
-        ui.padTabBar.heightConstraint.constant = showsPadTabStrip ? 36 : 0
+        ui.tabBar.collectionView.isHidden = !showsTabBar
+        ui.topBar.heightConstraint.constant = 52 + (showsTabBar ? 36 : 0)
+        ui.tabBar.heightConstraint.constant = showsTabBar ? 36 : 0
         
         ui.chromeContainer.containerView.isHidden = (!showsCompactPadBottomToolbar && pad) || controller.tabOverviewPresentation.isVisible
         ui.chromeContainer.bottomSafeAreaFillView.isHidden = (!showsCompactPadBottomToolbar && pad) || controller.tabOverviewPresentation.isVisible
@@ -826,9 +777,9 @@ final class BrowserUI {
         
         ui.topBar.barView.isHidden = true
         ui.topBar.safeAreaFillView.isHidden = true
-        ui.padTabBar.collectionView.isHidden = true
+        ui.tabBar.collectionView.isHidden = true
         ui.topBar.heightConstraint.constant = 52
-        ui.padTabBar.heightConstraint.constant = 0
+        ui.tabBar.heightConstraint.constant = 0
         
         ui.chromeContainer.containerView.isHidden = true
         ui.chromeContainer.bottomSafeAreaFillView.isHidden = true

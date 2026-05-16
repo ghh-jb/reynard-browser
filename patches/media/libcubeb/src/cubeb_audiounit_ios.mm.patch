@@ -1,9 +1,9 @@
 diff --git a/media/libcubeb/src/cubeb_audiounit_ios.mm b/media/libcubeb/src/cubeb_audiounit_ios.mm
 new file mode 100644
-index 000000000000..71ff604d0873
+index 000000000000..697d3e128db3
 --- /dev/null
 +++ b/media/libcubeb/src/cubeb_audiounit_ios.mm
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,59 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -13,7 +13,7 @@ index 000000000000..71ff604d0873
 + * https://github.com/minh-ton/truefox in Feb 2026. */
 +
 +#if defined(__IPHONE_14_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_14_0)
-+#import <AVFoundation/AVFoundation.h>
++#  import <AVFoundation/AVFoundation.h>
 +
 +extern "C" void cubeb_ios_activate_audio_session(void) {
 +  AVAudioSession* session = [AVAudioSession sharedInstance];
@@ -32,7 +32,7 @@ index 000000000000..71ff604d0873
 +  return static_cast<uint32_t>(session.sampleRate);
 +}
 +#else
-+#import <AudioToolbox/AudioToolbox.h>
++#  import <AudioToolbox/AudioToolbox.h>
 +
 +static void cubeb_ios_ensure_audio_session_initialized() {
 +  static bool sInitialized = false;
@@ -46,8 +46,8 @@ index 000000000000..71ff604d0873
 +extern "C" void cubeb_ios_activate_audio_session(void) {
 +  cubeb_ios_ensure_audio_session_initialized();
 +  UInt32 category = kAudioSessionCategory_MediaPlayback;
-+  AudioSessionSetProperty(kAudioSessionProperty_AudioCategory,
-+                          sizeof(category), &category);
++  AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(category),
++                          &category);
 +  AudioSessionSetActive(true);
 +}
 +

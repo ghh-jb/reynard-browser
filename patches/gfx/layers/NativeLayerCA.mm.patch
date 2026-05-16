@@ -1,0 +1,14 @@
+diff --git a/gfx/layers/NativeLayerCA.mm b/gfx/layers/NativeLayerCA.mm
+index 001fbe4895ce..ca07a07bb41b 100644
+--- a/gfx/layers/NativeLayerCA.mm
++++ b/gfx/layers/NativeLayerCA.mm
+@@ -1527,7 +1527,8 @@ CGColorRef CGColorCreateForDeviceColor(const gfx::DeviceColor& aColor) {
+   AVSampleBufferDisplayLayer* videoLayer =
+       (AVSampleBufferDisplayLayer*)mContentCALayer;
+ 
+-  if (@available(macOS 11.0, iOS 14.0, *)) {
++  if ([videoLayer
++          respondsToSelector:@selector(requiresFlushToResumeDecoding)]) {
+     if (videoLayer.requiresFlushToResumeDecoding) {
+       [videoLayer flush];
+     }

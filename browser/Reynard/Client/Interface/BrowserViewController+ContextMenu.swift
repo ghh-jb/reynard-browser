@@ -9,11 +9,27 @@ import GeckoView
 import ObjectiveC
 import UIKit
 
+final class ContextMenuContext {
+    enum Target {
+        case link(URL)
+        case image(URL)
+    }
+    
+    let target: Target
+    let point: CGPoint
+    
+    init(target: Target, point: CGPoint) {
+        self.target = target
+        self.point = point
+    }
+}
+
 private enum ContextMenuAssociatedKeys {
     static var pendingContextMenuContext = 0
     static var contextMenuInteraction = 0
     static var contextMenuViewController = 0
     static var isCommittingContextMenu = 0
+    static var isPresentingContextMenu = 0
     static var haptic = 0
 }
 
@@ -59,6 +75,20 @@ extension BrowserViewController: UIContextMenuInteractionDelegate {
         }
     }
     
+    private var isPresentingContextMenu: Bool {
+        get {
+            (objc_getAssociatedObject(self, &ContextMenuAssociatedKeys.isPresentingContextMenu) as? NSNumber)?.boolValue ?? false
+        }
+        set {
+            objc_setAssociatedObject(
+                self,
+                &ContextMenuAssociatedKeys.isPresentingContextMenu,
+                NSNumber(value: newValue),
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+    
     private var presentHaptic: UIImpactFeedbackGenerator {
         if let existing = objc_getAssociatedObject(self, &ContextMenuAssociatedKeys.haptic) as? UIImpactFeedbackGenerator {
             return existing
@@ -78,23 +108,31 @@ extension BrowserViewController: UIContextMenuInteractionDelegate {
         contextMenuInteraction = interaction
     }
     
-    func presentContextMenu(at point: CGPoint, for url: URL) {
+    func presentContextMenu(at point: CGPoint, target: ContextMenuContext.Target) {
+        let context = ContextMenuContext(target: target, point: point)
+        presentContextMenu(context)
+    }
+    
+    private func presentContextMenu(_ context: ContextMenuContext) {
         guard let interaction = contextMenuInteraction else {
             return
         }
         
         presentHaptic.prepare()
-        pendingContextMenuContext = ContextMenuContext(url: url, point: point)
+        closeContextMenu()
+        pendingContextMenuContext = context
         isCommittingContextMenu = false
+        isPresentingContextMenu = true
         
         let selector = NSSelectorFromString("_presentMenuAtLocation:")
         guard interaction.responds(to: selector) else {
+            isPresentingContextMenu = false
             pendingContextMenuContext = nil
             return
         }
         
         presentHaptic.impactOccurred()
-        _ = interaction.perform(selector, with: NSValue(cgPoint: point))
+        _ = interaction.perform(selector, with: NSValue(cgPoint: context.point))
     }
     
     func contextMenuInteraction(
@@ -102,8 +140,18 @@ extension BrowserViewController: UIContextMenuInteractionDelegate {
         configurationForMenuAtLocation location: CGPoint
     ) -> UIContextMenuConfiguration? {
         guard interaction === contextMenuInteraction,
+              isPresentingContextMenu,
               let context = pendingContextMenuContext else {
             return nil
+        }
+        isPresentingContextMenu = false
+        
+        if let imageConfiguration = ImagePreviewMenu.configuration(
+            for: context,
+            presentingController: self,
+            sourceView: browserUI.geckoView
+        ) {
+            return imageConfiguration
         }
         
         return LinkPreviewMenu.configuration(

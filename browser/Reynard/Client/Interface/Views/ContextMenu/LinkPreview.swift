@@ -8,24 +8,17 @@
 import GeckoView
 import UIKit
 
-final class ContextMenuContext {
-    let url: URL
-    let point: CGPoint
-    
-    init(url: URL, point: CGPoint) {
-        self.url = url
-        self.point = point
-    }
-}
-
 enum LinkPreviewMenu {
     static func configuration(
         for context: ContextMenuContext,
         onPreviewCreated: @escaping (LinkPreviewViewController) -> Void,
         openInNewTab: @escaping () -> Void,
         shareLink: @escaping (URL) -> Void
-    ) -> UIContextMenuConfiguration {
-        let url = context.url
+    ) -> UIContextMenuConfiguration? {
+        guard case .link(let url) = context.target else {
+            return nil
+        }
+        
         return UIContextMenuConfiguration(identifier: url as NSURL) { [url] in
             let viewController = LinkPreviewViewController(url: url)
             onPreviewCreated(viewController)

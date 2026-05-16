@@ -518,8 +518,13 @@ extension TabManagerImplementation: ContentDelegate {
     func onProductUrl(session: GeckoSession) {}
     
     func onContextMenu(session: GeckoSession, screenX: Int, screenY: Int, element: ContextElement) {
-        guard selectedTab?.session === session,
-              element.linkUri?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+        guard selectedTab?.session === session else {
+            return
+        }
+        
+        let hasImageSource = element.type == .image && element.srcUri?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        let hasLink = element.linkUri?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        guard hasImageSource || hasLink else {
             return
         }
         

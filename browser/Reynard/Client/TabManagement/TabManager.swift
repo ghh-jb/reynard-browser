@@ -18,6 +18,7 @@ protocol TabManager: AnyObject {
     @discardableResult
     func addTab(selecting: Bool, windowId: String?, at index: Int?) -> Int
     func selectTab(at index: Int)
+    func moveTab(from sourceIndex: Int, to destinationIndex: Int)
     func removeTab(at index: Int)
     func removeAllTabs()
     func browse(to term: String)

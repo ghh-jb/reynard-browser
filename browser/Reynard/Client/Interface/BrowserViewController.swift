@@ -172,6 +172,22 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
         tabManager.selectTab(at: index)
     }
     
+    func moveTab(from sourceIndex: Int, to destinationIndex: Int) {
+        let pendingTabID = pendingExpandedTabBarIndex.flatMap { tabManager.tabs[safe: $0]?.id }
+        tabManager.moveTab(from: sourceIndex, to: destinationIndex)
+        
+        if let pendingTabID {
+            pendingExpandedTabBarIndex = tabManager.tabs.firstIndex(where: { $0.id == pendingTabID })
+        }
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self else {
+                return
+            }
+            self.tabManagerDidChangeTabs(self.tabManager)
+        }
+    }
+    
     func closeTab(at index: Int) {
         pendingExpandedTabBarIndex = nil
         tabManager.removeTab(at: index)

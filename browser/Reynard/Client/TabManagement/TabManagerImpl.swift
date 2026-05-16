@@ -248,6 +248,25 @@ final class TabManagerImplementation: NSObject, TabManager {
         persistState()
     }
     
+    func moveTab(from sourceIndex: Int, to destinationIndex: Int) {
+        guard tabs.indices.contains(sourceIndex),
+              tabs.indices.contains(destinationIndex),
+              sourceIndex != destinationIndex else {
+            return
+        }
+        
+        let selectedTabID = selectedTab?.id
+        let movedTab = tabs.remove(at: sourceIndex)
+        tabs.insert(movedTab, at: destinationIndex)
+        
+        if let selectedTabID,
+           let selectedIndex = tabs.firstIndex(where: { $0.id == selectedTabID }) {
+            selectedTabIndex = selectedIndex
+        }
+        
+        persistState()
+    }
+    
     func removeTab(at index: Int) {
         guard tabs.indices.contains(index) else {
             return

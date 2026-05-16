@@ -154,6 +154,21 @@ extension BrowserViewController: TabManagerDelegate {
         pendingSelectionAnimation = false
     }
     
+    func tabManager(
+        _ tabManager: TabManager,
+        didRequestContextMenuAt point: CGPoint,
+        for element: ContextElement,
+        in session: GeckoSession
+    ) {
+        guard browserUI.geckoView.session === session,
+              let link = element.linkUri?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let url = URL(string: link) else {
+            return
+        }
+        
+        presentContextMenu(at: point, for: url)
+    }
+    
     func tabManager(_ tabManager: TabManager, didChangeFullscreen fullScreen: Bool, for session: GeckoSession) {
         guard tabManager.selectedTab?.session === session else {
             return

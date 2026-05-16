@@ -175,7 +175,7 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler {
             
             let contextElement = ContextElement(
                 baseUri: message?["baseUri"] as? String,
-                linkUri: message?["linkUri"] as? String,
+                linkUri: (message?["linkUri"] as? String) ?? (message?["uri"] as? String),
                 title: message?["title"] as? String,
                 altText: message?["alt"] as? String,
                 type: parseElementType(message?["elementType"] as? String ?? ""),

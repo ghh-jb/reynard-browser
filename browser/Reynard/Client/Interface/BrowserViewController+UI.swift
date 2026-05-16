@@ -22,7 +22,7 @@ private enum UIAssociatedKeys {
     static var activeTabBarReorderTargetIndex = 0
 }
 
-extension BrowserViewController {
+extension BrowserViewController: AddressBarDelegate, PhoneToolbarDelegate {
     var overviewInset: CGFloat {
         16
     }
@@ -1040,7 +1040,7 @@ final class BrowserUI {
 }
 
 // Tab Overview & Tab Bar
-extension BrowserViewController {
+extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UIGestureRecognizerDelegate {
     private final class WeakBox<T: AnyObject> {
         weak var value: T?
         

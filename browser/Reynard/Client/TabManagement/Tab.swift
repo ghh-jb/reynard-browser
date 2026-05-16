@@ -10,7 +10,7 @@ import UIKit
 
 final class Tab {
     let id: UUID
-    let session: GeckoSession
+    var session: GeckoSession
     var title: String
     var url: String?
     var favicon: UIImage?

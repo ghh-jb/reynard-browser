@@ -8,7 +8,7 @@
 import GeckoView
 import UIKit
 
-final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneToolbarDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UIGestureRecognizerDelegate {
+final class BrowserViewController: UIViewController {
     lazy var tabManager: TabManager = TabManagerImplementation(delegate: self)
     private(set) var isInFullscreenMedia = false
     private var orientationBeforeFullscreen: UIInterfaceOrientation?
@@ -66,6 +66,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
             object: nil
         )
         
+        configureContextMenu()
         observeDownloadState()
         syncDownloadButtonState()
         browserUI.configureLayout()

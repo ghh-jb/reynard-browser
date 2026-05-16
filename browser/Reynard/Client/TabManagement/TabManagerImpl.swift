@@ -68,6 +68,39 @@ final class TabManagerImplementation: NSObject, TabManager {
         return tab
     }
     
+    private func bindDelegates(to session: GeckoSession, for tab: Tab) {
+        session.contentDelegate = self
+        session.progressDelegate = self
+        session.navigationDelegate = self
+        let controller = NowPlayingController(session: session)
+        session.mediaSessionDelegate = controller
+        tab.nowPlayingController = controller
+    }
+    
+    private func applyTransferredState(to tab: Tab, url: String, title: String?) {
+        tab.url = url
+        if let title,
+           !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            tab.title = title
+        }
+        tab.pendingDisplayText = nil
+        tab.suppressInitialNavigation = true
+        tab.favicon = cachedFavicon(for: url)
+        tab.session.updateUserAgent(UserAgentController.shared.userAgent(for: url, tabID: tab.id))
+    }
+    
+    private func recordTransferredHistory(for tab: Tab, title: String?) {
+        guard let url = remoteURL(from: tab.url) else {
+            return
+        }
+        
+        historyStore.recordVisit(url: url, title: tab.title)
+        if let title,
+           !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            historyStore.updateTitle(for: url, title: title)
+        }
+    }
+    
     private func restoredURL(from value: String?) -> String? {
         guard let trimmedValue = value?.trimmingCharacters(in: .whitespacesAndNewlines),
               !trimmedValue.isEmpty,
@@ -233,6 +266,40 @@ final class TabManagerImplementation: NSObject, TabManager {
         return index
     }
     
+    @discardableResult
+    func addTab(using session: GeckoSession, url: String, title: String?, selecting: Bool, at insertionIndex: Int?) -> Int {
+        let tab = Tab(session: session)
+        bindDelegates(to: session, for: tab)
+        applyTransferredState(to: tab, url: url, title: title)
+        
+        let index = min(max(insertionIndex ?? tabs.count, 0), tabs.count)
+        if index == tabs.count {
+            tabs.append(tab)
+        } else {
+            tabs.insert(tab, at: index)
+            if selectedTabIndex >= index {
+                selectedTabIndex += 1
+            }
+        }
+        
+        delegate?.tabManagerDidChangeTabs(self)
+        delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
+        delegate?.tabManager(self, didUpdateTabAt: index, reason: .title)
+        scheduleFaviconUpdate(forTabAt: index)
+        recordTransferredHistory(for: tab, title: title)
+        
+        if selecting {
+            delegate?.tabManager(self, animateNewTabSelectionAt: index) { [weak self] in
+                self?.selectTab(at: index)
+            }
+            session.setFocused(true)
+        } else {
+            persistState()
+        }
+        
+        return index
+    }
+    
     func selectTab(at index: Int) {
         guard tabs.indices.contains(index) else {
             return
@@ -347,6 +414,29 @@ final class TabManagerImplementation: NSObject, TabManager {
         loadURL(searchTarget, in: tab)
     }
     
+    func replaceSession(with session: GeckoSession, url: String, title: String?) {
+        guard let tab = selectedTab else {
+            return
+        }
+        
+        let oldSession = tab.session
+        oldSession.setActive(false)
+        oldSession.close()
+        
+        bindDelegates(to: session, for: tab)
+        tab.session = session
+        applyTransferredState(to: tab, url: url, title: title)
+        session.setActive(true)
+        session.setFocused(true)
+        
+        delegate?.tabManagerDidChangeTabs(self)
+        delegate?.tabManager(self, didUpdateTabAt: selectedTabIndex, reason: .location)
+        delegate?.tabManager(self, didUpdateTabAt: selectedTabIndex, reason: .title)
+        scheduleFaviconUpdate(forTabAt: selectedTabIndex)
+        persistState()
+        recordTransferredHistory(for: tab, title: title)
+    }
+    
     func tabIndex(for session: GeckoSession) -> Int? {
         tabs.firstIndex(where: { $0.session === session })
     }
@@ -427,7 +517,14 @@ extension TabManagerImplementation: ContentDelegate {
     
     func onProductUrl(session: GeckoSession) {}
     
-    func onContextMenu(session: GeckoSession, screenX: Int, screenY: Int, element: ContextElement) {}
+    func onContextMenu(session: GeckoSession, screenX: Int, screenY: Int, element: ContextElement) {
+        guard selectedTab?.session === session,
+              element.linkUri?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false else {
+            return
+        }
+        
+        delegate?.tabManager(self, didRequestContextMenuAt: CGPoint(x: screenX, y: screenY), for: element, in: session)
+    }
     
     func onCrash(session: GeckoSession) {
         guard let index = tabIndex(for: session) else {

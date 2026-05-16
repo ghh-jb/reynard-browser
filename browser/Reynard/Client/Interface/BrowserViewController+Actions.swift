@@ -28,7 +28,6 @@ extension BrowserViewController {
             objc_setAssociatedObject(self, &ActionsAssociatedKeys.addonsController, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
-    
     func presentMenuSheet(initialSection: LibrarySection = .bookmarks) {
         let viewController = LibraryViewController(initialSection: initialSection) { [weak self] in
             self?.dismiss(animated: true)
@@ -38,9 +37,17 @@ extension BrowserViewController {
         present(navigationController, animated: true)
     }
     
-    func presentShareSheet() {
-        guard let tab = tabManager.selectedTab,
-              let url = tabManager.shareableURL(for: tab) else {
+    func presentShareSheet(url urlString: String? = nil) {
+        let shareURL: URL?
+        if let urlString {
+            shareURL = URL(string: urlString)
+        } else if let tab = tabManager.selectedTab {
+            shareURL = tabManager.shareableURL(for: tab)
+        } else {
+            shareURL = nil
+        }
+        
+        guard let url = shareURL else {
             return
         }
         

@@ -163,6 +163,15 @@ final class TabBarCell: UICollectionViewCell {
         separatorView.isHidden = selected
     }
     
+    func containsCloseButton(point: CGPoint) -> Bool {
+        guard !closeButton.isHidden else {
+            return false
+        }
+        
+        let pointInContentView = convert(point, to: contentView)
+        return closeButton.frame.contains(pointInContentView)
+    }
+    
     @objc private func closeTapped() {
         onClose?()
     }

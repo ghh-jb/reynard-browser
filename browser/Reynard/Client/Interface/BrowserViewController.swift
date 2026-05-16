@@ -8,7 +8,7 @@
 import GeckoView
 import UIKit
 
-final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneToolbarDelegate {
+final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneToolbarDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UIGestureRecognizerDelegate {
     lazy var tabManager: TabManager = TabManagerImplementation(delegate: self)
     private(set) var isInFullscreenMedia = false
     private var orientationBeforeFullscreen: UIInterfaceOrientation?
@@ -173,19 +173,7 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     }
     
     func moveTab(from sourceIndex: Int, to destinationIndex: Int) {
-        let pendingTabID = pendingExpandedTabBarIndex.flatMap { tabManager.tabs[safe: $0]?.id }
         tabManager.moveTab(from: sourceIndex, to: destinationIndex)
-        
-        if let pendingTabID {
-            pendingExpandedTabBarIndex = tabManager.tabs.firstIndex(where: { $0.id == pendingTabID })
-        }
-        
-        DispatchQueue.main.async { [weak self] in
-            guard let self else {
-                return
-            }
-            self.tabManagerDidChangeTabs(self.tabManager)
-        }
     }
     
     func closeTab(at index: Int) {
@@ -196,14 +184,6 @@ final class BrowserViewController: UIViewController, AddressBarDelegate, PhoneTo
     func clearAllTabs() {
         pendingExpandedTabBarIndex = nil
         tabManager.removeAllTabs()
-    }
-    
-    func usesExpandedTabBarWidth(at index: Int) -> Bool {
-        index == tabManager.selectedTabIndex || index == pendingExpandedTabBarIndex
-    }
-    
-    func setTabOverviewVisible(_ visible: Bool, animated: Bool) {
-        tabOverviewPresentation.setVisible(visible, animated: animated)
     }
     
     func browse(to term: String) {

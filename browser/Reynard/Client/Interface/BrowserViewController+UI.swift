@@ -10,10 +10,16 @@ import GeckoView
 import UIKit
 
 private enum UIAssociatedKeys {
-    static var tabCollectionCoordinator = 0
     static var browserUI = 0
     static var addressBarGestures = 0
     static var isSearchFocused = 0
+    static var activeReorderingCell = 0
+    static var activeDragSnapshotView = 0
+    static var pendingReorderStartWorkItem = 0
+    static var isInteractiveReorderActive = 0
+    static var activeDragOffset = 0
+    static var activeTabBarReorderSourceIndex = 0
+    static var activeTabBarReorderTargetIndex = 0
 }
 
 extension BrowserViewController {
@@ -25,28 +31,13 @@ extension BrowserViewController {
         16
     }
     
-    var tabCollectionCoordinator: TabCollectionCoordinator {
-        get {
-            if let coordinator = objc_getAssociatedObject(self, &UIAssociatedKeys.tabCollectionCoordinator) as? TabCollectionCoordinator {
-                return coordinator
-            }
-            
-            let coordinator = TabCollectionCoordinator(controller: self)
-            objc_setAssociatedObject(self, &UIAssociatedKeys.tabCollectionCoordinator, coordinator, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-            return coordinator
-        }
-        set {
-            objc_setAssociatedObject(self, &UIAssociatedKeys.tabCollectionCoordinator, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-        }
-    }
-    
     var browserUI: BrowserUI {
         get {
             if let ui = objc_getAssociatedObject(self, &UIAssociatedKeys.browserUI) as? BrowserUI {
                 return ui
             }
             
-            let ui = BrowserUI(controller: self, tabCollectionHandler: tabCollectionCoordinator)
+            let ui = BrowserUI(controller: self, tabCollectionHandler: self)
             objc_setAssociatedObject(self, &UIAssociatedKeys.browserUI, ui, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             return ui
         }
@@ -1046,4 +1037,489 @@ final class BrowserUI {
         let visibleBottom = max(0, geckoFrame.height - keyboardOverlap - 12)
         return min(keyboardOverlap, max(0, focusBottom - visibleBottom))
     }
+}
+
+// Tab Overview & Tab Bar
+extension BrowserViewController {
+    private final class WeakBox<T: AnyObject> {
+        weak var value: T?
+        
+        init(_ value: T?) {
+            self.value = value
+        }
+    }
+    
+    var activeReorderingCell: UICollectionViewCell? {
+        get {
+            (objc_getAssociatedObject(self, &UIAssociatedKeys.activeReorderingCell) as? WeakBox<UICollectionViewCell>)?.value
+        }
+        set {
+            objc_setAssociatedObject(
+                self,
+                &UIAssociatedKeys.activeReorderingCell,
+                WeakBox(newValue),
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+    
+    var activeDragSnapshotView: UIView? {
+        get {
+            (objc_getAssociatedObject(self, &UIAssociatedKeys.activeDragSnapshotView) as? WeakBox<UIView>)?.value
+        }
+        set {
+            objc_setAssociatedObject(
+                self,
+                &UIAssociatedKeys.activeDragSnapshotView,
+                WeakBox(newValue),
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+    
+    var pendingReorderStartWorkItem: DispatchWorkItem? {
+        get {
+            objc_getAssociatedObject(self, &UIAssociatedKeys.pendingReorderStartWorkItem) as? DispatchWorkItem
+        }
+        set {
+            objc_setAssociatedObject(
+                self,
+                &UIAssociatedKeys.pendingReorderStartWorkItem,
+                newValue,
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+    
+    var isInteractiveReorderActive: Bool {
+        get {
+            (objc_getAssociatedObject(self, &UIAssociatedKeys.isInteractiveReorderActive) as? NSNumber)?.boolValue ?? false
+        }
+        set {
+            objc_setAssociatedObject(
+                self,
+                &UIAssociatedKeys.isInteractiveReorderActive,
+                NSNumber(value: newValue),
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+    
+    var activeDragOffset: CGPoint {
+        get {
+            (objc_getAssociatedObject(self, &UIAssociatedKeys.activeDragOffset) as? NSValue)?.cgPointValue ?? .zero
+        }
+        set {
+            objc_setAssociatedObject(
+                self,
+                &UIAssociatedKeys.activeDragOffset,
+                NSValue(cgPoint: newValue),
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+    
+    var activeTabBarReorderSourceIndex: Int? {
+        get {
+            (objc_getAssociatedObject(self, &UIAssociatedKeys.activeTabBarReorderSourceIndex) as? NSNumber)?.intValue
+        }
+        set {
+            objc_setAssociatedObject(
+                self,
+                &UIAssociatedKeys.activeTabBarReorderSourceIndex,
+                newValue.map { NSNumber(value: $0) },
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+    
+    var activeTabBarReorderTargetIndex: Int? {
+        get {
+            (objc_getAssociatedObject(self, &UIAssociatedKeys.activeTabBarReorderTargetIndex) as? NSNumber)?.intValue
+        }
+        set {
+            objc_setAssociatedObject(
+                self,
+                &UIAssociatedKeys.activeTabBarReorderTargetIndex,
+                newValue.map { NSNumber(value: $0) },
+                .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+            )
+        }
+    }
+    
+    func usesExpandedTabBarWidth(for tab: Tab) -> Bool {
+        let selectedTabID = tabManager.selectedTab?.id
+        let pendingTabID = pendingExpandedTabBarIndex.flatMap { tabManager.tabs[safe: $0]?.id }
+        return tab.id == selectedTabID || tab.id == pendingTabID
+    }
+    
+    func setTabOverviewVisible(_ visible: Bool, animated: Bool) {
+        tabOverviewPresentation.setVisible(visible, animated: animated)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        tabManager.tabs.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
+        collectionView === self.browserUI.tabOverviewCollection.collectionView ||
+        collectionView === self.browserUI.tabBar.collectionView
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        if collectionView === self.browserUI.tabOverviewCollection.collectionView {
+            guard let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: TabOverviewCard.reuseIdentifier,
+                for: indexPath
+            ) as? TabOverviewCard else {
+                return UICollectionViewCell()
+            }
+            
+            let tab = self.tabManager.tabs[indexPath.item]
+            cell.configure(tab: tab)
+            cell.onClose = { [weak self, weak collectionView, weak cell] in
+                guard let self,
+                      let collectionView,
+                      let cell,
+                      let currentIndexPath = collectionView.indexPath(for: cell) else {
+                    return
+                }
+                self.closeTab(at: currentIndexPath.item)
+            }
+            return cell
+        }
+        
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: TabBarCell.reuseIdentifier,
+            for: indexPath
+        ) as? TabBarCell else {
+            return UICollectionViewCell()
+        }
+        
+        let tab = self.tabManager.tabs[indexPath.item]
+        let metrics = self.browserUI.tabBar.layoutMetrics(
+            for: indexPath.item,
+            fallbackWidth: self.view.bounds.width,
+            tabCount: self.tabManager.tabs.count,
+            usesExpandedWidth: { index in
+                self.usesExpandedTabBarWidthForLayoutIndex(index)
+            }
+        )
+        cell.configure(
+            tab: tab,
+            selected: tab.id == self.tabManager.selectedTab?.id,
+            layoutMode: metrics.mode,
+            itemWidth: metrics.width
+        )
+        cell.onClose = { [weak self, weak collectionView, weak cell] in
+            guard let self,
+                  let collectionView,
+                  let cell,
+                  let currentIndexPath = collectionView.indexPath(for: cell) else {
+                return
+            }
+            self.closeTab(at: currentIndexPath.item)
+        }
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if collectionView === self.browserUI.tabOverviewCollection.collectionView {
+            let previewImage: UIImage?
+            if let cell = collectionView.cellForItem(at: indexPath) as? TabOverviewCard {
+                previewImage = cell.currentPreviewImage
+            } else {
+                previewImage = self.tabManager.tabs[safe: indexPath.item]?.thumbnail
+            }
+            
+            self.tabOverviewPresentation.prepareDismissSelection(to: indexPath.item, previewImage: previewImage)
+            self.browserUI.tabOverviewCollection.collectionView.reloadData()
+            self.setTabOverviewVisible(false, animated: true)
+            return
+        }
+        
+        self.selectTab(at: indexPath.item, animated: true)
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        moveItemAt sourceIndexPath: IndexPath,
+        to destinationIndexPath: IndexPath
+    ) {
+        guard collectionView === self.browserUI.tabOverviewCollection.collectionView ||
+                collectionView === self.browserUI.tabBar.collectionView else {
+            return
+        }
+        
+        self.moveTab(from: sourceIndexPath.item, to: destinationIndexPath.item)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        guard collectionView === self.browserUI.tabOverviewCollection.collectionView,
+              let tabCell = cell as? TabOverviewCard else {
+            return
+        }
+        tabCell.setNeedsLayout()
+        tabCell.layoutIfNeeded()
+    }
+    
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        if collectionView === self.browserUI.tabOverviewCollection.collectionView {
+            return self.tabOverviewPresentation.itemSize(for: collectionView)
+        }
+        
+        if collectionView === self.browserUI.tabBar.collectionView {
+            let metrics = self.browserUI.tabBar.layoutMetrics(
+                for: indexPath.item,
+                fallbackWidth: self.view.bounds.width,
+                tabCount: self.tabManager.tabs.count,
+                usesExpandedWidth: { index in
+                    self.usesExpandedTabBarWidthForLayoutIndex(index)
+                }
+            )
+            return CGSize(width: metrics.width, height: collectionView.bounds.height)
+        }
+        
+        let title = self.tabManager.tabs[indexPath.item].title
+        let width = max(120, min(240, (title as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: 14, weight: .medium)]).width + 52))
+        return CGSize(width: width, height: 30)
+    }
+    
+    private func cancelPendingReorderStart() {
+        pendingReorderStartWorkItem?.cancel()
+        pendingReorderStartWorkItem = nil
+    }
+    
+    private func tabForCurrentTabBarLayout(at index: Int) -> Tab? {
+        guard self.tabManager.tabs.indices.contains(index) else {
+            return nil
+        }
+        
+        guard let sourceIndex = activeTabBarReorderSourceIndex,
+              let targetIndex = activeTabBarReorderTargetIndex,
+              self.tabManager.tabs.indices.contains(sourceIndex),
+              self.tabManager.tabs.indices.contains(targetIndex),
+              sourceIndex != targetIndex else {
+            return self.tabManager.tabs[index]
+        }
+        
+        var tabs = self.tabManager.tabs
+        let movedTab = tabs.remove(at: sourceIndex)
+        tabs.insert(movedTab, at: targetIndex)
+        return tabs[index]
+    }
+    
+    private func usesExpandedTabBarWidthForLayoutIndex(_ index: Int) -> Bool {
+        guard let tab = tabForCurrentTabBarLayout(at: index) else {
+            return false
+        }
+        return self.usesExpandedTabBarWidth(for: tab)
+    }
+    
+    private func updateTabBarReorderTarget(at location: CGPoint, in collectionView: UICollectionView) {
+        guard collectionView === self.browserUI.tabBar.collectionView,
+              let targetIndex = collectionView.indexPathForItem(at: location)?.item,
+              self.tabManager.tabs.indices.contains(targetIndex),
+              activeTabBarReorderTargetIndex != targetIndex else {
+            return
+        }
+        
+        activeTabBarReorderTargetIndex = targetIndex
+        collectionView.collectionViewLayout.invalidateLayout()
+    }
+    
+    private func clearTabBarReorderState() {
+        activeTabBarReorderSourceIndex = nil
+        activeTabBarReorderTargetIndex = nil
+    }
+    
+    private func beginTabBarDragSnapshot(for cell: UICollectionViewCell, in collectionView: UICollectionView, at location: CGPoint) {
+        guard let snapshot = cell.snapshotView(afterScreenUpdates: false) else {
+            return
+        }
+        
+        let frameInRoot = cell.convert(cell.bounds, to: self.view)
+        snapshot.frame = frameInRoot
+        snapshot.isUserInteractionEnabled = false
+        snapshot.layer.masksToBounds = false
+        snapshot.layer.shadowColor = UITraitCollection.current.userInterfaceStyle == .dark ? UIColor.white.cgColor : UIColor.black.cgColor
+        snapshot.layer.shadowOpacity = 0.18
+        snapshot.layer.shadowRadius = 10
+        snapshot.layer.shadowOffset = CGSize(width: 0, height: 6)
+        self.view.addSubview(snapshot)
+        self.view.bringSubviewToFront(snapshot)
+        UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseOut, .beginFromCurrentState]) {
+            snapshot.transform = CGAffineTransform(scaleX: 1.04, y: 1.04)
+        }
+        
+        cell.isHidden = true
+        activeDragSnapshotView = snapshot
+        
+        let locationInRoot = collectionView.convert(location, to: self.view)
+        activeDragOffset = CGPoint(
+            x: locationInRoot.x - snapshot.center.x,
+            y: locationInRoot.y - snapshot.center.y
+        )
+    }
+    
+    private func updateTabBarDragSnapshotPosition(_ location: CGPoint, in collectionView: UICollectionView) {
+        guard let snapshot = activeDragSnapshotView else {
+            return
+        }
+        
+        let locationInRoot = collectionView.convert(location, to: self.view)
+        snapshot.center = CGPoint(
+            x: locationInRoot.x - activeDragOffset.x,
+            y: locationInRoot.y - activeDragOffset.y
+        )
+    }
+    
+    private func endTabBarDragSnapshot() {
+        activeDragSnapshotView?.removeFromSuperview()
+        activeDragSnapshotView = nil
+        activeReorderingCell?.isHidden = false
+        activeDragOffset = .zero
+    }
+    
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let longPress = gestureRecognizer as? UILongPressGestureRecognizer,
+              let collectionView = longPress.view as? UICollectionView,
+              collectionView === self.browserUI.tabOverviewCollection.collectionView ||
+                collectionView === self.browserUI.tabBar.collectionView else {
+            return true
+        }
+        
+        let location = longPress.location(in: collectionView)
+        guard let indexPath = collectionView.indexPathForItem(at: location),
+              let cell = collectionView.cellForItem(at: indexPath) else {
+            return false
+        }
+        
+        let pointInCell = collectionView.convert(location, to: cell)
+        if let overviewCell = cell as? TabOverviewCard {
+            return !overviewCell.containsCloseButton(point: pointInCell)
+        }
+        if let tabBarCell = cell as? TabBarCell {
+            return !tabBarCell.containsCloseButton(point: pointInCell)
+        }
+        return false
+    }
+    
+    @objc func handleOverviewReorderLongPress(_ gestureRecognizer: UILongPressGestureRecognizer) {
+        guard let collectionView = gestureRecognizer.view as? UICollectionView,
+              collectionView === self.browserUI.tabOverviewCollection.collectionView ||
+                collectionView === self.browserUI.tabBar.collectionView else {
+            return
+        }
+        
+        let location = gestureRecognizer.location(in: collectionView)
+        
+        switch gestureRecognizer.state {
+        case .began:
+            guard let indexPath = collectionView.indexPathForItem(at: location),
+                  let cell = collectionView.cellForItem(at: indexPath) else {
+                return
+            }
+            
+            let pointInCell = collectionView.convert(location, to: cell)
+            if let overviewCell = cell as? TabOverviewCard,
+               overviewCell.containsCloseButton(point: pointInCell) {
+                return
+            }
+            if let tabBarCell = cell as? TabBarCell,
+               tabBarCell.containsCloseButton(point: pointInCell) {
+                return
+            }
+            
+            activeReorderingCell = cell
+            cancelPendingReorderStart()
+            if collectionView === self.browserUI.tabBar.collectionView {
+                activeTabBarReorderSourceIndex = indexPath.item
+                activeTabBarReorderTargetIndex = indexPath.item
+                beginTabBarDragSnapshot(for: cell, in: collectionView, at: location)
+            }
+            if let overviewCell = cell as? TabOverviewCard {
+                overviewCell.setReorderLifted(true, animated: true)
+            }
+            
+            let workItem = DispatchWorkItem { [weak self, weak collectionView, weak cell] in
+                guard let self,
+                      let collectionView,
+                      let cell,
+                      self.activeReorderingCell === cell,
+                      !self.isInteractiveReorderActive else {
+                    return
+                }
+                
+                guard collectionView.beginInteractiveMovementForItem(at: indexPath) else {
+                    if let overviewCell = cell as? TabOverviewCard {
+                        overviewCell.setReorderLifted(false, animated: true)
+                    }
+                    if collectionView === self.browserUI.tabBar.collectionView {
+                        self.endTabBarDragSnapshot()
+                        self.clearTabBarReorderState()
+                    }
+                    self.activeReorderingCell = nil
+                    return
+                }
+                
+                self.isInteractiveReorderActive = true
+            }
+            pendingReorderStartWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06, execute: workItem)
+            
+        case .changed:
+            if isInteractiveReorderActive {
+                updateTabBarReorderTarget(at: location, in: collectionView)
+                collectionView.updateInteractiveMovementTargetPosition(location)
+                if collectionView === self.browserUI.tabBar.collectionView {
+                    updateTabBarDragSnapshotPosition(location, in: collectionView)
+                }
+            }
+            
+        case .ended:
+            cancelPendingReorderStart()
+            if isInteractiveReorderActive {
+                collectionView.endInteractiveMovement()
+                isInteractiveReorderActive = false
+                if let activeReorderingCell = activeReorderingCell as? TabOverviewCard {
+                    activeReorderingCell.setReorderLifted(false, animated: true)
+                }
+                if collectionView === self.browserUI.tabBar.collectionView {
+                    clearTabBarReorderState()
+                    collectionView.collectionViewLayout.invalidateLayout()
+                    collectionView.layoutIfNeeded()
+                    endTabBarDragSnapshot()
+                }
+                self.activeReorderingCell = nil
+            } else if let activeReorderingCell = activeReorderingCell as? TabOverviewCard {
+                activeReorderingCell.setReorderLifted(false, animated: true)
+                if collectionView === self.browserUI.tabBar.collectionView {
+                    endTabBarDragSnapshot()
+                    clearTabBarReorderState()
+                }
+                self.activeReorderingCell = nil
+            }
+            
+        default:
+            cancelPendingReorderStart()
+            if isInteractiveReorderActive {
+                collectionView.cancelInteractiveMovement()
+                isInteractiveReorderActive = false
+            }
+            if let activeReorderingCell = activeReorderingCell as? TabOverviewCard {
+                activeReorderingCell.setReorderLifted(false, animated: true)
+            }
+            if collectionView === self.browserUI.tabBar.collectionView {
+                endTabBarDragSnapshot()
+                clearTabBarReorderState()
+            }
+            self.activeReorderingCell = nil
+        }
+    }
+    
 }

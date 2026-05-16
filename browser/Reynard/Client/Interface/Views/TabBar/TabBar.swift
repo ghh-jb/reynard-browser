@@ -30,6 +30,13 @@ final class TabBar {
         view.contentInsetAdjustmentBehavior = .never
         view.dataSource = tabCollectionHandler
         view.delegate = tabCollectionHandler
+        let reorderGesture = UILongPressGestureRecognizer(
+            target: tabCollectionHandler as AnyObject,
+            action: #selector(BrowserViewController.handleOverviewReorderLongPress(_:))
+        )
+        reorderGesture.minimumPressDuration = 0.35
+        reorderGesture.delegate = tabCollectionHandler as? UIGestureRecognizerDelegate
+        view.addGestureRecognizer(reorderGesture)
         view.register(TabBarCell.self, forCellWithReuseIdentifier: TabBarCell.reuseIdentifier)
         return view
     }()

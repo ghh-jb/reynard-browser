@@ -137,7 +137,7 @@ final class DownloadStore: NSObject {
     
     private let fileManager: FileManager
     private let storage: StorageURLs
-    private let stateQueue = DispatchQueue(label: "me.minh-ton.reynard.download-store-state", qos: .userInitiated)
+    private let stateQueue = DispatchQueue(label: "com.minh-ton.download-store", qos: .userInitiated)
     private lazy var session: URLSession = {
         let configuration = URLSessionConfiguration.default
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData

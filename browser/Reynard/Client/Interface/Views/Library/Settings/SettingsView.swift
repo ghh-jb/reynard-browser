@@ -54,7 +54,7 @@ final class SettingsRootViewController: SettingsTableViewController {
     }
     
     let jitSwitch = UISwitch()
-    let backgroundQueue = DispatchQueue(label: "me.minh-ton.reynard.settings.backgroundqueue", qos: .userInitiated)
+    let backgroundQueue = DispatchQueue(label: "com.minh-ton.settings-background-queue", qos: .userInitiated)
     var isJITLessModeActive = false
     var activeDDIDownloadToken: UUID?
     var activeUpdateTask: URLSessionDownloadTask?

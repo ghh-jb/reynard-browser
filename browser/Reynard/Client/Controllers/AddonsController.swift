@@ -20,7 +20,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
     private var sessionBrowserActions: [ObjectIdentifier: [String: AddonAction]] = [:]
     private var sessionPageActions: [ObjectIdentifier: [String: AddonAction]] = [:]
     private let iconCache = NSCache<NSString, UIImage>()
-    private let iconLoadingQueue = DispatchQueue(label: "me.minh-ton.AddonsController.IconLoading", qos: .utility)
+    private let iconLoadingQueue = DispatchQueue(label: "com.minh-ton.addons-controller-icon-queue", qos: .utility)
     private var iconPrefetchIDs = Set<String>()
     
     init(controller: BrowserViewController) {

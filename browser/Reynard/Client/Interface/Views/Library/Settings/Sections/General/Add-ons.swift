@@ -17,7 +17,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
     private static let sharedIconCache = NSCache<NSString, UIImage>()
     private static var hasLoadedInstalledAddons = false
     
-    private let iconLoadingQueue = DispatchQueue(label: "me.minh-ton.reynard.settings.addons.icons", qos: .utility)
+    private let iconLoadingQueue = DispatchQueue(label: "com.minh-ton.addons-settings-icon-queue", qos: .utility)
     private var iconLoadingIDs = Set<String>()
     private var addons: [Addon] = []
     private var isLoadingAddons = false

@@ -52,7 +52,7 @@ final class DDIManager: NSObject {
     }
     
     private let fileManager: FileManager
-    private let stateQueue = DispatchQueue(label: "me.minh-ton.reynard.jit.ddi-download-state", qos: .userInitiated)
+    private let stateQueue = DispatchQueue(label: "com.minh-ton.ddi-manager-queue", qos: .userInitiated)
     private lazy var session: URLSession = {
         let configuration = URLSessionConfiguration.default
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData

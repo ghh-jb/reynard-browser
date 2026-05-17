@@ -63,7 +63,7 @@ final class FaviconStore {
     
     private let fileManager: FileManager
     private let storage: StorageURLs
-    private let stateQueue = DispatchQueue(label: "me.minh-ton.reynard.favicon-store", qos: .utility)
+    private let stateQueue = DispatchQueue(label: "com.minh-ton.favicon-store", qos: .utility)
     
     private lazy var session: URLSession = {
         let configuration = URLSessionConfiguration.default

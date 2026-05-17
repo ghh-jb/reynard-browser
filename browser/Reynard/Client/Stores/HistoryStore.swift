@@ -37,7 +37,7 @@ final class HistoryStore {
     
     private let fileManager: FileManager
     private let storage: StorageURLs
-    private let stateQueue = DispatchQueue(label: "me.minh-ton.reynard.history-store", qos: .userInitiated)
+    private let stateQueue = DispatchQueue(label: "com.minh-ton.history-store", qos: .userInitiated)
     private var database: OpaquePointer?
     private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
     

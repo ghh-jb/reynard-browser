@@ -42,7 +42,7 @@ final class TabManagementStore {
     
     private let fileManager: FileManager
     private let storage: StorageURLs
-    private let stateQueue = DispatchQueue(label: "me.minh-ton.reynard.tab-management-store", qos: .userInitiated)
+    private let stateQueue = DispatchQueue(label: "com.minh-ton.tab-management-store", qos: .userInitiated)
     private var persistedState = PersistedState(selectedTabID: nil, tabs: [])
     
     init(fileManager: FileManager = .default) {

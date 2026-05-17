@@ -127,13 +127,13 @@ extension BrowserViewController: AddressBarDelegate, PhoneToolbarDelegate {
             return
         }
         
-        browserUI.toolbarView.updateBackButton(canGoBack: tab.canGoBack)
-        browserUI.toolbarView.updateForwardButton(canGoForward: tab.canGoForward)
+        browserUI.toolbarView.updateBackButton(canGoBack: tab.canNavigateBack)
+        browserUI.toolbarView.updateForwardButton(canGoForward: tab.canNavigateForward)
         let shareEnabled = tabManager.shareableURL(for: tab) != nil
         browserUI.toolbarView.updateShareButton(isEnabled: shareEnabled)
         browserUI.padTopBarButtons.shareButton.isEnabled = shareEnabled
-        browserUI.padTopBarButtons.backButton.isEnabled = tab.canGoBack
-        browserUI.padTopBarButtons.forwardButton.isEnabled = tab.canGoForward
+        browserUI.padTopBarButtons.backButton.isEnabled = tab.canNavigateBack
+        browserUI.padTopBarButtons.forwardButton.isEnabled = tab.canNavigateForward
     }
     
     @objc func addressBarPositionDidChange() {

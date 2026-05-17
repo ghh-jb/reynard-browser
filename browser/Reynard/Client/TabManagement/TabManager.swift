@@ -25,6 +25,8 @@ protocol TabManager: AnyObject {
     func removeAllTabs()
     func browse(to term: String)
     func browse(to term: String, in tab: Tab)
+    func goBack()
+    func goForward()
     func replaceSession(with session: GeckoSession, url: String, title: String?)
     func tabIndex(for session: GeckoSession) -> Int?
     func shareableURL(for tab: Tab) -> URL?

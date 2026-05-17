@@ -17,8 +17,10 @@ final class Tab {
     var pendingRestoreURL: String?
     var pendingDisplayText: String?
     var suppressInitialNavigation = true
-    var canGoBack = false
-    var canGoForward = false
+    var sessionCanGoBack = false
+    var sessionCanGoForward = false
+    var canNavigateBack = false
+    var canNavigateForward = false
     var isLoading = false
     var progress: Float = 0
     var thumbnail: UIImage?

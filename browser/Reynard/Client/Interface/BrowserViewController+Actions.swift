@@ -78,11 +78,11 @@ extension BrowserViewController {
     }
     
     func goBack() {
-        tabManager.selectedTab?.session.goBack()
+        tabManager.goBack()
     }
     
     func goForward() {
-        tabManager.selectedTab?.session.goForward()
+        tabManager.goForward()
     }
     
     func changeWebsiteMode() {

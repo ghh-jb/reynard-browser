@@ -21,6 +21,7 @@ final class TabManagerImplementation: NSObject, TabManager {
     private let store: TabManagementStore
     private let faviconStore: FaviconStore
     private let historyStore: HistoryStore
+    private let sessionStore: TabSessionStore
     private var faviconTasks: [UUID: Task<Void, Never>] = [:]
     
     private lazy var isURLLenient: NSRegularExpression = {
@@ -31,11 +32,13 @@ final class TabManagerImplementation: NSObject, TabManager {
     init(
         delegate: TabManagerDelegate?,
         store: TabManagementStore = .shared,
+        sessionStore: TabSessionStore = .shared,
         faviconStore: FaviconStore = .shared,
         historyStore: HistoryStore = .shared
     ) {
         self.delegate = delegate
         self.store = store
+        self.sessionStore = sessionStore
         self.faviconStore = faviconStore
         self.historyStore = historyStore
     }
@@ -58,6 +61,36 @@ final class TabManagerImplementation: NSObject, TabManager {
     private func loadURL(_ url: String, in tab: Tab) {
         tab.session.updateUserAgent(UserAgentController.shared.userAgent(for: url, tabID: tab.id))
         tab.session.load(url)
+    }
+    
+    private func applyNavigationState(to tab: Tab) {
+        let snapshot = sessionStore.loadSnapshot(for: tab.id)
+        if snapshot.ownsNav {
+            tab.canNavigateBack = snapshot.canGoBack
+            tab.canNavigateForward = snapshot.canGoForward
+            return
+        }
+        
+        tab.canNavigateBack = snapshot.canGoBack || tab.sessionCanGoBack
+        tab.canNavigateForward = snapshot.canGoForward || tab.sessionCanGoForward
+    }
+    
+    private func recordNavigation(_ url: String, for tab: Tab) {
+        let trimmedURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedURL.isEmpty,
+              trimmedURL.lowercased() != "about:blank" else {
+            return
+        }
+        
+        let snapshot = sessionStore.recordNavigation(to: trimmedURL, for: tab.id)
+        if snapshot.ownsNav {
+            tab.canNavigateBack = snapshot.canGoBack
+            tab.canNavigateForward = snapshot.canGoForward
+            return
+        }
+        
+        tab.canNavigateBack = snapshot.canGoBack || tab.sessionCanGoBack
+        tab.canNavigateForward = snapshot.canGoForward || tab.sessionCanGoForward
     }
     
     private func makeTab(windowId: String?) -> Tab {
@@ -202,6 +235,11 @@ final class TabManagerImplementation: NSObject, TabManager {
                 thumbnail: snapshot.thumbnail
             )
             tab.pendingRestoreURL = restoredURL(from: snapshot.url)
+            let sessionSnapshot = sessionStore.loadSnapshot(for: tab.id)
+            if sessionSnapshot.canGoBack || sessionSnapshot.canGoForward {
+                _ = sessionStore.setOwnsNav(true, for: tab.id)
+            }
+            applyNavigationState(to: tab)
             let controller = NowPlayingController(session: tab.session)
             tab.session.mediaSessionDelegate = controller
             tab.nowPlayingController = controller
@@ -271,6 +309,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         let tab = Tab(session: session)
         bindDelegates(to: session, for: tab)
         applyTransferredState(to: tab, url: url, title: title)
+        recordNavigation(url, for: tab)
         
         let index = min(max(insertionIndex ?? tabs.count, 0), tabs.count)
         if index == tabs.count {
@@ -309,6 +348,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         
         selectedTabIndex = index
         tabs[index].session.setActive(true)
+        applyNavigationState(to: tabs[index])
         
         delegate?.tabManager(self, didSelectTabAt: index, previousIndex: previousIndex)
         loadRestoredURLIfNeeded(for: index)
@@ -343,6 +383,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         let removedTab = tabs.remove(at: index)
         cancelFaviconTask(for: removedTab.id)
         UserAgentController.shared.clearOverrides(forTabID: removedTab.id)
+        sessionStore.removeSession(for: removedTab.id)
         
         if tabs.isEmpty {
             selectedTabIndex = -1
@@ -379,6 +420,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         tabs.removeAll(keepingCapacity: true)
         removedTabs.forEach { cancelFaviconTask(for: $0.id) }
         removedTabs.forEach { UserAgentController.shared.clearOverrides(forTabID: $0.id) }
+        removedTabs.forEach { sessionStore.removeSession(for: $0.id) }
         selectedTabIndex = -1
         delegate?.tabManagerDidChangeTabs(self)
         addTab(selecting: true, windowId: nil)
@@ -414,6 +456,54 @@ final class TabManagerImplementation: NSObject, TabManager {
         loadURL(searchTarget, in: tab)
     }
     
+    func goBack() {
+        guard let tab = selectedTab else {
+            return
+        }
+        
+        let snapshot = sessionStore.loadSnapshot(for: tab.id)
+        if !snapshot.ownsNav && tab.sessionCanGoBack {
+            _ = sessionStore.previousURL(for: tab.id)
+            applyNavigationState(to: tab)
+            delegate?.tabManager(self, didUpdateTabAt: selectedTabIndex, reason: .navigationState)
+            tab.session.goBack()
+            return
+        }
+        
+        guard let url = sessionStore.previousURL(for: tab.id) else {
+            return
+        }
+        
+        _ = sessionStore.setOwnsNav(true, for: tab.id)
+        applyNavigationState(to: tab)
+        delegate?.tabManager(self, didUpdateTabAt: selectedTabIndex, reason: .navigationState)
+        loadURL(url, in: tab)
+    }
+    
+    func goForward() {
+        guard let tab = selectedTab else {
+            return
+        }
+        
+        let snapshot = sessionStore.loadSnapshot(for: tab.id)
+        if !snapshot.ownsNav && tab.sessionCanGoForward {
+            _ = sessionStore.nextURL(for: tab.id)
+            applyNavigationState(to: tab)
+            delegate?.tabManager(self, didUpdateTabAt: selectedTabIndex, reason: .navigationState)
+            tab.session.goForward()
+            return
+        }
+        
+        guard let url = sessionStore.nextURL(for: tab.id) else {
+            return
+        }
+        
+        _ = sessionStore.setOwnsNav(true, for: tab.id)
+        applyNavigationState(to: tab)
+        delegate?.tabManager(self, didUpdateTabAt: selectedTabIndex, reason: .navigationState)
+        loadURL(url, in: tab)
+    }
+    
     func replaceSession(with session: GeckoSession, url: String, title: String?) {
         guard let tab = selectedTab else {
             return
@@ -426,6 +516,11 @@ final class TabManagerImplementation: NSObject, TabManager {
         bindDelegates(to: session, for: tab)
         tab.session = session
         applyTransferredState(to: tab, url: url, title: title)
+        tab.sessionCanGoBack = false
+        tab.sessionCanGoForward = false
+        recordNavigation(url, for: tab)
+        _ = sessionStore.setOwnsNav(true, for: tab.id)
+        applyNavigationState(to: tab)
         session.setActive(true)
         session.setFocused(true)
         
@@ -606,6 +701,9 @@ extension TabManagerImplementation: NavigationDelegate {
         }
         
         tabs[index].url = url
+        if let url {
+            recordNavigation(url, for: tabs[index])
+        }
         tabs[index].pendingDisplayText = nil
         tabs[index].favicon = nil
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .location)
@@ -624,7 +722,8 @@ extension TabManagerImplementation: NavigationDelegate {
             return
         }
         
-        tabs[index].canGoBack = canGoBack
+        tabs[index].sessionCanGoBack = canGoBack
+        applyNavigationState(to: tabs[index])
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .navigationState)
     }
     
@@ -633,7 +732,8 @@ extension TabManagerImplementation: NavigationDelegate {
             return
         }
         
-        tabs[index].canGoForward = canGoForward
+        tabs[index].sessionCanGoForward = canGoForward
+        applyNavigationState(to: tabs[index])
         delegate?.tabManager(self, didUpdateTabAt: index, reason: .navigationState)
     }
     
@@ -658,6 +758,7 @@ extension TabManagerImplementation: NavigationDelegate {
         newTab.nowPlayingController = controller
         newTab.url = uri
         newTab.favicon = cachedFavicon(for: uri)
+        recordNavigation(uri, for: newTab)
         
         let insertionIndex = tabIndex(for: session).map { $0 + 1 }
         let index = min(max(insertionIndex ?? tabs.count, 0), tabs.count)

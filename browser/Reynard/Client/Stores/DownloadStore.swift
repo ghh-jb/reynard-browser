@@ -158,8 +158,12 @@ final class DownloadStore: NSObject {
             fatalError("Documents directory is unavailable")
         }
         
+        guard let applicationSupportDirectoryURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Application Support directory is unavailable")
+        }
+        
         let downloadsDirectoryURL = documentsDirectoryURL.appendingPathComponent("Downloads", isDirectory: true)
-        let appDataDirectoryURL = documentsDirectoryURL.appendingPathComponent("AppData", isDirectory: true)
+        let appDataDirectoryURL = applicationSupportDirectoryURL.appendingPathComponent("AppData", isDirectory: true)
         let manifestFileURL = appDataDirectoryURL.appendingPathComponent("DownloadStore", isDirectory: false)
         self.storage = StorageURLs(
             downloadsDirectoryURL: downloadsDirectoryURL,

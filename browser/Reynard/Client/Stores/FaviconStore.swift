@@ -95,8 +95,11 @@ final class FaviconStore {
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
         
-        let documentsDirectoryURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let directoryURL = documentsDirectoryURL
+        guard let applicationSupportDirectoryURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Application Support directory is unavailable")
+        }
+        
+        let directoryURL = applicationSupportDirectoryURL
             .appendingPathComponent("AppData", isDirectory: true)
             .appendingPathComponent("Favicons", isDirectory: true)
         

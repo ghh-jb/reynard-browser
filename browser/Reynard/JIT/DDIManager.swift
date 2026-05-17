@@ -11,7 +11,7 @@ final class DDIManager: NSObject {
     enum DDIError: LocalizedError {
         case alreadyInProgress
         case cancelled
-        case documentsDirectoryUnavailable
+        case appSupportDirUnavail
         case invalidRuntimeVersion
         case invalidRemoteURL
         
@@ -21,8 +21,8 @@ final class DDIManager: NSObject {
                 return "A Developer Disk Image download is already in progress."
             case .cancelled:
                 return "Developer Disk Image download was cancelled."
-            case .documentsDirectoryUnavailable:
-                return "Unable to access the app Documents directory."
+            case .appSupportDirUnavail:
+                return "Unable to access the app Application Support directory."
             case .invalidRuntimeVersion:
                 return "Unable to determine the iOS version needed for Developer Disk Image download."
             case .invalidRemoteURL:
@@ -323,11 +323,11 @@ final class DDIManager: NSObject {
     }
     
     private func ddiRootDirectoryURL() throws -> URL {
-        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            throw DDIError.documentsDirectoryUnavailable
+        guard let applicationSupportDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            throw DDIError.appSupportDirUnavail
         }
         
-        return documentsDirectory.appendingPathComponent("DDI", isDirectory: true)
+        return applicationSupportDirectory.appendingPathComponent("DDI", isDirectory: true)
     }
 }
 

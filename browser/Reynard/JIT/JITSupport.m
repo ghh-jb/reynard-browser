@@ -134,7 +134,7 @@ static void startHeartbeat(DeviceProvider *provider) {
             if (ffiError) {
                 idevice_error_free(ffiError);
                 break;
-            }    
+            }
         }
     });
 }
@@ -893,13 +893,13 @@ BOOL detachLegacyDebuggerSession(LegacyDebugConnection *connection, int32_t pid)
 // of the logic from there with only a few modifications here.
 
 static NSURL *ddiDirectoryURL(NSError **error) {
-    NSURL *documentsDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory inDomains:NSUserDomainMask].firstObject;
-    if (!documentsDirectory) {
+    NSURL *applicationSupportDirectory = [[NSFileManager defaultManager] URLsForDirectory:NSApplicationSupportDirectory inDomains:NSUserDomainMask].firstObject;
+    if (!applicationSupportDirectory) {
         if (error) *error = MakeError(DDIMountPathResolveFailed);
         return nil;
     }
     
-    return [documentsDirectory URLByAppendingPathComponent:@"DDI" isDirectory:YES];
+    return [applicationSupportDirectory URLByAppendingPathComponent:@"DDI" isDirectory:YES];
 }
 
 static NSData *ddiFileData(NSURL *ddiDirectory, NSString *fileName, NSError **error) {

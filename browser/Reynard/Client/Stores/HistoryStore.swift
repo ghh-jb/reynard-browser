@@ -44,11 +44,11 @@ final class HistoryStore {
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
         
-        guard let documentsDirectoryURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            fatalError("Documents directory is unavailable")
+        guard let applicationSupportDirectoryURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Application Support directory is unavailable")
         }
         
-        let directoryURL = documentsDirectoryURL
+        let directoryURL = applicationSupportDirectoryURL
             .appendingPathComponent("AppData", isDirectory: true)
             .appendingPathComponent("History", isDirectory: true)
         self.storage = StorageURLs(

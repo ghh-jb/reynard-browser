@@ -155,14 +155,6 @@ extension BrowserViewController: TabManagerDelegate {
             pendingExpandedIndex: pendingExpandedTabBarIndex
         )
         
-        if usesPadChrome {
-            browserUI.tabBar.centerSelectedTab(
-                selectedIndex: tabManager.selectedTabIndex,
-                isVisible: usesPadChrome && activeTabs.indices.contains(tabManager.selectedTabIndex),
-                animated: pendingSelectionAnimation
-            )
-        }
-        
         if isInFullscreenMedia,
            activeFullscreenSession !== selectedTab.session {
             applyFullscreenState(false, for: activeFullscreenSession)

@@ -17,6 +17,7 @@ final class TabOverviewCard: UICollectionViewCell {
     private let liftedShadowOpacity: Float = 0.18
     private let baseShadowRadius: CGFloat = 8
     private let liftedShadowRadius: CGFloat = 12
+    private let transitionSnapshotOutset: CGFloat = 18
     private let baseShadowOffset = CGSize(width: 0, height: 3)
     private let liftedShadowOffset = CGSize(width: 0, height: 6)
     
@@ -246,6 +247,39 @@ final class TabOverviewCard: UICollectionViewCell {
     
     func previewSnapshotView() -> UIView? {
         cardView.snapshotView(afterScreenUpdates: false)
+    }
+    
+    func transitionContentFrame(in targetView: UIView) -> CGRect {
+        layoutIfNeeded()
+        contentView.layoutIfNeeded()
+        let snapshotBounds = contentView.bounds.insetBy(dx: -transitionSnapshotOutset, dy: -transitionSnapshotOutset)
+        return contentView.convert(snapshotBounds, to: targetView)
+    }
+    
+    func transitionPreviewImageFrame(in targetView: UIView) -> CGRect {
+        layoutIfNeeded()
+        contentView.layoutIfNeeded()
+        return previewImageView.convert(previewImageView.bounds, to: targetView)
+    }
+    
+    func transitionSnapshotView() -> UIView? {
+        layoutIfNeeded()
+        contentView.layoutIfNeeded()
+        
+        let snapshotBounds = contentView.bounds.insetBy(dx: -transitionSnapshotOutset, dy: -transitionSnapshotOutset)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: snapshotBounds.size, format: format)
+        let image = renderer.image { context in
+            context.cgContext.translateBy(x: transitionSnapshotOutset, y: transitionSnapshotOutset)
+            contentView.layer.render(in: context.cgContext)
+        }
+        
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = .scaleToFill
+        imageView.clipsToBounds = false
+        return imageView
     }
     
     func setTransitionHidden(_ hidden: Bool) {

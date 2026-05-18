@@ -135,13 +135,4 @@ final class TabBar {
         
         collectionView.layoutIfNeeded()
     }
-    
-    func centerSelectedTab(selectedIndex: Int, isVisible: Bool, animated: Bool) {
-        guard isVisible, selectedIndex >= 0 else {
-            return
-        }
-        
-        let indexPath = IndexPath(item: selectedIndex, section: 0)
-        collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: animated)
-    }
 }

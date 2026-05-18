@@ -55,12 +55,13 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         }
         
         if let previousIndex,
-           controller.tabManager.tabs.indices.contains(previousIndex) {
-            controller.tabManager.tabs[previousIndex].session.setAddonTabActive(false)
+           (controller.tabManager.selectedTabMode == .private ? controller.tabManager.privateTabs : controller.tabManager.regularTabs).indices.contains(previousIndex) {
+            (controller.tabManager.selectedTabMode == .private ? controller.tabManager.privateTabs : controller.tabManager.regularTabs)[previousIndex].session.setAddonTabActive(false)
         }
         
-        if controller.tabManager.tabs.indices.contains(selectedIndex) {
-            controller.tabManager.tabs[selectedIndex].session.setAddonTabActive(true)
+        let activeTabs = controller.tabManager.selectedTabMode == .private ? controller.tabManager.privateTabs : controller.tabManager.regularTabs
+        if activeTabs.indices.contains(selectedIndex) {
+            activeTabs[selectedIndex].session.setAddonTabActive(true)
         }
     }
     
@@ -176,7 +177,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
                 selecting: true,
                 url: value,
                 windowId: nil,
-                at: self?.controller?.tabManager.tabs.count,
+                at: self?.controller?.tabManager.regularTabs.count,
                 loadURLInApp: true
             )
         }
@@ -333,12 +334,12 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
             return nil
         }
         
-        let tabIndex = controller.createTab(selecting: selecting, windowId: windowId, at: index)
-        guard controller.tabManager.tabs.indices.contains(tabIndex) else {
+        let tabIndex = controller.createTab(selecting: selecting, windowId: windowId, at: index, isPrivate: false)
+        guard controller.tabManager.regularTabs.indices.contains(tabIndex) else {
             return nil
         }
         
-        let tab = controller.tabManager.tabs[tabIndex]
+        let tab = controller.tabManager.regularTabs[tabIndex]
         if let url = url?.trimmingCharacters(in: .whitespacesAndNewlines),
            !url.isEmpty {
             if loadURLInApp {
@@ -347,7 +348,8 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
                 tab.pendingDisplayText = url
             }
             
-            if tabIndex == controller.tabManager.selectedTabIndex {
+            if tabIndex == controller.tabManager.selectedTabIndex,
+               controller.tabManager.selectedTabMode == .regular {
                 controller.refreshAddressBar()
             }
         }

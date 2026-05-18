@@ -153,8 +153,9 @@ extension BrowserViewController: AddressBarDelegate, PhoneToolbarDelegate {
     }
     
     private func activeTabBarHeight() -> CGFloat {
+        let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
         guard usesPadChrome,
-              tabManager.tabs.count > 1 else {
+              activeTabs.count > 1 else {
             return 0
         }
         
@@ -184,8 +185,9 @@ extension BrowserViewController: AddressBarDelegate, PhoneToolbarDelegate {
     }
     
     func captureThumbnail(for index: Int) {
+        let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
         guard !browserUI.geckoView.isHidden,
-              let tab = tabManager.tabs[safe: index],
+              let tab = activeTabs[safe: index],
               browserUI.geckoView.session === tab.session else {
             return
         }
@@ -415,10 +417,11 @@ final class BrowserUI {
         ui.topBar.barView.addSubview(ui.tabBar.collectionView)
         
         view.addSubview(ui.tabOverview.containerView)
-        ui.tabOverview.containerView.addSubview(ui.tabOverviewCollection.collectionView)
+        ui.tabOverview.containerView.addSubview(ui.tabOverviewCollection.privateTabsCollection)
+        ui.tabOverview.containerView.addSubview(ui.tabOverviewCollection.tabsCollection)
         ui.tabOverview.containerView.addSubview(ui.tabOverviewBottomBar.barView)
         ui.tabOverview.containerView.addSubview(ui.tabOverviewTopBar.barView)
-        ui.tabOverviewBarButtons.attach(to: ui.tabOverviewBottomBar.barView)
+        ui.tabOverviewBarButtons.attach(to: ui.tabOverviewBottomBar.barView, verticalPhoneMode: true)
         
         ui.geckoTopPhoneConstraint = ui.geckoView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
         ui.geckoTopPadConstraint = ui.geckoView.topAnchor.constraint(equalTo: ui.topBar.barView.bottomAnchor)
@@ -473,14 +476,18 @@ final class BrowserUI {
         
         ui.tabBar.heightConstraint = ui.tabBar.collectionView.heightAnchor.constraint(equalToConstant: 36)
         
-        ui.tabOverviewCollection.topPhoneConstraint = ui.tabOverviewCollection.collectionView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor)
-        ui.tabOverviewCollection.bottomPhoneConstraint = ui.tabOverviewCollection.collectionView.bottomAnchor.constraint(equalTo: ui.tabOverviewBottomBar.barView.topAnchor)
-        ui.tabOverviewCollection.topPadConstraint = ui.tabOverviewCollection.collectionView.topAnchor.constraint(equalTo: ui.tabOverviewTopBar.barView.bottomAnchor)
-        ui.tabOverviewCollection.bottomPadConstraint = ui.tabOverviewCollection.collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ui.tabOverviewCollection.topPhoneConstraint = ui.tabOverviewCollection.tabsCollection.topAnchor.constraint(equalTo: view.topAnchor)
+        ui.tabOverviewCollection.bottomPhoneConstraint = ui.tabOverviewCollection.tabsCollection.bottomAnchor.constraint(equalTo: ui.tabOverviewBottomBar.barView.topAnchor)
+        ui.tabOverviewCollection.topPadConstraint = ui.tabOverviewCollection.tabsCollection.topAnchor.constraint(equalTo: ui.tabOverviewTopBar.barView.bottomAnchor)
+        ui.tabOverviewCollection.bottomPadConstraint = ui.tabOverviewCollection.tabsCollection.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ui.tabOverviewCollection.privateTopPhoneConstraint = ui.tabOverviewCollection.privateTabsCollection.topAnchor.constraint(equalTo: view.topAnchor)
+        ui.tabOverviewCollection.privateBottomPhoneConstraint = ui.tabOverviewCollection.privateTabsCollection.bottomAnchor.constraint(equalTo: ui.tabOverviewBottomBar.barView.topAnchor)
+        ui.tabOverviewCollection.privateTopPadConstraint = ui.tabOverviewCollection.privateTabsCollection.topAnchor.constraint(equalTo: ui.tabOverviewTopBar.barView.bottomAnchor)
+        ui.tabOverviewCollection.privateBottomPadConstraint = ui.tabOverviewCollection.privateTabsCollection.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         
         ui.tabOverviewBottomBar.bottomConstraint = ui.tabOverviewBottomBar.barView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ui.tabOverviewBottomBar.heightConstraint = ui.tabOverviewBottomBar.barView.heightAnchor.constraint(equalToConstant: 108)
-        ui.tabOverviewTopBar.heightConstraint = ui.tabOverviewTopBar.barView.heightAnchor.constraint(equalToConstant: 108)
+        ui.tabOverviewBottomBar.heightConstraint = ui.tabOverviewBottomBar.barView.heightAnchor.constraint(equalToConstant: 144)
+        ui.tabOverviewTopBar.heightConstraint = ui.tabOverviewTopBar.barView.heightAnchor.constraint(equalToConstant: 76)
         
         NSLayoutConstraint.activate([
             ui.geckoLeadingPhoneConstraint,
@@ -548,10 +555,15 @@ final class BrowserUI {
             ui.tabOverview.containerView.topAnchor.constraint(equalTo: view.topAnchor),
             ui.tabOverview.containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
-            ui.tabOverviewCollection.collectionView.leadingAnchor.constraint(equalTo: ui.tabOverview.containerView.safeAreaLayoutGuide.leadingAnchor),
-            ui.tabOverviewCollection.collectionView.trailingAnchor.constraint(equalTo: ui.tabOverview.containerView.safeAreaLayoutGuide.trailingAnchor),
+            ui.tabOverviewCollection.tabsCollection.leadingAnchor.constraint(equalTo: ui.tabOverview.containerView.safeAreaLayoutGuide.leadingAnchor),
+            ui.tabOverviewCollection.tabsCollection.trailingAnchor.constraint(equalTo: ui.tabOverview.containerView.safeAreaLayoutGuide.trailingAnchor),
             ui.tabOverviewCollection.topPhoneConstraint,
             ui.tabOverviewCollection.bottomPhoneConstraint,
+            
+            ui.tabOverviewCollection.privateTabsCollection.leadingAnchor.constraint(equalTo: ui.tabOverview.containerView.safeAreaLayoutGuide.leadingAnchor),
+            ui.tabOverviewCollection.privateTabsCollection.trailingAnchor.constraint(equalTo: ui.tabOverview.containerView.safeAreaLayoutGuide.trailingAnchor),
+            ui.tabOverviewCollection.privateTopPhoneConstraint,
+            ui.tabOverviewCollection.privateBottomPhoneConstraint,
             
             ui.tabOverviewBottomBar.barView.leadingAnchor.constraint(equalTo: ui.tabOverview.containerView.leadingAnchor),
             ui.tabOverviewBottomBar.barView.trailingAnchor.constraint(equalTo: ui.tabOverview.containerView.trailingAnchor),
@@ -573,6 +585,8 @@ final class BrowserUI {
         ui.phoneToolbarCompactPadTopConstraint.isActive = false
         ui.tabOverviewCollection.topPadConstraint.isActive = false
         ui.tabOverviewCollection.bottomPadConstraint.isActive = false
+        ui.tabOverviewCollection.privateTopPadConstraint.isActive = false
+        ui.tabOverviewCollection.privateBottomPadConstraint.isActive = false
         ui.geckoBottomCompactPadConstraint.isActive = false
         ui.keyboardDismissButton.trailingPadConstraint.isActive = false
         ui.keyboardDismissButton.trailingCompactPadConstraint.isActive = false
@@ -600,6 +614,7 @@ final class BrowserUI {
         
         let layoutBlock = {
             self.controller.view.layoutIfNeeded()
+            self.controller.browserUI.tabOverviewCollection.applyTransforms()
             self.updatePhoneDismissKeyboardButtonShadowPath()
         }
         
@@ -669,8 +684,13 @@ final class BrowserUI {
         ui.tabOverviewCollection.bottomPhoneConstraint.isActive = phoneOverview
         ui.tabOverviewCollection.topPadConstraint.isActive = !phoneOverview
         ui.tabOverviewCollection.bottomPadConstraint.isActive = !phoneOverview
+        ui.tabOverviewCollection.privateTopPhoneConstraint.isActive = phoneOverview
+        ui.tabOverviewCollection.privateBottomPhoneConstraint.isActive = phoneOverview
+        ui.tabOverviewCollection.privateTopPadConstraint.isActive = !phoneOverview
+        ui.tabOverviewCollection.privateBottomPadConstraint.isActive = !phoneOverview
         
-        let showsTabBar = pad && !controller.tabOverviewPresentation.isVisible && controller.tabManager.tabs.count > 1 && (!controller.isPad ? Prefs.AppearanceSettings.showsLandscapeTabBar && isLandscape : true)
+        let activeTabs = controller.tabManager.selectedTabMode == .private ? controller.tabManager.privateTabs : controller.tabManager.regularTabs
+        let showsTabBar = pad && !controller.tabOverviewPresentation.isVisible && activeTabs.count > 1 && (!controller.isPad ? Prefs.AppearanceSettings.showsLandscapeTabBar && isLandscape : true)
         let showsCompactPadBottomToolbar = compactPad && !controller.tabOverviewPresentation.isVisible
         ui.topBar.barView.isHidden = !pad
         ui.topBar.safeAreaFillView.isHidden = !pad
@@ -687,7 +707,8 @@ final class BrowserUI {
         
         ui.tabOverviewTopBar.barView.isHidden = phoneOverview
         ui.tabOverviewBottomBar.barView.isHidden = !phoneOverview
-        ui.tabOverviewBarButtons.attach(to: phoneOverview ? ui.tabOverviewBottomBar.barView : ui.tabOverviewTopBar.barView)
+        ui.tabOverviewBarButtons.attach(to: phoneOverview ? ui.tabOverviewBottomBar.barView : ui.tabOverviewTopBar.barView, verticalPhoneMode: phoneOverview)
+        ui.tabOverviewBarButtons.setTabCount(controller.regularTabCount())
         ui.padTopBarButtons.updateLayout(isPadLayout: controller.isPad, showsCompactPadChrome: compactPad, sidebarVisible: controller.isLibrarySidebarVisible)
         ui.padTopBarButtons.leftStack.isHidden = compactPad
         ui.padTopBarButtons.rightStack.isHidden = compactPad
@@ -1148,26 +1169,112 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     }
     
     func usesExpandedTabBarWidth(for tab: Tab) -> Bool {
+        let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
         let selectedTabID = tabManager.selectedTab?.id
-        let pendingTabID = pendingExpandedTabBarIndex.flatMap { tabManager.tabs[safe: $0]?.id }
+        let pendingTabID = pendingExpandedTabBarIndex.flatMap { activeTabs[safe: $0]?.id }
         return tab.id == selectedTabID || tab.id == pendingTabID
+    }
+    
+    func overviewTabs(for mode: TabOverviewCollection.Mode) -> [Tab] {
+        switch mode {
+        case .privateTabs:
+            return tabManager.privateTabs
+        case .regularTabs:
+            return tabManager.regularTabs
+        }
+    }
+    
+    func overviewMode(for collectionView: UICollectionView) -> TabOverviewCollection.Mode? {
+        if collectionView === browserUI.tabOverviewCollection.privateTabsCollection {
+            return .privateTabs
+        }
+        
+        if collectionView === browserUI.tabOverviewCollection.tabsCollection {
+            return .regularTabs
+        }
+        
+        return nil
+    }
+    
+    func overviewItemIndex(forTabAt tabIndex: Int, mode: TabOverviewCollection.Mode? = nil) -> Int? {
+        let resolvedMode = mode ?? browserUI.tabOverviewCollection.mode
+        guard tabManager.selectedTabMode == (resolvedMode == .privateTabs ? .private : .regular),
+              (tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs).indices.contains(tabIndex) else {
+            return nil
+        }
+        return tabIndex
+    }
+    
+    func currentOverviewCollectionView() -> UICollectionView {
+        switch browserUI.tabOverviewCollection.mode {
+        case .privateTabs:
+            return browserUI.tabOverviewCollection.privateTabsCollection
+        case .regularTabs:
+            return browserUI.tabOverviewCollection.tabsCollection
+        }
+    }
+    
+    func regularTabCount() -> Int {
+        tabManager.regularTabs.count
+    }
+    
+    func restoreTabOverviewMode() {
+        let snapshot = TabManagementStore.shared.loadSnapshot()
+        let restoredMode: TabMode
+        if snapshot.selectedTabMode == .private,
+           !snapshot.privateTabs.isEmpty {
+            restoredMode = .private
+        } else if snapshot.selectedTabMode == .regular,
+                  !snapshot.regularTabs.isEmpty {
+            restoredMode = .regular
+        } else if !snapshot.regularTabs.isEmpty {
+            restoredMode = .regular
+        } else if !snapshot.privateTabs.isEmpty {
+            restoredMode = .private
+        } else {
+            restoredMode = .regular
+        }
+        
+        let mode: TabOverviewCollection.Mode = restoredMode == .private ? .privateTabs : .regularTabs
+        browserUI.tabOverviewBarButtons.modeControl.selectedSegmentIndex = mode.rawValue
+        browserUI.tabOverviewCollection.setMode(mode, in: browserUI.tabOverview.containerView, animated: false)
+        browserUI.tabOverviewBarButtons.setTabCount(regularTabCount())
     }
     
     func setTabOverviewVisible(_ visible: Bool, animated: Bool) {
         tabOverviewPresentation.setVisible(visible, animated: animated)
     }
     
+    @objc func tabOverviewModeChanged(_ segmentedControl: UISegmentedControl) {
+        let mode = TabOverviewCollection.Mode(rawValue: segmentedControl.selectedSegmentIndex) ?? .regularTabs
+        browserUI.tabOverviewCollection.setMode(mode, in: browserUI.tabOverview.containerView, animated: true)
+        TabManagementStore.shared.saveLastTabOverview(mode == .privateTabs ? .private : .regular)
+        browserUI.tabOverviewBarButtons.setTabCount(regularTabCount())
+    }
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        tabManager.tabs.count
+        if collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection {
+            let count = tabManager.privateTabs.count
+            collectionView.backgroundView?.isHidden = count != 0
+            return count
+        }
+        
+        if collectionView === self.browserUI.tabOverviewCollection.tabsCollection {
+            return tabManager.regularTabs.count
+        }
+        
+        return (tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs).count
     }
     
     func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
-        collectionView === self.browserUI.tabOverviewCollection.collectionView ||
+        collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
+        collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection ||
         collectionView === self.browserUI.tabBar.collectionView
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        if collectionView === self.browserUI.tabOverviewCollection.collectionView {
+        if collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
+            collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection {
             guard let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: TabOverviewCard.reuseIdentifier,
                 for: indexPath
@@ -1175,16 +1282,23 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
                 return UICollectionViewCell()
             }
             
-            let tab = self.tabManager.tabs[indexPath.item]
+            guard let mode = overviewMode(for: collectionView),
+                  overviewTabs(for: mode).indices.contains(indexPath.item) else {
+                return UICollectionViewCell()
+            }
+            
+            let tab = overviewTabs(for: mode)[indexPath.item]
             cell.configure(tab: tab)
             cell.onClose = { [weak self, weak collectionView, weak cell] in
                 guard let self,
                       let collectionView,
                       let cell,
-                      let currentIndexPath = collectionView.indexPath(for: cell) else {
+                      let currentIndexPath = collectionView.indexPath(for: cell),
+                      let overviewMode = self.overviewMode(for: collectionView) else {
                     return
                 }
-                self.closeTab(at: currentIndexPath.item)
+                self.pendingExpandedTabBarIndex = nil
+                self.tabManager.removeTab(at: currentIndexPath.item, mode: overviewMode == .privateTabs ? .private : .regular)
             }
             return cell
         }
@@ -1196,11 +1310,12 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
             return UICollectionViewCell()
         }
         
-        let tab = self.tabManager.tabs[indexPath.item]
+        let activeTabs = self.tabManager.selectedTabMode == .private ? self.tabManager.privateTabs : self.tabManager.regularTabs
+        let tab = activeTabs[indexPath.item]
         let metrics = self.browserUI.tabBar.layoutMetrics(
             for: indexPath.item,
             fallbackWidth: self.view.bounds.width,
-            tabCount: self.tabManager.tabs.count,
+            tabCount: activeTabs.count,
             usesExpandedWidth: { index in
                 self.usesExpandedTabBarWidthForLayoutIndex(index)
             }
@@ -1224,16 +1339,26 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if collectionView === self.browserUI.tabOverviewCollection.collectionView {
+        if collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
+            collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection {
+            guard let overviewMode = overviewMode(for: collectionView),
+                  overviewTabs(for: overviewMode).indices.contains(indexPath.item) else {
+                return
+            }
+            
             let previewImage: UIImage?
             if let cell = collectionView.cellForItem(at: indexPath) as? TabOverviewCard {
                 previewImage = cell.currentPreviewImage
             } else {
-                previewImage = self.tabManager.tabs[safe: indexPath.item]?.thumbnail
+                previewImage = overviewTabs(for: overviewMode)[safe: indexPath.item]?.thumbnail
             }
             
-            self.tabOverviewPresentation.prepareDismissSelection(to: indexPath.item, previewImage: previewImage)
-            self.browserUI.tabOverviewCollection.collectionView.reloadData()
+            self.tabOverviewPresentation.prepareDismissSelection(
+                to: indexPath.item,
+                mode: overviewMode == .privateTabs ? .private : .regular,
+                previewImage: previewImage
+            )
+            collectionView.reloadData()
             self.setTabOverviewVisible(false, animated: true)
             return
         }
@@ -1246,16 +1371,26 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
         moveItemAt sourceIndexPath: IndexPath,
         to destinationIndexPath: IndexPath
     ) {
-        guard collectionView === self.browserUI.tabOverviewCollection.collectionView ||
+        guard collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
+                collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection ||
                 collectionView === self.browserUI.tabBar.collectionView else {
             return
         }
         
-        self.moveTab(from: sourceIndexPath.item, to: destinationIndexPath.item)
+        guard let overviewMode = overviewMode(for: collectionView) else {
+            return
+        }
+        
+        self.tabManager.moveTab(
+            from: sourceIndexPath.item,
+            to: destinationIndexPath.item,
+            mode: overviewMode == .privateTabs ? .private : .regular
+        )
     }
     
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        guard collectionView === self.browserUI.tabOverviewCollection.collectionView,
+        guard (collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
+               collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection),
               let tabCell = cell as? TabOverviewCard else {
             return
         }
@@ -1268,7 +1403,8 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
         layout collectionViewLayout: UICollectionViewLayout,
         sizeForItemAt indexPath: IndexPath
     ) -> CGSize {
-        if collectionView === self.browserUI.tabOverviewCollection.collectionView {
+        if collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
+            collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection {
             return self.tabOverviewPresentation.itemSize(for: collectionView)
         }
         
@@ -1276,7 +1412,7 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
             let metrics = self.browserUI.tabBar.layoutMetrics(
                 for: indexPath.item,
                 fallbackWidth: self.view.bounds.width,
-                tabCount: self.tabManager.tabs.count,
+                tabCount: (self.tabManager.selectedTabMode == .private ? self.tabManager.privateTabs : self.tabManager.regularTabs).count,
                 usesExpandedWidth: { index in
                     self.usesExpandedTabBarWidthForLayoutIndex(index)
                 }
@@ -1284,7 +1420,12 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
             return CGSize(width: metrics.width, height: collectionView.bounds.height)
         }
         
-        let title = self.tabManager.tabs[indexPath.item].title
+        guard let overviewMode = overviewMode(for: collectionView),
+              overviewTabs(for: overviewMode).indices.contains(indexPath.item) else {
+            return CGSize(width: 120, height: 30)
+        }
+        
+        let title = overviewTabs(for: overviewMode)[indexPath.item].title
         let width = max(120, min(240, (title as NSString).size(withAttributes: [.font: UIFont.systemFont(ofSize: 14, weight: .medium)]).width + 52))
         return CGSize(width: width, height: 30)
     }
@@ -1295,19 +1436,20 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     }
     
     private func tabForCurrentTabBarLayout(at index: Int) -> Tab? {
-        guard self.tabManager.tabs.indices.contains(index) else {
+        let activeTabs = self.tabManager.selectedTabMode == .private ? self.tabManager.privateTabs : self.tabManager.regularTabs
+        guard activeTabs.indices.contains(index) else {
             return nil
         }
         
         guard let sourceIndex = activeTabBarReorderSourceIndex,
               let targetIndex = activeTabBarReorderTargetIndex,
-              self.tabManager.tabs.indices.contains(sourceIndex),
-              self.tabManager.tabs.indices.contains(targetIndex),
+              activeTabs.indices.contains(sourceIndex),
+              activeTabs.indices.contains(targetIndex),
               sourceIndex != targetIndex else {
-            return self.tabManager.tabs[index]
+            return activeTabs[index]
         }
         
-        var tabs = self.tabManager.tabs
+        var tabs = activeTabs
         let movedTab = tabs.remove(at: sourceIndex)
         tabs.insert(movedTab, at: targetIndex)
         return tabs[index]
@@ -1323,7 +1465,7 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     private func updateTabBarReorderTarget(at location: CGPoint, in collectionView: UICollectionView) {
         guard collectionView === self.browserUI.tabBar.collectionView,
               let targetIndex = collectionView.indexPathForItem(at: location)?.item,
-              self.tabManager.tabs.indices.contains(targetIndex),
+              (self.tabManager.selectedTabMode == .private ? self.tabManager.privateTabs : self.tabManager.regularTabs).indices.contains(targetIndex),
               activeTabBarReorderTargetIndex != targetIndex else {
             return
         }
@@ -1388,7 +1530,8 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let longPress = gestureRecognizer as? UILongPressGestureRecognizer,
               let collectionView = longPress.view as? UICollectionView,
-              collectionView === self.browserUI.tabOverviewCollection.collectionView ||
+              collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
+                collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection ||
                 collectionView === self.browserUI.tabBar.collectionView else {
             return true
         }
@@ -1411,7 +1554,8 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     
     @objc func handleOverviewReorderLongPress(_ gestureRecognizer: UILongPressGestureRecognizer) {
         guard let collectionView = gestureRecognizer.view as? UICollectionView,
-              collectionView === self.browserUI.tabOverviewCollection.collectionView ||
+              collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
+                collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection ||
                 collectionView === self.browserUI.tabBar.collectionView else {
             return
         }

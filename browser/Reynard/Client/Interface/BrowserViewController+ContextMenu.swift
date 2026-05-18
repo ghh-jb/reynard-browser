@@ -156,6 +156,7 @@ extension BrowserViewController: UIContextMenuInteractionDelegate {
         
         return LinkPreviewMenu.configuration(
             for: context,
+            isPrivate: tabManager.selectedTab?.isPrivate ?? false,
             onPreviewCreated: { [weak self] preview in
                 self?.contextMenuViewController = preview
             },
@@ -260,13 +261,15 @@ extension BrowserViewController: UIContextMenuInteractionDelegate {
         
         isCommittingContextMenu = true
         let selectedIndex = tabManager.selectedTabIndex
-        let insertionIndex = selectedIndex >= 0 ? selectedIndex + 1 : tabManager.tabs.count
+        let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
+        let insertionIndex = selectedIndex >= 0 ? selectedIndex + 1 : activeTabs.count
         tabManager.addTab(
             using: session,
             url: preview.pageURL,
             title: preview.pageTitle,
             selecting: true,
-            at: insertionIndex
+            at: insertionIndex,
+            isPrivate: tabManager.selectedTab?.isPrivate ?? false
         )
         contextMenuViewController = nil
     }

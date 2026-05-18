@@ -54,9 +54,28 @@ final class TabOverviewBarButtons {
         return toolbar
     }()
     
+    lazy var modeControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: ["Private", "0 Tabs"])
+        control.translatesAutoresizingMaskIntoConstraints = false
+        control.selectedSegmentIndex = TabOverviewCollection.Mode.regularTabs.rawValue
+        control.addTarget(controller, action: #selector(BrowserViewController.tabOverviewModeChanged(_:)), for: .valueChanged)
+        return control
+    }()
+    
     private var leadingConstraint: NSLayoutConstraint?
     private var trailingConstraint: NSLayoutConstraint?
+    private var widthConstraint: NSLayoutConstraint?
     private var centerYConstraint: NSLayoutConstraint?
+    private var centerYFromBottomConstraint: NSLayoutConstraint?
+    private var centerYFromTopConstraint: NSLayoutConstraint?
+    private var modeLeadingConstraint: NSLayoutConstraint?
+    private var modeTrailingConstraint: NSLayoutConstraint?
+    private var modeHeightConstraint: NSLayoutConstraint?
+    private var modeWidthConstraint: NSLayoutConstraint?
+    private var modeCenterYConstraint: NSLayoutConstraint?
+    private var modeTrailingToButtonsConstraint: NSLayoutConstraint?
+    private var modeBottomConstraint: NSLayoutConstraint?
+    private var modeTopConstraint: NSLayoutConstraint?
     
     private unowned let controller: BrowserViewController
     
@@ -73,31 +92,103 @@ final class TabOverviewBarButtons {
         ])
     }
     
-    func attach(to hostView: UIView) {
+    func attach(to hostView: UIView, verticalPhoneMode: Bool) {
         let controlsView = MakeButtons.hasLiquidGlass ? actionToolbar : actionStack
         
-        guard controlsView.superview !== hostView else {
-            return
-        }
-        
-        actionStack.removeFromSuperview()
-        actionToolbar.removeFromSuperview()
         NSLayoutConstraint.deactivate([
             leadingConstraint,
             trailingConstraint,
+            widthConstraint,
             centerYConstraint,
+            centerYFromBottomConstraint,
+            centerYFromTopConstraint,
+            modeLeadingConstraint,
+            modeTrailingConstraint,
+            modeHeightConstraint,
+            modeWidthConstraint,
+            modeCenterYConstraint,
+            modeTrailingToButtonsConstraint,
+            modeBottomConstraint,
+            modeTopConstraint,
         ].compactMap { $0 })
         
-        hostView.addSubview(controlsView)
+        actionStack.removeFromSuperview()
+        actionToolbar.removeFromSuperview()
+        modeControl.removeFromSuperview()
         
-        leadingConstraint = controlsView.leadingAnchor.constraint(equalTo: hostView.leadingAnchor, constant: 32)
-        trailingConstraint = controlsView.trailingAnchor.constraint(equalTo: hostView.trailingAnchor, constant: -32)
-        centerYConstraint = controlsView.centerYAnchor.constraint(equalTo: hostView.centerYAnchor)
+        leadingConstraint = nil
+        trailingConstraint = nil
+        widthConstraint = nil
+        centerYConstraint = nil
+        centerYFromBottomConstraint = nil
+        centerYFromTopConstraint = nil
+        modeLeadingConstraint = nil
+        modeTrailingConstraint = nil
+        modeHeightConstraint = nil
+        modeWidthConstraint = nil
+        modeCenterYConstraint = nil
+        modeTrailingToButtonsConstraint = nil
+        modeBottomConstraint = nil
+        modeTopConstraint = nil
+        
+        hostView.addSubview(controlsView)
+        hostView.addSubview(modeControl)
+        
+        modeLeadingConstraint = modeControl.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor, constant: 32)
+        modeHeightConstraint = modeControl.heightAnchor.constraint(equalToConstant: 32)
+        
+        if verticalPhoneMode {
+            actionStack.distribution = .equalSpacing
+            actionStack.spacing = 0
+            leadingConstraint = controlsView.leadingAnchor.constraint(equalTo: hostView.leadingAnchor, constant: 32)
+            trailingConstraint = controlsView.trailingAnchor.constraint(equalTo: hostView.trailingAnchor, constant: -32)
+            modeTrailingConstraint = modeControl.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor, constant: -32)
+            centerYFromBottomConstraint = controlsView.centerYAnchor.constraint(equalTo: hostView.bottomAnchor, constant: -54)
+            modeBottomConstraint = modeControl.bottomAnchor.constraint(equalTo: controlsView.topAnchor, constant: -18)
+        } else {
+            actionStack.distribution = .fill
+            actionStack.spacing = 10
+            trailingConstraint = controlsView.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor, constant: -32)
+            widthConstraint = controlsView.widthAnchor.constraint(equalToConstant: 146)
+            centerYFromTopConstraint = controlsView.centerYAnchor.constraint(equalTo: hostView.topAnchor, constant: 38)
+            modeCenterYConstraint = modeControl.centerYAnchor.constraint(equalTo: controlsView.centerYAnchor)
+            modeWidthConstraint = modeControl.widthAnchor.constraint(equalToConstant: 375)
+            modeWidthConstraint?.priority = .defaultHigh
+            modeTrailingToButtonsConstraint = modeControl.trailingAnchor.constraint(lessThanOrEqualTo: controlsView.leadingAnchor, constant: -16)
+        }
         
         NSLayoutConstraint.activate([
             leadingConstraint,
             trailingConstraint,
+            widthConstraint,
             centerYConstraint,
+            centerYFromBottomConstraint,
+            centerYFromTopConstraint,
+            modeLeadingConstraint,
+            modeTrailingConstraint,
+            modeHeightConstraint,
+            modeWidthConstraint,
+            modeCenterYConstraint,
+            modeTrailingToButtonsConstraint,
+            modeTopConstraint,
+            modeBottomConstraint,
         ].compactMap { $0 })
+    }
+    
+    func setTabCount(_ tabCount: Int) {
+        modeControl.setTitle("\(tabCount)" + (tabCount == 1 ? " Tab" : " Tabs"), forSegmentAt: TabOverviewCollection.Mode.regularTabs.rawValue)
+        
+        // Unrelated, too lazy to make a separate func
+        let hasVisibleTab: Bool
+        switch controller.browserUI.tabOverviewCollection.mode {
+        case .privateTabs:
+            hasVisibleTab = !controller.tabManager.privateTabs.isEmpty
+        case .regularTabs:
+            hasVisibleTab = !controller.tabManager.regularTabs.isEmpty
+        }
+        
+        doneButton.isEnabled = hasVisibleTab
+        doneButton.alpha = hasVisibleTab ? 1 : 0.35
+        doneBarButtonItem.isEnabled = hasVisibleTab
     }
 }

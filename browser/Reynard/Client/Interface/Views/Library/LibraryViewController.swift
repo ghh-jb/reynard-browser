@@ -9,10 +9,15 @@ import UIKit
 
 final class LibraryViewController: UITabBarController, UITabBarControllerDelegate, UINavigationControllerDelegate {
     private let initialSection: LibrarySection
+    private let isPrivateMode: Bool
     private let onClose: (() -> Void)?
+    private var visibleSections: [LibrarySection] {
+        isPrivateMode ? LibrarySection.allCases.filter { $0 != .history } : LibrarySection.allCases
+    }
     
-    init(initialSection: LibrarySection = .bookmarks, onClose: (() -> Void)? = nil) {
+    init(initialSection: LibrarySection = .bookmarks, isPrivateMode: Bool = false, onClose: (() -> Void)? = nil) {
         self.initialSection = initialSection
+        self.isPrivateMode = isPrivateMode
         self.onClose = onClose
         super.init(nibName: nil, bundle: nil)
     }
@@ -26,7 +31,8 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
         view.backgroundColor = .systemGroupedBackground
         delegate = self
         setViewControllers(makeSectionViewControllers(), animated: false)
-        selectedIndex = initialSection.rawValue
+        let selectedSection = visibleSections.contains(initialSection) ? initialSection : .bookmarks
+        selectedIndex = visibleSections.firstIndex(of: selectedSection) ?? 0
         LibraryTabBarStyle.apply(to: tabBar)
         if onClose != nil {
             navigationItem.rightBarButtonItem = makeCloseBarButtonItem()
@@ -45,7 +51,9 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
     }
     
     @objc private func applySettingsTabBadge() {
-        viewControllers?[LibrarySection.settings.rawValue].tabBarItem.badgeValue = ""
+        viewControllers?.first { viewController in
+            viewController.tabBarItem.tag == LibrarySection.settings.rawValue
+        }?.tabBarItem.badgeValue = ""
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -65,12 +73,18 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
     }
     
     private func makeSectionViewControllers() -> [UIViewController] {
-        [
-            makeSectionViewController(for: .bookmarks, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { BookmarksManagerView() })),
-            makeSectionViewController(for: .history, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { HistoryManagerView() })),
-            makeSectionViewController(for: .downloads, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { DownloadsManagerView() })),
-            makeSectionViewController(for: .settings, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { SettingsView() })),
-        ]
+        visibleSections.map { section in
+            switch section {
+            case .bookmarks:
+                return makeSectionViewController(for: section, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { BookmarksManagerView() }))
+            case .history:
+                return makeSectionViewController(for: section, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { HistoryManagerView() }))
+            case .downloads:
+                return makeSectionViewController(for: section, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { DownloadsManagerView() }))
+            case .settings:
+                return makeSectionViewController(for: section, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { SettingsView() }))
+            }
+        }
     }
     
     private func makeSectionViewController(for section: LibrarySection, contentViewController: UIViewController) -> UIViewController {
@@ -83,7 +97,8 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
     }
     
     private func updateNavigationTitle() {
-        guard let section = LibrarySection(rawValue: selectedIndex) else {
+        guard let tag = viewControllers?[safe: selectedIndex]?.tabBarItem.tag,
+              let section = LibrarySection(rawValue: tag) else {
             title = nil
             return
         }

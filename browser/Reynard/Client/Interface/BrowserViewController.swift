@@ -72,6 +72,7 @@ final class BrowserViewController: UIViewController {
         browserUI.configureLayout()
         browserUI.observeKeyboard()
         addressBarGestures.configureGestures()
+        restoreTabOverviewMode()
         syncBrowserNavigationChrome(animated: false)
         syncPadSidebarButtonItem()
         
@@ -130,7 +131,8 @@ final class BrowserViewController: UIViewController {
         syncPadSidebarButtonItem()
         refreshAddressBar()
         browserUI.applyChromeLayout(animated: false)
-        browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
+        browserUI.tabOverviewCollection.tabsCollection.collectionViewLayout.invalidateLayout()
+        browserUI.tabOverviewCollection.privateTabsCollection.collectionViewLayout.invalidateLayout()
         browserUI.tabBar.collectionView.collectionViewLayout.invalidateLayout()
         tabOverviewPresentation.refreshForCurrentOrientation()
     }
@@ -144,7 +146,8 @@ final class BrowserViewController: UIViewController {
         coordinator.animate { _ in
             self.syncBrowserNavigationChrome(animated: false)
             self.syncPadSidebarButtonItem()
-            self.browserUI.tabOverviewCollection.collectionView.collectionViewLayout.invalidateLayout()
+            self.browserUI.tabOverviewCollection.tabsCollection.collectionViewLayout.invalidateLayout()
+            self.browserUI.tabOverviewCollection.privateTabsCollection.collectionViewLayout.invalidateLayout()
             self.browserUI.tabBar.collectionView.collectionViewLayout.invalidateLayout()
         } completion: { _ in
             self.syncBrowserNavigationChrome(animated: false)
@@ -162,29 +165,30 @@ final class BrowserViewController: UIViewController {
     }
     
     @discardableResult
-    func createTab(selecting: Bool, windowId: String? = nil, at index: Int? = nil) -> Int {
-        let createdIndex = tabManager.addTab(selecting: selecting, windowId: windowId, at: index)
+    func createTab(selecting: Bool, windowId: String? = nil, at index: Int? = nil, isPrivate: Bool? = nil) -> Int {
+        let shouldCreatePrivate = isPrivate ?? (tabManager.selectedTabMode == .private)
+        let createdIndex = tabManager.addTab(selecting: selecting, windowId: windowId, at: index, isPrivate: shouldCreatePrivate)
         pendingExpandedTabBarIndex = selecting ? createdIndex : nil
         return createdIndex
     }
     
     func selectTab(at index: Int, animated: Bool) {
         pendingSelectionAnimation = animated
-        tabManager.selectTab(at: index)
+        tabManager.selectTab(at: index, mode: nil)
     }
     
     func moveTab(from sourceIndex: Int, to destinationIndex: Int) {
-        tabManager.moveTab(from: sourceIndex, to: destinationIndex)
+        tabManager.moveTab(from: sourceIndex, to: destinationIndex, mode: nil)
     }
     
     func closeTab(at index: Int) {
         pendingExpandedTabBarIndex = nil
-        tabManager.removeTab(at: index)
+        tabManager.removeTab(at: index, mode: nil)
     }
     
     func clearAllTabs() {
         pendingExpandedTabBarIndex = nil
-        tabManager.removeAllTabs()
+        tabManager.removeAllTabs(mode: nil)
     }
     
     func browse(to term: String) {
@@ -203,16 +207,17 @@ final class BrowserViewController: UIViewController {
     }
     
     private func prepareTabForExternalLoad() {
-        guard !tabManager.tabs.isEmpty else {
-            tabManager.createInitialTab()
+        let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
+        guard !activeTabs.isEmpty else {
+            _ = createTab(selecting: true, at: 0)
             return
         }
         
-        if tabManager.tabs.count == 1 && tabManager.tabs[0].url == nil {
+        if activeTabs.count == 1 && activeTabs[0].url == nil {
             return
         }
         
-        _ = createTab(selecting: true, at: tabManager.tabs.count)
+        _ = createTab(selecting: true, at: activeTabs.count)
     }
     
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {

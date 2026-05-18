@@ -11,9 +11,18 @@ import UIKit
 final class TabManagementStore {
     static let shared = TabManagementStore()
     
+    enum LastTabOverview: String, Codable {
+        case regular
+        case `private`
+    }
+    
     struct Snapshot {
-        let tabs: [TabSnapshot]
-        let selectedTabID: UUID?
+        let regularTabs: [TabSnapshot]
+        let privateTabs: [TabSnapshot]
+        let selectedRegularTabID: UUID?
+        let selectedPrivateTabID: UUID?
+        let selectedTabMode: TabMode
+        let lastTabOverview: LastTabOverview
     }
     
     struct TabSnapshot {
@@ -21,6 +30,7 @@ final class TabManagementStore {
         let title: String
         let url: String?
         let thumbnail: UIImage?
+        let isPrivate: Bool
     }
     
     private struct StorageURLs {
@@ -30,8 +40,12 @@ final class TabManagementStore {
     }
     
     private struct PersistedState: Codable {
-        let selectedTabID: UUID?
-        let tabs: [PersistedTab]
+        let regularTabs: [PersistedTab]
+        let privateTabs: [PersistedTab]
+        let selectedRegularTabID: UUID?
+        let selectedPrivateTabID: UUID?
+        let selectedTabMode: TabMode
+        let lastTabOverview: LastTabOverview
     }
     
     private struct PersistedTab: Codable {
@@ -43,7 +57,14 @@ final class TabManagementStore {
     private let fileManager: FileManager
     private let storage: StorageURLs
     private let stateQueue = DispatchQueue(label: "com.minh-ton.tab-management-store", qos: .userInitiated)
-    private var persistedState = PersistedState(selectedTabID: nil, tabs: [])
+    private var persistedState = PersistedState(
+        regularTabs: [],
+        privateTabs: [],
+        selectedRegularTabID: nil,
+        selectedPrivateTabID: nil,
+        selectedTabMode: .regular,
+        lastTabOverview: .regular
+    )
     
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -72,28 +93,55 @@ final class TabManagementStore {
     func loadSnapshot() -> Snapshot {
         stateQueue.sync {
             Snapshot(
-                tabs: persistedState.tabs.map {
-                    TabSnapshot(
-                        id: $0.id,
-                        title: $0.title,
-                        url: $0.url,
-                        thumbnail: loadThumbnailLocked(for: $0.id)
-                    )
-                },
-                selectedTabID: persistedState.selectedTabID
+                regularTabs: persistedState.regularTabs.map { tabSnapshot(from: $0, isPrivate: false) },
+                privateTabs: persistedState.privateTabs.map { tabSnapshot(from: $0, isPrivate: true) },
+                selectedRegularTabID: persistedState.selectedRegularTabID,
+                selectedPrivateTabID: persistedState.selectedPrivateTabID,
+                selectedTabMode: persistedState.selectedTabMode,
+                lastTabOverview: persistedState.lastTabOverview
             )
         }
     }
     
-    func saveTabs(_ tabs: [Tab], selectedTabID: UUID?) {
-        let persistedTabs = tabs.map {
+    func saveTabs(
+        regularTabs: [Tab],
+        privateTabs: [Tab],
+        selectedRegularTabID: UUID?,
+        selectedPrivateTabID: UUID?,
+        selectedTabMode: TabMode
+    ) {
+        let persistedRegularTabs = regularTabs.map {
+            PersistedTab(id: $0.id, title: $0.title, url: $0.url)
+        }
+        let persistedPrivateTabs = privateTabs.map {
             PersistedTab(id: $0.id, title: $0.title, url: $0.url)
         }
         
         stateQueue.async {
-            self.persistedState = PersistedState(selectedTabID: selectedTabID, tabs: persistedTabs)
+            self.persistedState = PersistedState(
+                regularTabs: persistedRegularTabs,
+                privateTabs: persistedPrivateTabs,
+                selectedRegularTabID: selectedRegularTabID,
+                selectedPrivateTabID: selectedPrivateTabID,
+                selectedTabMode: selectedTabMode,
+                lastTabOverview: self.persistedState.lastTabOverview
+            )
             self.savePersistedStateLocked()
-            self.pruneThumbCacheLocked(validTabIDs: Set(persistedTabs.map(\.id)))
+            self.pruneThumbCacheLocked(validTabIDs: Set((persistedRegularTabs + persistedPrivateTabs).map(\.id)))
+        }
+    }
+    
+    func saveLastTabOverview(_ lastTabOverview: LastTabOverview) {
+        stateQueue.async {
+            self.persistedState = PersistedState(
+                regularTabs: self.persistedState.regularTabs,
+                privateTabs: self.persistedState.privateTabs,
+                selectedRegularTabID: self.persistedState.selectedRegularTabID,
+                selectedPrivateTabID: self.persistedState.selectedPrivateTabID,
+                selectedTabMode: self.persistedState.selectedTabMode,
+                lastTabOverview: lastTabOverview
+            )
+            self.savePersistedStateLocked()
         }
     }
     
@@ -124,7 +172,14 @@ final class TabManagementStore {
             return
         }
         
-        let emptyState = PersistedState(selectedTabID: nil, tabs: [])
+        let emptyState = PersistedState(
+            regularTabs: [],
+            privateTabs: [],
+            selectedRegularTabID: nil,
+            selectedPrivateTabID: nil,
+            selectedTabMode: .regular,
+            lastTabOverview: .regular
+        )
         guard let data = try? JSONEncoder().encode(emptyState) else {
             return
         }
@@ -134,7 +189,14 @@ final class TabManagementStore {
     
     private func loadPersistedStateLocked() {
         guard let data = try? Data(contentsOf: storage.manifestFileURL) else {
-            persistedState = PersistedState(selectedTabID: nil, tabs: [])
+            persistedState = PersistedState(
+                regularTabs: [],
+                privateTabs: [],
+                selectedRegularTabID: nil,
+                selectedPrivateTabID: nil,
+                selectedTabMode: .regular,
+                lastTabOverview: .regular
+            )
             return
         }
         
@@ -143,7 +205,14 @@ final class TabManagementStore {
             return
         }
         
-        persistedState = PersistedState(selectedTabID: nil, tabs: [])
+        persistedState = PersistedState(
+            regularTabs: [],
+            privateTabs: [],
+            selectedRegularTabID: nil,
+            selectedPrivateTabID: nil,
+            selectedTabMode: .regular,
+            lastTabOverview: .regular
+        )
         savePersistedStateLocked()
     }
     
@@ -161,6 +230,16 @@ final class TabManagementStore {
         }
         
         return UIImage(data: data)
+    }
+    
+    private func tabSnapshot(from persistedTab: PersistedTab, isPrivate: Bool) -> TabSnapshot {
+        TabSnapshot(
+            id: persistedTab.id,
+            title: persistedTab.title,
+            url: persistedTab.url,
+            thumbnail: loadThumbnailLocked(for: persistedTab.id),
+            isPrivate: isPrivate
+        )
     }
     
     private func pruneThumbCacheLocked(validTabIDs: Set<UUID>) {

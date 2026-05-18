@@ -13,9 +13,11 @@ final class Tab {
     var session: GeckoSession
     var title: String
     var url: String?
+    var isPrivate: Bool
     var favicon: UIImage?
     var pendingRestoreURL: String?
     var pendingDisplayText: String?
+    var selectionOrder = 0
     var suppressInitialNavigation = true
     var sessionCanGoBack = false
     var sessionCanGoForward = false
@@ -32,7 +34,8 @@ final class Tab {
         title: String = "",
         url: String? = nil,
         favicon: UIImage? = nil,
-        thumbnail: UIImage? = nil
+        thumbnail: UIImage? = nil,
+        isPrivate: Bool = false
     ) {
         self.id = id
         self.session = session
@@ -40,5 +43,6 @@ final class Tab {
         self.url = url
         self.favicon = favicon
         self.thumbnail = thumbnail
+        self.isPrivate = isPrivate
     }
 }

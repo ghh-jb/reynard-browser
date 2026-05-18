@@ -29,7 +29,7 @@ extension BrowserViewController {
         }
     }
     func presentMenuSheet(initialSection: LibrarySection = .bookmarks) {
-        let viewController = LibraryViewController(initialSection: initialSection) { [weak self] in
+        let viewController = LibraryViewController(initialSection: initialSection, isPrivateMode: tabManager.selectedTab?.isPrivate == true) { [weak self] in
             self?.dismiss(animated: true)
         }
         let navigationController = UINavigationController(rootViewController: viewController)
@@ -69,8 +69,12 @@ extension BrowserViewController {
     }
     
     func createNewTab() {
-        _ = createTab(selecting: true)
-        setTabOverviewVisible(false, animated: true)
+        if tabOverviewPresentation.isVisible {
+            _ = createTab(selecting: true, isPrivate: browserUI.tabOverviewCollection.mode == .privateTabs)
+        } else {
+            _ = createTab(selecting: true)
+            setTabOverviewVisible(false, animated: true)
+        }
     }
     
     func dismissKeyboard() {
@@ -126,6 +130,27 @@ extension BrowserViewController {
     }
     
     @objc func doneTapped() {
+        if tabOverviewPresentation.isVisible {
+            let targetMode: TabMode = browserUI.tabOverviewCollection.mode == .privateTabs ? .private : .regular
+            let targetTabs = targetMode == .private ? tabManager.privateTabs : tabManager.regularTabs
+            guard !targetTabs.isEmpty else {
+                return
+            }
+            
+            if tabManager.selectedTabMode != targetMode {
+                var tabIndex: Int?
+                for index in targetTabs.indices {
+                    if tabIndex == nil || targetTabs[index].selectionOrder >= targetTabs[tabIndex!].selectionOrder {
+                        tabIndex = index
+                    }
+                }
+                
+                if let tabIndex {
+                    pendingSelectionAnimation = false
+                    tabManager.selectTab(at: tabIndex, mode: targetMode)
+                }
+            }
+        }
         hideTabOverview()
     }
     
@@ -134,6 +159,20 @@ extension BrowserViewController {
     }
     
     @objc func clearAllTabsTapped() {
+        if tabOverviewPresentation.isVisible,
+           browserUI.tabOverviewCollection.mode == .privateTabs {
+            pendingExpandedTabBarIndex = nil
+            tabManager.removeAllTabs(mode: .private)
+            return
+        }
+        
+        if tabOverviewPresentation.isVisible,
+           browserUI.tabOverviewCollection.mode == .regularTabs {
+            pendingExpandedTabBarIndex = nil
+            tabManager.removeAllTabs(mode: .regular)
+            return
+        }
+        
         clearAllTabs()
     }
     

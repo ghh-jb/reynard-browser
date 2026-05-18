@@ -11,6 +11,7 @@ import UIKit
 enum LinkPreviewMenu {
     static func configuration(
         for context: ContextMenuContext,
+        isPrivate: Bool,
         onPreviewCreated: @escaping (LinkPreviewViewController) -> Void,
         openInNewTab: @escaping () -> Void,
         shareLink: @escaping (URL) -> Void
@@ -20,7 +21,7 @@ enum LinkPreviewMenu {
         }
         
         return UIContextMenuConfiguration(identifier: url as NSURL) { [url] in
-            let viewController = LinkPreviewViewController(url: url)
+            let viewController = LinkPreviewViewController(url: url, isPrivate: isPrivate)
             onPreviewCreated(viewController)
             return viewController
         } actionProvider: { _ in
@@ -57,11 +58,12 @@ final class LinkPreviewViewController: UIViewController, ContentDelegate, Naviga
     private let geckoView = GeckoView()
     private var hasClosedSession = false
     
-    init(url: URL) {
+    init(url: URL, isPrivate: Bool) {
         pageURL = url.absoluteString
         super.init(nibName: nil, bundle: nil)
         preferredContentSize = CGSize(width: 340, height: 480)
         session = GeckoSession()
+        session?.isPrivateMode = isPrivate
         session?.contentDelegate = self
         session?.navigationDelegate = self
     }

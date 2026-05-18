@@ -258,11 +258,12 @@ final class AddressBarGestures: NSObject {
         }
         
         if horizontalTargetIndex == nil {
+            let activeTabs = controller.tabManager.selectedTabMode == .private ? controller.tabManager.privateTabs : controller.tabManager.regularTabs
             let candidate = controller.tabManager.selectedTabIndex + direction
-            if controller.tabManager.tabs.indices.contains(candidate) {
+            if activeTabs.indices.contains(candidate) {
                 horizontalTargetIndex = candidate
                 
-                let targetTab = controller.tabManager.tabs[candidate]
+                let targetTab = activeTabs[candidate]
                 
                 let targetContent = createContentPreview(for: targetTab)
                 targetContent.frame = controller.browserUI.geckoView.frame.offsetBy(dx: CGFloat(direction) * controller.browserUI.geckoView.bounds.width, dy: 0)
@@ -299,7 +300,7 @@ final class AddressBarGestures: NSObject {
         let shouldSwitch = horizontalTargetIndex != nil && (abs(translationX) > width * 0.28 || abs(velocityX) > 700)
         let shouldCreateNewTab = !controller.usesPadChrome
         && horizontalTargetIndex == nil
-        && controller.tabManager.selectedTabIndex == controller.tabManager.tabs.count - 1
+        && controller.tabManager.selectedTabIndex == (controller.tabManager.selectedTabMode == .private ? controller.tabManager.privateTabs : controller.tabManager.regularTabs).count - 1
         && horizontalDirection == 1
         && (abs(translationX) > width * 0.28 || velocityX < -700)
         

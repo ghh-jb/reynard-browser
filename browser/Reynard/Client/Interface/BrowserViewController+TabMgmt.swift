@@ -87,8 +87,9 @@ extension BrowserViewController {
 
 extension BrowserViewController: TabManagerDelegate {
     func tabManagerDidChangeTabs(_ tabManager: TabManager) {
+        let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
         if let pendingExpandedTabBarIndex,
-           !tabManager.tabs.indices.contains(pendingExpandedTabBarIndex) {
+           !activeTabs.indices.contains(pendingExpandedTabBarIndex) {
             self.pendingExpandedTabBarIndex = nil
         }
         
@@ -101,28 +102,36 @@ extension BrowserViewController: TabManagerDelegate {
         }
         refreshAddressBar()
         
-        browserUI.tabOverviewCollection.collectionView.reloadData()
+        if !tabOverviewPresentation.isVisible {
+            let overviewMode: TabOverviewCollection.Mode = tabManager.selectedTabMode == .private ? .privateTabs : .regularTabs
+            browserUI.tabOverviewBarButtons.modeControl.selectedSegmentIndex = overviewMode.rawValue
+            browserUI.tabOverviewCollection.setMode(overviewMode, in: browserUI.tabOverview.containerView, animated: false)
+        }
+        browserUI.tabOverviewBarButtons.setTabCount(regularTabCount())
+        browserUI.tabOverviewCollection.tabsCollection.reloadData()
+        browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
         browserUI.tabBar.collectionView.reloadData()
         browserUI.applyChromeLayout(animated: false)
         browserUI.tabBar.refreshLayout(
             fallbackWidth: view.bounds.width,
-            tabCount: tabManager.tabs.count,
+            tabCount: activeTabs.count,
             selectedIndex: tabManager.selectedTabIndex,
             pendingExpandedIndex: pendingExpandedTabBarIndex
         )
     }
     
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?) {
+        let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
         pendingExpandedTabBarIndex = nil
         if let previousIndex {
             captureThumbnail(for: previousIndex)
         }
         
-        guard tabManager.tabs.indices.contains(index) else {
+        guard activeTabs.indices.contains(index) else {
             return
         }
         
-        let selectedTab = tabManager.tabs[index]
+        let selectedTab = activeTabs[index]
         browserUI.geckoView.session = selectedTab.session
         addonsController.handleTabSelectionChange(selectedIndex: index, previousIndex: previousIndex)
         
@@ -130,11 +139,18 @@ extension BrowserViewController: TabManagerDelegate {
         refreshAddressBar()
         
         updateNavigationButtons()
-        browserUI.tabOverviewCollection.collectionView.reloadData()
+        if !tabOverviewPresentation.isVisible {
+            let overviewMode: TabOverviewCollection.Mode = tabManager.selectedTabMode == .private ? .privateTabs : .regularTabs
+            browserUI.tabOverviewBarButtons.modeControl.selectedSegmentIndex = overviewMode.rawValue
+            browserUI.tabOverviewCollection.setMode(overviewMode, in: browserUI.tabOverview.containerView, animated: false)
+        }
+        browserUI.tabOverviewBarButtons.setTabCount(regularTabCount())
+        browserUI.tabOverviewCollection.tabsCollection.reloadData()
+        browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
         browserUI.tabBar.collectionView.reloadData()
         browserUI.tabBar.refreshLayout(
             fallbackWidth: view.bounds.width,
-            tabCount: tabManager.tabs.count,
+            tabCount: activeTabs.count,
             selectedIndex: tabManager.selectedTabIndex,
             pendingExpandedIndex: pendingExpandedTabBarIndex
         )
@@ -142,7 +158,7 @@ extension BrowserViewController: TabManagerDelegate {
         if usesPadChrome {
             browserUI.tabBar.centerSelectedTab(
                 selectedIndex: tabManager.selectedTabIndex,
-                isVisible: usesPadChrome && tabManager.tabs.indices.contains(tabManager.selectedTabIndex),
+                isVisible: usesPadChrome && activeTabs.indices.contains(tabManager.selectedTabIndex),
                 animated: pendingSelectionAnimation
             )
         }
@@ -182,14 +198,19 @@ extension BrowserViewController: TabManagerDelegate {
     }
     
     func tabManager(_ tabManager: TabManager, didUpdateTabAt index: Int, reason: TabManagerUpdateReason) {
-        guard tabManager.tabs.indices.contains(index) else {
+        let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
+        guard activeTabs.indices.contains(index) else {
             return
         }
         
         switch reason {
         case .title:
+            if index == tabManager.selectedTabIndex {
+                refreshAddressBar()
+            }
             browserUI.tabBar.collectionView.reloadData()
-            browserUI.tabOverviewCollection.collectionView.reloadData()
+            browserUI.tabOverviewCollection.tabsCollection.reloadData()
+            browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
             
         case .location:
             if index == tabManager.selectedTabIndex {
@@ -199,7 +220,8 @@ extension BrowserViewController: TabManagerDelegate {
             
         case .favicon:
             browserUI.tabBar.collectionView.reloadData()
-            browserUI.tabOverviewCollection.collectionView.reloadData()
+            browserUI.tabOverviewCollection.tabsCollection.reloadData()
+            browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
             
         case .navigationState:
             if index == tabManager.selectedTabIndex {
@@ -208,7 +230,7 @@ extension BrowserViewController: TabManagerDelegate {
             
         case .loading:
             if index == tabManager.selectedTabIndex {
-                let tab = tabManager.tabs[index]
+                let tab = activeTabs[index]
                 syncAddressBarLoadingState(progress: tab.progress, isLoading: tab.isLoading)
             }
             
@@ -216,17 +238,19 @@ extension BrowserViewController: TabManagerDelegate {
             if index == tabManager.selectedTabIndex {
                 captureThumbnail(for: index)
             }
-            browserUI.tabOverviewCollection.collectionView.reloadData()
+            browserUI.tabOverviewCollection.tabsCollection.reloadData()
+            browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
         }
     }
     
     func tabManager(_ tabManager: TabManager, animateNewTabSelectionAt index: Int, completion: @escaping () -> Void) {
-        guard tabManager.tabs.indices.contains(index) else {
+        let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
+        guard activeTabs.indices.contains(index) else {
             completion()
             return
         }
         
-        addressBarGestures.animateAutomaticNewTabTransition(to: tabManager.tabs[index], completion: completion)
+        addressBarGestures.animateAutomaticNewTabTransition(to: activeTabs[index], completion: completion)
     }
     
     func tabManager(_ tabManager: TabManager, didRequestDownload download: DownloadStore.PendingDownload) {

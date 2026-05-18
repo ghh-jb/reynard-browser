@@ -18,6 +18,7 @@ public class GeckoSession {
     var window: GeckoViewWindow?
     var id: String?
     public var isAddonPopup = false
+    public var isPrivateMode = false
     lazy var addonSessionListener = AddonSessionListener(session: self)
     public var userAgentOverride: String?
     
@@ -116,7 +117,7 @@ public class GeckoSession {
                 "settings": settings,
                 "modules": modules,
             ],
-            false
+            isPrivateMode
         )
     }
     

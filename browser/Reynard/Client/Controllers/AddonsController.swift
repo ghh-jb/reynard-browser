@@ -65,12 +65,16 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         }
     }
     
+    private var addonsInMenu: [Addon] {
+        AddonsRuntime.shared.installedAddons.filter { $0.metaData.allowedInPrivateBrowsing }
+    }
+    
     func visibleMenuItemsForCurrentSite() -> [AddonMenuItem] {
         guard let session = currentSession() else {
             return []
         }
         
-        return AddonsRuntime.shared.installedAddons
+        return addonsInMenu
             .filter { addon in
                 visibleActions(for: addon, session: session).isEmpty == false
             }
@@ -448,7 +452,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
             return
         }
         
-        AddonsRuntime.shared.installedAddons
+        addonsInMenu
             .filter { addon in
                 visibleActions(for: addon, session: session).isEmpty == false
             }

@@ -422,6 +422,13 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
         )
     }
     
+    public func setAllowedInPrivateBrowsing(_ addon: Addon, allowed: Bool) async throws -> Addon {
+        try await mutateAddon(
+            type: "GeckoView:WebExtension:SetPBAllowed",
+            message: ["extensionId": addon.id, "allowed": allowed]
+        )
+    }
+    
     public func uninstall(_ addon: Addon) async throws {
         _ = try await GeckoEventDispatcherWrapper.runtimeInstance.query(
             type: "GeckoView:WebExtension:Uninstall",

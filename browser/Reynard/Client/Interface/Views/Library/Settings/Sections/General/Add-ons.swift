@@ -205,6 +205,7 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
     
     private enum ActionRow: Int {
         case enabled
+        case privateBrowsing
         case options
         case remove
     }
@@ -217,10 +218,11 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
     
     private let addonID: String
     private let enableSwitch = UISwitch()
+    private let privateBrowsingSwitch = UISwitch()
     private var addon: Addon?
     
     private var actionRows: [ActionRow] {
-        var rows: [ActionRow] = [.enabled]
+        var rows: [ActionRow] = [.enabled, .privateBrowsing]
         if optionsPageURL != nil {
             rows.append(.options)
         }
@@ -271,6 +273,8 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
         super.viewDidLoad()
         enableSwitch.isEnabled = false
         enableSwitch.addTarget(self, action: #selector(enableSwitchChanged(_:)), for: .valueChanged)
+        privateBrowsingSwitch.isEnabled = false
+        privateBrowsingSwitch.addTarget(self, action: #selector(privateBrowsingSwitchChanged(_:)), for: .valueChanged)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -316,7 +320,7 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
         let row = actionRows[indexPath.row]
         
         switch row {
-        case .enabled:
+        case .enabled, .privateBrowsing:
             return
         case .options:
             guard let optionsPageURL else {
@@ -339,6 +343,36 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
             return informationRows.isEmpty ? nil : "Information"
         case nil:
             return nil
+        }
+    }
+    
+    @objc private func privateBrowsingSwitchChanged(_ sender: UISwitch) {
+        let desiredState = sender.isOn
+        sender.isEnabled = false
+        
+        Task { [weak self] in
+            guard let self, let addon = self.addon else {
+                await MainActor.run {
+                    sender.setOn(!desiredState, animated: true)
+                    sender.isEnabled = true
+                }
+                return
+            }
+            
+            do {
+                let updatedAddon = try await AddonsRuntime.shared.setAllowedInPrivateBrowsing(addon, allowed: desiredState)
+                
+                await MainActor.run {
+                    self.apply(addon: updatedAddon)
+                    sender.isEnabled = true
+                }
+            } catch {
+                await MainActor.run {
+                    sender.setOn(!desiredState, animated: true)
+                    sender.isEnabled = true
+                    self.presentAlert(title: "Failed to update private browsing access", message: "\(error)")
+                }
+            }
         }
     }
     
@@ -397,6 +431,8 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
         title = addon.metaData.name ?? addon.id
         enableSwitch.isOn = addon.metaData.enabled
         enableSwitch.isEnabled = true
+        privateBrowsingSwitch.isOn = addon.metaData.allowedInPrivateBrowsing
+        privateBrowsingSwitch.isEnabled = true
         tableView.reloadData()
     }
     
@@ -414,6 +450,10 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
             cell.textLabel?.text = "Enabled"
             cell.selectionStyle = .none
             cell.accessoryView = enableSwitch
+        case .privateBrowsing:
+            cell.textLabel?.text = "Allow in Private Browsing"
+            cell.selectionStyle = .none
+            cell.accessoryView = privateBrowsingSwitch
         case .options:
             cell.textLabel?.text = "Add-on Settings"
             cell.textLabel?.textColor = view.tintColor

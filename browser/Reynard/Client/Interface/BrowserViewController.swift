@@ -74,7 +74,7 @@ final class BrowserViewController: UIViewController {
         addressBarGestures.configureGestures()
         restoreTabOverviewMode()
         syncBrowserNavigationChrome(animated: false)
-        syncPadSidebarButtonItem()
+        syncSidebarButtonItem()
         
         if AppUpdates.shared.hasUpdate {
             applyUpdateMenuButtonBadge()
@@ -116,7 +116,7 @@ final class BrowserViewController: UIViewController {
             return
         }
         syncBrowserNavigationChrome(animated: false)
-        syncPadSidebarButtonItem()
+        syncSidebarButtonItem()
         syncDownloadButtonState()
         browserUI.applyChromeLayout(animated: false)
     }
@@ -128,7 +128,7 @@ final class BrowserViewController: UIViewController {
             return
         }
         syncBrowserNavigationChrome(animated: false)
-        syncPadSidebarButtonItem()
+        syncSidebarButtonItem()
         refreshAddressBar()
         browserUI.applyChromeLayout(animated: false)
         browserUI.tabOverviewCollection.tabsCollection.collectionViewLayout.invalidateLayout()
@@ -145,13 +145,13 @@ final class BrowserViewController: UIViewController {
         
         coordinator.animate { _ in
             self.syncBrowserNavigationChrome(animated: false)
-            self.syncPadSidebarButtonItem()
+            self.syncSidebarButtonItem()
             self.browserUI.tabOverviewCollection.tabsCollection.collectionViewLayout.invalidateLayout()
             self.browserUI.tabOverviewCollection.privateTabsCollection.collectionViewLayout.invalidateLayout()
             self.browserUI.tabBar.collectionView.collectionViewLayout.invalidateLayout()
         } completion: { _ in
             self.syncBrowserNavigationChrome(animated: false)
-            self.syncPadSidebarButtonItem()
+            self.syncSidebarButtonItem()
             self.browserUI.geckoView.transform = .identity
             self.addressBarGestures.resetHorizontalTransition()
             self.tabOverviewPresentation.refreshForCurrentOrientation()
@@ -335,5 +335,4 @@ final class BrowserViewController: UIViewController {
         UIDevice.current.setValue(deviceOrientation.rawValue, forKey: "orientation")
         UIViewController.attemptRotationToDeviceOrientation()
     }
-    
 }

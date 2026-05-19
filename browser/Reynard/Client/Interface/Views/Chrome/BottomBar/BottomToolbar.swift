@@ -1,5 +1,5 @@
 //
-//  PhoneToolbar.swift
+//  BottomToolbar.swift
 //  Reynard
 //
 //  Created by Minh Ton on 5/3/26.
@@ -7,7 +7,7 @@
 
 import UIKit
 
-protocol PhoneToolbarDelegate: AnyObject {
+protocol BottomToolbarDelegate: AnyObject {
     func backButtonClicked()
     func forwardButtonClicked()
     func shareButtonClicked()
@@ -16,8 +16,8 @@ protocol PhoneToolbarDelegate: AnyObject {
     func tabsButtonClicked()
 }
 
-final class PhoneToolbar: UIView {
-    weak var delegate: PhoneToolbarDelegate?
+final class BottomToolbar: UIView {
+    weak var delegate: BottomToolbarDelegate?
     
     private lazy var backButton: UIButton = {
         MakeButtons.makeToolbarButton(target: self, imageName: "chevron.backward", action: #selector(backButtonClicked))

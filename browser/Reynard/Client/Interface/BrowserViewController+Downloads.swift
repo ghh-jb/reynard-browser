@@ -79,16 +79,16 @@ extension BrowserViewController {
     }
     
     func syncDownloadButtonState() {
-        let previousPadShowsDownloads = browserUI.padTopBarButtons.downloadButton.isShowingDownloads
+        let previousTopBarShowsDownloads = browserUI.topBarButtons.downloadButton.isShowingDownloads
         let summary = DownloadStore.shared.snapshot().summary
-        browserUI.toolbarView.updateDownloadButton(summary: summary)
-        browserUI.padTopBarButtons.updateDownloadButton(summary: summary)
-        let showsPadDownloads = browserUI.padTopBarButtons.downloadButton.isShowingDownloads
+        browserUI.bottomToolbar.updateDownloadButton(summary: summary)
+        browserUI.topBarButtons.updateDownloadButton(summary: summary)
+        let showsTopBarDownloads = browserUI.topBarButtons.downloadButton.isShowingDownloads
         
         if !shouldEmbedSidebarContainer,
            isPad,
            !usesCompactPadChrome,
-           previousPadShowsDownloads != showsPadDownloads {
+           previousTopBarShowsDownloads != showsTopBarDownloads {
             browserUI.applyChromeLayout(animated: false)
         }
     }

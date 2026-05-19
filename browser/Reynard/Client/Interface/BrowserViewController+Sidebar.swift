@@ -50,8 +50,8 @@ extension BrowserViewController {
         isSidebarContainerHost && traitCollection.userInterfaceIdiom == .pad
     }
     
-    func syncPadSidebarButtonItem() {
-        browserUI.padTopBarButtons.syncSidebarButton(splitViewController: splitViewController)
+    func syncSidebarButtonItem() {
+        browserUI.topBarButtons.syncSidebarButton(splitViewController: splitViewController)
     }
     
     func setupEmbeddedSidebarContainer() {
@@ -172,7 +172,7 @@ final class BrowserSplitViewController: UISplitViewController, UISplitViewContro
             return
         }
         
-        let destinationButton = browserViewController.browserUI.padTopBarButtons.sidebarButton
+        let destinationButton = browserViewController.browserUI.topBarButtons.sidebarButton
         let sourceFrame = sourceView.convert(sourceView.bounds, to: containerView)
         snapshot.frame = sourceFrame
         containerView.addSubview(snapshot)

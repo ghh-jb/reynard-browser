@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class PadTopBarButtons {
+final class TopBarButtons {
     lazy var sidebarButton = MakeButtons.makeToolbarButton(controller: controller, imageName: "sidebar.left", action: #selector(BrowserViewController.librarySidebarTapped))
     
     lazy var backButton = MakeButtons.makeToolbarButton(controller: controller, imageName: "chevron.backward", action: #selector(BrowserViewController.padBackTapped))

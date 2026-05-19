@@ -1,5 +1,5 @@
 //
-//  ChromeContainer.swift
+//  BottomContainer.swift
 //  Reynard
 //
 //  Created by Minh Ton on 5/3/26.
@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class ChromeContainer {
+final class BottomContainer {
     let containerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false

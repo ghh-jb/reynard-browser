@@ -40,7 +40,7 @@ final class AddressBarButton: UIButton {
             }
         }
     }
-
+    
     @available(iOS 13.0, *)
     @objc private func handleLegacyPrimaryTap() {
         guard let interaction = interactions.compactMap({ $0 as? UIContextMenuInteraction }).first else {

@@ -407,7 +407,7 @@ final class AddressBar: UIView {
     private func handleTrailingButtonTap() {
         delegate?.addressBarDidTapTrailingButton(self)
     }
-
+    
     private func symbolImage(primary: String, fallback: String) -> UIImage? {
         if let image = UIImage(systemName: primary) {
             return image

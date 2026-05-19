@@ -53,7 +53,7 @@ extension BrowserViewController {
         
         let sheet = UIActivityViewController(activityItems: [url], applicationActivities: nil)
         if let popover = sheet.popoverPresentationController {
-            let sourceView = usesCompactPadChrome ? browserUI.toolbarView : (usesPadChrome ? browserUI.topBar.barView : browserUI.toolbarView)
+            let sourceView = usesCompactPadChrome ? browserUI.bottomToolbar : (usesPadChrome ? browserUI.topBar.barView : browserUI.bottomToolbar)
             popover.sourceView = sourceView
             popover.sourceRect = sourceView.bounds
         }

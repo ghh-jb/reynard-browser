@@ -14,6 +14,7 @@ enum LinkPreviewMenu {
         isPrivate: Bool,
         onPreviewCreated: @escaping (LinkPreviewViewController) -> Void,
         openInNewTab: @escaping () -> Void,
+        openInNewPrivateTab: @escaping () -> Void,
         shareLink: @escaping (URL) -> Void
     ) -> UIContextMenuConfiguration? {
         guard case .link(let url) = context.target else {
@@ -32,6 +33,13 @@ enum LinkPreviewMenu {
                 openInNewTab()
             }
             
+            let openInNewPrivateTabAction = UIAction(
+                title: "Open in New Private Tab",
+                image: UIImage(systemName: "sunglasses")
+            ) { _ in
+                openInNewPrivateTab()
+            }
+            
             let copyLinkAction = UIAction(
                 title: "Copy Link",
                 image: UIImage(systemName: "document.on.document")
@@ -46,7 +54,7 @@ enum LinkPreviewMenu {
                 shareLink(url)
             }
             
-            return UIMenu(title: "", children: [openInNewTabAction, copyLinkAction, shareLinkAction])
+            return UIMenu(title: "", children: [openInNewTabAction, openInNewPrivateTabAction, copyLinkAction, shareLinkAction])
         }
     }
 }

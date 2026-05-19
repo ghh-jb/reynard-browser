@@ -163,6 +163,9 @@ extension BrowserViewController: UIContextMenuInteractionDelegate {
             openInNewTab: { [weak self] in
                 self?.openPreviewInNewTab()
             },
+            openInNewPrivateTab: { [weak self] in
+                self?.openPreviewInNewPrivateTab()
+            },
             shareLink: { [weak self] url in
                 self?.presentShareSheet(url: url.absoluteString)
             }
@@ -272,6 +275,25 @@ extension BrowserViewController: UIContextMenuInteractionDelegate {
             isPrivate: tabManager.selectedTab?.isPrivate ?? false
         )
         contextMenuViewController = nil
+    }
+    
+    private func openPreviewInNewPrivateTab() {
+        guard let preview = contextMenuViewController else {
+            return
+        }
+        
+        let previewURL = preview.pageURL
+        isCommittingContextMenu = true
+        closeContextMenu()
+        
+        let insertionIndex = tabManager.selectedTabMode == .private ? tabManager.selectedTabIndex + 1 : tabManager.privateTabs.count
+        let tabIndex = createTab(selecting: true, at: insertionIndex, isPrivate: true)
+        guard tabManager.privateTabs.indices.contains(tabIndex) else {
+            return
+        }
+        
+        tabManager.browse(to: previewURL, in: tabManager.privateTabs[tabIndex])
+        refreshAddressBar()
     }
     
     private func makeTargetedPreview() -> UITargetedPreview {

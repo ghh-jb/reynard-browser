@@ -66,7 +66,11 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
     }
     
     private var addonsInMenu: [Addon] {
-        AddonsRuntime.shared.installedAddons.filter { $0.metaData.allowedInPrivateBrowsing }
+        guard controller?.tabManager.selectedTab?.isPrivate == true else {
+            return AddonsRuntime.shared.installedAddons
+        }
+        
+        return AddonsRuntime.shared.installedAddons.filter { $0.metaData.allowedInPrivateBrowsing }
     }
     
     func visibleMenuItemsForCurrentSite() -> [AddonMenuItem] {

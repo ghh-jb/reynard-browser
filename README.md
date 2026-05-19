@@ -14,13 +14,14 @@ The latest builds are available on the [Releases](https://github.com/minh-ton/re
 
 For the best performance and automatic JIT enablement, it is recommended to sideload Reynard via [TrollStore](https://github.com/opa334/TrollStore) using the `Reynard-TrollStore.tipa` build.
 
-If TrollStore is not available, you should use [AltStore](https://altstore.io/) or [SideStore](https://sidestore.io/) to sideload the `Reynard.ipa` build instead. Please note that you must select the **Keep App Extensions** option during installation, as Reynard relies on its extensions to function and will not work without them. After sideloading, you may want to enable JIT by following [this guide](https://github.com/minh-ton/reynard-browser/wiki/2.-Enabling-JIT).
+If TrollStore is not available, use [AltStore](https://altstore.io/) or [SideStore](https://sidestore.io/) to sideload the `Reynard.ipa` build. Please note that you must select the **Keep App Extensions** option during installation, as Reynard relies on its extensions to function and will not work without them. After sideloading, you may want to enable JIT by following [this guide](https://github.com/minh-ton/reynard-browser/wiki/2.-Enabling-JIT).
 
 You can also [click here](https://stikstore.app/altdirect/?url=https://github.com/minh-ton/reynard-browser/releases/download/0.0.1-a1/source.json&exclude=livecontainer,stikstore,trollapps,feather) to add the AltStore Source for Reynard in AltStore or SideStore.
 
 > [!IMPORTANT]
 > - **LiveContainer is not supported** due to its own limitations.
-> - Compatibility with other sideloading methods is currently unknown.
+> - Sideloading methods that use a distribution certificate for signing are **not supported**.⁠
+> - Other sideloading methods are **untested**, and **no support will be provided** for issues arising from them.
 > - On **iOS 17.0**, the TrollStore build does not work correctly, so sideload the ‎`Reynard.ipa` build instead.
 
 This project is still in an early experimental state, so expect bugs and missing features. If you encounter issues, check the [Issues & FAQ](https://github.com/minh-ton/reynard-browser/wiki/3.-Issues-&-FAQ) page before opening a new issue.

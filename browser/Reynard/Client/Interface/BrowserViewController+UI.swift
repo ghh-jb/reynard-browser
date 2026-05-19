@@ -18,8 +18,16 @@ private enum UIAssociatedKeys {
     static var pendingReorderStartWorkItem = 0
     static var isInteractiveReorderActive = 0
     static var activeDragOffset = 0
+    static var tabOverviewCardAnimationState = 0
     static var activeTabBarReorderSourceIndex = 0
     static var activeTabBarReorderTargetIndex = 0
+}
+
+private final class TabOverviewCardAnimationState {
+    var hasIdentitySnapshot = false
+    var regularTabIDs: [UUID] = []
+    var privateTabIDs: [UUID] = []
+    var fakeInsertionMode: TabOverviewCollection.Mode?
 }
 
 extension BrowserViewController: AddressBarDelegate, PhoneToolbarDelegate {
@@ -479,11 +487,11 @@ final class BrowserUI {
         ui.tabOverviewCollection.topPhoneConstraint = ui.tabOverviewCollection.tabsCollection.topAnchor.constraint(equalTo: view.topAnchor)
         ui.tabOverviewCollection.bottomPhoneConstraint = ui.tabOverviewCollection.tabsCollection.bottomAnchor.constraint(equalTo: ui.tabOverviewBottomBar.barView.topAnchor)
         ui.tabOverviewCollection.topPadConstraint = ui.tabOverviewCollection.tabsCollection.topAnchor.constraint(equalTo: ui.tabOverviewTopBar.barView.bottomAnchor)
-        ui.tabOverviewCollection.bottomPadConstraint = ui.tabOverviewCollection.tabsCollection.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ui.tabOverviewCollection.bottomPadConstraint = ui.tabOverviewCollection.tabsCollection.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ui.tabOverviewCollection.privateTopPhoneConstraint = ui.tabOverviewCollection.privateTabsCollection.topAnchor.constraint(equalTo: view.topAnchor)
         ui.tabOverviewCollection.privateBottomPhoneConstraint = ui.tabOverviewCollection.privateTabsCollection.bottomAnchor.constraint(equalTo: ui.tabOverviewBottomBar.barView.topAnchor)
         ui.tabOverviewCollection.privateTopPadConstraint = ui.tabOverviewCollection.privateTabsCollection.topAnchor.constraint(equalTo: ui.tabOverviewTopBar.barView.bottomAnchor)
-        ui.tabOverviewCollection.privateBottomPadConstraint = ui.tabOverviewCollection.privateTabsCollection.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ui.tabOverviewCollection.privateBottomPadConstraint = ui.tabOverviewCollection.privateTabsCollection.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         
         ui.tabOverviewBottomBar.bottomConstraint = ui.tabOverviewBottomBar.barView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ui.tabOverviewBottomBar.heightConstraint = ui.tabOverviewBottomBar.barView.heightAnchor.constraint(equalToConstant: 144)
@@ -1168,6 +1176,24 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
         }
     }
     
+    private var tabOverviewCardAnimationState: TabOverviewCardAnimationState {
+        if let state = objc_getAssociatedObject(
+            self,
+            &UIAssociatedKeys.tabOverviewCardAnimationState
+        ) as? TabOverviewCardAnimationState {
+            return state
+        }
+        
+        let state = TabOverviewCardAnimationState()
+        objc_setAssociatedObject(
+            self,
+            &UIAssociatedKeys.tabOverviewCardAnimationState,
+            state,
+            .OBJC_ASSOCIATION_RETAIN_NONATOMIC
+        )
+        return state
+    }
+    
     func usesExpandedTabBarWidth(for tab: Tab) -> Bool {
         let activeTabs = tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs
         let selectedTabID = tabManager.selectedTab?.id
@@ -1214,6 +1240,292 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
         }
     }
     
+    // For anyone wondering what's the fake insertion slot is,
+    // it is a transparent cell inserted at the end of the
+    // collection view so the overview can scroll to the end
+    // first before the new tab card is inserted, which makes
+    // the new tab card appear from the bottom of the screen.
+    private func hasOverviewFakeInsertionSlot(for mode: TabOverviewCollection.Mode) -> Bool {
+        tabOverviewCardAnimationState.fakeInsertionMode == mode
+    }
+    
+    private func isOverviewFakeInsertionSlot(in collectionView: UICollectionView, at indexPath: IndexPath) -> Bool {
+        guard let mode = overviewMode(for: collectionView),
+              hasOverviewFakeInsertionSlot(for: mode) else {
+            return false
+        }
+        
+        return indexPath.item == overviewTabs(for: mode).count
+    }
+    
+    func refreshOverviewCardAnimationSnapshot() {
+        let regularIDs = tabManager.regularTabs.map(\.id)
+        let privateIDs = tabManager.privateTabs.map(\.id)
+        updateOverviewCardAnimationSnapshot(regularIDs: regularIDs, privateIDs: privateIDs)
+    }
+    
+    func reloadOverviewCollections() {
+        tabOverviewCardAnimationState.fakeInsertionMode = nil
+        browserUI.tabOverviewCollection.tabsCollection.reloadData()
+        browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
+        refreshOverviewCardAnimationSnapshot()
+    }
+    
+    func prepareOverviewFakeInsertionSlot(for mode: TabOverviewCollection.Mode, completion: @escaping () -> Void) {
+        let state = tabOverviewCardAnimationState
+        guard tabOverviewPresentation.isVisible,
+              !tabOverviewPresentation.isTransitionRunning,
+              state.fakeInsertionMode == nil else {
+            completion()
+            return
+        }
+        
+        let collectionView: UICollectionView
+        let itemCount: Int
+        switch mode {
+        case .privateTabs:
+            collectionView = browserUI.tabOverviewCollection.privateTabsCollection
+            itemCount = tabManager.privateTabs.count
+        case .regularTabs:
+            collectionView = browserUI.tabOverviewCollection.tabsCollection
+            itemCount = tabManager.regularTabs.count
+        }
+        
+        let fakeIndexPath = IndexPath(item: itemCount, section: 0)
+        state.fakeInsertionMode = mode
+        UIView.performWithoutAnimation {
+            collectionView.performBatchUpdates {
+                collectionView.insertItems(at: [fakeIndexPath])
+            } completion: { _ in
+                guard state.fakeInsertionMode == mode,
+                      collectionView.numberOfItems(inSection: fakeIndexPath.section) > fakeIndexPath.item else {
+                    completion()
+                    return
+                }
+                
+                collectionView.layoutIfNeeded()
+                guard let targetContentOffset = self.overviewContentOffsetForBottomAlignedItem(at: fakeIndexPath, in: collectionView) else {
+                    completion()
+                    return
+                }
+                
+                let scrollDuration: TimeInterval = 0.4
+                UIView.animate(withDuration: scrollDuration, delay: 0, usingSpringWithDamping: 0.9, initialSpringVelocity: 1, options: [.curveEaseInOut, .allowUserInteraction]) {
+                    collectionView.contentOffset = targetContentOffset
+                }
+                
+                self.completeWhenOverviewScrollReachesTarget(
+                    collectionView,
+                    targetContentOffset: targetContentOffset,
+                    timeout: scrollDuration,
+                    completion: completion
+                )
+            }
+        }
+    }
+    
+    private func completeWhenOverviewScrollReachesTarget(
+        _ collectionView: UICollectionView,
+        targetContentOffset: CGPoint,
+        timeout: TimeInterval,
+        completion: @escaping () -> Void
+    ) {
+        let deadline = Date().addingTimeInterval(timeout)
+        
+        func checkScrollPosition() {
+            let distance = abs(collectionView.contentOffset.y - targetContentOffset.y)
+            if distance <= 1 || Date() >= deadline {
+                completion()
+                return
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + (1.0 / 60.0)) {
+                checkScrollPosition()
+            }
+        }
+        
+        DispatchQueue.main.async {
+            checkScrollPosition()
+        }
+    }
+    
+    private func overviewContentOffsetForBottomAlignedItem(
+        at indexPath: IndexPath,
+        in collectionView: UICollectionView
+    ) -> CGPoint? {
+        collectionView.layoutIfNeeded()
+        guard let attributes = collectionView.layoutAttributesForItem(at: indexPath) else {
+            return nil
+        }
+        
+        let inset = collectionView.adjustedContentInset
+        let minimumY = -inset.top
+        let maximumY = max(minimumY, collectionView.contentSize.height - collectionView.bounds.height + inset.bottom)
+        let targetY = attributes.frame.maxY - collectionView.bounds.height + inset.bottom
+        let clampedY = min(max(targetY, minimumY), maximumY)
+        return CGPoint(x: collectionView.contentOffset.x, y: clampedY)
+    }
+    
+    func refreshVisibleOverviewCard(at index: Int, mode: TabMode) {
+        let overviewMode: TabOverviewCollection.Mode = mode == .private ? .privateTabs : .regularTabs
+        let tabs = overviewTabs(for: overviewMode)
+        guard tabs.indices.contains(index) else {
+            return
+        }
+        
+        let collectionView = overviewMode == .privateTabs ?
+        browserUI.tabOverviewCollection.privateTabsCollection :
+        browserUI.tabOverviewCollection.tabsCollection
+        let indexPath = IndexPath(item: index, section: 0)
+        guard let cell = collectionView.cellForItem(at: indexPath) as? TabOverviewCard else {
+            return
+        }
+        
+        cell.configure(tab: tabs[index])
+    }
+    
+    func applyOverviewTabChanges() {
+        let state = tabOverviewCardAnimationState
+        let regularIDs = tabManager.regularTabs.map(\.id)
+        let privateIDs = tabManager.privateTabs.map(\.id)
+        
+        guard state.hasIdentitySnapshot,
+              tabOverviewPresentation.isVisible,
+              !tabOverviewPresentation.isTransitionRunning else {
+            reloadOverviewCollections()
+            return
+        }
+        
+        let previousRegularCount = state.regularTabIDs.count
+        let previousPrivateCount = state.privateTabIDs.count
+        let fakeInsertionMode = state.fakeInsertionMode
+        let regularFakeDeletion = fakeInsertionMode == .regularTabs ? [IndexPath(item: previousRegularCount, section: 0)] : []
+        let privateFakeDeletion = fakeInsertionMode == .privateTabs ? [IndexPath(item: previousPrivateCount, section: 0)] : []
+        let regularInsertions = insertedIndexPaths(previousIDs: state.regularTabIDs, currentIDs: regularIDs)
+        let privateInsertions = insertedIndexPaths(previousIDs: state.privateTabIDs, currentIDs: privateIDs)
+        let regularDeletions = deletedIndexPaths(previousIDs: state.regularTabIDs, currentIDs: regularIDs)
+        let privateDeletions = deletedIndexPaths(previousIDs: state.privateTabIDs, currentIDs: privateIDs)
+        let hasInsertions = !regularInsertions.isEmpty || !privateInsertions.isEmpty
+        let hasDeletions = !regularDeletions.isEmpty || !privateDeletions.isEmpty
+        let isPureInsertion = previousRegularCount + regularInsertions.count == regularIDs.count &&
+        previousPrivateCount + privateInsertions.count == privateIDs.count
+        let isPureDeletion = regularIDs.count + regularDeletions.count == previousRegularCount &&
+        privateIDs.count + privateDeletions.count == previousPrivateCount
+        
+        updateOverviewCardAnimationSnapshot(regularIDs: regularIDs, privateIDs: privateIDs)
+        state.fakeInsertionMode = nil
+        
+        guard (hasInsertions && isPureInsertion) ||
+                (hasDeletions && isPureDeletion) else {
+            reloadOverviewCollections()
+            return
+        }
+        
+        if !regularInsertions.isEmpty {
+            insertOverviewItems(
+                in: browserUI.tabOverviewCollection.tabsCollection,
+                at: regularInsertions,
+                deletingFakeSlotAt: regularFakeDeletion,
+                previousItemCount: previousRegularCount
+            )
+        }
+        
+        if !regularDeletions.isEmpty {
+            browserUI.tabOverviewCollection.tabsCollection.layoutIfNeeded()
+            browserUI.tabOverviewCollection.tabsCollection.performBatchUpdates {
+                browserUI.tabOverviewCollection.tabsCollection.deleteItems(at: regularDeletions)
+            }
+        }
+        
+        if !privateInsertions.isEmpty {
+            insertOverviewItems(
+                in: browserUI.tabOverviewCollection.privateTabsCollection,
+                at: privateInsertions,
+                deletingFakeSlotAt: privateFakeDeletion,
+                previousItemCount: previousPrivateCount
+            )
+        }
+        
+        if !privateDeletions.isEmpty {
+            browserUI.tabOverviewCollection.privateTabsCollection.layoutIfNeeded()
+            browserUI.tabOverviewCollection.privateTabsCollection.performBatchUpdates {
+                browserUI.tabOverviewCollection.privateTabsCollection.deleteItems(at: privateDeletions)
+            }
+        }
+    }
+    
+    private func insertOverviewItems(
+        in collectionView: UICollectionView,
+        at insertionIndexPaths: [IndexPath],
+        deletingFakeSlotAt fakeDeletionIndexPaths: [IndexPath],
+        previousItemCount: Int
+    ) {
+        if fakeDeletionIndexPaths.isEmpty {
+            prepareOverviewCollectionForInsertions(
+                collectionView,
+                insertionIndexPaths: insertionIndexPaths,
+                previousItemCount: previousItemCount
+            )
+        } else {
+            collectionView.layoutIfNeeded()
+        }
+        collectionView.performBatchUpdates {
+            if !fakeDeletionIndexPaths.isEmpty {
+                collectionView.deleteItems(at: fakeDeletionIndexPaths)
+            }
+            collectionView.insertItems(at: insertionIndexPaths)
+        }
+    }
+    
+    private func updateOverviewCardAnimationSnapshot(regularIDs: [UUID], privateIDs: [UUID]) {
+        let state = tabOverviewCardAnimationState
+        state.hasIdentitySnapshot = true
+        state.regularTabIDs = regularIDs
+        state.privateTabIDs = privateIDs
+    }
+    
+    private func insertedIndexPaths(previousIDs: [UUID], currentIDs: [UUID]) -> [IndexPath] {
+        let previousIDSet = Set(previousIDs)
+        var insertedIndexPaths: [IndexPath] = []
+        
+        for index in currentIDs.indices where !previousIDSet.contains(currentIDs[index]) {
+            insertedIndexPaths.append(IndexPath(item: index, section: 0))
+        }
+        
+        return insertedIndexPaths
+    }
+    
+    private func deletedIndexPaths(previousIDs: [UUID], currentIDs: [UUID]) -> [IndexPath] {
+        let currentIDSet = Set(currentIDs)
+        var deletedIndexPaths: [IndexPath] = []
+        
+        for index in previousIDs.indices where !currentIDSet.contains(previousIDs[index]) {
+            deletedIndexPaths.append(IndexPath(item: index, section: 0))
+        }
+        
+        return deletedIndexPaths
+    }
+    
+    private func prepareOverviewCollectionForInsertions(
+        _ collectionView: UICollectionView,
+        insertionIndexPaths: [IndexPath],
+        previousItemCount: Int
+    ) {
+        guard previousItemCount > 0,
+              let insertionIndexPath = insertionIndexPaths.last else {
+            collectionView.layoutIfNeeded()
+            return
+        }
+        
+        let anchorItem = min(max(insertionIndexPath.item - 1, 0), previousItemCount - 1)
+        collectionView.scrollToItem(
+            at: IndexPath(item: anchorItem, section: 0),
+            at: .bottom,
+            animated: false
+        )
+        collectionView.layoutIfNeeded()
+    }
+    
     func regularTabCount() -> Int {
         tabManager.regularTabs.count
     }
@@ -1239,6 +1551,7 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
         browserUI.tabOverviewBarButtons.modeControl.selectedSegmentIndex = mode.rawValue
         browserUI.tabOverviewCollection.setMode(mode, in: browserUI.tabOverview.containerView, animated: false)
         browserUI.tabOverviewBarButtons.setTabCount(regularTabCount())
+        refreshOverviewCardAnimationSnapshot()
     }
     
     func setTabOverviewVisible(_ visible: Bool, animated: Bool) {
@@ -1255,19 +1568,24 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection {
             let count = tabManager.privateTabs.count
-            collectionView.backgroundView?.isHidden = count != 0
-            return count
+            let hasFakeInsertionSlot = hasOverviewFakeInsertionSlot(for: .privateTabs)
+            collectionView.backgroundView?.isHidden = count != 0 || hasFakeInsertionSlot
+            return count + (hasFakeInsertionSlot ? 1 : 0)
         }
         
         if collectionView === self.browserUI.tabOverviewCollection.tabsCollection {
-            return tabManager.regularTabs.count
+            return tabManager.regularTabs.count + (hasOverviewFakeInsertionSlot(for: .regularTabs) ? 1 : 0)
         }
         
         return (tabManager.selectedTabMode == .private ? tabManager.privateTabs : tabManager.regularTabs).count
     }
     
     func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
-        collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
+        if isOverviewFakeInsertionSlot(in: collectionView, at: indexPath) {
+            return false
+        }
+        
+        return collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
         collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection ||
         collectionView === self.browserUI.tabBar.collectionView
     }
@@ -1275,12 +1593,24 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         if collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
             collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection {
+            if isOverviewFakeInsertionSlot(in: collectionView, at: indexPath) {
+                let cell = collectionView.dequeueReusableCell(
+                    withReuseIdentifier: TabOverviewCollection.fakeInsertionReuseIdentifier,
+                    for: indexPath
+                )
+                cell.isHidden = true
+                cell.contentView.alpha = 0
+                cell.backgroundColor = .clear
+                return cell
+            }
+            
             guard let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: TabOverviewCard.reuseIdentifier,
                 for: indexPath
             ) as? TabOverviewCard else {
                 return UICollectionViewCell()
             }
+            cell.isHidden = false
             
             guard let mode = overviewMode(for: collectionView),
                   overviewTabs(for: mode).indices.contains(indexPath.item) else {
@@ -1391,9 +1721,12 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
         guard (collectionView === self.browserUI.tabOverviewCollection.tabsCollection ||
                collectionView === self.browserUI.tabOverviewCollection.privateTabsCollection),
-              let tabCell = cell as? TabOverviewCard else {
+              let tabCell = cell as? TabOverviewCard,
+              let overviewMode = overviewMode(for: collectionView),
+              overviewTabs(for: overviewMode).indices.contains(indexPath.item) else {
             return
         }
+        
         tabCell.setNeedsLayout()
         tabCell.layoutIfNeeded()
     }

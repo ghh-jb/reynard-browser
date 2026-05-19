@@ -7,8 +7,35 @@
 
 import UIKit
 
+final class TabOverviewCollectionLayout: UICollectionViewFlowLayout {
+    private var insertedIndexPaths = Set<IndexPath>()
+    
+    override func prepare(forCollectionViewUpdates updateItems: [UICollectionViewUpdateItem]) {
+        super.prepare(forCollectionViewUpdates: updateItems)
+        insertedIndexPaths = Set(updateItems.compactMap { item in
+            item.updateAction == .insert ? item.indexPathAfterUpdate : nil
+        })
+    }
+    
+    override func initialLayoutAttributesForAppearingItem(at itemIndexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+        let attributes = super.initialLayoutAttributesForAppearingItem(at: itemIndexPath)?.copy() as? UICollectionViewLayoutAttributes ??
+        layoutAttributesForItem(at: itemIndexPath)?.copy() as? UICollectionViewLayoutAttributes
+        if insertedIndexPaths.contains(itemIndexPath) {
+            attributes?.alpha = 0
+            attributes?.transform = CGAffineTransform(scaleX: 0.85, y: 0.85)
+        }
+        return attributes
+    }
+    
+    override func finalizeCollectionViewUpdates() {
+        super.finalizeCollectionViewUpdates()
+        insertedIndexPaths.removeAll()
+    }
+}
+
 final class TabOverviewCollection {
     typealias TabCollectionHandler = UICollectionViewDataSource & UICollectionViewDelegate & UICollectionViewDelegateFlowLayout
+    static let fakeInsertionReuseIdentifier = "TabOverviewFakeInsertionCell"
     
     enum Mode: Int {
         case privateTabs = 0
@@ -83,7 +110,7 @@ final class TabOverviewCollection {
     }
     
     private func makeCollectionView() -> UICollectionView {
-        let layout = UICollectionViewFlowLayout()
+        let layout = TabOverviewCollectionLayout()
         layout.minimumLineSpacing = overviewSpacing
         layout.minimumInteritemSpacing = overviewSpacing
         let view = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -100,6 +127,7 @@ final class TabOverviewCollection {
         reorderGesture.minimumPressDuration = 0.35
         reorderGesture.delegate = tabCollectionHandler as? UIGestureRecognizerDelegate
         view.addGestureRecognizer(reorderGesture)
+        view.register(UICollectionViewCell.self, forCellWithReuseIdentifier: Self.fakeInsertionReuseIdentifier)
         view.register(TabOverviewCard.self, forCellWithReuseIdentifier: TabOverviewCard.reuseIdentifier)
         return view
     }
@@ -140,7 +168,7 @@ final class TabOverviewCollection {
         }
         
         if animated && modeChanged {
-            UIView.animate(withDuration: 0.24, delay: 0, options: [.curveEaseOut], animations: animations)
+            UIView.animate(withDuration: 0.65, delay: 0, usingSpringWithDamping: 0.95, initialSpringVelocity: 1, options: [.curveEaseInOut], animations: animations)
         } else {
             animations()
         }

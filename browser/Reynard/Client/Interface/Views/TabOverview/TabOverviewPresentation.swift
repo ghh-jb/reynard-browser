@@ -138,11 +138,16 @@ final class TabOverviewPresentation {
     
     private func animatePhoneOverviewPresentation() {
         isTransitionRunning = true
+        isVisible = true
+        currentOverviewProgress = 1
         
         let overviewMode: TabOverviewCollection.Mode = controller.tabManager.selectedTabMode == .private ? .privateTabs : .regularTabs
         controller.browserUI.tabOverviewBarButtons.modeControl.selectedSegmentIndex = overviewMode.rawValue
         controller.browserUI.tabOverviewCollection.setMode(overviewMode, in: controller.browserUI.tabOverview.containerView, animated: false)
         let selectedIndex = controller.tabManager.selectedTabIndex
+        controller.view.layoutIfNeeded()
+        let bottomSnapshot = controller.browserUI.toolbarView.snapshotView(afterScreenUpdates: false)
+        controller.applyChromeLayout(animated: false)
         controller.captureThumbnail(for: selectedIndex)
         controller.browserUI.tabOverviewCollection.tabsCollection.collectionViewLayout.invalidateLayout()
         controller.browserUI.tabOverviewCollection.privateTabsCollection.collectionViewLayout.invalidateLayout()
@@ -167,7 +172,7 @@ final class TabOverviewPresentation {
         let standardCollectionTransform = selectedCollection.transform
         
         guard let selectedCell = selectedOverviewCell(at: selectedIndex),
-              let bottomSnapshot = controller.browserUI.toolbarView.snapshotView(afterScreenUpdates: true) else {
+              let bottomSnapshot else {
             isTransitionRunning = false
             applyOverviewProgress(1)
             isVisible = true
@@ -218,8 +223,6 @@ final class TabOverviewPresentation {
             
             self.controller.view.bringSubviewToFront(self.controller.browserUI.tabOverview.containerView)
             self.controller.browserUI.geckoView.isHidden = false
-            self.isVisible = true
-            self.currentOverviewProgress = 1
             self.controller.applyChromeLayout(animated: false)
             self.isTransitionRunning = false
         }
@@ -322,11 +325,14 @@ final class TabOverviewPresentation {
     
     private func animatePadOverviewPresentation() {
         isTransitionRunning = true
+        isVisible = true
+        currentOverviewProgress = 1
         
         let overviewMode: TabOverviewCollection.Mode = controller.tabManager.selectedTabMode == .private ? .privateTabs : .regularTabs
         controller.browserUI.tabOverviewBarButtons.modeControl.selectedSegmentIndex = overviewMode.rawValue
         controller.browserUI.tabOverviewCollection.setMode(overviewMode, in: controller.browserUI.tabOverview.containerView, animated: false)
         let selectedIndex = controller.tabManager.selectedTabIndex
+        controller.applyChromeLayout(animated: false)
         controller.captureThumbnail(for: selectedIndex)
         controller.browserUI.tabOverviewCollection.tabsCollection.collectionViewLayout.invalidateLayout()
         controller.browserUI.tabOverviewCollection.privateTabsCollection.collectionViewLayout.invalidateLayout()
@@ -347,6 +353,9 @@ final class TabOverviewPresentation {
         
         tabOverviewDismissTargetIndex = selectedIndex
         let selectedCollection = controller.currentOverviewCollectionView()
+        if let selectedItem = controller.overviewItemIndex(forTabAt: selectedIndex) {
+            selectedCollection.scrollToItem(at: IndexPath(item: selectedItem, section: 0), at: .centeredVertically, animated: false)
+        }
         selectedCollection.layoutIfNeeded()
         
         let standardCollectionTransform = selectedCollection.transform
@@ -402,8 +411,6 @@ final class TabOverviewPresentation {
             
             self.controller.view.bringSubviewToFront(self.controller.browserUI.tabOverview.containerView)
             self.controller.browserUI.geckoView.isHidden = false
-            self.isVisible = true
-            self.currentOverviewProgress = 1
             self.controller.applyChromeLayout(animated: false)
             self.isTransitionRunning = false
         }
@@ -554,14 +561,7 @@ final class TabOverviewPresentation {
             y: contentCenter.y + ((previewFrame.midY - contentCenter.y) * scaleY)
         )
         
-        return CGAffineTransform(
-            a: scaleX,
-            b: 0,
-            c: 0,
-            d: scaleY,
-            tx: sourceFrame.midX - scaledPreviewCenter.x,
-            ty: sourceFrame.midY - scaledPreviewCenter.y
-        )
+        return CGAffineTransform(a: scaleX, b: 0, c: 0, d: scaleY, tx: sourceFrame.midX - scaledPreviewCenter.x, ty: sourceFrame.midY - scaledPreviewCenter.y)
     }
     
     private func overviewAnimationIndex() -> Int {

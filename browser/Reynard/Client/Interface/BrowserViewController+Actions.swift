@@ -70,7 +70,13 @@ extension BrowserViewController {
     
     func createNewTab() {
         if tabOverviewPresentation.isVisible {
-            _ = createTab(selecting: true, isPrivate: browserUI.tabOverviewCollection.mode == .privateTabs)
+            let overviewMode = browserUI.tabOverviewCollection.mode
+            prepareOverviewFakeInsertionSlot(for: overviewMode) { [weak self] in
+                guard let self else {
+                    return
+                }
+                _ = self.createTab(selecting: true, isPrivate: overviewMode == .privateTabs)
+            }
         } else {
             _ = createTab(selecting: true)
             setTabOverviewVisible(false, animated: true)

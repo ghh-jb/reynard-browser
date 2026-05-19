@@ -108,8 +108,7 @@ extension BrowserViewController: TabManagerDelegate {
             browserUI.tabOverviewCollection.setMode(overviewMode, in: browserUI.tabOverview.containerView, animated: false)
         }
         browserUI.tabOverviewBarButtons.setTabCount(regularTabCount())
-        browserUI.tabOverviewCollection.tabsCollection.reloadData()
-        browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
+        applyOverviewTabChanges()
         browserUI.tabBar.collectionView.reloadData()
         browserUI.applyChromeLayout(animated: false)
         browserUI.tabBar.refreshLayout(
@@ -145,8 +144,9 @@ extension BrowserViewController: TabManagerDelegate {
             browserUI.tabOverviewCollection.setMode(overviewMode, in: browserUI.tabOverview.containerView, animated: false)
         }
         browserUI.tabOverviewBarButtons.setTabCount(regularTabCount())
-        browserUI.tabOverviewCollection.tabsCollection.reloadData()
-        browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
+        if !tabOverviewPresentation.isVisible {
+            reloadOverviewCollections()
+        }
         browserUI.tabBar.collectionView.reloadData()
         browserUI.tabBar.refreshLayout(
             fallbackWidth: view.bounds.width,
@@ -201,8 +201,11 @@ extension BrowserViewController: TabManagerDelegate {
                 refreshAddressBar()
             }
             browserUI.tabBar.collectionView.reloadData()
-            browserUI.tabOverviewCollection.tabsCollection.reloadData()
-            browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
+            if tabOverviewPresentation.isVisible {
+                refreshVisibleOverviewCard(at: index, mode: tabManager.selectedTabMode)
+            } else {
+                reloadOverviewCollections()
+            }
             
         case .location:
             if index == tabManager.selectedTabIndex {
@@ -212,8 +215,11 @@ extension BrowserViewController: TabManagerDelegate {
             
         case .favicon:
             browserUI.tabBar.collectionView.reloadData()
-            browserUI.tabOverviewCollection.tabsCollection.reloadData()
-            browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
+            if tabOverviewPresentation.isVisible {
+                refreshVisibleOverviewCard(at: index, mode: tabManager.selectedTabMode)
+            } else {
+                reloadOverviewCollections()
+            }
             
         case .navigationState:
             if index == tabManager.selectedTabIndex {
@@ -230,8 +236,11 @@ extension BrowserViewController: TabManagerDelegate {
             if index == tabManager.selectedTabIndex {
                 captureThumbnail(for: index)
             }
-            browserUI.tabOverviewCollection.tabsCollection.reloadData()
-            browserUI.tabOverviewCollection.privateTabsCollection.reloadData()
+            if tabOverviewPresentation.isVisible {
+                refreshVisibleOverviewCard(at: index, mode: tabManager.selectedTabMode)
+            } else {
+                reloadOverviewCollections()
+            }
         }
     }
     

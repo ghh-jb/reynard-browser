@@ -138,6 +138,14 @@ final class HistoryStore {
         }
     }
     
+    func clearHistory(since startDate: Date?) {
+        stateQueue.async {
+            if self.clearHistoryLocked(since: startDate) {
+                self.postDidChange()
+            }
+        }
+    }
+    
     private func prepareStorageLocked() {
         try? fileManager.createDirectory(at: storage.directoryURL, withIntermediateDirectories: true)
     }
@@ -272,6 +280,93 @@ final class HistoryStore {
         }
         
         return sqlite3_changes(database) > 0
+    }
+    
+    private func clearHistoryLocked(since startDate: Date?) -> Bool {
+        guard beginTransactionLocked() else {
+            return false
+        }
+        
+        if let startDate {
+            guard deleteVisitsLocked(since: startDate.timeIntervalSince1970),
+                  executeLocked("DELETE FROM history WHERE id NOT IN (SELECT DISTINCT siteID FROM visits);"),
+                  rebuildHistoryStatsLocked() else {
+                rollbackTransactionLocked()
+                return false
+            }
+        } else {
+            guard executeLocked("DELETE FROM history;") else {
+                rollbackTransactionLocked()
+                return false
+            }
+        }
+        
+        guard commitTransactionLocked() else {
+            rollbackTransactionLocked()
+            return false
+        }
+        
+        return true
+    }
+    
+    private func deleteVisitsLocked(since timestamp: TimeInterval) -> Bool {
+        guard let statement = prepareStatementLocked("DELETE FROM visits WHERE date >= ?;") else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_double(statement, 1, timestamp)
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+    
+    private func rebuildHistoryStatsLocked() -> Bool {
+        guard let selectStatement = prepareStatementLocked(
+            """
+            SELECT history.id, COUNT(visits.id), MAX(visits.date)
+            FROM history
+            JOIN visits ON visits.siteID = history.id
+            GROUP BY history.id;
+            """
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(selectStatement)
+        }
+        
+        guard let updateStatement = prepareStatementLocked(
+            "UPDATE history SET visit_count = ?, updated_at = ?, frecency = ? WHERE id = ?;"
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(updateStatement)
+        }
+        
+        while sqlite3_step(selectStatement) == SQLITE_ROW {
+            let id = sqlite3_column_int64(selectStatement, 0)
+            let visitCount = Int(sqlite3_column_int64(selectStatement, 1))
+            let updatedAt = sqlite3_column_double(selectStatement, 2)
+            let frecency = frecencyScore(forVisitCount: visitCount, lastVisitedAt: Date(timeIntervalSince1970: updatedAt))
+            
+            sqlite3_reset(updateStatement)
+            sqlite3_clear_bindings(updateStatement)
+            sqlite3_bind_int64(updateStatement, 1, Int64(visitCount))
+            sqlite3_bind_double(updateStatement, 2, updatedAt)
+            sqlite3_bind_int64(updateStatement, 3, Int64(frecency))
+            sqlite3_bind_int64(updateStatement, 4, id)
+            
+            guard sqlite3_step(updateStatement) == SQLITE_DONE else {
+                return false
+            }
+        }
+        
+        return true
     }
     
     private func fetchSitesLocked() -> [HistorySiteSnapshot] {

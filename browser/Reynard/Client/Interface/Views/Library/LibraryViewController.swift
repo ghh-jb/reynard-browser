@@ -140,19 +140,20 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.delegate = self
-        navigationItem.leftItemsSupplementBackButton = false
         
         let selectedTag = viewControllers?[safe: selectedIndex]?.tabBarItem.tag
-        let keepsBookmarksActionsButton: Bool
+        let keepsLibraryActionsButton: Bool
         if #available(iOS 26.0, *) {
-            keepsBookmarksActionsButton = MakeButtons.hasLiquidGlass && selectedTag == LibrarySection.bookmarks.rawValue
+            keepsLibraryActionsButton = MakeButtons.hasLiquidGlass && (
+                selectedTag == LibrarySection.bookmarks.rawValue ||
+                selectedTag == LibrarySection.history.rawValue
+            )
         } else {
-            keepsBookmarksActionsButton = false
+            keepsLibraryActionsButton = false
         }
         
-        if !keepsBookmarksActionsButton {
-            navigationItem.leftBarButtonItems = []
-            navigationItem.leftBarButtonItem = nil
+        if !keepsLibraryActionsButton {
+            MakeButtons.removeLibraryActionBarButtons(from: navigationItem)
         }
     }
     
@@ -185,12 +186,14 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
         updateNavigationTitle()
         
-        guard viewController.tabBarItem.tag != LibrarySection.bookmarks.rawValue else {
+        let selectedTag = viewController.tabBarItem.tag
+        if #available(iOS 26.0, *),
+           MakeButtons.hasLiquidGlass,
+           (selectedTag == LibrarySection.bookmarks.rawValue || selectedTag == LibrarySection.history.rawValue) {
             return
         }
         
-        navigationItem.leftBarButtonItems = []
-        navigationItem.leftBarButtonItem = nil
+        MakeButtons.removeLibraryActionBarButtons(from: navigationItem)
     }
     
     private func updateNavigationTitle() {

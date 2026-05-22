@@ -6,7 +6,55 @@
 
 import UIKit
 
-final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate, UIGestureRecognizerDelegate {
+final class HistoryManagerView: UIView {
+    private weak var hostedViewController: HistoryManagerViewController?
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        translatesAutoresizingMaskIntoConstraints = false
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        embedViewControllerIfNeeded()
+    }
+    
+    private func embedViewControllerIfNeeded() {
+        guard hostedViewController == nil,
+              let parentViewController = containingViewController else {
+            return
+        }
+        
+        let historyViewController = HistoryManagerViewController()
+        historyViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        historyViewController.view.backgroundColor = .clear
+        
+        parentViewController.addChild(historyViewController)
+        addSubview(historyViewController.view)
+        
+        NSLayoutConstraint.activate([
+            historyViewController.view.topAnchor.constraint(equalTo: topAnchor),
+            historyViewController.view.leadingAnchor.constraint(equalTo: leadingAnchor),
+            historyViewController.view.trailingAnchor.constraint(equalTo: trailingAnchor),
+            historyViewController.view.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+        
+        historyViewController.didMove(toParent: parentViewController)
+        hostedViewController = historyViewController
+    }
+}
+
+private extension UIView {
+    var containingViewController: UIViewController? {
+        sequence(first: next, next: { $0?.next }).first(where: { $0 is UIViewController }) as? UIViewController
+    }
+}
+
+private final class HistoryManagerViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate, UIGestureRecognizerDelegate {
     private struct Section {
         let day: Date
         let title: String
@@ -28,6 +76,29 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
         searchBar.delegate = self
         return searchBar
     }()
+    
+    private lazy var clearHistoryButton = MakeButtons.makeLibraryActionsButton(
+        target: self,
+        imageName: "clock.badge.xmark",
+        action: #selector(clearHistoryButtonTapped)
+    )
+    private lazy var clearHistoryBarButtonItem: UIBarButtonItem = {
+        let item = UIBarButtonItem(
+            image: UIImage(named: "clock.badge.xmark"),
+            style: .plain,
+            target: self,
+            action: #selector(clearHistoryButtonTapped)
+        )
+        item.tag = MakeButtons.historyLibraryActionBarButtonTag
+        return item
+    }()
+    private var usesNavigationActionsButton: Bool {
+        if #available(iOS 26.0, *) {
+            return MakeButtons.hasLiquidGlass
+        }
+        
+        return false
+    }
     
     private let headerContainerView: UIView = {
         let view = UIView()
@@ -72,11 +143,14 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
     private var suppressNextReload = false
     private var hasStoredHistory = false
     
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init() {
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
         
-        translatesAutoresizingMaskIntoConstraints = false
-        backgroundColor = .systemGroupedBackground
+        view.backgroundColor = .systemGroupedBackground
         
         emptyStateView.addSubview(emptyStateLabel)
         NSLayoutConstraint.activate([
@@ -86,12 +160,12 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
             emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: emptyStateView.trailingAnchor, constant: -24),
         ])
         
-        addSubview(tableView)
+        view.addSubview(tableView)
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: topAnchor),
-            tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            tableView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            tableView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
         
         setupHeaderView()
@@ -128,10 +202,15 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
         }
     }
     
-    override func layoutSubviews() {
-        super.layoutSubviews()
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
         updateHeaderSizeIfNeeded()
         tableView.backgroundView?.frame = tableView.bounds
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        installNavigationActionsButtonIfNeeded()
     }
     
     private func setupHeaderView() {
@@ -139,14 +218,29 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
         headerContainerView.addSubview(searchBar)
         searchBar.translatesAutoresizingMaskIntoConstraints = false
         
-        NSLayoutConstraint.activate([
+        var constraints = [
             searchBar.topAnchor.constraint(equalTo: headerContainerView.layoutMarginsGuide.topAnchor),
             searchBar.leadingAnchor.constraint(equalTo: headerContainerView.layoutMarginsGuide.leadingAnchor),
-            searchBar.trailingAnchor.constraint(equalTo: headerContainerView.layoutMarginsGuide.trailingAnchor),
             searchBar.bottomAnchor.constraint(equalTo: headerContainerView.bottomAnchor)
-        ])
+        ]
         
-        let targetWidth = bounds.width > 0 ? bounds.width : UIScreen.main.bounds.width
+        if usesNavigationActionsButton {
+            constraints.append(searchBar.trailingAnchor.constraint(equalTo: headerContainerView.layoutMarginsGuide.trailingAnchor))
+        } else {
+            headerContainerView.addSubview(clearHistoryButton)
+            clearHistoryButton.translatesAutoresizingMaskIntoConstraints = false
+            constraints.append(contentsOf: [
+                searchBar.trailingAnchor.constraint(equalTo: clearHistoryButton.leadingAnchor),
+                clearHistoryButton.trailingAnchor.constraint(equalTo: headerContainerView.trailingAnchor, constant: -20),
+                clearHistoryButton.centerYAnchor.constraint(equalTo: searchBar.searchTextField.centerYAnchor),
+                clearHistoryButton.widthAnchor.constraint(equalTo: clearHistoryButton.heightAnchor),
+                clearHistoryButton.heightAnchor.constraint(equalTo: searchBar.searchTextField.heightAnchor),
+            ])
+        }
+        
+        NSLayoutConstraint.activate(constraints)
+        
+        let targetWidth = view.bounds.width > 0 ? view.bounds.width : UIScreen.main.bounds.width
         headerContainerView.frame = CGRect(x: 0, y: 0, width: targetWidth, height: 0)
         updateHeaderFittingHeight()
         
@@ -182,6 +276,33 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
     
     @objc private func handleBackgroundTap() {
         searchBar.resignFirstResponder()
+    }
+    
+    @objc private func clearHistoryButtonTapped() {
+        searchBar.resignFirstResponder()
+        
+        let browserViewController = resolvedBrowserViewController()
+        let viewController = ClearHistoryViewController(tabCount: browserViewController?.tabManager.regularTabs.count ?? 0) { [weak browserViewController] startDate, shouldCloseTabs in
+            HistoryStore.shared.clearHistory(since: startDate)
+            
+            if shouldCloseTabs {
+                browserViewController?.clearAllTabs()
+                browserViewController?.createTab(selecting: true, isPrivate: false)
+            }
+        }
+        let navigationController = UINavigationController(rootViewController: viewController)
+        navigationController.modalPresentationStyle = .pageSheet
+        present(navigationController, animated: true)
+    }
+    
+    private func installNavigationActionsButtonIfNeeded() {
+        guard usesNavigationActionsButton,
+              let navigationItem = navigationController?.topViewController?.navigationItem else {
+            return
+        }
+        
+        clearHistoryBarButtonItem.tintColor = .label
+        MakeButtons.installLibraryActionBarButton(clearHistoryBarButtonItem, in: navigationItem)
     }
     
     private func updateHeaderFittingHeight() {
@@ -453,21 +574,21 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
         browserViewController.loadViewIfNeeded()
         browserViewController.browse(to: item.url.absoluteString)
         
-        if nearestViewController?.navigationController?.presentingViewController is BrowserViewController {
-            nearestViewController?.navigationController?.dismiss(animated: true)
+        if navigationController?.presentingViewController is BrowserViewController {
+            navigationController?.dismiss(animated: true)
         }
     }
     
     private func resolvedBrowserViewController() -> BrowserViewController? {
-        if let splitViewController = nearestViewController?.splitViewController as? BrowserSplitViewController {
+        if let splitViewController = splitViewController as? BrowserSplitViewController {
             return splitViewController.contentBrowserViewController
         }
         
-        if let browserViewController = nearestViewController?.navigationController?.presentingViewController as? BrowserViewController {
+        if let browserViewController = navigationController?.presentingViewController as? BrowserViewController {
             return browserViewController
         }
         
-        return window?.rootViewController.flatMap { resolvedBrowserViewController(from: $0) }
+        return view.window?.rootViewController.flatMap { resolvedBrowserViewController(from: $0) }
     }
     
     private func resolvedBrowserViewController(from controller: UIViewController) -> BrowserViewController? {
@@ -494,10 +615,6 @@ final class HistoryManagerView: UIView, UITableViewDataSource, UITableViewDelega
         }
         
         return controller.children.compactMap { resolvedBrowserViewController(from: $0) }.first
-    }
-    
-    private var nearestViewController: UIViewController? {
-        sequence(first: next, next: { $0?.next }).first { $0 is UIViewController } as? UIViewController
     }
     
     private func removeItem(at indexPath: IndexPath) {

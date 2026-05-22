@@ -82,17 +82,21 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
         searchBar.delegate = self
         return searchBar
     }()
-    private lazy var searchActionsButton = MakeButtons.makeBookmarksActionsButton(
+    private lazy var searchActionsButton = MakeButtons.makeLibraryActionsButton(
         target: self,
         imageName: "ellipsis",
         action: #selector(searchActionsButtonTapped)
     )
-    private lazy var bookmarksActionsBarButtonItem = UIBarButtonItem(
-        image: UIImage(systemName: "ellipsis"),
-        style: .plain,
-        target: self,
-        action: #selector(searchActionsButtonTapped)
-    )
+    private lazy var bookmarksActionsBarButtonItem: UIBarButtonItem = {
+        let item = UIBarButtonItem(
+            image: UIImage(systemName: "ellipsis"),
+            style: .plain,
+            target: self,
+            action: #selector(searchActionsButtonTapped)
+        )
+        item.tag = MakeButtons.bookmarksLibraryActionBarButtonTag
+        return item
+    }()
     private let usesNavigationActionsButton: Bool
     private let headerContainerView: UIView = {
         let view = UIView()
@@ -476,7 +480,7 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
             return
         }
         
-        MakeButtons.updateBookmarksActionsButton(searchActionsButton, imageName: symbolName)
+        MakeButtons.updateLibraryActionsButton(searchActionsButton, imageName: symbolName)
         
         if #available(iOS 14.0, *) {
             searchActionsButton.menu = isEditing ? nil : makeSearchActionsMenu()
@@ -544,17 +548,7 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
         }
         
         updateSearchActionsButton()
-        
-        if let items = navigationItem.leftBarButtonItems {
-            guard !items.contains(where: { $0 === bookmarksActionsBarButtonItem }) else {
-                return
-            }
-            
-            navigationItem.leftBarButtonItems = items + [bookmarksActionsBarButtonItem]
-            return
-        }
-        
-        navigationItem.leftBarButtonItems = [bookmarksActionsBarButtonItem]
+        MakeButtons.installLibraryActionBarButton(bookmarksActionsBarButtonItem, in: navigationItem)
     }
     
     private func reloadContents() {

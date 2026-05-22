@@ -1061,25 +1061,27 @@ final class BrowserUI {
     }
 }
 
+@objc
+private final class WeakObjectBox: NSObject {
+    weak var value: AnyObject?
+    
+    init(_ value: AnyObject?) {
+        self.value = value
+    }
+}
+
 // Tab Overview & Tab Bar
 extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UIGestureRecognizerDelegate {
-    private final class WeakBox<T: AnyObject> {
-        weak var value: T?
-        
-        init(_ value: T?) {
-            self.value = value
-        }
-    }
-    
     var activeReorderingCell: UICollectionViewCell? {
         get {
-            (objc_getAssociatedObject(self, &UIAssociatedKeys.activeReorderingCell) as? WeakBox<UICollectionViewCell>)?.value
+            (objc_getAssociatedObject(self, &UIAssociatedKeys.activeReorderingCell) as? WeakObjectBox)?
+                .value as? UICollectionViewCell
         }
         set {
             objc_setAssociatedObject(
                 self,
                 &UIAssociatedKeys.activeReorderingCell,
-                WeakBox(newValue),
+                WeakObjectBox(newValue),
                 .OBJC_ASSOCIATION_RETAIN_NONATOMIC
             )
         }
@@ -1087,13 +1089,14 @@ extension BrowserViewController: UICollectionViewDataSource, UICollectionViewDel
     
     var activeDragSnapshotView: UIView? {
         get {
-            (objc_getAssociatedObject(self, &UIAssociatedKeys.activeDragSnapshotView) as? WeakBox<UIView>)?.value
+            (objc_getAssociatedObject(self, &UIAssociatedKeys.activeDragSnapshotView) as? WeakObjectBox)?
+                .value as? UIView
         }
         set {
             objc_setAssociatedObject(
                 self,
                 &UIAssociatedKeys.activeDragSnapshotView,
-                WeakBox(newValue),
+                WeakObjectBox(newValue),
                 .OBJC_ASSOCIATION_RETAIN_NONATOMIC
             )
         }

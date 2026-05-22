@@ -37,6 +37,7 @@ final class EditBookmarkViewController: UIViewController, UITableViewDataSource,
     private let bookmark: BookmarkSnapshot?
     private let initialBookmarkTitle: String
     private let initialBookmarkURL: URL?
+    private let showsFavoritesHierarchyOnly: Bool
     private var bookmarkFolderRows: [BookmarkOperationFolderRow] = []
     private var selectedBookmarkFolderGUID: String?
     private var faviconTask: Task<Void, Never>?
@@ -109,11 +110,19 @@ final class EditBookmarkViewController: UIViewController, UITableViewDataSource,
         return textField
     }()
     
-    init(bookmark: BookmarkSnapshot? = nil, title: String = "", url: URL? = nil, selectedFolderGUID: String? = nil, store: BookmarkStore = .shared) {
+    init(
+        bookmark: BookmarkSnapshot? = nil,
+        title: String = "",
+        url: URL? = nil,
+        selectedFolderGUID: String? = nil,
+        showsFavoritesHierarchyOnly: Bool = false,
+        store: BookmarkStore = .shared
+    ) {
         self.bookmark = bookmark
         self.bookmarkStore = store
         self.initialBookmarkTitle = title
         self.initialBookmarkURL = url
+        self.showsFavoritesHierarchyOnly = showsFavoritesHierarchyOnly
         self.selectedBookmarkFolderGUID = selectedFolderGUID ?? bookmark?.parentGUID
         super.init(nibName: nil, bundle: nil)
     }
@@ -132,7 +141,7 @@ final class EditBookmarkViewController: UIViewController, UITableViewDataSource,
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        title = bookmark == nil ? "Add Bookmark" : "Edit Bookmark"
+        title = showsFavoritesHierarchyOnly ? "Add to Favorites" : (bookmark == nil ? "Add Bookmark" : "Edit Bookmark")
         view.backgroundColor = .systemGroupedBackground
         navigationItem.largeTitleDisplayMode = .never
         
@@ -210,7 +219,7 @@ final class EditBookmarkViewController: UIViewController, UITableViewDataSource,
     }
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        section == 2 ? "Locations" : nil
+        section == 2 ? "Location" : nil
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -277,7 +286,11 @@ final class EditBookmarkViewController: UIViewController, UITableViewDataSource,
         tableView.deselectRow(at: indexPath, animated: true)
         
         if indexPath.section == 1 {
-            let viewController = NewBookmarkFolderViewController(selectedParentFolderGUID: selectedBookmarkFolderGUID, store: bookmarkStore)
+            let viewController = NewBookmarkFolderViewController(
+                selectedParentFolderGUID: selectedBookmarkFolderGUID,
+                showsFavoritesHierarchyOnly: showsFavoritesHierarchyOnly,
+                store: bookmarkStore
+            )
             let navigationController = UINavigationController(rootViewController: viewController)
             navigationController.modalPresentationStyle = .pageSheet
             present(navigationController, animated: true)
@@ -333,7 +346,7 @@ final class EditBookmarkViewController: UIViewController, UITableViewDataSource,
     }
     
     private func reloadFolderHierarchy() {
-        let root = bookmarkStore.folderHierarchy()
+        let root = showsFavoritesHierarchyOnly ? bookmarkStore.favoritesFolderHierarchy() : bookmarkStore.folderHierarchy()
         bookmarkFolderRows = makeBookmarkOperationFolderRows(root: root, store: bookmarkStore)
         if selectedBookmarkFolderGUID == nil {
             selectedBookmarkFolderGUID = root.parent.guid
@@ -343,6 +356,7 @@ final class EditBookmarkViewController: UIViewController, UITableViewDataSource,
 
 final class NewBookmarkFolderViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate {
     private let bookmarkStore: BookmarkStore
+    private let showsFavoritesHierarchyOnly: Bool
     private var parentFolderRows: [BookmarkOperationFolderRow] = []
     private var selectedParentFolderGUID: String?
     
@@ -372,9 +386,10 @@ final class NewBookmarkFolderViewController: UIViewController, UITableViewDataSo
         return textField
     }()
     
-    init(selectedParentFolderGUID: String? = nil, store: BookmarkStore = .shared) {
+    init(selectedParentFolderGUID: String? = nil, showsFavoritesHierarchyOnly: Bool = false, store: BookmarkStore = .shared) {
         self.selectedParentFolderGUID = selectedParentFolderGUID
         self.bookmarkStore = store
+        self.showsFavoritesHierarchyOnly = showsFavoritesHierarchyOnly
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -406,7 +421,7 @@ final class NewBookmarkFolderViewController: UIViewController, UITableViewDataSo
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
         
-        let root = bookmarkStore.folderHierarchy()
+        let root = showsFavoritesHierarchyOnly ? bookmarkStore.favoritesFolderHierarchy() : bookmarkStore.folderHierarchy()
         parentFolderRows = makeBookmarkOperationFolderRows(root: root, store: bookmarkStore)
         if selectedParentFolderGUID == nil {
             selectedParentFolderGUID = root.parent.guid
@@ -424,7 +439,7 @@ final class NewBookmarkFolderViewController: UIViewController, UITableViewDataSo
     }
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        section == 1 ? "Locations" : nil
+        section == 1 ? "Location" : nil
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

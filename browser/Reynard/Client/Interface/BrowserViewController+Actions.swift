@@ -210,7 +210,7 @@ extension BrowserViewController {
         addonsController.presentCurrentSiteSettings(for: item)
     }
     
-    @objc func presentAddBookmarkRequested() {
+    @objc func presentAddBookmarkRequested(_ notification: Notification) {
         guard let selectedTab = tabManager.selectedTab,
               let urlString = selectedTab.url?.trimmingCharacters(in: .whitespacesAndNewlines),
               let url = URL(string: urlString) else {
@@ -218,6 +218,18 @@ extension BrowserViewController {
         }
         
         let title = selectedTab.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        if notification.userInfo?["addToFavorites"] as? Bool == true {
+            let viewController = EditBookmarkViewController(
+                title: title,
+                url: url,
+                showsFavoritesHierarchyOnly: true
+            )
+            let navigationController = UINavigationController(rootViewController: viewController)
+            navigationController.modalPresentationStyle = .pageSheet
+            present(navigationController, animated: true)
+            return
+        }
+        
         let viewController: EditBookmarkViewController
         if let bookmark = BookmarkStore.shared.bookmark(for: url) {
             viewController = EditBookmarkViewController(bookmark: bookmark)

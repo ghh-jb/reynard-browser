@@ -33,6 +33,16 @@ enum AddressBarMenu {
             tabActions.append(UIAction(title: title, image: UIImage(systemName: "book")) { _ in
                 NotificationCenter.default.post(name: addBookmarkNotification, object: nil)
             })
+            
+            if !BookmarkStore.shared.containsBookmarkInFavoritesHierarchy(for: url) {
+                tabActions.append(UIAction(title: "Add to Favorites", image: UIImage(systemName: "star")) { _ in
+                    NotificationCenter.default.post(
+                        name: addBookmarkNotification,
+                        object: nil,
+                        userInfo: ["addToFavorites": true]
+                    )
+                })
+            }
         }
         
         let addonsChildren: [UIMenuElement]

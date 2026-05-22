@@ -160,6 +160,22 @@ final class BookmarkStore {
         }
     }
     
+    func containsBookmarkInFavoritesHierarchy(for url: URL) -> Bool {
+        stateQueue.sync {
+            containsBookmarkLocked(url: url, inFolderHierarchyWithGUID: Constants.favoritesFolderGUID)
+        }
+    }
+    
+    func favoritesFolderHierarchy() -> BookmarkFolderHierarchySnapshot {
+        stateQueue.sync {
+            let parent = folderSnapshotLocked(guid: Constants.favoritesFolderGUID) ?? rootFolderSnapshotLocked()
+            return BookmarkFolderHierarchySnapshot(
+                parent: parent,
+                items: fetchChildFoldersLocked(parentGUID: parent.guid)
+            )
+        }
+    }
+    
     func folderContents(parentGUID: String? = nil) -> BookmarkFolderContentsSnapshot {
         stateQueue.sync {
             let requestedParentGUID = resolvedParentGUID(for: parentGUID)
@@ -631,6 +647,39 @@ final class BookmarkStore {
         bind(urlString, to: statement, at: 2)
         bind(strippedURLString(from: urlString), to: statement, at: 3)
         return readBookmarkSnapshotsLocked(from: statement).first
+    }
+    
+    private func containsBookmarkLocked(url: URL, inFolderHierarchyWithGUID folderGUID: String) -> Bool {
+        let urlString = url.absoluteString
+        guard let statement = prepareStatementLocked(
+   """
+   WITH RECURSIVE descendants(guid) AS (
+    SELECT ?
+    UNION ALL
+    SELECT s.child
+    FROM \(Constants.structureTableName) AS s
+    JOIN descendants AS d ON s.parent = d.guid
+   )
+   SELECT 1
+   FROM \(Constants.bookmarkTableName) AS b
+   JOIN descendants AS d ON d.guid = b.guid
+   WHERE b.type = ?
+     AND (b.url = ? OR b.stripped_url = ?)
+   LIMIT 1;
+   """
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(folderGUID, to: statement, at: 1)
+        sqlite3_bind_int64(statement, 2, BookmarkNodeType.bookmark.rawValue)
+        bind(urlString, to: statement, at: 3)
+        bind(strippedURLString(from: urlString), to: statement, at: 4)
+        return sqlite3_step(statement) == SQLITE_ROW
     }
     
     private func rankedMatchesLocked(matching query: String, limit: Int) -> [BookmarkSnapshot] {

@@ -39,6 +39,7 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
         imageName: "ellipsis",
         action: #selector(downloadsActionsButtonTapped)
     )
+    private var legacyDownloadsActionsMenuDelegate: LegacyDownloadsActionsMenuDelegate?
     private lazy var downloadsActionsBarButtonItem: UIBarButtonItem = {
         let item = UIBarButtonItem(
             image: UIImage(systemName: "ellipsis"),
@@ -196,6 +197,10 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
             if #available(iOS 14.0, *) {
                 downloadsActionsButton.menu = makeDownloadsActionsMenu()
                 downloadsActionsButton.showsMenuAsPrimaryAction = true
+            } else if #available(iOS 13.0, *) {
+                let delegate = LegacyDownloadsActionsMenuDelegate(owner: self)
+                downloadsActionsButton.addInteraction(UIContextMenuInteraction(delegate: delegate))
+                legacyDownloadsActionsMenuDelegate = delegate
             }
             
             constraints.append(contentsOf: [
@@ -233,11 +238,30 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
     }
     
     @objc private func downloadsActionsButtonTapped() {
+        if #available(iOS 13.0, *) {
+            if #unavailable(iOS 14.0) {
+                presentLegacyDownloadsActionsMenu()
+            }
+        }
     }
     
-    @available(iOS 14.0, *)
-    private func makeDownloadsActionsMenu() -> UIMenu {
-        UIMenu(children: [
+    @available(iOS 13.0, *)
+    private func presentLegacyDownloadsActionsMenu() {
+        guard let interaction = downloadsActionsButton.interactions.compactMap({ $0 as? UIContextMenuInteraction }).first else {
+            return
+        }
+        
+        let selector = NSSelectorFromString("_presentMenuAtLocation:")
+        guard interaction.responds(to: selector) else {
+            return
+        }
+        
+        let center = NSValue(cgPoint: CGPoint(x: downloadsActionsButton.bounds.midX, y: downloadsActionsButton.bounds.midY))
+        _ = interaction.perform(selector, with: center)
+    }
+    
+    fileprivate func makeDownloadsActionsMenu() -> UIMenu {
+        UIMenu(title: "", children: [
             UIAction(title: "Open Downloads Folder", image: UIImage(systemName: "folder")) { [weak self] _ in
                 self?.openDownloadsFolder()
             },
@@ -693,6 +717,27 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
     
     private var nearestViewController: UIViewController? {
         sequence(first: next, next: { $0?.next }).first { $0 is UIViewController } as? UIViewController
+    }
+}
+
+private final class LegacyDownloadsActionsMenuDelegate: NSObject, UIContextMenuInteractionDelegate {
+    weak var owner: DownloadsManagerView?
+    
+    init(owner: DownloadsManagerView) {
+        self.owner = owner
+    }
+    
+    func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        configurationForMenuAtLocation location: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        guard let owner else {
+            return nil
+        }
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            owner.makeDownloadsActionsMenu()
+        }
     }
 }
 

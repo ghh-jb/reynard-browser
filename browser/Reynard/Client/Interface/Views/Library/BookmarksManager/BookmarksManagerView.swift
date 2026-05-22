@@ -87,6 +87,7 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
         imageName: "ellipsis",
         action: #selector(searchActionsButtonTapped)
     )
+    private var legacySearchActionsMenuDelegate: LegacySearchActionsMenuDelegate?
     private lazy var bookmarksActionsBarButtonItem: UIBarButtonItem = {
         let item = UIBarButtonItem(
             image: UIImage(systemName: "ellipsis"),
@@ -147,7 +148,7 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
         view.backgroundColor = .systemGroupedBackground
         configureLayout()
         
-        tableView.register(BookmarkListItemCell.self, forCellReuseIdentifier: BookmarkListItemCell.reuseIdentifier)
+        tableView.register(BookmarkItemCell.self, forCellReuseIdentifier: BookmarkItemCell.reuseIdentifier)
         
         if isRootFolder {
             setupHeaderView()
@@ -222,9 +223,9 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
         }
         
         let cell = tableView.dequeueReusableCell(
-            withIdentifier: BookmarkListItemCell.reuseIdentifier,
+            withIdentifier: BookmarkItemCell.reuseIdentifier,
             for: indexPath
-        ) as! BookmarkListItemCell
+        ) as! BookmarkItemCell
         
         switch item {
         case let .folder(folder):
@@ -461,7 +462,29 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
     @objc private func searchActionsButtonTapped() {
         if isEditing {
             setEditing(false, animated: true)
+            return
         }
+        
+        if #available(iOS 13.0, *) {
+            if #unavailable(iOS 14.0) {
+                presentLegacySearchActionsMenu()
+            }
+        }
+    }
+    
+    @available(iOS 13.0, *)
+    private func presentLegacySearchActionsMenu() {
+        guard let interaction = searchActionsButton.interactions.compactMap({ $0 as? UIContextMenuInteraction }).first else {
+            return
+        }
+        
+        let selector = NSSelectorFromString("_presentMenuAtLocation:")
+        guard interaction.responds(to: selector) else {
+            return
+        }
+        
+        let center = NSValue(cgPoint: CGPoint(x: searchActionsButton.bounds.midX, y: searchActionsButton.bounds.midY))
+        _ = interaction.perform(selector, with: center)
     }
     
     private func updateSearchActionsButton() {
@@ -488,9 +511,8 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
         }
     }
     
-    @available(iOS 14.0, *)
-    private func makeSearchActionsMenu() -> UIMenu {
-        UIMenu(children: [
+    fileprivate func makeSearchActionsMenu() -> UIMenu {
+        UIMenu(title: "", children: [
             makeSortMenu(),
             UIAction(
                 title: "Show Folders on Top",
@@ -501,7 +523,7 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
                 self?.reloadContents()
                 self?.updateSearchActionsButton()
             },
-            UIMenu(options: .displayInline, children: [
+            UIMenu(title: "", image: nil, identifier: nil, options: .displayInline, children: [
                 UIAction(title: "Edit Bookmarks", image: UIImage(systemName: "pencil")) { [weak self] _ in
                     self?.setEditing(true, animated: true)
                 },
@@ -512,7 +534,6 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
         ])
     }
     
-    @available(iOS 14.0, *)
     private func makeSortMenu() -> UIMenu {
         let selectedOrder = Prefs.BookmarkSettings.sortOrders
         let sortOptions: [(title: String, order: BookmarkSortOrder)] = [
@@ -524,6 +545,8 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
         let menu = UIMenu(
             title: "Sort By",
             image: UIImage(systemName: "arrow.up.arrow.down"),
+            identifier: nil,
+            options: [],
             children: sortOptions.map {
                 let order = $0.order
                 return UIAction(title: $0.title, state: order == selectedOrder ? .on : .off) { [weak self] _ in
@@ -674,6 +697,13 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
         } else {
             headerContainerView.addSubview(searchActionsButton)
             searchActionsButton.translatesAutoresizingMaskIntoConstraints = false
+            if #available(iOS 13.0, *) {
+                if #unavailable(iOS 14.0) {
+                    let delegate = LegacySearchActionsMenuDelegate(owner: self)
+                    searchActionsButton.addInteraction(UIContextMenuInteraction(delegate: delegate))
+                    legacySearchActionsMenuDelegate = delegate
+                }
+            }
             constraints.append(contentsOf: [
                 searchBar.trailingAnchor.constraint(equalTo: searchActionsButton.leadingAnchor),
                 searchActionsButton.trailingAnchor.constraint(equalTo: headerContainerView.trailingAnchor, constant: -20),
@@ -842,157 +872,30 @@ private final class BookmarksFolderViewController: UIViewController, UITableView
     }
 }
 
-private extension UIView {
-    var containingViewController: UIViewController? {
-        sequence(first: next, next: { $0?.next }).first(where: { $0 is UIViewController }) as? UIViewController
+private final class LegacySearchActionsMenuDelegate: NSObject, UIContextMenuInteractionDelegate {
+    weak var owner: BookmarksFolderViewController?
+    
+    init(owner: BookmarksFolderViewController) {
+        self.owner = owner
+    }
+    
+    func contextMenuInteraction(
+        _ interaction: UIContextMenuInteraction,
+        configurationForMenuAtLocation location: CGPoint
+    ) -> UIContextMenuConfiguration? {
+        guard let owner,
+              !owner.isEditing else {
+            return nil
+        }
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            owner.makeSearchActionsMenu()
+        }
     }
 }
 
-private final class BookmarkListItemCell: UITableViewCell {
-    static let reuseIdentifier = "BookmarkListItemCell"
-    
-    private static let faviconStore = FaviconStore.shared
-    
-    private let iconView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-    
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .preferredFont(forTextStyle: .body)
-        label.textColor = .label
-        label.adjustsFontForContentSizeCategory = true
-        label.numberOfLines = 1
-        return label
-    }()
-    private let countLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .preferredFont(forTextStyle: .body)
-        label.textColor = .secondaryLabel
-        label.adjustsFontForContentSizeCategory = true
-        label.textAlignment = .right
-        label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        return label
-    }()
-    
-    private var representedURL: URL?
-    private var faviconTask: Task<Void, Never>?
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        
-        clipsToBounds = true
-        contentView.clipsToBounds = true
-        
-        contentView.addSubview(iconView)
-        contentView.addSubview(titleLabel)
-        contentView.addSubview(countLabel)
-        
-        NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-            iconView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 26),
-            iconView.heightAnchor.constraint(equalToConstant: 26),
-            
-            titleLabel.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 13),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: countLabel.leadingAnchor, constant: -8),
-            titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            
-            countLabel.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
-            countLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-        ])
-        
-        separatorInset.left = 56
-        applyIcon(UIImage(systemName: "globe"), tintColor: .secondaryLabel)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        contentView.layoutIfNeeded()
-        let guideFrameInContent = contentView.layoutMarginsGuide.layoutFrame
-        let guideFrameInCell = convert(guideFrameInContent, from: contentView)
-        let rightInset = bounds.width - guideFrameInCell.maxX
-        separatorInset = UIEdgeInsets(
-            top: separatorInset.top,
-            left: separatorInset.left,
-            bottom: separatorInset.bottom,
-            right: rightInset
-        )
-    }
-    
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        representedURL = nil
-        faviconTask?.cancel()
-        faviconTask = nil
-        titleLabel.text = nil
-        countLabel.text = nil
-        countLabel.isHidden = true
-        applyIcon(UIImage(systemName: "globe"), tintColor: .secondaryLabel)
-    }
-    
-    func apply(folder: BookmarkFolderSnapshot) {
-        representedURL = nil
-        faviconTask?.cancel()
-        faviconTask = nil
-        titleLabel.text = folder.title
-        countLabel.text = "\(folder.childCount)"
-        countLabel.isHidden = false
-        
-        if folder.isProtected && folder.title == "Favorites" {
-            applyIcon(UIImage(systemName: "star"), tintColor: .secondaryLabel)
-        } else {
-            applyIcon(UIImage(systemName: "folder"), tintColor: .secondaryLabel)
-        }
-    }
-    
-    func apply(bookmark: BookmarkSnapshot) {
-        representedURL = bookmark.url
-        faviconTask?.cancel()
-        faviconTask = nil
-        titleLabel.text = bookmark.title
-        countLabel.text = nil
-        countLabel.isHidden = true
-        
-        if let cachedImage = Self.faviconStore.cachedImage(for: bookmark.url) {
-            applyIcon(cachedImage, tintColor: nil)
-            return
-        }
-        
-        applyIcon(UIImage(systemName: "globe"), tintColor: .secondaryLabel)
-        let expectedURL = bookmark.url
-        faviconTask = Task { [weak self] in
-            guard let self else {
-                return
-            }
-            
-            let image = await Self.faviconStore.resolveFavicon(for: expectedURL)
-            guard !Task.isCancelled else {
-                return
-            }
-            
-            await MainActor.run {
-                guard self.representedURL == expectedURL else {
-                    return
-                }
-                
-                self.applyIcon(image ?? UIImage(systemName: "globe"), tintColor: image == nil ? .secondaryLabel : nil)
-            }
-        }
-    }
-    
-    private func applyIcon(_ image: UIImage?, tintColor: UIColor?) {
-        iconView.image = image
-        iconView.tintColor = tintColor
+private extension UIView {
+    var containingViewController: UIViewController? {
+        sequence(first: next, next: { $0?.next }).first(where: { $0 is UIViewController }) as? UIViewController
     }
 }

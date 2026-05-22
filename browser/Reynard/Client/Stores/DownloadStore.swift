@@ -44,6 +44,7 @@ struct DownloadItemSnapshot {
     let originalURL: URL?
     let mimeType: String?
     let state: State
+    let fileExists: Bool
     let totalBytes: Int64?
     let downloadedBytes: Int64
     let bytesPerSecond: Int64
@@ -341,6 +342,19 @@ final class DownloadStore: NSObject {
         }
     }
     
+    func clearDownloadHistory(since startDate: Date?) {
+        stateQueue.async {
+            if let startDate {
+                self.persistedDownloads.removeAll { $0.addedAt >= startDate }
+            } else {
+                self.persistedDownloads.removeAll()
+            }
+            
+            self.savePersistedDownloadsLocked()
+            self.postDidChange()
+        }
+    }
+    
     func markCompletedDownloadsViewed() {
         stateQueue.async {
             guard self.hasUnviewedCompletedDownloads else {
@@ -401,6 +415,7 @@ final class DownloadStore: NSObject {
                     originalURL: active.originalURL,
                     mimeType: active.mimeType,
                     state: .downloading,
+                    fileExists: true,
                     totalBytes: active.expectedBytes,
                     downloadedBytes: active.downloadedBytes,
                     bytesPerSecond: active.bytesPerSecond,
@@ -411,14 +426,16 @@ final class DownloadStore: NSObject {
         
         let completedItems = persistedDownloads
             .map { entry in
-                DownloadItemSnapshot(
+                let fileURL = storage.downloadsDirectoryURL.appendingPathComponent(entry.relativePath, isDirectory: false)
+                return DownloadItemSnapshot(
                     id: entry.id,
                     fileName: entry.fileName,
-                    fileURL: storage.downloadsDirectoryURL.appendingPathComponent(entry.relativePath, isDirectory: false),
+                    fileURL: fileURL,
                     sourceURL: URL(string: entry.sourceURLString) ?? storage.downloadsDirectoryURL,
                     originalURL: entry.originalURLString.flatMap(URL.init(string:)),
                     mimeType: entry.mimeType,
                     state: .completed,
+                    fileExists: fileManager.fileExists(atPath: fileURL.path),
                     totalBytes: entry.fileSize,
                     downloadedBytes: entry.fileSize,
                     bytesPerSecond: 0,

@@ -114,6 +114,9 @@ final class DownloadItemCell: UITableViewCell {
         representedFileURL = nil
         representedItemID = nil
         lastDetailsLabelUpdateTime = 0
+        contentView.alpha = 1
+        fileNameLabel.textColor = .label
+        detailsLabel.textColor = .secondaryLabel
         iconView.image = nil
         iconView.transform = .identity
         iconView.tintColor = .label
@@ -121,6 +124,10 @@ final class DownloadItemCell: UITableViewCell {
     
     func apply(item: DownloadItemSnapshot) {
         fileNameLabel.text = item.fileName
+        let isDeleted = item.state == .completed && !item.fileExists
+        contentView.alpha = isDeleted ? 0.45 : 1
+        fileNameLabel.textColor = isDeleted ? .secondaryLabel : .label
+        detailsLabel.textColor = .secondaryLabel
         
         switch item.state {
         case .downloading:
@@ -163,11 +170,18 @@ final class DownloadItemCell: UITableViewCell {
         case .completed:
             representedItemID = item.id
             lastDetailsLabelUpdateTime = 0
-            detailsLabel.text = item.totalBytes.map { Self.formattedByteCount($0) } ?? "Unknown size"
+            detailsLabel.text = item.fileExists ? (item.totalBytes.map { Self.formattedByteCount($0) } ?? "Unknown size") : "Deleted"
             progressView.isHidden = true
             progressView.progress = 0
             iconView.transform = .identity
             iconView.tintColor = nil
+            
+            guard item.fileExists else {
+                representedFileURL = nil
+                iconView.image = Self.iconProvider.genericPlaceholderIcon()
+                return
+            }
+            
             representedFileURL = item.fileURL
             iconView.image = item.fileURL.flatMap { Self.iconProvider.cachedIcon(for: $0) } ?? Self.iconProvider.genericPlaceholderIcon()
             
@@ -348,8 +362,8 @@ private final class DownloadFileIconProvider {
         let contentTypeIdentifier = resolvedContentTypeIdentifier(fileName: fileName, mimeType: mimeType)
         let existingExtension = URL(fileURLWithPath: fileName).pathExtension.lowercased()
         let preferredExtension = existingExtension.isEmpty
-            ? (preferredFilenameExtension(from: contentTypeIdentifier) ?? "")
-            : existingExtension
+        ? (preferredFilenameExtension(from: contentTypeIdentifier) ?? "")
+        : existingExtension
         let placeholderName = preferredExtension.isEmpty ? "generic-file" : "generic-file.\(preferredExtension)"
         let placeholderURL = placeholderDirectory.appendingPathComponent(placeholderName)
         
@@ -393,7 +407,7 @@ private final class DownloadFileIconProvider {
             nil
         )?.takeRetainedValue() as String?
     }
-
+    
     private func preferredFilenameExtension(from contentTypeIdentifier: String?) -> String? {
         guard let contentTypeIdentifier else {
             return nil

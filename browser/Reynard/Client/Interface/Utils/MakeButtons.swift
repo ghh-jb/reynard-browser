@@ -13,9 +13,11 @@ enum MakeButtons {
     static let hasLiquidGlass = dlsym(UnsafeMutableRawPointer(bitPattern: -2), "_UISolariumEnabled") != nil && _UISolariumEnabled()
     static let bookmarksLibraryActionBarButtonTag = 8701
     static let historyLibraryActionBarButtonTag = 8702
+    static let downloadsLibraryActionBarButtonTag = 8703
     static let libraryActionBarButtonTags: Set<Int> = [
         bookmarksLibraryActionBarButtonTag,
         historyLibraryActionBarButtonTag,
+        downloadsLibraryActionBarButtonTag,
     ]
     
     private static func toolbarImage(for imageName: String) -> UIImage? {

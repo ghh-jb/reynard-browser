@@ -13,6 +13,11 @@ final class SearchPreferencesViewController: SettingsTableViewController {
         title = "Search"
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        tableView.reloadData()
+    }
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }

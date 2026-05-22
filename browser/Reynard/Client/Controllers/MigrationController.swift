@@ -63,6 +63,7 @@ final class MigrationController {
         }
         
         do {
+            try removeLegacyStoreFolders(in: sourceURL)
             try fileManager.createDirectory(at: applicationSupportDirectoryURL, withIntermediateDirectories: true)
             if fileManager.fileExists(atPath: destinationURL.path) {
                 try fileManager.removeItem(at: destinationURL)
@@ -104,5 +105,14 @@ final class MigrationController {
         try? fileManager.removeItem(
             at: documentsDirectoryURL.appendingPathComponent("ua-override.json", isDirectory: false)
         )
+    }
+
+    private func removeLegacyStoreFolders(in appDataDirectoryURL: URL) throws {
+        for folderName in ["TabManagement", "Favicons"] {
+            let folderURL = appDataDirectoryURL.appendingPathComponent(folderName, isDirectory: true)
+            if fileManager.fileExists(atPath: folderURL.path) {
+                try fileManager.removeItem(at: folderURL)
+            }
+        }
     }
 }

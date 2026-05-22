@@ -7,52 +7,32 @@
 
 import CryptoKit
 import Foundation
+import SQLite3
 import UIKit
 
 final class FaviconStore {
     static let shared = FaviconStore()
     
-    private enum Constants {
-        static let expirationDays = 30
-        static let manifestFileName = "FaviconStore"
-        static let imageFilePrefix = "img-"
-        static let persistDelay: TimeInterval = 10
-        static let maxHTMLBytes = 768 * 1024
-        static let maxImageBytes = 2 * 1024 * 1024
-        static let maxRedirectDepth = 3
-    }
+    private static let expirationDays = 30
+    private static let databaseName = "Favicons"
+    private static let imageFilePrefix = "img-"
+    private static let maxHTMLBytes = 768 * 1024
+    private static let maxImageBytes = 2 * 1024 * 1024
+    private static let maxRedirectDepth = 3
     
     private struct StorageURLs {
         let directoryURL: URL
-        let manifestFileURL: URL
+        let databaseURL: URL
     }
     
-    private struct PersistedState: Codable {
-        let associations: [SiteAssociation]
-        let images: [CachedImage]
-    }
-    
-    private struct SiteAssociation: Codable {
+    private struct SiteAssociation {
         let scopeKey: String
         let imageKey: String
-        let iconURL: String
-        var updatedAt: Date
-    }
-    
-    private struct CachedImage: Codable {
-        let imageKey: String
-        let sourceURLs: [String]
-        var updatedAt: Date
     }
     
     private struct HTMLDocument {
         let html: String
         let url: URL
-    }
-    
-    private struct IconCandidate {
-        let url: URL
-        let score: Int
     }
     
     private struct RemoteImage {
@@ -64,6 +44,8 @@ final class FaviconStore {
     private let fileManager: FileManager
     private let storage: StorageURLs
     private let stateQueue = DispatchQueue(label: "com.minh-ton.favicon-store", qos: .utility)
+    private var database: OpaquePointer?
+    private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
     
     private lazy var session: URLSession = {
         let configuration = URLSessionConfiguration.default
@@ -86,11 +68,7 @@ final class FaviconStore {
         options: []
     )
     
-    private var associationsByScopeKey: [String: SiteAssociation] = [:]
-    private var imagesByKey: [String: CachedImage] = [:]
-    private var imageKeysBySourceURL: [String: String] = [:]
     private var activeRequests: [String: Task<UIImage?, Never>] = [:]
-    private var pendingPersistWorkItem: DispatchWorkItem?
     
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -105,13 +83,26 @@ final class FaviconStore {
         
         self.storage = StorageURLs(
             directoryURL: directoryURL,
-            manifestFileURL: directoryURL.appendingPathComponent(Constants.manifestFileName, isDirectory: false)
+            databaseURL: directoryURL.appendingPathComponent(Self.databaseName, isDirectory: false)
         )
         
         stateQueue.sync {
             prepareStorageLocked()
-            loadPersistedStateLocked()
+            openDatabaseLocked()
+            configureDatabaseLocked()
+            createSchemaLocked()
             pruneExpiredEntriesLocked(now: Date())
+        }
+    }
+    
+    deinit {
+        stateQueue.sync {
+            guard let database else {
+                return
+            }
+            
+            sqlite3_close(database)
+            self.database = nil
         }
     }
     
@@ -155,60 +146,64 @@ final class FaviconStore {
     
     private func prepareStorageLocked() {
         try? fileManager.createDirectory(at: storage.directoryURL, withIntermediateDirectories: true)
-        
-        guard !fileManager.fileExists(atPath: storage.manifestFileURL.path) else {
-            return
-        }
-        
-        let emptyState = PersistedState(associations: [], images: [])
-        guard let data = try? JSONEncoder().encode(emptyState) else {
-            return
-        }
-        
-        try? data.write(to: storage.manifestFileURL, options: .atomic)
     }
     
-    private func loadPersistedStateLocked() {
-        guard let data = try? Data(contentsOf: storage.manifestFileURL),
-              let state = try? JSONDecoder().decode(PersistedState.self, from: data) else {
-            associationsByScopeKey = [:]
-            imagesByKey = [:]
-            imageKeysBySourceURL = [:]
+    private func openDatabaseLocked() {
+        guard database == nil else {
             return
         }
         
-        associationsByScopeKey = state.associations.reduce(into: [:]) { result, association in
-            result[association.scopeKey] = association
-        }
-        imagesByKey = state.images.reduce(into: [:]) { result, image in
-            result[image.imageKey] = image
-        }
-        imageKeysBySourceURL = state.images.reduce(into: [:]) { result, image in
-            image.sourceURLs.forEach { result[$0] = image.imageKey }
-        }
-    }
-    
-    private func persistStateLocked() {
-        let state = PersistedState(
-            associations: Array(associationsByScopeKey.values),
-            images: Array(imagesByKey.values)
-        )
-        
-        guard let data = try? JSONEncoder().encode(state) else {
+        var database: OpaquePointer?
+        let flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
+        guard sqlite3_open_v2(storage.databaseURL.path, &database, flags, nil) == SQLITE_OK else {
+            if let database {
+                sqlite3_close(database)
+            }
+            assertionFailure("Failed to open Favicons database")
             return
         }
         
-        try? data.write(to: storage.manifestFileURL, options: .atomic)
+        self.database = database
     }
     
-    private func schedulePersistLocked() {
-        pendingPersistWorkItem?.cancel()
-        
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.persistStateLocked()
+    private func configureDatabaseLocked() {
+        guard database != nil else {
+            return
         }
-        pendingPersistWorkItem = workItem
-        stateQueue.asyncAfter(deadline: .now() + Constants.persistDelay, execute: workItem)
+        
+        _ = executeLocked("PRAGMA foreign_keys = ON;")
+        _ = executeLocked("PRAGMA journal_mode = WAL;")
+        _ = executeLocked("PRAGMA synchronous = NORMAL;")
+        _ = executeLocked("PRAGMA temp_store = MEMORY;")
+        sqlite3_busy_timeout(database, 2_500)
+    }
+    
+    private func createSchemaLocked() {
+        let sql = """
+        CREATE TABLE IF NOT EXISTS favicon_images (
+            image_key TEXT PRIMARY KEY,
+            updated_at REAL NOT NULL
+        );
+        
+        CREATE TABLE IF NOT EXISTS favicon_sources (
+            source_url TEXT PRIMARY KEY,
+            image_key TEXT NOT NULL REFERENCES favicon_images(image_key) ON DELETE CASCADE
+        );
+        
+        CREATE TABLE IF NOT EXISTS favicon_associations (
+            scope_key TEXT PRIMARY KEY,
+            image_key TEXT NOT NULL REFERENCES favicon_images(image_key) ON DELETE CASCADE,
+            icon_url TEXT NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_favicon_images_updated_at ON favicon_images(updated_at);
+        CREATE INDEX IF NOT EXISTS idx_favicon_sources_image_key ON favicon_sources(image_key);
+        CREATE INDEX IF NOT EXISTS idx_favicon_associations_image_key ON favicon_associations(image_key);
+        CREATE INDEX IF NOT EXISTS idx_favicon_associations_updated_at ON favicon_associations(updated_at);
+        """
+        
+        _ = executeLocked(sql)
     }
     
     private func cachedImageLocked(for pageURL: URL, now: Date) -> UIImage? {
@@ -219,9 +214,7 @@ final class FaviconStore {
             return nil
         }
         
-        associationsByScopeKey[association.scopeKey]?.updatedAt = now
-        imagesByKey[association.imageKey]?.updatedAt = now
-        schedulePersistLocked()
+        _ = updateTimestampsLocked(scopeKey: association.scopeKey, imageKey: association.imageKey, now: now)
         return image
     }
     
@@ -269,20 +262,17 @@ final class FaviconStore {
             let now = Date()
             pruneExpiredEntriesLocked(now: now)
             
-            guard let imageKey = imageKeysBySourceURL[iconURL.absoluteString],
+            guard let imageKey = imageKeyLocked(forSourceURL: iconURL.absoluteString),
                   let image = loadImageLocked(for: imageKey) else {
                 return nil
             }
             
             let scopeKey = scopeKey(for: pageURL, iconURL: iconURL)
-            associationsByScopeKey[scopeKey] = SiteAssociation(
-                scopeKey: scopeKey,
-                imageKey: imageKey,
-                iconURL: iconURL.absoluteString,
-                updatedAt: now
-            )
-            imagesByKey[imageKey]?.updatedAt = now
-            schedulePersistLocked()
+            guard upsertAssociationLocked(scopeKey: scopeKey, imageKey: imageKey, iconURL: iconURL.absoluteString, now: now),
+                  updateImageTimestampLocked(imageKey: imageKey, now: now) else {
+                return nil
+            }
+            
             return image
         }
     }
@@ -296,76 +286,107 @@ final class FaviconStore {
         }
         
         let scopeKey = scopeKey(for: pageURL, iconURL: remoteImage.url)
-        imagesByKey[imageKey] = CachedImage(
-            imageKey: imageKey,
-            sourceURLs: mergedSourceURLs(for: imageKey, adding: remoteImage.url.absoluteString),
-            updatedAt: now
-        )
-        imagesByKey[imageKey]?.sourceURLs.forEach {
-            imageKeysBySourceURL[$0] = imageKey
+        guard executeLocked("BEGIN IMMEDIATE TRANSACTION;") else {
+            return
         }
-        associationsByScopeKey[scopeKey] = SiteAssociation(
-            scopeKey: scopeKey,
-            imageKey: imageKey,
-            iconURL: remoteImage.url.absoluteString,
-            updatedAt: now
-        )
-        schedulePersistLocked()
+        
+        guard upsertImageLocked(imageKey: imageKey, now: now),
+              upsertSourceURLLocked(remoteImage.url.absoluteString, imageKey: imageKey),
+              upsertAssociationLocked(scopeKey: scopeKey, imageKey: imageKey, iconURL: remoteImage.url.absoluteString, now: now) else {
+            _ = executeLocked("ROLLBACK TRANSACTION;")
+            return
+        }
+        
+        guard executeLocked("COMMIT TRANSACTION;") else {
+            _ = executeLocked("ROLLBACK TRANSACTION;")
+            return
+        }
     }
     
     private func pruneExpiredEntriesLocked(now: Date) {
-        let expiredScopeKeys = associationsByScopeKey.compactMap { entry in
-            isExpired(entry.value.updatedAt, comparedTo: now) ? entry.key : nil
-        }
-        for scopeKey in expiredScopeKeys {
-            associationsByScopeKey.removeValue(forKey: scopeKey)
-        }
+        let imageKeysBeforePruning = Set(fetchImageKeysLocked())
+        let startOfToday = Calendar.current.startOfDay(for: now)
+        let cutoff = (Calendar.current.date(byAdding: .day, value: 1 - Self.expirationDays, to: startOfToday) ?? startOfToday).timeIntervalSince1970
         
-        let expiredImageKeys = imagesByKey.compactMap { entry in
-            isExpired(entry.value.updatedAt, comparedTo: now) ? entry.key : nil
-        }
-        for imageKey in expiredImageKeys {
-            removeImageLocked(imageKey)
-        }
+        _ = deleteExpiredAssociationsLocked(cutoff: cutoff)
+        _ = deleteExpiredImagesLocked(cutoff: cutoff)
+        _ = executeLocked(
+            """
+            DELETE FROM favicon_images
+            WHERE image_key NOT IN (
+                SELECT image_key
+                FROM favicon_associations
+            );
+            """
+        )
         
-        removeUnreferencedImagesLocked()
-    }
-    
-    private func removeUnreferencedImagesLocked() {
-        let referencedImageKeys = Set(associationsByScopeKey.values.map(\.imageKey))
-        let unreferencedImageKeys = imagesByKey.keys.filter { !referencedImageKeys.contains($0) }
-        for imageKey in unreferencedImageKeys {
-            removeImageLocked(imageKey)
-        }
-    }
-    
-    private func removeImageLocked(_ imageKey: String) {
-        if let image = imagesByKey.removeValue(forKey: imageKey) {
-            image.sourceURLs.forEach {
-                imageKeysBySourceURL.removeValue(forKey: $0)
+        let imageKeysAfterPruning = Set(fetchImageKeysLocked())
+        for imageKey in imageKeysBeforePruning where !imageKeysAfterPruning.contains(imageKey) {
+            let imageURL = imageFileURL(for: imageKey)
+            if fileManager.fileExists(atPath: imageURL.path) {
+                try? fileManager.removeItem(at: imageURL)
             }
-        }
-        
-        let imageURL = imageFileURL(for: imageKey)
-        if fileManager.fileExists(atPath: imageURL.path) {
-            try? fileManager.removeItem(at: imageURL)
-        }
-        
-        let scopeKeys = associationsByScopeKey.compactMap { entry in
-            entry.value.imageKey == imageKey ? entry.key : nil
-        }
-        for scopeKey in scopeKeys {
-            associationsByScopeKey.removeValue(forKey: scopeKey)
         }
     }
     
     private func lookupAssociationLocked(for pageURL: URL) -> SiteAssociation? {
         for lookupKey in lookupKeys(for: pageURL) {
-            if let association = associationsByScopeKey[lookupKey] {
+            if let association = associationLocked(scopeKey: lookupKey) {
                 return association
             }
         }
         return nil
+    }
+    
+    private func associationLocked(scopeKey: String) -> SiteAssociation? {
+        guard let statement = prepareStatementLocked(
+            """
+            SELECT scope_key, image_key
+            FROM favicon_associations
+            WHERE scope_key = ?
+            LIMIT 1;
+            """
+        ) else {
+            return nil
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(scopeKey, to: statement, at: 1)
+        guard sqlite3_step(statement) == SQLITE_ROW else {
+            return nil
+        }
+        
+        return SiteAssociation(
+            scopeKey: string(from: statement, at: 0),
+            imageKey: string(from: statement, at: 1)
+        )
+    }
+    
+    private func imageKeyLocked(forSourceURL sourceURL: String) -> String? {
+        guard let statement = prepareStatementLocked(
+            """
+            SELECT image_key
+            FROM favicon_sources
+            WHERE source_url = ?
+            LIMIT 1;
+            """
+        ) else {
+            return nil
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(sourceURL, to: statement, at: 1)
+        guard sqlite3_step(statement) == SQLITE_ROW else {
+            return nil
+        }
+        
+        return string(from: statement, at: 0)
     }
     
     private func loadImageLocked(for imageKey: String) -> UIImage? {
@@ -378,13 +399,198 @@ final class FaviconStore {
         return image
     }
     
-    private func mergedSourceURLs(for imageKey: String, adding sourceURL: String) -> [String] {
-        let existingSourceURLs = imagesByKey[imageKey]?.sourceURLs ?? []
-        return Array(Set(existingSourceURLs + [sourceURL])).sorted()
+    private func removeImageLocked(_ imageKey: String) {
+        guard let statement = prepareStatementLocked(
+            "DELETE FROM favicon_images WHERE image_key = ?;"
+        ) else {
+            let imageURL = imageFileURL(for: imageKey)
+            if fileManager.fileExists(atPath: imageURL.path) {
+                try? fileManager.removeItem(at: imageURL)
+            }
+            return
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(imageKey, to: statement, at: 1)
+        _ = sqlite3_step(statement)
+        
+        let imageURL = imageFileURL(for: imageKey)
+        if fileManager.fileExists(atPath: imageURL.path) {
+            try? fileManager.removeItem(at: imageURL)
+        }
+    }
+    
+    private func upsertImageLocked(imageKey: String, now: Date) -> Bool {
+        guard let statement = prepareStatementLocked(
+            """
+            INSERT INTO favicon_images (image_key, updated_at)
+            VALUES (?, ?)
+            ON CONFLICT(image_key) DO UPDATE SET
+                updated_at = excluded.updated_at;
+            """
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(imageKey, to: statement, at: 1)
+        sqlite3_bind_double(statement, 2, now.timeIntervalSince1970)
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+    
+    private func upsertSourceURLLocked(_ sourceURL: String, imageKey: String) -> Bool {
+        guard let statement = prepareStatementLocked(
+            """
+            INSERT INTO favicon_sources (source_url, image_key)
+            VALUES (?, ?)
+            ON CONFLICT(source_url) DO UPDATE SET
+                image_key = excluded.image_key;
+            """
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(sourceURL, to: statement, at: 1)
+        bind(imageKey, to: statement, at: 2)
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+    
+    private func upsertAssociationLocked(scopeKey: String, imageKey: String, iconURL: String, now: Date) -> Bool {
+        guard let statement = prepareStatementLocked(
+            """
+            INSERT INTO favicon_associations (scope_key, image_key, icon_url, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(scope_key) DO UPDATE SET
+                image_key = excluded.image_key,
+                icon_url = excluded.icon_url,
+                updated_at = excluded.updated_at;
+            """
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(scopeKey, to: statement, at: 1)
+        bind(imageKey, to: statement, at: 2)
+        bind(iconURL, to: statement, at: 3)
+        sqlite3_bind_double(statement, 4, now.timeIntervalSince1970)
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+    
+    private func updateTimestampsLocked(scopeKey: String, imageKey: String, now: Date) -> Bool {
+        guard executeLocked("BEGIN IMMEDIATE TRANSACTION;") else {
+            return false
+        }
+        
+        guard updateAssociationTimestampLocked(scopeKey: scopeKey, now: now),
+              updateImageTimestampLocked(imageKey: imageKey, now: now) else {
+            _ = executeLocked("ROLLBACK TRANSACTION;")
+            return false
+        }
+        
+        guard executeLocked("COMMIT TRANSACTION;") else {
+            _ = executeLocked("ROLLBACK TRANSACTION;")
+            return false
+        }
+        
+        return true
+    }
+    
+    private func updateAssociationTimestampLocked(scopeKey: String, now: Date) -> Bool {
+        guard let statement = prepareStatementLocked(
+            "UPDATE favicon_associations SET updated_at = ? WHERE scope_key = ?;"
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_double(statement, 1, now.timeIntervalSince1970)
+        bind(scopeKey, to: statement, at: 2)
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+    
+    private func updateImageTimestampLocked(imageKey: String, now: Date) -> Bool {
+        guard let statement = prepareStatementLocked(
+            "UPDATE favicon_images SET updated_at = ? WHERE image_key = ?;"
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_double(statement, 1, now.timeIntervalSince1970)
+        bind(imageKey, to: statement, at: 2)
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+    
+    private func fetchImageKeysLocked() -> [String] {
+        guard let statement = prepareStatementLocked(
+            "SELECT image_key FROM favicon_images;"
+        ) else {
+            return []
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        var imageKeys: [String] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            imageKeys.append(string(from: statement, at: 0))
+        }
+        return imageKeys
+    }
+    
+    private func deleteExpiredAssociationsLocked(cutoff: TimeInterval) -> Bool {
+        guard let statement = prepareStatementLocked(
+            "DELETE FROM favicon_associations WHERE updated_at < ?;"
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_double(statement, 1, cutoff)
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+    
+    private func deleteExpiredImagesLocked(cutoff: TimeInterval) -> Bool {
+        guard let statement = prepareStatementLocked(
+            "DELETE FROM favicon_images WHERE updated_at < ?;"
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_double(statement, 1, cutoff)
+        return sqlite3_step(statement) == SQLITE_DONE
     }
     
     private func imageFileURL(for imageKey: String) -> URL {
-        storage.directoryURL.appendingPathComponent(Constants.imageFilePrefix + imageKey, isDirectory: false)
+        storage.directoryURL.appendingPathComponent(Self.imageFilePrefix + imageKey, isDirectory: false)
     }
     
     private func supportsFaviconLookup(for pageURL: URL) -> Bool {
@@ -481,7 +687,7 @@ final class FaviconStore {
         }
         
         guard let (data, response) = await data(for: request),
-              data.count <= Constants.maxHTMLBytes else {
+              data.count <= Self.maxHTMLBytes else {
             return nil
         }
         
@@ -496,7 +702,7 @@ final class FaviconStore {
         }
         
         let finalURL = response.url ?? pageURL
-        if redirectDepth < Constants.maxRedirectDepth,
+        if redirectDepth < Self.maxRedirectDepth,
            let redirectURL = metaRefreshRedirectURL(in: html, baseURL: finalURL),
            redirectURL != finalURL {
             return await fetchHTMLDocument(for: redirectURL, redirectDepth: redirectDepth + 1)
@@ -514,7 +720,7 @@ final class FaviconStore {
         }
         
         guard let (data, response) = await data(for: request),
-              data.count <= Constants.maxImageBytes,
+              data.count <= Self.maxImageBytes,
               let image = UIImage(data: data) else {
             return nil
         }
@@ -654,12 +860,45 @@ final class FaviconStore {
             .replacingOccurrences(of: "&#39;", with: "'")
     }
     
-    private func isExpired(_ date: Date, comparedTo now: Date) -> Bool {
-        let calendar = Calendar.current
-        let startDate = calendar.startOfDay(for: date)
-        let endDate = calendar.startOfDay(for: now)
-        let components = calendar.dateComponents([.day], from: startDate, to: endDate)
-        return (components.day ?? 0) >= Constants.expirationDays
+    private func executeLocked(_ sql: String) -> Bool {
+        guard let database else {
+            return false
+        }
+        
+        var errorPointer: UnsafeMutablePointer<Int8>?
+        let result = sqlite3_exec(database, sql, nil, nil, &errorPointer)
+        if let errorPointer {
+            sqlite3_free(errorPointer)
+        }
+        return result == SQLITE_OK
+    }
+    
+    private func prepareStatementLocked(_ sql: String) -> OpaquePointer? {
+        guard let database else {
+            return nil
+        }
+        
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(database, sql, -1, &statement, nil) == SQLITE_OK else {
+            if let statement {
+                sqlite3_finalize(statement)
+            }
+            return nil
+        }
+        
+        return statement
+    }
+    
+    private func bind(_ value: String, to statement: OpaquePointer?, at index: Int32) {
+        sqlite3_bind_text(statement, index, value, -1, sqliteTransient)
+    }
+    
+    private func string(from statement: OpaquePointer?, at index: Int32) -> String {
+        guard let rawValue = sqlite3_column_text(statement, index) else {
+            return ""
+        }
+        
+        return String(cString: rawValue)
     }
     
     private static func sha256(_ data: Data) -> String {

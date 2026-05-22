@@ -36,13 +36,14 @@ final class SettingsRootViewController: SettingsTableViewController {
     
     var visibleSections: [Section] {
         var hiddenSections: Set<Section> = []
+        let unsandboxed = getEntitlementValue("com.apple.private.security.no-sandbox")
         
-        if !AppUpdates.shared.hasUpdate {
+        if !AppUpdates.shared.hasUpdate || (unsandboxed && !installedThroughTrollStore) {
             hiddenSections.insert(.updates)
         }
         
         // if using Trollstore or jailbroken, hide JIT section
-        if getEntitlementValue("com.apple.private.security.no-sandbox") {
+        if unsandboxed {
             hiddenSections.insert(.jit)
         }
         
@@ -204,8 +205,15 @@ final class SettingsRootViewController: SettingsTableViewController {
     }
     
     override func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        guard visibleSections.indices.contains(section), visibleSections[section] == .jit else { return nil }
-        return makeJITFooterView()
+        guard visibleSections.indices.contains(section) else { return nil }
+        switch visibleSections[section] {
+        case .updates where installedThroughTrollStore:
+            return makeTrollStoreUpdateFooterView()
+        case .jit:
+            return makeJITFooterView()
+        default:
+            return nil
+        }
     }
 }
 

@@ -8,6 +8,11 @@
 import UIKit
 
 extension SettingsRootViewController {
+    var installedThroughTrollStore: Bool {
+        let tsPath = Bundle.main.bundlePath + "/../_TrollStore"
+        return access(tsPath, F_OK) == 0
+    }
+    
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         guard visibleSections.indices.contains(indexPath.section),
               visibleSections[indexPath.section] == .updates,
@@ -116,6 +121,29 @@ extension SettingsRootViewController {
         ])
         
         return cell
+    }
+    
+    func makeTrollStoreUpdateFooterView() -> UIView {
+        let footerView = UITableViewHeaderFooterView(reuseIdentifier: nil)
+        footerView.contentView.preservesSuperviewLayoutMargins = true
+        
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.numberOfLines = 0
+        label.font = UIFont.preferredFont(forTextStyle: .footnote)
+        label.adjustsFontForContentSizeCategory = true
+        label.textColor = .secondaryLabel
+        label.text = "Make sure TrollStore's URL Scheme is enabled."
+        
+        footerView.contentView.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: footerView.contentView.layoutMarginsGuide.leadingAnchor),
+            label.trailingAnchor.constraint(equalTo: footerView.contentView.layoutMarginsGuide.trailingAnchor),
+            label.topAnchor.constraint(equalTo: footerView.contentView.layoutMarginsGuide.topAnchor),
+            label.bottomAnchor.constraint(equalTo: footerView.contentView.layoutMarginsGuide.bottomAnchor),
+        ])
+        
+        return footerView
     }
     
     func makeUpdateNowCell() -> UITableViewCell {
@@ -250,24 +278,15 @@ extension SettingsRootViewController {
             return
         }
         
-        let isTrollStore = getEntitlementValue("com.apple.private.security.no-sandbox")
-        
-        if isTrollStore {
+        if installedThroughTrollStore {
             let tsURLStr = downloadURLStr.replacingOccurrences(of: "Reynard.ipa", with: "Reynard-TrollStore.tipa")
-            _ = tsURLStr.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? tsURLStr
-            /*
-             if let schemeURL = URL(string: "apple-magnifier://install?url=" + encoded),
-             UIApplication.shared.canOpenURL(schemeURL) {
-             UIApplication.shared.open(schemeURL)
-             return
-             }
-             */
-            guard let tsURL = URL(string: tsURLStr) else { return }
-            startUpdateDownload(
-                from: tsURL,
-                fileName: "Reynard-TrollStore.tipa",
-                message: "When the download finishes, choose TrollStore in the share sheet to install the update."
-            )
+            let encoded = tsURLStr.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? tsURLStr
+            
+            if let schemeURL = URL(string: "apple-magnifier://install?url=" + encoded),
+               UIApplication.shared.canOpenURL(schemeURL) {
+                UIApplication.shared.open(schemeURL)
+                return
+            }
         } else {
             startUpdateDownload(
                 from: downloadURL,

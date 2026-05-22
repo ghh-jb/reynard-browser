@@ -201,4 +201,31 @@ extension BrowserViewController {
     @objc func dismissKeyboardTapped() {
         dismissKeyboard()
     }
+    
+    @objc func presentAddonSettingsRequested(_ notification: Notification) {
+        guard let item = notification.userInfo?["addonItem"] as? AddonMenuItem else {
+            return
+        }
+        
+        addonsController.presentCurrentSiteSettings(for: item)
+    }
+    
+    @objc func presentAddBookmarkRequested() {
+        guard let selectedTab = tabManager.selectedTab,
+              let urlString = selectedTab.url?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let url = URL(string: urlString) else {
+            return
+        }
+        
+        let title = selectedTab.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let viewController: EditBookmarkViewController
+        if let bookmark = BookmarkStore.shared.bookmark(for: url) {
+            viewController = EditBookmarkViewController(bookmark: bookmark)
+        } else {
+            viewController = EditBookmarkViewController(title: title, url: url)
+        }
+        let navigationController = UINavigationController(rootViewController: viewController)
+        navigationController.modalPresentationStyle = .pageSheet
+        present(navigationController, animated: true)
+    }
 }

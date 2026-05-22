@@ -61,6 +61,12 @@ final class BrowserViewController: UIViewController {
         )
         NotificationCenter.default.addObserver(
             self,
+            selector: #selector(presentAddBookmarkRequested),
+            name: AddressBarMenu.addBookmarkNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
             selector: #selector(applyUpdateMenuButtonBadge),
             name: AppUpdates.updateAvailableNotification,
             object: nil

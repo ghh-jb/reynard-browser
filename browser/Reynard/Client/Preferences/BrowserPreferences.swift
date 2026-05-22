@@ -48,6 +48,10 @@ final class BrowserPreferences {
             // Appearance
             key("AppearanceSettings", "addressBarPosition"): AddressBarPosition.bottom.rawValue,
             key("AppearanceSettings", "showsLandscapeTabBar"): true,
+            
+            // Bookmarks
+            key("BookmarkSettings", "placeFoldersOnTop"): true,
+            key("BookmarkSettings", "sortOrders"): BookmarkSortOrder.none.rawValue,
         ])
     }
     
@@ -175,6 +179,28 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(hasPairingFile && newValue, forSetting: "JITSettings", key: "isJITEnabled")
+            }
+        }
+    }
+    
+    // MARK: - Bookmarks
+    struct BookmarkSettings {
+        static var placeFoldersOnTop: Bool {
+            get {
+                prefs.bool(forSetting: "BookmarkSettings", key: "placeFoldersOnTop")
+            }
+            set {
+                prefs.set(newValue, forSetting: "BookmarkSettings", key: "placeFoldersOnTop")
+            }
+        }
+        
+        static var sortOrders: BookmarkSortOrder {
+            get {
+                let rawValue = prefs.string(forSetting: "BookmarkSettings", key: "sortOrders") ?? BookmarkSortOrder.none.rawValue
+                return BookmarkSortOrder(rawValue: rawValue) ?? .none
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "BookmarkSettings", key: "sortOrders")
             }
         }
     }

@@ -7,6 +7,87 @@
 
 import UIKit
 
+enum LibrarySection: Int, CaseIterable {
+    case bookmarks
+    case history
+    case downloads
+    case settings
+    
+    var title: String {
+        switch self {
+        case .bookmarks:
+            return "Bookmarks"
+        case .history:
+            return "History"
+        case .downloads:
+            return "Downloads"
+        case .settings:
+            return "Settings"
+        }
+    }
+    
+    var symbolName: String {
+        switch self {
+        case .bookmarks:
+            return "book"
+        case .history:
+            return "clock"
+        case .downloads:
+            return "arrow.down.circle"
+        case .settings:
+            return "gearshape"
+        }
+    }
+    
+    var selectedSymbolName: String {
+        switch self {
+        case .bookmarks:
+            return "book.fill"
+        case .history:
+            return "clock.fill"
+        case .downloads:
+            return "arrow.down.circle.fill"
+        case .settings:
+            return "gearshape.fill"
+        }
+    }
+    
+    var tabBarItem: UITabBarItem {
+        let configuration = UIImage.SymbolConfiguration(pointSize: 18, weight: .regular)
+        let item = UITabBarItem(
+            title: title,
+            image: UIImage(systemName: symbolName, withConfiguration: configuration),
+            selectedImage: UIImage(systemName: selectedSymbolName, withConfiguration: configuration)
+        )
+        item.tag = rawValue
+        return item
+    }
+}
+
+private enum LibraryTabBarStyle {
+    static func apply(to tabBar: UITabBar) {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .systemBackground
+        
+        let titleAttributes: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 10, weight: .regular)]
+        
+        [appearance.stackedLayoutAppearance, appearance.inlineLayoutAppearance, appearance.compactInlineLayoutAppearance].forEach { itemAppearance in
+            itemAppearance.normal.iconColor = .secondaryLabel
+            itemAppearance.normal.titleTextAttributes = titleAttributes.merging([.foregroundColor: UIColor.secondaryLabel]) { _, new in new }
+            itemAppearance.selected.iconColor = .label
+            itemAppearance.selected.titleTextAttributes = titleAttributes.merging([.foregroundColor: UIColor.label]) { _, new in new }
+        }
+        
+        tabBar.standardAppearance = appearance
+        if #available(iOS 15.0, *) {
+            tabBar.scrollEdgeAppearance = appearance
+        }
+        tabBar.tintColor = .label
+        tabBar.unselectedItemTintColor = .secondaryLabel
+    }
+}
+
 final class LibraryViewController: UITabBarController, UITabBarControllerDelegate, UINavigationControllerDelegate {
     private let initialSection: LibrarySection
     private let isPrivateMode: Bool
@@ -60,8 +141,19 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
         super.viewWillAppear(animated)
         navigationController?.delegate = self
         navigationItem.leftItemsSupplementBackButton = false
-        navigationItem.leftBarButtonItems = []
-        navigationItem.leftBarButtonItem = nil
+        
+        let selectedTag = viewControllers?[safe: selectedIndex]?.tabBarItem.tag
+        let keepsBookmarksActionsButton: Bool
+        if #available(iOS 26.0, *) {
+            keepsBookmarksActionsButton = MakeButtons.hasLiquidGlass && selectedTag == LibrarySection.bookmarks.rawValue
+        } else {
+            keepsBookmarksActionsButton = false
+        }
+        
+        if !keepsBookmarksActionsButton {
+            navigationItem.leftBarButtonItems = []
+            navigationItem.leftBarButtonItem = nil
+        }
     }
     
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
@@ -74,26 +166,31 @@ final class LibraryViewController: UITabBarController, UITabBarControllerDelegat
     
     private func makeSectionViewControllers() -> [UIViewController] {
         visibleSections.map { section in
+            let contentViewController: UIViewController
             switch section {
             case .bookmarks:
-                return makeSectionViewController(for: section, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { BookmarksManagerView() }))
+                contentViewController = LibraryHostedSectionViewController(hostedViewFactory: { BookmarksManagerView() })
             case .history:
-                return makeSectionViewController(for: section, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { HistoryManagerView() }))
+                contentViewController = LibraryHostedSectionViewController(hostedViewFactory: { HistoryManagerView() })
             case .downloads:
-                return makeSectionViewController(for: section, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { DownloadsManagerView() }))
+                contentViewController = LibraryHostedSectionViewController(hostedViewFactory: { DownloadsManagerView() })
             case .settings:
-                return makeSectionViewController(for: section, contentViewController: LibraryHostedSectionViewController(hostedViewFactory: { SettingsView() }))
+                contentViewController = LibraryHostedSectionViewController(hostedViewFactory: { SettingsView() })
             }
+            contentViewController.tabBarItem = section.tabBarItem
+            return contentViewController
         }
-    }
-    
-    private func makeSectionViewController(for section: LibrarySection, contentViewController: UIViewController) -> UIViewController {
-        contentViewController.tabBarItem = section.tabBarItem
-        return contentViewController
     }
     
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
         updateNavigationTitle()
+        
+        guard viewController.tabBarItem.tag != LibrarySection.bookmarks.rawValue else {
+            return
+        }
+        
+        navigationItem.leftBarButtonItems = []
+        navigationItem.leftBarButtonItem = nil
     }
     
     private func updateNavigationTitle() {

@@ -263,13 +263,6 @@ extension BrowserViewController: AddressBarDelegate, BottomToolbarDelegate {
         )
     }
     
-    @objc func presentAddonSettingsRequested(_ notification: Notification) {
-        guard let item = notification.userInfo?["addonItem"] as? AddonMenuItem else {
-            return
-        }
-        
-        addonsController.presentCurrentSiteSettings(for: item)
-    }
     
     func addressBarDidSubmit(_ searchTerm: String) {
         browse(to: searchTerm)

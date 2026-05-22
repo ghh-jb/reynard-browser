@@ -17,21 +17,21 @@ enum AddressBarMenu {
     private static let manageAddonsIdentifier = UIMenu.Identifier("me.minh-ton.reynard.address-bar-menu.manage-addons")
     static let presentAddonSettingsNotification = Notification.Name("me.minh-ton.reynard.address-bar-menu.present-addon-settings")
     static let changeWebsiteModeNotification = Notification.Name("me.minh-ton.reynard.address-bar-menu.toggle-website-mode")
+    static let addBookmarkNotification = Notification.Name("me.minh-ton.reynard.address-bar-menu.add-bookmark")
     
     static func makeMenu(
         selectedTab: Tab?,
         selectedURL: String?,
         addonItems: [AddonItem]
     ) -> UIMenu? {
-        var children: [UIMenuElement] = []
+        var tabActions: [UIMenuElement] = []
         
-        if let selectedTab,
-           let selectedURL,
-           let isDesktop = UserAgentController.shared.isDesktopMode(for: selectedURL, tabID: selectedTab.id) {
-            let title = isDesktop ? "Request Mobile Website" : "Request Desktop Website"
-            let imageName = isDesktop ? "iphone" : "desktopcomputer"
-            children.append(UIAction(title: title, image: UIImage(systemName: imageName)) { _ in
-                NotificationCenter.default.post(name: changeWebsiteModeNotification, object: nil)
+        let url = selectedURL.flatMap(URL.init(string:))
+        if let url,
+           url.host != nil {
+            let title = BookmarkStore.shared.bookmark(for: url) == nil ? "Add Bookmark" : "Edit Bookmark"
+            tabActions.append(UIAction(title: title, image: UIImage(systemName: "book")) { _ in
+                NotificationCenter.default.post(name: addBookmarkNotification, object: nil)
             })
         }
         
@@ -56,14 +56,26 @@ enum AddressBarMenu {
             }
         }
         
-        children.append(
+        var pageActions: [UIMenuElement] = [
             UIMenu(
                 title: "Manage Add-ons",
                 image: UIImage(systemName: "puzzlepiece.extension"),
                 identifier: manageAddonsIdentifier,
                 children: addonsChildren
             )
-        )
+        ]
+        
+        if let selectedTab,
+           let selectedURL,
+           let isDesktop = UserAgentController.shared.isDesktopMode(for: selectedURL, tabID: selectedTab.id) {
+            let title = isDesktop ? "Request Mobile Website" : "Request Desktop Website"
+            let imageName = isDesktop ? "iphone" : "desktopcomputer"
+            pageActions.append(UIAction(title: title, image: UIImage(systemName: imageName)) { _ in
+                NotificationCenter.default.post(name: changeWebsiteModeNotification, object: nil)
+            })
+        }
+        
+        let children = tabActions + [UIMenu(options: .displayInline, children: pageActions)]
         
         guard !children.isEmpty else {
             return nil

@@ -8,15 +8,15 @@
 import UIKit
 
 final class TopBarButtons {
-    lazy var sidebarButton = MakeButtons.makeToolbarButton(controller: controller, imageName: "sidebar.left", action: #selector(BrowserViewController.librarySidebarTapped))
+    lazy var sidebarButton = MakeButtons.makeToolbarButton(target: controller, imageName: "sidebar.left", action: #selector(BrowserViewController.librarySidebarTapped))
     
-    lazy var backButton = MakeButtons.makeToolbarButton(controller: controller, imageName: "chevron.backward", action: #selector(BrowserViewController.padBackTapped))
-    lazy var forwardButton = MakeButtons.makeToolbarButton(controller: controller, imageName: "chevron.forward", action: #selector(BrowserViewController.padForwardTapped))
-    lazy var menuButton = MakeButtons.makeToolbarButton(controller: controller, imageName: "ellipsis.circle", action: #selector(BrowserViewController.topBarMenuTapped))
+    lazy var backButton = MakeButtons.makeToolbarButton(target: controller, imageName: "chevron.backward", action: #selector(BrowserViewController.padBackTapped))
+    lazy var forwardButton = MakeButtons.makeToolbarButton(target: controller, imageName: "chevron.forward", action: #selector(BrowserViewController.padForwardTapped))
+    lazy var menuButton = MakeButtons.makeToolbarButton(target: controller, imageName: "ellipsis.circle", action: #selector(BrowserViewController.topBarMenuTapped))
     lazy var downloadButton = MakeButtons.makeDownloadToolbarButton(target: controller, action: #selector(BrowserViewController.topBarDownloadsTapped))
-    lazy var shareButton = MakeButtons.makeToolbarButton(controller: controller, imageName: "square.and.arrow.up", action: #selector(BrowserViewController.shareTapped))
-    lazy var newTabButton = MakeButtons.makeToolbarButton(controller: controller, imageName: "plus", action: #selector(BrowserViewController.newTabTapped))
-    lazy var tabOverviewButton = MakeButtons.makeToolbarButton(controller: controller, imageName: "square.on.square", action: #selector(BrowserViewController.tabsTapped))
+    lazy var shareButton = MakeButtons.makeToolbarButton(target: controller, imageName: "square.and.arrow.up", action: #selector(BrowserViewController.shareTapped))
+    lazy var newTabButton = MakeButtons.makeToolbarButton(target: controller, imageName: "plus", action: #selector(BrowserViewController.newTabTapped))
+    lazy var tabOverviewButton = MakeButtons.makeToolbarButton(target: controller, imageName: "square.on.square", action: #selector(BrowserViewController.tabsTapped))
     
     lazy var leftStack: UIStackView = {
         downloadButton.isHidden = true

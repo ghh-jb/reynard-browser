@@ -564,7 +564,18 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
                 return configuration
             }
             
-            let openAction = UIContextualAction(style: .normal, title: "Open in Files") { [weak self] _, _, completion in
+            let shareAction = UIContextualAction(style: .normal, title: "Share") { [weak self] _, _, completion in
+                guard let self else {
+                    completion(false)
+                    return
+                }
+                
+                self.presentShareSheet(for: item, from: indexPath)
+                completion(true)
+            }
+            shareAction.backgroundColor = .systemGreen
+            
+            let openAction = UIContextualAction(style: .normal, title: "Open in\nFiles") { [weak self] _, _, completion in
                 guard let self else {
                     completion(false)
                     return
@@ -575,7 +586,7 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
             }
             openAction.backgroundColor = .systemBlue
             
-            let configuration = UISwipeActionsConfiguration(actions: [deleteAction, openAction])
+            let configuration = UISwipeActionsConfiguration(actions: [deleteAction, shareAction, openAction])
             configuration.performsFirstActionWithFullSwipe = true
             return configuration
         }
@@ -592,7 +603,7 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
             return
         }
         
-        presentShareSheet(for: item, from: indexPath)
+        openDownloadedFile(item)
     }
     
     func tableView(_ tableView: UITableView, willBeginEditingRowAt indexPath: IndexPath) {

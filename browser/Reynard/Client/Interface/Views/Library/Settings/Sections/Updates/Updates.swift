@@ -86,6 +86,7 @@ extension SettingsRootViewController {
         textView.isSelectable = false
         textView.backgroundColor = .clear
         textView.attributedText = releaseNotes
+        textView.textColor = .label
         textView.textContainerInset = UIEdgeInsets(top: 8, left: 0, bottom: 0, right: 0)
         textView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
         textView.textContainer.lineFragmentPadding = 0

@@ -278,6 +278,7 @@ extension SettingsRootViewController {
             return
         }
         
+        let expectedSize = latestEntry["size"] as? Int
         if installedThroughTrollStore {
             let tsURLStr = downloadURLStr.replacingOccurrences(of: "Reynard.ipa", with: "Reynard-TrollStore.tipa")
             let encoded = tsURLStr.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? tsURLStr
@@ -291,12 +292,21 @@ extension SettingsRootViewController {
             startUpdateDownload(
                 from: downloadURL,
                 fileName: "Reynard.ipa",
+                expectedSize: expectedSize,
                 message: "When the download finishes, choose the app that you used to sideload Reynard in the share sheet to install the update."
             )
         }
     }
     
-    private func startUpdateDownload(from url: URL, fileName: String, message: String) {
+    private func startUpdateDownload(from url: URL, fileName: String, expectedSize: Int?, message: String) {
+        guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let dest = docs.appendingPathComponent(fileName)
+        
+        if isCurrentDownloadedUpdate(at: dest, expectedSize: expectedSize) {
+            presentDownloadedUpdate(at: dest)
+            return
+        }
+        
         let alert = UIAlertController(
             title: "Downloading Update",
             message: message,
@@ -321,18 +331,10 @@ extension SettingsRootViewController {
                     return
                 }
                 guard let location else { return }
-                guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-                let dest = docs.appendingPathComponent(fileName)
                 try? FileManager.default.removeItem(at: dest)
                 try? FileManager.default.moveItem(at: location, to: dest)
                 self?.dismissAlertIfPresented(alert) {
-                    let activity = UIActivityViewController(activityItems: [dest], applicationActivities: nil)
-                    if let popover = activity.popoverPresentationController {
-                        popover.sourceView = self?.view
-                        popover.sourceRect = CGRect(x: self?.view.bounds.midX ?? 0, y: self?.view.bounds.midY ?? 0, width: 0, height: 0)
-                        popover.permittedArrowDirections = []
-                    }
-                    self?.present(activity, animated: true)
+                    self?.presentDownloadedUpdate(at: dest)
                 }
             }
         }
@@ -354,5 +356,24 @@ extension SettingsRootViewController {
             }
             task.resume()
         }
+    }
+    
+    private func isCurrentDownloadedUpdate(at fileURL: URL, expectedSize: Int?) -> Bool {
+        guard FileManager.default.fileExists(atPath: fileURL.path),
+              let expectedSize,
+              let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+              let cachedSize = attributes[.size] as? NSNumber else { return false }
+        
+        return cachedSize.int64Value == Int64(expectedSize)
+    }
+    
+    private func presentDownloadedUpdate(at fileURL: URL) {
+        let activity = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+        if let popover = activity.popoverPresentationController {
+            popover.sourceView = view
+            popover.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+        present(activity, animated: true)
     }
 }

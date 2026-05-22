@@ -23,6 +23,9 @@ final class BrowserViewController: UIViewController {
     }
     
     deinit {
+        if isInFullscreenMedia {
+            UIApplication.shared.isIdleTimerDisabled = false
+        }
         NotificationCenter.default.removeObserver(self)
     }
     
@@ -282,6 +285,7 @@ final class BrowserViewController: UIViewController {
         isInFullscreenMedia = fullScreen
         browserUI.applyChromeLayout(animated: true)
         updateFullscreenOrientation(fullScreen)
+        UIApplication.shared.isIdleTimerDisabled = fullScreen
     }
     
     private func updateFullscreenOrientation(_ fullScreen: Bool) {

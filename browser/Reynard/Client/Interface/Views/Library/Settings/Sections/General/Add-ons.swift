@@ -7,6 +7,8 @@
 
 import GeckoView
 import UIKit
+import UniformTypeIdentifiers
+import MobileCoreServices
 
 final class AddonsPreferencesViewController: SettingsTableViewController {
     private enum Section: Int, CaseIterable {
@@ -21,6 +23,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
     private var iconLoadingIDs = Set<String>()
     private var addons: [Addon] = []
     private var isLoadingAddons = false
+    private var isInstallingAddonFromFile = false
     
     init() {
         super.init(style: .insetGrouped)
@@ -51,7 +54,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
         case .installed:
             return addons.isEmpty ? 1 : addons.count
         case .more:
-            return 1
+            return 2
         case nil:
             return 0
         }
@@ -81,8 +84,20 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
             return cell
         case .more:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = "Discover Add-ons..."
-            cell.textLabel?.textColor = view.tintColor
+            switch indexPath.row {
+            case 0:
+                cell.textLabel?.text = "Discover Add-ons..."
+                cell.textLabel?.textColor = view.tintColor
+            case 1:
+                cell.textLabel?.text = isInstallingAddonFromFile ? "Installing Add-on..." : "Install Add-on From File..."
+                cell.textLabel?.textColor = isInstallingAddonFromFile ? .secondaryLabel : view.tintColor
+                if isInstallingAddonFromFile {
+                    cell.selectionStyle = .none
+                }
+            default:
+                return cell
+            }
+            
             return cell
         case nil:
             return UITableViewCell()
@@ -102,7 +117,17 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
                 animated: true
             )
         case .more:
-            openLinkInBrowser("https://addons.mozilla.org/android/")
+            switch indexPath.row {
+            case 0:
+                openLinkInBrowser("https://addons.mozilla.org/android/")
+            case 1:
+                guard !isInstallingAddonFromFile else {
+                    return
+                }
+                presentAddonFilePicker()
+            default:
+                return
+            }
         case nil:
             return
         }
@@ -159,6 +184,99 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
         return addons[indexPath.row]
     }
     
+    private func presentAddonFilePicker() {
+        let picker: UIDocumentPickerViewController
+        if #available(iOS 14.0, *) {
+            picker = UIDocumentPickerViewController(forOpeningContentTypes: Self.allowedAddonFileTypes(), asCopy: true)
+        } else {
+            picker = UIDocumentPickerViewController(documentTypes: Self.allowedAddonDocumentTypeIdentifiers(), in: .import)
+        }
+        if #available(iOS 13.0, *) {
+            picker.shouldShowFileExtensions = true
+        }
+        picker.delegate = self
+        picker.allowsMultipleSelection = false
+        present(picker, animated: true)
+    }
+    
+    private func installAddon(from sourceURL: URL) {
+        isInstallingAddonFromFile = true
+        tableView.reloadSections(IndexSet(integer: Section.more.rawValue), with: .none)
+        
+        Task { [weak self] in
+            guard let self else {
+                return
+            }
+            
+            do {
+                let stagedURL = try Self.stageAddonPackage(from: sourceURL)
+                _ = try await AddonsRuntime.shared.install(url: stagedURL.absoluteString)
+                await self.reloadAddonsFromRuntime()
+                
+                await MainActor.run {
+                    self.isInstallingAddonFromFile = false
+                    self.tableView.reloadSections(IndexSet(integer: Section.more.rawValue), with: .none)
+                }
+            } catch {
+                await MainActor.run {
+                    self.isInstallingAddonFromFile = false
+                    self.tableView.reloadSections(IndexSet(integer: Section.more.rawValue), with: .none)
+                    self.presentAlert(title: "Failed to install add-on", message: "\(error)")
+                }
+            }
+        }
+    }
+    
+    @available(iOS 14.0, *)
+    private static func allowedAddonFileTypes() -> [UTType] {
+        if let xpiType = UTType(filenameExtension: "xpi") {
+            return [xpiType]
+        }
+        
+        return [UTType(importedAs: "org.mozilla.xpi-extension")]
+    }
+    
+    private static func allowedAddonDocumentTypeIdentifiers() -> [String] {
+        var identifiers: [String] = []
+        
+        ["xpi"].forEach { ext in
+            if let typeIdentifier = UTTypeCreatePreferredIdentifierForTag(
+                kUTTagClassFilenameExtension,
+                ext as CFString,
+                nil
+            )?.takeRetainedValue() as String?,
+               !identifiers.contains(typeIdentifier) {
+                identifiers.append(typeIdentifier)
+            }
+        }
+        
+        return identifiers
+    }
+    
+    private static func stageAddonPackage(from sourceURL: URL) throws -> URL {
+        let fileManager = FileManager.default
+        let directoryURL = fileManager.temporaryDirectory.appendingPathComponent("Addons", isDirectory: true)
+        try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        
+        let destinationURL = directoryURL
+            .appendingPathComponent(UUID().uuidString, isDirectory: false)
+            .appendingPathExtension("xpi")
+        
+        let accessed = sourceURL.startAccessingSecurityScopedResource()
+        defer {
+            if accessed {
+                sourceURL.stopAccessingSecurityScopedResource()
+            }
+        }
+        
+        if fileManager.fileExists(atPath: destinationURL.path) {
+            try fileManager.removeItem(at: destinationURL)
+        }
+        
+        try fileManager.copyItem(at: sourceURL, to: destinationURL)
+        return destinationURL
+    }
+    
     private func loadIconIfNeeded(for addon: Addon) {
         let cacheKey = addon.id as NSString
         guard Self.sharedIconCache.object(forKey: cacheKey) == nil,
@@ -195,6 +313,18 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
             }
         }
     }
+}
+
+extension AddonsPreferencesViewController: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let url = urls.first else {
+            return
+        }
+        
+        installAddon(from: url)
+    }
+    
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {}
 }
 
 final class AddonDetailsPreferencesViewController: SettingsTableViewController {

@@ -17,13 +17,10 @@ final class AddonPromptViewController: UITableViewController {
     
     private enum DisplayItem {
         case domainHeader(String)
-        case domain(String)
         case showAllSites
         case permission(String)
         case dataCollection(String)
     }
-    
-    private static let contractedDomainCount = 5
     
     private let prompt: AddonPermissionPrompt
     private let onDecision: (AddonPermissionPromptResponse) -> Void
@@ -165,9 +162,6 @@ final class AddonPromptViewController: UITableViewController {
             case .domainHeader(let value):
                 cell.textLabel?.font = .preferredFont(forTextStyle: .body)
                 cell.textLabel?.text = value
-            case .domain(let value):
-                cell.textLabel?.font = .preferredFont(forTextStyle: .body)
-                cell.textLabel?.text = value
             case .showAllSites:
                 cell.textLabel?.font = .preferredFont(forTextStyle: .body)
                 cell.textLabel?.text = "Show All Sites"
@@ -248,12 +242,7 @@ final class AddonPromptViewController: UITableViewController {
         
         if !domainRows.isEmpty {
             items.append(.domainHeader("Access your data for sites in \(domainRows.count) domains"))
-            
-            domainRows.prefix(Self.contractedDomainCount).forEach { items.append(.domain($0)) }
-            
-            if domainRows.count > Self.contractedDomainCount {
-                items.append(.showAllSites)
-            }
+            items.append(.showAllSites)
         }
         
         permissionRows.forEach { items.append(.permission($0)) }

@@ -142,6 +142,25 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         presentAlert(title: "Extension Error", message: failure.code ?? "Install failed")
     }
     
+    @MainActor
+    func addonsController(_ controller: AddonsRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse {
+        await withCheckedContinuation { continuation in
+            let promptViewController = AddonPromptViewController(prompt: prompt) { response in
+                continuation.resume(returning: response)
+            }
+            
+            let navigationController = UINavigationController(rootViewController: promptViewController)
+            navigationController.modalPresentationStyle = .pageSheet
+            
+            guard let presenter = self.topPresentedViewController() ?? self.controller else {
+                continuation.resume(returning: .deny)
+                return
+            }
+            
+            presenter.present(navigationController, animated: true)
+        }
+    }
+    
     func addonsController(_ controller: AddonsRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?) {
         guard let session else {
             return

@@ -78,19 +78,31 @@ public struct AddonAction {
 public struct AddonMetaData {
     public let name: String?
     public let description: String?
+    public let fullDescription: String?
     public let version: String
     public let iconURL: String?
     public let optionsPageURL: String?
     public let openOptionsPageInTab: Bool
     public let enabled: Bool
     public let allowedInPrivateBrowsing: Bool
+    public let incognito: AddonIncognitoMode
     public let baseURL: String
+    public let creatorName: String?
+    public let creatorURL: String?
+    public let homepageURL: String?
+    public let reviewURL: String?
+    public let averageRating: Double?
+    public let reviewCount: Int?
+    public let updateDate: String?
     public let requiredPermissions: [String]
     public let requiredOrigins: [String]
+    public let requiredDataCollectionPermissions: [String]
     public let optionalPermissions: [String]
     public let optionalOrigins: [String]
+    public let optionalDataCollectionPermissions: [String]
     public let grantedOptionalPermissions: [String]
     public let grantedOptionalOrigins: [String]
+    public let grantedOptionalDataCollectionPermissions: [String]
     public let downloadURL: String?
     public let amoListingURL: String?
     public let disabledFlags: [String]
@@ -98,22 +110,66 @@ public struct AddonMetaData {
     init(dictionary: [String: Any?]) {
         name = dictionary["name"] as? String
         description = dictionary["description"] as? String
+        fullDescription = dictionary["fullDescription"] as? String
         version = dictionary["version"] as? String ?? ""
         iconURL = Self.resolveIconURL(from: dictionary["icons"] ?? nil)
         optionsPageURL = dictionary["optionsPageURL"] as? String
         openOptionsPageInTab = dictionary["openOptionsPageInTab"] as? Bool ?? false
         enabled = dictionary["enabled"] as? Bool ?? false
         allowedInPrivateBrowsing = dictionary["privateBrowsingAllowed"] as? Bool ?? false
+        incognito = AddonIncognitoMode(rawValue: dictionary["incognito"] as? String ?? "") ?? .spanning
         baseURL = dictionary["baseURL"] as? String ?? ""
+        creatorName = dictionary["creatorName"] as? String
+        creatorURL = dictionary["creatorURL"] as? String
+        homepageURL = dictionary["homepageURL"] as? String
+        reviewURL = dictionary["reviewURL"] as? String
+        if let value = dictionary["averageRating"] as? Double {
+            averageRating = value
+        } else if let value = dictionary["averageRating"] as? NSNumber {
+            averageRating = value.doubleValue
+        } else {
+            averageRating = nil
+        }
+        if let value = dictionary["reviewCount"] as? Int {
+            reviewCount = value
+        } else if let value = dictionary["reviewCount"] as? NSNumber {
+            reviewCount = value.intValue
+        } else {
+            reviewCount = nil
+        }
+        updateDate = dictionary["updateDate"] as? String
         requiredPermissions = dictionary["requiredPermissions"] as? [String] ?? []
         requiredOrigins = dictionary["requiredOrigins"] as? [String] ?? []
+        requiredDataCollectionPermissions = dictionary["requiredDataCollectionPermissions"] as? [String] ?? []
         optionalPermissions = dictionary["optionalPermissions"] as? [String] ?? []
         optionalOrigins = dictionary["optionalOrigins"] as? [String] ?? []
+        optionalDataCollectionPermissions = dictionary["optionalDataCollectionPermissions"] as? [String] ?? []
         grantedOptionalPermissions = dictionary["grantedOptionalPermissions"] as? [String] ?? []
         grantedOptionalOrigins = dictionary["grantedOptionalOrigins"] as? [String] ?? []
+        grantedOptionalDataCollectionPermissions = dictionary["grantedOptionalDataCollectionPermissions"] as? [String] ?? []
         downloadURL = dictionary["downloadUrl"] as? String
         amoListingURL = dictionary["amoListingURL"] as? String
         disabledFlags = dictionary["disabledFlags"] as? [String] ?? []
+    }
+    
+    public var isBlocklisted: Bool {
+        disabledFlags.contains("blocklistDisabled")
+    }
+    
+    public var isSoftBlocked: Bool {
+        disabledFlags.contains("softBlocklistDisabled")
+    }
+    
+    public var isUnsigned: Bool {
+        disabledFlags.contains("signatureDisabled")
+    }
+    
+    public var isIncompatible: Bool {
+        disabledFlags.contains("appVersionDisabled")
+    }
+    
+    public var canToggleEnabledState: Bool {
+        !isBlocklisted && !isUnsigned && !isIncompatible
     }
     
     private static func resolveIconURL(from value: Any?) -> String? {
@@ -166,6 +222,12 @@ public struct AddonMetaData {
             })
             .first?.1
     }
+}
+
+public enum AddonIncognitoMode: String {
+    case spanning
+    case split
+    case notAllowed = "not_allowed"
 }
 
 public final class Addon: NSObject {
@@ -237,9 +299,73 @@ public struct AddonInstallFailure: Error {
     public let extensionVersion: String?
 }
 
+public struct AddonPermissionChangeRequest {
+    public let permissions: [String]
+    public let origins: [String]
+    public let dataCollectionPermissions: [String]
+    
+    public init(
+        permissions: [String] = [],
+        origins: [String] = [],
+        dataCollectionPermissions: [String] = []
+    ) {
+        self.permissions = permissions
+        self.origins = origins
+        self.dataCollectionPermissions = dataCollectionPermissions
+    }
+}
+
+public enum AddonPermissionPromptKind {
+    case install
+    case optional
+    case update
+}
+
+public struct AddonPermissionPrompt {
+    public let kind: AddonPermissionPromptKind
+    public let addon: Addon
+    public let permissions: [String]
+    public let origins: [String]
+    public let dataCollectionPermissions: [String]
+    
+    public init(
+        kind: AddonPermissionPromptKind,
+        addon: Addon,
+        permissions: [String],
+        origins: [String],
+        dataCollectionPermissions: [String]
+    ) {
+        self.kind = kind
+        self.addon = addon
+        self.permissions = permissions
+        self.origins = origins
+        self.dataCollectionPermissions = dataCollectionPermissions
+    }
+}
+
+public struct AddonPermissionPromptResponse {
+    public let allow: Bool
+    public let privateBrowsingAllowed: Bool
+    public let technicalAndInteractionDataGranted: Bool
+    
+    public init(
+        allow: Bool,
+        privateBrowsingAllowed: Bool = false,
+        technicalAndInteractionDataGranted: Bool = false
+    ) {
+        self.allow = allow
+        self.privateBrowsingAllowed = privateBrowsingAllowed
+        self.technicalAndInteractionDataGranted = technicalAndInteractionDataGranted
+    }
+    
+    public static let deny = AddonPermissionPromptResponse(allow: false)
+}
+
 public protocol AddonEmbedderDelegate: AnyObject {
     func addonsController(_ controller: AddonsRuntime, didUpdate addon: Addon)
     func addonsController(_ controller: AddonsRuntime, didFailInstall failure: AddonInstallFailure)
+    @MainActor
+    func addonsController(_ controller: AddonsRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse
     func addonsController(_ controller: AddonsRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?)
     func addonsController(_ controller: AddonsRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?)
     func addonsController(_ controller: AddonsRuntime, didRequestOpenOptionsPageFor addon: Addon)
@@ -251,6 +377,8 @@ public protocol AddonEmbedderDelegate: AnyObject {
 public extension AddonEmbedderDelegate {
     func addonsController(_ controller: AddonsRuntime, didUpdate addon: Addon) {}
     func addonsController(_ controller: AddonsRuntime, didFailInstall failure: AddonInstallFailure) {}
+    @MainActor
+    func addonsController(_ controller: AddonsRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse { .deny }
     func addonsController(_ controller: AddonsRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?) {}
     func addonsController(_ controller: AddonsRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?) {}
     func addonsController(_ controller: AddonsRuntime, didRequestOpenOptionsPageFor addon: Addon) {}
@@ -429,6 +557,30 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
         )
     }
     
+    public func addOptionalPermissions(_ request: AddonPermissionChangeRequest, to addon: Addon) async throws -> Addon {
+        try await mutateAddon(
+            type: "GeckoView:WebExtension:AddOptionalPermissions",
+            message: [
+                "extensionId": addon.id,
+                "permissions": request.permissions,
+                "origins": request.origins,
+                "dataCollectionPermissions": request.dataCollectionPermissions,
+            ]
+        )
+    }
+    
+    public func removeOptionalPermissions(_ request: AddonPermissionChangeRequest, from addon: Addon) async throws -> Addon {
+        try await mutateAddon(
+            type: "GeckoView:WebExtension:RemoveOptionalPermissions",
+            message: [
+                "extensionId": addon.id,
+                "permissions": request.permissions,
+                "origins": request.origins,
+                "dataCollectionPermissions": request.dataCollectionPermissions,
+            ]
+        )
+    }
+    
     public func uninstall(_ addon: Addon) async throws {
         _ = try await GeckoEventDispatcherWrapper.runtimeInstance.query(
             type: "GeckoView:WebExtension:Uninstall",
@@ -578,15 +730,31 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
                 newSessionID: newSessionID
             ) ?? false
         case .installPrompt:
-            // TODO: Implement a proper prompt UI and return the user's choice
+            guard let prompt = try await permissionPrompt(for: .installPrompt, message: message) else {
+                return [
+                    "allow": false,
+                    "privateBrowsingAllowed": false,
+                    "isTechnicalAndInteractionDataGranted": false,
+                ]
+            }
+            let response = await delegate?.addonsController(self, promptFor: prompt) ?? .deny
             return [
-                "allow": true,
-                "privateBrowsingAllowed": false,
-                "isTechnicalAndInteractionDataGranted": false,
+                "allow": response.allow,
+                "privateBrowsingAllowed": response.privateBrowsingAllowed,
+                "isTechnicalAndInteractionDataGranted": response.technicalAndInteractionDataGranted,
             ]
-        case .optionalPrompt, .updatePrompt:
-            // TODO: Implement a proper prompt UI and return the user's choice
-            return ["allow": true]
+        case .optionalPrompt:
+            guard let prompt = try await permissionPrompt(for: .optionalPrompt, message: message) else {
+                return ["allow": false]
+            }
+            let optionalResponse = await delegate?.addonsController(self, promptFor: prompt) ?? .deny
+            return ["allow": optionalResponse.allow]
+        case .updatePrompt:
+            guard let prompt = try await permissionPrompt(for: .updatePrompt, message: message) else {
+                return ["allow": false]
+            }
+            let updateResponse = await delegate?.addonsController(self, promptFor: prompt) ?? .deny
+            return ["allow": updateResponse.allow]
         case .installationFailed:
             let failure = AddonInstallFailure(
                 code: stringValue(message?["error"]),
@@ -664,6 +832,22 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
         return nil
     }
     
+    private func stringArray(_ value: Any?) -> [String] {
+        if let strings = value as? [String] {
+            return strings.filter { !$0.isEmpty }
+        }
+        
+        if let strings = value as? [NSString] {
+            return strings.map { $0 as String }.filter { !$0.isEmpty }
+        }
+        
+        if let values = value as? [Any] {
+            return values.compactMap { stringValue($0) }.filter { !$0.isEmpty }
+        }
+        
+        return []
+    }
+    
     private func addonID(from message: [String: Any?]?) -> String? {
         if let extensionID = message?["extensionId"] as? String,
            extensionID.isEmpty == false {
@@ -682,6 +866,61 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
         }
         
         return nil
+    }
+    
+    private func addonForPrompt(from message: [String: Any?]?) async throws -> Addon? {
+        if let extensionDictionary = message?["extension"] as? [String: Any?] {
+            return Addon(dictionary: extensionDictionary)
+        }
+        
+        guard let extensionID = addonID(from: message) else {
+            return nil
+        }
+        
+        if let cachedAddon = addonsByID[extensionID] {
+            return cachedAddon
+        }
+        
+        return try await addon(byID: extensionID)
+    }
+    
+    private func permissionPrompt(
+        for event: AddonRuntimeEvent,
+        message: [String: Any?]?
+    ) async throws -> AddonPermissionPrompt? {
+        guard let addon = try await addonForPrompt(from: message) else {
+            return nil
+        }
+        
+        switch event {
+        case .installPrompt:
+            return AddonPermissionPrompt(
+                kind: .install,
+                addon: addon,
+                permissions: stringArray(message?["permissions"]),
+                origins: stringArray(message?["origins"]),
+                dataCollectionPermissions: stringArray(message?["dataCollectionPermissions"])
+            )
+        case .optionalPrompt:
+            let permissionDictionary = message?["permissions"] as? [String: Any?]
+            return AddonPermissionPrompt(
+                kind: .optional,
+                addon: addon,
+                permissions: stringArray(permissionDictionary?["permissions"]),
+                origins: stringArray(permissionDictionary?["origins"]),
+                dataCollectionPermissions: stringArray(permissionDictionary?["data_collection"])
+            )
+        case .updatePrompt:
+            return AddonPermissionPrompt(
+                kind: .update,
+                addon: addon,
+                permissions: stringArray(message?["newPermissions"]),
+                origins: stringArray(message?["newOrigins"]),
+                dataCollectionPermissions: stringArray(message?["newDataCollectionPermissions"])
+            )
+        default:
+            return nil
+        }
     }
     
     private func action(

@@ -11,20 +11,50 @@ import UniformTypeIdentifiers
 import MobileCoreServices
 
 final class AddonsPreferencesViewController: SettingsTableViewController {
-    private enum Section: Int, CaseIterable {
+    private enum Section {
         case installed
+        case unsupported
         case more
     }
     
     private static let sharedIconCache = NSCache<NSString, UIImage>()
-    private static let hiddenAddonIDs: Set<String> = ["default-theme@mozilla.org"]
     private static var hasLoadedInstalledAddons = false
     
     private let iconLoadingQueue = DispatchQueue(label: "com.minh-ton.addons-settings-icon-queue", qos: .utility)
     private var iconLoadingIDs = Set<String>()
-    private var addons: [Addon] = []
+    private var installedAddons: [Addon] = []
+    private var unsupportedAddons: [Addon] = []
+    private var addonStatusTextByID: [String: String] = [:]
+    private var footerSummaryText: String?
     private var isLoadingAddons = false
     private var isInstallingAddonFromFile = false
+    private var isUpdatingAddons = false
+    private let lastCheckedDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
+    
+    private var visibleSections: [Section] {
+        var sections: [Section] = [.installed]
+        if !unsupportedAddons.isEmpty {
+            sections.append(.unsupported)
+        }
+        sections.append(.more)
+        return sections
+    }
+    
+    private var updateActionTitle: String {
+        if isUpdatingAddons {
+            return "Updating Add-ons..."
+        }
+        if let browserViewController = resolvedBrowserViewController(),
+           browserViewController.addonController.updateController.hasPendingApprovals {
+            return "Complete Add-on Updates"
+        }
+        return "Update All Add-ons"
+    }
     
     init() {
         super.init(style: .insetGrouped)
@@ -43,28 +73,43 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        resolvedBrowserViewController()?.addonController.updateController.setSettingsVisible(true)
+        resetDisplayedUpdateState()
         syncAddonsFromCache()
     }
     
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        resolvedBrowserViewController()?.addonController.updateController.setSettingsVisible(false)
+    }
+    
     override func numberOfSections(in tableView: UITableView) -> Int {
-        Section.allCases.count
+        visibleSections.count
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch Section(rawValue: section) {
-        case .installed:
-            return addons.isEmpty ? 1 : addons.count
-        case .more:
-            return 2
-        case nil:
+        guard visibleSections.indices.contains(section) else {
             return 0
+        }
+        
+        switch visibleSections[section] {
+        case .installed:
+            return installedAddons.isEmpty ? 1 : installedAddons.count
+        case .unsupported:
+            return unsupportedAddons.count
+        case .more:
+            return 3
         }
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        switch Section(rawValue: indexPath.section) {
+        guard visibleSections.indices.contains(indexPath.section) else {
+            return UITableViewCell()
+        }
+        
+        switch visibleSections[indexPath.section] {
         case .installed:
-            if addons.isEmpty {
+            if installedAddons.isEmpty {
                 let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
                 cell.selectionStyle = .none
                 cell.textLabel?.text = isLoadingAddons ? "Loading Add-ons..." : "No Add-ons Installed"
@@ -72,13 +117,31 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
                 return cell
             }
             
-            guard addons.indices.contains(indexPath.row) else {
+            guard installedAddons.indices.contains(indexPath.row) else {
                 return UITableViewCell()
             }
             
-            let addon = addons[indexPath.row]
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            let addon = installedAddons[indexPath.row]
+            let statusText = displayedStatusText(for: addon)
+            let cell = UITableViewCell(style: statusText == nil ? .default : .subtitle, reuseIdentifier: nil)
             cell.textLabel?.text = addon.metaData.name ?? addon.id
+            cell.detailTextLabel?.text = statusText
+            cell.detailTextLabel?.textColor = .secondaryLabel
+            cell.accessoryType = .disclosureIndicator
+            cell.imageView?.image = Self.sharedIconCache.object(forKey: addon.id as NSString) ?? UIImage(systemName: "puzzlepiece.extension")
+            loadIconIfNeeded(for: addon)
+            return cell
+        case .unsupported:
+            guard unsupportedAddons.indices.contains(indexPath.row) else {
+                return UITableViewCell()
+            }
+            
+            let addon = unsupportedAddons[indexPath.row]
+            let statusText = displayedStatusText(for: addon) ?? "Unsupported"
+            let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+            cell.textLabel?.text = addon.metaData.name ?? addon.id
+            cell.detailTextLabel?.text = statusText
+            cell.detailTextLabel?.textColor = .secondaryLabel
             cell.accessoryType = .disclosureIndicator
             cell.imageView?.image = Self.sharedIconCache.object(forKey: addon.id as NSString) ?? UIImage(systemName: "puzzlepiece.extension")
             loadIconIfNeeded(for: addon)
@@ -95,22 +158,30 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
                 if isInstallingAddonFromFile {
                     cell.selectionStyle = .none
                 }
+            case 2:
+                cell.textLabel?.text = updateActionTitle
+                cell.textLabel?.textColor = isUpdatingAddons ? .secondaryLabel : view.tintColor
+                if isUpdatingAddons {
+                    cell.selectionStyle = .none
+                }
             default:
                 return cell
             }
             
             return cell
-        case nil:
-            return UITableViewCell()
         }
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         defer { tableView.deselectRow(at: indexPath, animated: true) }
         
-        switch Section(rawValue: indexPath.section) {
-        case .installed:
-            guard let addon = installedAddon(at: indexPath) else {
+        guard visibleSections.indices.contains(indexPath.section) else {
+            return
+        }
+        
+        switch visibleSections[indexPath.section] {
+        case .installed, .unsupported:
+            guard let addon = addon(at: indexPath) else {
                 return
             }
             navigationController?.pushViewController(
@@ -126,25 +197,51 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
                     return
                 }
                 presentAddonFilePicker()
+            case 2:
+                guard !isUpdatingAddons else {
+                    return
+                }
+                performUpdateAction()
             default:
                 return
             }
-        case nil:
-            return
         }
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        guard Section(rawValue: section) == .installed,
-              !addons.isEmpty else {
+        guard visibleSections.indices.contains(section) else {
             return nil
         }
-        return "Installed Add-ons"
+        
+        switch visibleSections[section] {
+        case .installed:
+            return installedAddons.isEmpty ? nil : "Installed Add-ons"
+        case .unsupported:
+            return unsupportedAddons.isEmpty ? nil : "Unsupported Add-ons"
+        case .more:
+            return nil
+        }
+    }
+    
+    override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
+        guard visibleSections.indices.contains(section), visibleSections[section] == .more else {
+            return nil
+        }
+        if let footerSummaryText {
+            return footerSummaryText
+        }
+        if let lastGlobalCheckAt = Prefs.AddonSettings.lastGlobalCheckAt {
+            return "Last checked on \(lastCheckedDateFormatter.string(from: lastGlobalCheckAt))."
+        }
+        return nil
     }
     
     private func syncAddonsFromCache() {
-        addons = AddonsRuntime.shared.installedAddons.filter { !Self.hiddenAddonIDs.contains($0.id) }
-        if addons.isEmpty && !Self.hasLoadedInstalledAddons {
+        let visibleAddons = AddonRuntime.shared.installedAddons.filter { !$0.isBuiltIn }
+        installedAddons = visibleAddons.filter { !$0.metaData.isUnsupported }
+        unsupportedAddons = visibleAddons.filter { $0.metaData.isUnsupported }
+        
+        if installedAddons.isEmpty && unsupportedAddons.isEmpty && !Self.hasLoadedInstalledAddons {
             guard !isLoadingAddons else {
                 return
             }
@@ -163,26 +260,41 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
     private func reloadAddonsFromRuntime() async {
         let refreshedAddons: [Addon]
         do {
-            refreshedAddons = try await AddonsRuntime.shared.list()
+            refreshedAddons = try await AddonRuntime.shared.list()
         } catch {
-            refreshedAddons = AddonsRuntime.shared.installedAddons
+            refreshedAddons = AddonRuntime.shared.installedAddons
         }
         
         await MainActor.run {
             Self.hasLoadedInstalledAddons = true
-            self.addons = refreshedAddons.filter { !Self.hiddenAddonIDs.contains($0.id) }
+            let visibleAddons = refreshedAddons.filter { !$0.isBuiltIn }
+            self.installedAddons = visibleAddons.filter { !$0.metaData.isUnsupported }
+            self.unsupportedAddons = visibleAddons.filter { $0.metaData.isUnsupported }
             self.isLoadingAddons = false
             self.tableView.reloadData()
         }
     }
     
-    private func installedAddon(at indexPath: IndexPath) -> Addon? {
-        guard Section(rawValue: indexPath.section) == .installed,
-              !addons.isEmpty,
-              addons.indices.contains(indexPath.row) else {
+    private func addon(at indexPath: IndexPath) -> Addon? {
+        guard visibleSections.indices.contains(indexPath.section) else {
             return nil
         }
-        return addons[indexPath.row]
+        
+        switch visibleSections[indexPath.section] {
+        case .installed:
+            guard !installedAddons.isEmpty,
+                  installedAddons.indices.contains(indexPath.row) else {
+                return nil
+            }
+            return installedAddons[indexPath.row]
+        case .unsupported:
+            guard unsupportedAddons.indices.contains(indexPath.row) else {
+                return nil
+            }
+            return unsupportedAddons[indexPath.row]
+        case .more:
+            return nil
+        }
     }
     
     private func presentAddonFilePicker() {
@@ -202,7 +314,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
     
     private func installAddon(from sourceURL: URL) {
         isInstallingAddonFromFile = true
-        tableView.reloadSections(IndexSet(integer: Section.more.rawValue), with: .none)
+        reloadMoreSection()
         
         Task { [weak self] in
             guard let self else {
@@ -211,46 +323,28 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
             
             do {
                 let stagedURL = try Self.stageAddonPackage(from: sourceURL)
-                _ = try await AddonsRuntime.shared.install(url: stagedURL.absoluteString)
+                _ = try await AddonRuntime.shared.install(url: stagedURL.absoluteString)
                 await self.reloadAddonsFromRuntime()
                 
                 await MainActor.run {
                     self.isInstallingAddonFromFile = false
-                    self.tableView.reloadSections(IndexSet(integer: Section.more.rawValue), with: .none)
+                    self.reloadMoreSection()
                 }
             } catch {
                 await MainActor.run {
                     self.isInstallingAddonFromFile = false
-                    self.tableView.reloadSections(IndexSet(integer: Section.more.rawValue), with: .none)
-                    guard !Self.isUserCancelledAddonInstall(error) else {
+                    self.reloadMoreSection()
+                    let presentation = AddonErrors.installErrPresentation(
+                        for: error,
+                        addonName: sourceURL.deletingPathExtension().lastPathComponent
+                    )
+                    guard !presentation.isUserCancelled else {
                         return
                     }
-                    self.presentAlert(title: "Failed to install add-on", message: "\(error)")
+                    self.presentAlert(title: nil, message: presentation.alertMessage)
                 }
             }
         }
-    }
-    
-    private static func isUserCancelledAddonInstall(_ error: Error) -> Bool {
-        guard let value = Mirror(reflecting: error).descendant("value") as? [String: Any?] else {
-            return false
-        }
-        
-        let cancelledByUser: Int?
-        if let number = value["cancelledByUser"] as? NSNumber {
-            cancelledByUser = number.intValue
-        } else {
-            cancelledByUser = value["cancelledByUser"] as? Int
-        }
-        
-        let installError: Int?
-        if let number = value["installError"] as? NSNumber {
-            installError = number.intValue
-        } else {
-            installError = value["installError"] as? Int
-        }
-        
-        return cancelledByUser == 1 && installError == 0
     }
     
     @available(iOS 14.0, *)
@@ -325,12 +419,8 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
                     Self.sharedIconCache.setObject(image, forKey: cacheKey)
                 }
                 
-                guard let currentRow = self.addons.firstIndex(where: { $0.id == addon.id }) else {
-                    return
-                }
-                
-                let currentIndexPath = IndexPath(row: currentRow, section: Section.installed.rawValue)
-                guard let cell = self.tableView.cellForRow(at: currentIndexPath) else {
+                guard let currentIndexPath = self.indexPath(forAddonID: addon.id),
+                      let cell = self.tableView.cellForRow(at: currentIndexPath) else {
                     return
                 }
                 
@@ -338,6 +428,141 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
                 cell.setNeedsLayout()
             }
         }
+    }
+    
+    private func displayedStatusText(for addon: Addon) -> String? {
+        if let statusText = addonStatusTextByID[addon.id] {
+            return statusText
+        }
+        if addon.metaData.isUnsupported {
+            return "Unsupported"
+        }
+        return nil
+    }
+    
+    private func resetDisplayedUpdateState() {
+        addonStatusTextByID.removeAll()
+        footerSummaryText = nil
+        
+        let pendingApprovalAddonIDs = Prefs.AddonSettings.pendingApprovalAddonIDs
+        guard !pendingApprovalAddonIDs.isEmpty else {
+            return
+        }
+        
+        pendingApprovalAddonIDs.forEach { addonStatusTextByID[$0] = "Needs permission to update" }
+        footerSummaryText = pendingApprovalAddonIDs.count == 1
+        ? "1 add-on needs permission to update."
+        : "\(pendingApprovalAddonIDs.count) add-ons need permission to update."
+    }
+    
+    private func performUpdateAction() {
+        guard let browserViewController = resolvedBrowserViewController() else {
+            return
+        }
+        
+        isUpdatingAddons = true
+        addonStatusTextByID.removeAll()
+        footerSummaryText = nil
+        tableView.reloadData()
+        
+        Task { [weak self] in
+            guard let self else {
+                return
+            }
+            
+            let result: AddonUpdateBatchResult
+            if browserViewController.addonController.updateController.hasPendingApprovals {
+                result = await browserViewController.addonController.updateController.completePendingUpdates { [weak self] addonID, statusText in
+                    guard let self else {
+                        return
+                    }
+                    if let statusText {
+                        self.addonStatusTextByID[addonID] = statusText
+                    } else {
+                        self.addonStatusTextByID.removeValue(forKey: addonID)
+                    }
+                    if let indexPath = self.indexPath(forAddonID: addonID) {
+                        self.tableView.reloadRows(at: [indexPath], with: .none)
+                    } else {
+                        self.tableView.reloadData()
+                    }
+                }
+            } else {
+                result = await browserViewController.addonController.updateController.updateAllAddons { [weak self] addonID, statusText in
+                    guard let self else {
+                        return
+                    }
+                    if let statusText {
+                        self.addonStatusTextByID[addonID] = statusText
+                    } else {
+                        self.addonStatusTextByID.removeValue(forKey: addonID)
+                    }
+                    if let indexPath = self.indexPath(forAddonID: addonID) {
+                        self.tableView.reloadRows(at: [indexPath], with: .none)
+                    } else {
+                        self.tableView.reloadData()
+                    }
+                }
+            }
+            
+            await self.reloadAddonsFromRuntime()
+            
+            await MainActor.run {
+                self.isUpdatingAddons = false
+                
+                let pendingApprovalAddonIDs = Prefs.AddonSettings.pendingApprovalAddonIDs
+                pendingApprovalAddonIDs.forEach { self.addonStatusTextByID[$0] = "Needs permission to update" }
+                self.footerSummaryText = self.footerSummary(for: result)
+                self.tableView.reloadData()
+            }
+        }
+    }
+    
+    private func footerSummary(for result: AddonUpdateBatchResult) -> String? {
+        var parts: [String] = []
+        
+        if result.updatedCount > 0 {
+            parts.append(result.updatedCount == 1 ? "1 add-on updated." : "\(result.updatedCount) add-ons updated.")
+        }
+        
+        if result.pendingApprovalCount > 0 {
+            parts.append(
+                result.pendingApprovalCount == 1
+                ? "1 add-on needs permission to update."
+                : "\(result.pendingApprovalCount) add-ons need permission to update."
+            )
+        }
+        
+        if result.failedCount > 0 {
+            parts.append(result.failedCount == 1 ? "1 add-on failed to update." : "\(result.failedCount) add-ons failed to update.")
+        }
+        
+        if parts.isEmpty, result.noUpdateCount > 0 {
+            return "No updates found."
+        }
+        
+        return parts.isEmpty ? nil : parts.joined(separator: " ")
+    }
+    
+    private func indexPath(forAddonID addonID: String) -> IndexPath? {
+        if let row = installedAddons.firstIndex(where: { $0.id == addonID }),
+           let section = visibleSections.firstIndex(of: .installed) {
+            return IndexPath(row: row, section: section)
+        }
+        
+        if let row = unsupportedAddons.firstIndex(where: { $0.id == addonID }),
+           let section = visibleSections.firstIndex(of: .unsupported) {
+            return IndexPath(row: row, section: section)
+        }
+        
+        return nil
+    }
+    
+    private func reloadMoreSection() {
+        guard let section = visibleSections.firstIndex(of: .more) else {
+            return
+        }
+        tableView.reloadSections(IndexSet(integer: section), with: .none)
     }
 }
 
@@ -434,6 +659,13 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
             )
         }
         
+        if metaData.isUnsupported {
+            return StatusMessage(
+                text: "This extension isn't supported by this version of Reynard and has been disabled.",
+                color: .systemOrange
+            )
+        }
+        
         if metaData.isUnsigned {
             let addonName = metaData.name ?? addon.id
             return StatusMessage(
@@ -444,13 +676,8 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
         
         if metaData.isIncompatible {
             let addonName = metaData.name ?? addon.id
-            let appName = (Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String)
-            ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String)
-            ?? "the browser"
-            let appVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
-            ?? "Unknown"
             return StatusMessage(
-                text: "\(addonName) is not compatible with your version of \(appName) (version \(appVersion)).",
+                text: "\(addonName) is not compatible with this version of Reynard.",
                 color: .systemOrange
             )
         }
@@ -589,7 +816,7 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
             }
             
             do {
-                let updatedAddon = try await AddonsRuntime.shared.setAllowedInPrivateBrowsing(addon, allowed: desiredState)
+                let updatedAddon = try await AddonRuntime.shared.setAllowedInPrivateBrowsing(addon, allowed: desiredState)
                 
                 await MainActor.run {
                     self.isUpdatingAddon = false
@@ -623,8 +850,8 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
             
             do {
                 let updatedAddon = try await (desiredState
-                                              ? AddonsRuntime.shared.enable(addon)
-                                              : AddonsRuntime.shared.disable(addon))
+                                              ? AddonRuntime.shared.enable(addon)
+                                              : AddonRuntime.shared.disable(addon))
                 
                 await MainActor.run {
                     self.isUpdatingAddon = false
@@ -642,7 +869,7 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
     
     private func reloadAddon() async {
         do {
-            let refreshedAddon = try await AddonsRuntime.shared.addon(byID: addonID)
+            let refreshedAddon = try await AddonRuntime.shared.addon(byID: addonID)
             await MainActor.run {
                 guard let refreshedAddon else {
                     self.navigationController?.popViewController(animated: true)
@@ -662,7 +889,7 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
         self.addon = addon
         title = addon.metaData.name ?? addon.id
         enableSwitch.isOn = addon.metaData.enabled
-        enableSwitch.isEnabled = addon.metaData.canToggleEnabledState && !isUpdatingAddon
+        enableSwitch.isEnabled = addon.metaData.canBeEnabled && !isUpdatingAddon
         privateBrowsingSwitch.isOn = addon.metaData.allowedInPrivateBrowsing
         privateBrowsingSwitch.isEnabled = addon.metaData.incognito != .notAllowed && !isUpdatingAddon
         tableView.reloadData()
@@ -773,7 +1000,7 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
             }
             
             do {
-                try await AddonsRuntime.shared.uninstall(addon)
+                try await AddonRuntime.shared.uninstall(addon)
                 await MainActor.run {
                     self.navigationController?.popViewController(animated: true)
                 }
@@ -1003,7 +1230,7 @@ private final class AddonInformationPreferencesViewController: SettingsTableView
     
     private func reloadAddon() async {
         do {
-            let refreshedAddon = try await AddonsRuntime.shared.addon(byID: addonID)
+            let refreshedAddon = try await AddonRuntime.shared.addon(byID: addonID)
             await MainActor.run {
                 guard let refreshedAddon else {
                     self.navigationController?.popViewController(animated: true)
@@ -1319,8 +1546,8 @@ private final class AddonPermissionsPreferencesViewController: SettingsTableView
             
             do {
                 let updatedAddon = try await (desiredState
-                                              ? AddonsRuntime.shared.addOptionalPermissions(request, to: addon)
-                                              : AddonsRuntime.shared.removeOptionalPermissions(request, from: addon))
+                                              ? AddonRuntime.shared.addOptionalPermissions(request, to: addon)
+                                              : AddonRuntime.shared.removeOptionalPermissions(request, from: addon))
                 
                 await MainActor.run {
                     self.isUpdatingPermissions = false
@@ -1341,7 +1568,7 @@ private final class AddonPermissionsPreferencesViewController: SettingsTableView
     
     private func reloadAddon() async {
         do {
-            let refreshedAddon = try await AddonsRuntime.shared.addon(byID: addonID)
+            let refreshedAddon = try await AddonRuntime.shared.addon(byID: addonID)
             await MainActor.run {
                 guard let refreshedAddon else {
                     self.navigationController?.popViewController(animated: true)

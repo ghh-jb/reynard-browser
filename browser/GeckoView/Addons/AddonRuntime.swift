@@ -1,5 +1,5 @@
 //
-//  AddonsRuntime.swift
+//  AddonRuntime.swift
 //  Reynard
 //
 //  Created by Minh Ton on 28/4/26.
@@ -164,12 +164,16 @@ public struct AddonMetaData {
         disabledFlags.contains("signatureDisabled")
     }
     
+    public var isUnsupported: Bool {
+        disabledFlags.contains("appDisabled")
+    }
+    
     public var isIncompatible: Bool {
         disabledFlags.contains("appVersionDisabled")
     }
     
-    public var canToggleEnabledState: Bool {
-        !isBlocklisted && !isUnsigned && !isIncompatible
+    public var canBeEnabled: Bool {
+        !isBlocklisted && !isUnsigned && !isIncompatible && !isUnsupported
     }
     
     private static func resolveIconURL(from value: Any?) -> String? {
@@ -362,29 +366,29 @@ public struct AddonPermissionPromptResponse {
 }
 
 public protocol AddonEmbedderDelegate: AnyObject {
-    func addonsController(_ controller: AddonsRuntime, didUpdate addon: Addon)
-    func addonsController(_ controller: AddonsRuntime, didFailInstall failure: AddonInstallFailure)
+    func addonController(_ controller: AddonRuntime, didUpdate addon: Addon)
+    func addonController(_ controller: AddonRuntime, didFailInstall failure: AddonInstallFailure)
     @MainActor
-    func addonsController(_ controller: AddonsRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse
-    func addonsController(_ controller: AddonsRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?)
-    func addonsController(_ controller: AddonsRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?)
-    func addonsController(_ controller: AddonsRuntime, didRequestOpenOptionsPageFor addon: Addon)
-    func addonsController(_ controller: AddonsRuntime, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool
-    func addonsController(_ controller: AddonsRuntime, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny
-    func addonsController(_ controller: AddonsRuntime, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny
+    func addonController(_ controller: AddonRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse
+    func addonController(_ controller: AddonRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?)
+    func addonController(_ controller: AddonRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?)
+    func addonController(_ controller: AddonRuntime, didRequestOpenOptionsPageFor addon: Addon)
+    func addonController(_ controller: AddonRuntime, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool
+    func addonController(_ controller: AddonRuntime, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny
+    func addonController(_ controller: AddonRuntime, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny
 }
 
 public extension AddonEmbedderDelegate {
-    func addonsController(_ controller: AddonsRuntime, didUpdate addon: Addon) {}
-    func addonsController(_ controller: AddonsRuntime, didFailInstall failure: AddonInstallFailure) {}
+    func addonController(_ controller: AddonRuntime, didUpdate addon: Addon) {}
+    func addonController(_ controller: AddonRuntime, didFailInstall failure: AddonInstallFailure) {}
     @MainActor
-    func addonsController(_ controller: AddonsRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse { .deny }
-    func addonsController(_ controller: AddonsRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?) {}
-    func addonsController(_ controller: AddonsRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?) {}
-    func addonsController(_ controller: AddonsRuntime, didRequestOpenOptionsPageFor addon: Addon) {}
-    func addonsController(_ controller: AddonsRuntime, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool { false }
-    func addonsController(_ controller: AddonsRuntime, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny { .deny }
-    func addonsController(_ controller: AddonsRuntime, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny { .deny }
+    func addonController(_ controller: AddonRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse { .deny }
+    func addonController(_ controller: AddonRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?) {}
+    func addonController(_ controller: AddonRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?) {}
+    func addonController(_ controller: AddonRuntime, didRequestOpenOptionsPageFor addon: Addon) {}
+    func addonController(_ controller: AddonRuntime, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool { false }
+    func addonController(_ controller: AddonRuntime, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny { .deny }
+    func addonController(_ controller: AddonRuntime, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny { .deny }
 }
 
 enum AddonRuntimeEvent: String, CaseIterable {
@@ -433,7 +437,7 @@ final class AddonSessionListener: GeckoEventListenerInternal {
         guard let session else {
             throw GeckoHandlerError("session has been destroyed")
         }
-        return try await AddonsRuntime.shared.handleSessionEvent(
+        return try await AddonRuntime.shared.handleSessionEvent(
             type: type,
             message: message,
             session: session
@@ -441,8 +445,8 @@ final class AddonSessionListener: GeckoEventListenerInternal {
     }
 }
 
-public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
-    public static let shared = AddonsRuntime()
+public final class AddonRuntime: NSObject, GeckoEventListenerInternal {
+    public static let shared = AddonRuntime()
     
     public weak var delegate: AddonEmbedderDelegate? {
         didSet {
@@ -496,7 +500,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
         let staleAddonIDs = addonsByID.keys.filter { listedAddonIDs.contains($0) == false }
         let removedAddons = staleAddonIDs.compactMap { removeAddon(byID: $0) }
         let _ = entries.map { self.upsertAddon(from: $0) }
-        removedAddons.forEach { delegate?.addonsController(self, didUpdate: $0) }
+        removedAddons.forEach { delegate?.addonController(self, didUpdate: $0) }
         return installedAddons
     }
     
@@ -532,7 +536,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
             throw GeckoHandlerError("Invalid install response")
         }
         let addon = upsertAddon(from: extensionDictionary)
-        delegate?.addonsController(self, didUpdate: addon)
+        delegate?.addonController(self, didUpdate: addon)
         return addon
     }
     
@@ -587,7 +591,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
             message: ["webExtensionId": addon.id]
         )
         if let removedAddon = removeAddon(byID: addon.id) {
-            delegate?.addonsController(self, didUpdate: removedAddon)
+            delegate?.addonController(self, didUpdate: removedAddon)
         }
     }
     
@@ -601,7 +605,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
             return nil
         }
         let updated = upsertAddon(from: extensionDictionary)
-        delegate?.addonsController(self, didUpdate: updated)
+        delegate?.addonController(self, didUpdate: updated)
         return updated
     }
     
@@ -621,7 +625,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
             throw GeckoHandlerError("Invalid extension response")
         }
         let updated = upsertAddon(from: extensionDictionary)
-        delegate?.addonsController(self, didUpdate: updated)
+        delegate?.addonController(self, didUpdate: updated)
         return updated
     }
     
@@ -645,7 +649,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
                   let addon = try await addon(byID: extensionID) else {
                 throw GeckoHandlerError("runtime.openOptionsPage is not supported")
             }
-            delegate?.addonsController(self, didRequestOpenOptionsPageFor: addon)
+            delegate?.addonController(self, didRequestOpenOptionsPageFor: addon)
             return nil
         case "GeckoView:WebExtension:NewTab":
             guard let extensionID = message?["extensionId"] as? String,
@@ -656,7 +660,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
             let details = AddonCreateTabDetails(
                 dictionary: message?["createProperties"] as? [String: Any?] ?? [:]
             )
-            return delegate?.addonsController(
+            return delegate?.addonController(
                 self,
                 createNewTabFor: addon,
                 details: details,
@@ -670,7 +674,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
             let details = AddonUpdateTabDetails(
                 dictionary: message?["updateProperties"] as? [String: Any?] ?? [:]
             )
-            if delegate?.addonsController(self, updateTab: session, for: addon, details: details) == .allow {
+            if delegate?.addonController(self, updateTab: session, for: addon, details: details) == .allow {
                 return nil
             }
             throw GeckoHandlerError("tabs.update is not supported")
@@ -679,7 +683,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
                   let addon = try await addon(byID: extensionID) else {
                 throw GeckoHandlerError("tabs.remove is not supported")
             }
-            if delegate?.addonsController(self, closeTab: session, for: addon) == .allow {
+            if delegate?.addonController(self, closeTab: session, for: addon) == .allow {
                 return nil
             }
             throw GeckoHandlerError("tabs.remove is not supported")
@@ -712,7 +716,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
                   let addon = try await addon(byID: extensionID) else {
                 throw GeckoHandlerError("runtime.openOptionsPage is not supported")
             }
-            delegate?.addonsController(self, didRequestOpenOptionsPageFor: addon)
+            delegate?.addonController(self, didRequestOpenOptionsPageFor: addon)
             return nil
         case .newTab:
             guard let extensionID = message?["extensionId"] as? String,
@@ -723,7 +727,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
             let details = AddonCreateTabDetails(
                 dictionary: message?["createProperties"] as? [String: Any?] ?? [:]
             )
-            return delegate?.addonsController(
+            return delegate?.addonController(
                 self,
                 createNewTabFor: addon,
                 details: details,
@@ -737,7 +741,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
                     "isTechnicalAndInteractionDataGranted": false,
                 ]
             }
-            let response = await delegate?.addonsController(self, promptFor: prompt) ?? .deny
+            let response = await delegate?.addonController(self, promptFor: prompt) ?? .deny
             return [
                 "allow": response.allow,
                 "privateBrowsingAllowed": response.privateBrowsingAllowed,
@@ -747,13 +751,13 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
             guard let prompt = try await permissionPrompt(for: .optionalPrompt, message: message) else {
                 return ["allow": false]
             }
-            let optionalResponse = await delegate?.addonsController(self, promptFor: prompt) ?? .deny
+            let optionalResponse = await delegate?.addonController(self, promptFor: prompt) ?? .deny
             return ["allow": optionalResponse.allow]
         case .updatePrompt:
             guard let prompt = try await permissionPrompt(for: .updatePrompt, message: message) else {
                 return ["allow": false]
             }
-            let updateResponse = await delegate?.addonsController(self, promptFor: prompt) ?? .deny
+            let updateResponse = await delegate?.addonController(self, promptFor: prompt) ?? .deny
             return ["allow": updateResponse.allow]
         case .installationFailed:
             let failure = AddonInstallFailure(
@@ -762,17 +766,17 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
                 extensionName: stringValue(message?["addonName"]),
                 extensionVersion: stringValue(message?["addonVersion"])
             )
-            delegate?.addonsController(self, didFailInstall: failure)
+            delegate?.addonController(self, didFailInstall: failure)
             return nil
         case .uninstalled:
             if let removedAddon = removeAddon(from: message) {
-                delegate?.addonsController(self, didUpdate: removedAddon)
+                delegate?.addonController(self, didUpdate: removedAddon)
             }
             return nil
         case .optionalPermissionsChanged, .ready, .disabling, .disabled, .enabling, .enabled, .uninstalling, .installing, .installed:
             if let extensionDictionary = message?["extension"] as? [String: Any?] {
                 let addon = upsertAddon(from: extensionDictionary)
-                delegate?.addonsController(self, didUpdate: addon)
+                delegate?.addonController(self, didUpdate: addon)
             }
             return nil
         }
@@ -951,7 +955,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
                 addon.pageAction = action
             }
         }
-        delegate?.addonsController(self, didUpdate: action, for: addon, session: session)
+        delegate?.addonController(self, didUpdate: action, for: addon, session: session)
     }
     
     private func handleOpenPopup(
@@ -966,7 +970,7 @@ public final class AddonsRuntime: NSObject, GeckoEventListenerInternal {
               !popupURL.isEmpty else {
             return
         }
-        delegate?.addonsController(
+        delegate?.addonController(
             self,
             didRequestOpenPopup: popupURL,
             for: addon,

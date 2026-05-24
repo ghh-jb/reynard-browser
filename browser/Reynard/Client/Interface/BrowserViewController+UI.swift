@@ -250,9 +250,9 @@ extension BrowserViewController: AddressBarDelegate, BottomToolbarDelegate {
             )
         }
         browserUI.addressBar.setLoadingProgress(selectedTab?.progress ?? 0, isLoading: selectedTab?.isLoading ?? false)
-        addonsController.prepareVisibleAddonIcons()
-        let addonItems = addonsController.visibleMenuItemsForCurrentSite().map { item in
-            AddressBarMenu.AddonItem(menuItem: item, image: addonsController.iconImage(for: item.addon))
+        addonController.prepareVisibleAddonIcons()
+        let addonItems = addonController.visibleMenuItemsForCurrentSite().map { item in
+            AddressBarMenu.AddonItem(menuItem: item, image: addonController.iconImage(for: item.addon))
         }
         browserUI.addressBar.setAddonsMenu(
             AddressBarMenu.makeMenu(

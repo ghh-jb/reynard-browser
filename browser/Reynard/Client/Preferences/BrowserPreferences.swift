@@ -52,6 +52,10 @@ final class BrowserPreferences {
             // Bookmarks
             key("BookmarkSettings", "placeFoldersOnTop"): true,
             key("BookmarkSettings", "sortOrders"): BookmarkSortOrder.none.rawValue,
+            
+            // Add-ons
+            key("AddonSettings", "lastGlobalCheckAt"): "",
+            key("AddonSettings", "pendingApprovalAddonIDs"): Data(),
         ])
     }
     
@@ -201,6 +205,37 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue.rawValue, forSetting: "BookmarkSettings", key: "sortOrders")
+            }
+        }
+    }
+    
+    // MARK: - Add-ons
+    struct AddonSettings {
+        static var lastGlobalCheckAt: Date? {
+            get {
+                guard let value = prefs.string(forSetting: "AddonSettings", key: "lastGlobalCheckAt"),
+                      !value.isEmpty else {
+                    return nil
+                }
+                return ISO8601DateFormatter().date(from: value)
+            }
+            set {
+                prefs.set(newValue.map { ISO8601DateFormatter().string(from: $0) }, forSetting: "AddonSettings", key: "lastGlobalCheckAt")
+            }
+        }
+        
+        static var pendingApprovalAddonIDs: [String] {
+            get {
+                guard let data = prefs.data(forSetting: "AddonSettings", key: "pendingApprovalAddonIDs"),
+                      !data.isEmpty,
+                      let values = try? JSONDecoder().decode([String].self, from: data) else {
+                    return []
+                }
+                return values
+            }
+            set {
+                let data = try? JSONEncoder().encode(newValue)
+                prefs.set(data, forSetting: "AddonSettings", key: "pendingApprovalAddonIDs")
             }
         }
     }

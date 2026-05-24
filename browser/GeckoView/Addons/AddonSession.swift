@@ -1,5 +1,5 @@
 //
-//  AddonsSession.swift
+//  AddonSession.swift
 //  Reynard
 //
 //  Created by Minh Ton on 28/4/26.

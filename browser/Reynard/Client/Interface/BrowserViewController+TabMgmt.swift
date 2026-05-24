@@ -132,7 +132,7 @@ extension BrowserViewController: TabManagerDelegate {
         
         let selectedTab = activeTabs[index]
         browserUI.geckoView.session = selectedTab.session
-        addonsController.handleTabSelectionChange(selectedIndex: index, previousIndex: previousIndex)
+        addonController.handleTabSelectionChange(selectedIndex: index, previousIndex: previousIndex)
         
         syncAddressBarLoadingState(progress: selectedTab.progress, isLoading: selectedTab.isLoading)
         refreshAddressBar()
@@ -261,6 +261,6 @@ extension BrowserViewController: TabManagerDelegate {
     }
     
     func tabManager(_ tabManager: TabManager, shouldHandleExternalResponse response: ExternalResponseInfo, for session: GeckoSession) -> Bool {
-        addonsController.handleExternalResponse(response)
+        addonController.handleExternalResponse(response)
     }
 }

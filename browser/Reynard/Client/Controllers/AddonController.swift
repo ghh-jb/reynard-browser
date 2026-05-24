@@ -1,5 +1,5 @@
 //
-//  AddonsController.swift
+//  AddonController.swift
 //  Reynard
 //
 //  Created by Minh Ton on 28/4/26.
@@ -15,22 +15,25 @@ struct AddonMenuItem {
     let title: String
 }
 
-final class AddonsController: NSObject, AddonEmbedderDelegate {
+final class AddonController: NSObject, AddonEmbedderDelegate {
     private weak var controller: BrowserViewController?
     private var sessionBrowserActions: [ObjectIdentifier: [String: AddonAction]] = [:]
     private var sessionPageActions: [ObjectIdentifier: [String: AddonAction]] = [:]
     private let iconCache = NSCache<NSString, UIImage>()
     private let iconLoadingQueue = DispatchQueue(label: "com.minh-ton.addons-controller-icon-queue", qos: .utility)
     private var iconPrefetchIDs = Set<String>()
+    let updateController: AddonUpdateController
     
     init(controller: BrowserViewController) {
         self.controller = controller
+        updateController = AddonUpdateController()
         iconCache.countLimit = 64
     }
     
     func start() async {
-        AddonsRuntime.shared.delegate = self
-        _ = try? await AddonsRuntime.shared.list()
+        AddonRuntime.shared.delegate = self
+        _ = try? await AddonRuntime.shared.list()
+        updateController.start()
         controller?.refreshAddressBar()
     }
     
@@ -41,9 +44,18 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         
         Task { @MainActor [weak self] in
             do {
-                _ = try await AddonsRuntime.shared.install(url: response.url, installMethod: .manager)
+                _ = try await AddonRuntime.shared.install(url: response.url, installMethod: .manager)
             } catch {
-                self?.presentAlert(title: "Extension Error", message: "\(error)")
+                guard let self else {
+                    return
+                }
+                let presentation = AddonErrors.installErrPresentation(
+                    for: error,
+                    addonName: nil
+                )
+                if !presentation.isUserCancelled {
+                    self.presentAlert(title: nil, message: presentation.alertMessage)
+                }
             }
         }
         return true
@@ -67,10 +79,10 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
     
     private var addonsInMenu: [Addon] {
         guard controller?.tabManager.selectedTab?.isPrivate == true else {
-            return AddonsRuntime.shared.installedAddons
+            return AddonRuntime.shared.installedAddons
         }
         
-        return AddonsRuntime.shared.installedAddons.filter { $0.metaData.allowedInPrivateBrowsing }
+        return AddonRuntime.shared.installedAddons.filter { $0.metaData.allowedInPrivateBrowsing }
     }
     
     func visibleMenuItemsForCurrentSite() -> [AddonMenuItem] {
@@ -120,48 +132,57 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
             }
             
             do {
-                if let popupURL = try await AddonsRuntime.shared.clickAction(kind: item.action.kind, addon: item.addon),
+                if let popupURL = try await AddonRuntime.shared.clickAction(kind: item.action.kind, addon: item.addon),
                    !popupURL.isEmpty {
                     self.presentPopupAfterMenuDismissal(url: popupURL, title: item.title)
                 }
             } catch {
-                self.presentAlert(title: "Extension Error", message: "\(error)")
+                self.presentAlert(title: nil, message: "\(error)")
             }
         }
     }
     
-    func addonsController(_ controller: AddonsRuntime, didUpdate addon: Addon) {
+    func addonController(_ controller: AddonRuntime, didUpdate addon: Addon) {
         _ = addon
-        if addon.metaData.enabled == false || AddonsRuntime.shared.installedAddons.contains(where: { $0.id == addon.id }) == false {
+        if addon.metaData.enabled == false || AddonRuntime.shared.installedAddons.contains(where: { $0.id == addon.id }) == false {
             clearCachedActions(for: addon.id)
         }
         self.controller?.refreshAddressBar()
     }
     
-    func addonsController(_ controller: AddonsRuntime, didFailInstall failure: AddonInstallFailure) {
-        presentAlert(title: "Extension Error", message: failure.code ?? "Install failed")
+    func addonController(_ controller: AddonRuntime, didFailInstall failure: AddonInstallFailure) {
+        _ = controller
+        _ = failure
     }
     
     @MainActor
-    func addonsController(_ controller: AddonsRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse {
-        await withCheckedContinuation { continuation in
-            let promptViewController = AddonPromptViewController(prompt: prompt) { response in
-                continuation.resume(returning: response)
+    func addonController(_ controller: AddonRuntime, promptFor prompt: AddonPermissionPrompt) async -> AddonPermissionPromptResponse {
+        let presentPrompt: @MainActor (AddonPermissionPrompt) async -> AddonPermissionPromptResponse = { prompt in
+            await withCheckedContinuation { continuation in
+                let promptViewController = AddonPromptViewController(prompt: prompt) { response in
+                    continuation.resume(returning: response)
+                }
+                
+                let navigationController = UINavigationController(rootViewController: promptViewController)
+                navigationController.modalPresentationStyle = .pageSheet
+                
+                guard let presenter = self.topPresentedViewController() ?? self.controller else {
+                    continuation.resume(returning: .deny)
+                    return
+                }
+                
+                presenter.present(navigationController, animated: true)
             }
-            
-            let navigationController = UINavigationController(rootViewController: promptViewController)
-            navigationController.modalPresentationStyle = .pageSheet
-            
-            guard let presenter = self.topPresentedViewController() ?? self.controller else {
-                continuation.resume(returning: .deny)
-                return
-            }
-            
-            presenter.present(navigationController, animated: true)
         }
+        
+        if prompt.kind == .update {
+            return await updateController.responseForUpdatePrompt(prompt, presentPrompt: presentPrompt)
+        }
+        
+        return await presentPrompt(prompt)
     }
     
-    func addonsController(_ controller: AddonsRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?) {
+    func addonController(_ controller: AddonRuntime, didUpdate action: AddonAction, for addon: Addon, session: GeckoSession?) {
         guard let session else {
             return
         }
@@ -183,7 +204,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         }
     }
     
-    func addonsController(_ controller: AddonsRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?) {
+    func addonController(_ controller: AddonRuntime, didRequestOpenPopup popupURL: String, for addon: Addon, action: AddonAction, session: GeckoSession?) {
         Task { @MainActor [weak self] in
             self?.presentPopupAfterMenuDismissal(
                 url: popupURL,
@@ -192,7 +213,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         }
     }
     
-    func addonsController(_ controller: AddonsRuntime, didRequestOpenOptionsPageFor addon: Addon) {
+    func addonController(_ controller: AddonRuntime, didRequestOpenOptionsPageFor addon: Addon) {
         _ = controller
         guard let value = addon.metaData.optionsPageURL,
               URL(string: value) != nil else {
@@ -217,7 +238,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         createTab()
     }
     
-    func addonsController(_ controller: AddonsRuntime, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool {
+    func addonController(_ controller: AddonRuntime, createNewTabFor addon: Addon, details: AddonCreateTabDetails, newSessionID: String) -> Bool {
         _ = addon
         let createTab: () -> Void = { [weak self] in
             self?.createAddonTab(
@@ -236,7 +257,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         return true
     }
     
-    func addonsController(_ controller: AddonsRuntime, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny {
+    func addonController(_ controller: AddonRuntime, updateTab session: GeckoSession, for addon: Addon, details: AddonUpdateTabDetails) -> AllowOrDeny {
         _ = addon
         guard let index = self.controller?.tabManager.tabIndex(for: session) else {
             return .deny
@@ -249,7 +270,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         return .allow
     }
     
-    func addonsController(_ controller: AddonsRuntime, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny {
+    func addonController(_ controller: AddonRuntime, closeTab session: GeckoSession, for addon: Addon) -> AllowOrDeny {
         _ = addon
         guard let index = self.controller?.tabManager.tabIndex(for: session) else {
             return .deny
@@ -339,7 +360,7 @@ final class AddonsController: NSObject, AddonEmbedderDelegate {
         presenter?.present(popupViewController, animated: true)
     }
     
-    private func presentAlert(title: String, message: String) {
+    private func presentAlert(title: String?, message: String) {
         guard let presenter = topPresentedViewController() else {
             return
         }

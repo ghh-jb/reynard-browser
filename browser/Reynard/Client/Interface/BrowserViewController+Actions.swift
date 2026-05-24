@@ -10,22 +10,22 @@ import ObjectiveC
 import UIKit
 
 private enum ActionsAssociatedKeys {
-    static var addonsController = 0
+    static var addonController = 0
 }
 
 extension BrowserViewController {
-    var addonsController: AddonsController {
+    var addonController: AddonController {
         get {
-            if let controller = objc_getAssociatedObject(self, &ActionsAssociatedKeys.addonsController) as? AddonsController {
+            if let controller = objc_getAssociatedObject(self, &ActionsAssociatedKeys.addonController) as? AddonController {
                 return controller
             }
             
-            let controller = AddonsController(controller: self)
-            objc_setAssociatedObject(self, &ActionsAssociatedKeys.addonsController, controller, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            let controller = AddonController(controller: self)
+            objc_setAssociatedObject(self, &ActionsAssociatedKeys.addonController, controller, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
             return controller
         }
         set {
-            objc_setAssociatedObject(self, &ActionsAssociatedKeys.addonsController, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            objc_setAssociatedObject(self, &ActionsAssociatedKeys.addonController, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
     }
     func presentMenuSheet(initialSection: LibrarySection = .bookmarks) {
@@ -207,7 +207,7 @@ extension BrowserViewController {
             return
         }
         
-        addonsController.presentCurrentSiteSettings(for: item)
+        addonController.presentCurrentSiteSettings(for: item)
     }
     
     @objc func presentAddBookmarkRequested(_ notification: Notification) {

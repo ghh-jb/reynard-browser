@@ -97,7 +97,7 @@ final class BrowserViewController: UIViewController {
                 return
             }
             
-            await self.addonsController.start()
+            await self.addonController.start()
             self.tabManager.selectedTab?.session.setAddonTabActive(true)
         }
         

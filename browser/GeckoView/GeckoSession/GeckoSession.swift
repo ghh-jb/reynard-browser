@@ -13,6 +13,23 @@ protocol GeckoSessionHandlerCommon: GeckoEventListenerInternal {
     var enabled: Bool { get }
 }
 
+public struct GeckoSessionSettings {
+    public let userAgentOverride: String?
+    public let userAgentMode: Int
+    public let viewportMode: Int
+    
+    public init(userAgentOverride: String?, userAgentMode: Int, viewportMode: Int) {
+        self.userAgentOverride = userAgentOverride
+        self.userAgentMode = userAgentMode
+        self.viewportMode = viewportMode
+    }
+}
+
+public enum GeckoSessionLoadFlags {
+    public static let none = 0
+    public static let replaceHistory = 1 << 6
+}
+
 public class GeckoSession {
     let dispatcher: GeckoEventDispatcherWrapper = GeckoEventDispatcherWrapper()
     var window: GeckoViewWindow?
@@ -21,12 +38,24 @@ public class GeckoSession {
     public var isPrivateMode = false
     lazy var addonSessionListener = AddonSessionListener(session: self)
     public var userAgentOverride: String?
+    public var userAgentMode = 0
+    public var viewportMode = 0
     
-    public func updateUserAgent(_ ua: String?) {
-        userAgentOverride = ua
+    public func updateSettings(_ settings: GeckoSessionSettings) {
+        userAgentOverride = settings.userAgentOverride
+        userAgentMode = settings.userAgentMode
+        viewportMode = settings.viewportMode
+        
         guard isOpen() else { return }
-        let uaValue: Any = ua ?? NSNull()
-        dispatcher.dispatch(type: "GeckoView:UpdateSettings", message: ["userAgentOverride": uaValue])
+        
+        let uaValue: Any = settings.userAgentOverride ?? NSNull()
+        dispatcher.dispatch(
+            type: "GeckoView:UpdateSettings",
+            message: [
+                "userAgentOverride": uaValue,
+                "userAgentMode": settings.userAgentMode,
+                "viewportMode": settings.viewportMode,
+            ])
     }
     
     lazy var contentHandler = newContentHandler(self)
@@ -94,9 +123,9 @@ public class GeckoSession {
             "chromeUri": nil,
             "screenId": 0,
             "useTrackingProtection": false,
-            "userAgentMode": 0,
+            "userAgentMode": userAgentMode,
             "userAgentOverride": userAgentOverride,
-            "viewportMode": 0,
+            "viewportMode": viewportMode,
             "displayMode": 0,
             "suspendMediaWhenInactive": false,
             "allowJavascript": true,
@@ -137,16 +166,12 @@ public class GeckoSession {
         id = nil
     }
     
-    public func load(_ url: String) {
-        dispatchLoad(url)
-    }
-    
-    private func dispatchLoad(_ url: String) {
+    public func load(_ url: String, flags: Int = GeckoSessionLoadFlags.none) {
         dispatcher.dispatch(
             type: "GeckoView:LoadUri",
             message: [
                 "uri": url,
-                "flags": 0,
+                "flags": flags,
                 "headerFilter": 1,
             ])
     }

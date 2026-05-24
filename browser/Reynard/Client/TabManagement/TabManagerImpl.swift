@@ -132,7 +132,7 @@ final class TabManagerImplementation: NSObject, TabManager {
     }
     
     private func loadURL(_ url: String, in tab: Tab) {
-        tab.session.updateUserAgent(UserAgentController.shared.userAgent(for: url, tabID: tab.id))
+        tab.session.updateSettings(GeckoSessionController.shared.sessionSettings(for: url, tabID: tab.id))
         tab.session.load(url)
     }
     
@@ -192,7 +192,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         tab.pendingDisplayText = nil
         tab.suppressInitialNavigation = true
         tab.favicon = cachedFavicon(for: url)
-        tab.session.updateUserAgent(UserAgentController.shared.userAgent(for: url, tabID: tab.id))
+        tab.session.updateSettings(GeckoSessionController.shared.sessionSettings(for: url, tabID: tab.id))
     }
     
     private func recordTransferredHistory(for tab: Tab, title: String?) {
@@ -534,7 +534,7 @@ final class TabManagerImplementation: NSObject, TabManager {
             removedTab = privateTabs.remove(at: index)
         }
         cancelFaviconTask(for: removedTab.id)
-        UserAgentController.shared.clearOverrides(forTabID: removedTab.id)
+        GeckoSessionController.shared.clearOverrides(forTabID: removedTab.id)
         sessionStore.removeSession(for: removedTab.id)
         
         if tabs(for: mode).isEmpty {
@@ -581,7 +581,7 @@ final class TabManagerImplementation: NSObject, TabManager {
             selectedPrivateTabIndex = -1
         }
         removedTabs.forEach { cancelFaviconTask(for: $0.id) }
-        removedTabs.forEach { UserAgentController.shared.clearOverrides(forTabID: $0.id) }
+        removedTabs.forEach { GeckoSessionController.shared.clearOverrides(forTabID: $0.id) }
         removedTabs.forEach { sessionStore.removeSession(for: $0.id) }
         delegate?.tabManagerDidChangeTabs(self)
         
@@ -873,7 +873,7 @@ extension TabManagerImplementation: NavigationDelegate {
         }
         
         if let url {
-            session.updateUserAgent(UserAgentController.shared.userAgent(for: url, tabID: tab.id))
+            session.updateSettings(GeckoSessionController.shared.sessionSettings(for: url, tabID: tab.id))
         }
         
         tab.url = url
@@ -935,7 +935,7 @@ extension TabManagerImplementation: NavigationDelegate {
         newSession.progressDelegate = self
         newSession.navigationDelegate = self
         let newTab = Tab(session: newSession, isPrivate: sourceIsPrivate)
-        newSession.userAgentOverride = UserAgentController.shared.userAgent(for: uri, tabID: newTab.id)
+        newSession.updateSettings(GeckoSessionController.shared.sessionSettings(for: uri, tabID: newTab.id))
         let controller = NowPlayingController(session: newSession)
         newSession.mediaSessionDelegate = controller
         newTab.nowPlayingController = controller
@@ -985,14 +985,16 @@ extension TabManagerImplementation: ProgressDelegate {
         }
         let tab = tabs(for: location.mode)[location.index]
         
-        let currentHost = tab.url.flatMap { UserAgentController.shared.extractHost(from: $0) }
-        let requestedHost = UserAgentController.shared.extractHost(from: url)
-        let desiredUserAgent = UserAgentController.shared.userAgent(for: url, tabID: tab.id)
+        let currentHost = tab.url.flatMap { GeckoSessionController.shared.extractHost(from: $0) }
+        let requestedHost = GeckoSessionController.shared.extractHost(from: url)
+        let desiredSettings = GeckoSessionController.shared.sessionSettings(for: url, tabID: tab.id)
         
         if currentHost != nil,
            requestedHost != nil,
            currentHost != requestedHost,
-           desiredUserAgent != session.userAgentOverride {
+           (desiredSettings.userAgentOverride != session.userAgentOverride ||
+            desiredSettings.userAgentMode != session.userAgentMode ||
+            desiredSettings.viewportMode != session.viewportMode) {
             loadURL(url, in: tab)
         }
         

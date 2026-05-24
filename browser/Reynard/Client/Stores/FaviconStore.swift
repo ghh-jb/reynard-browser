@@ -682,9 +682,6 @@ final class FaviconStore {
         var request = URLRequest(url: pageURL)
         request.httpMethod = "GET"
         request.setValue("text/html,application/xhtml+xml", forHTTPHeaderField: "Accept")
-        if let userAgent = UserAgentController.shared.userAgent(for: pageURL.absoluteString) {
-            request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        }
         
         guard let (data, response) = await data(for: request),
               data.count <= Self.maxHTMLBytes else {
@@ -715,9 +712,6 @@ final class FaviconStore {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("image/*,*/*;q=0.8", forHTTPHeaderField: "Accept")
-        if let userAgent = UserAgentController.shared.userAgent(for: url.absoluteString) {
-            request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        }
         
         guard let (data, response) = await data(for: request),
               data.count <= Self.maxImageBytes,

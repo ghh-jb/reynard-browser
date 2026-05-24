@@ -77,7 +77,7 @@ enum AddressBarMenu {
         
         if let selectedTab,
            let selectedURL,
-           let isDesktop = UserAgentController.shared.isDesktopMode(for: selectedURL, tabID: selectedTab.id) {
+           let isDesktop = GeckoSessionController.shared.isDesktopMode(for: selectedURL, tabID: selectedTab.id) {
             let title = isDesktop ? "Request Mobile Website" : "Request Desktop Website"
             let imageName = isDesktop ? "iphone" : "desktopcomputer"
             pageActions.append(UIAction(title: title, image: UIImage(systemName: imageName)) { _ in

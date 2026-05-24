@@ -97,13 +97,22 @@ extension BrowserViewController {
     
     func changeWebsiteMode() {
         guard let tab = tabManager.selectedTab,
-              let url = tab.url else {
+              let url = tab.url,
+              let navigationAction = GeckoSessionController.shared.changeWebsiteMode(for: url, tabID: tab.id) else {
             return
         }
         
-        UserAgentController.shared.changeWebsiteMode(for: url, tabID: tab.id)
-        tab.session.updateUserAgent(UserAgentController.shared.userAgent(for: url, tabID: tab.id))
-        tab.session.reload()
+        switch navigationAction {
+        case .reload:
+            tab.session.updateSettings(GeckoSessionController.shared.sessionSettings(for: url, tabID: tab.id))
+            tab.session.reload()
+        case let .load(overrideURL):
+            tab.pendingDisplayText = overrideURL
+            tab.suppressInitialNavigation = false
+            tab.session.updateSettings(GeckoSessionController.shared.sessionSettings(for: overrideURL, tabID: tab.id))
+            tab.session.load(overrideURL, flags: GeckoSessionLoadFlags.replaceHistory)
+        }
+        
         refreshAddressBar()
     }
     

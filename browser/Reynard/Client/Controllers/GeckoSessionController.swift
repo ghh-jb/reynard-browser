@@ -1,25 +1,33 @@
 //
-//  UserAgentController.swift
+//  GeckoSessionController.swift
 //  Reynard
 //
 //  Created by Minh Ton on 21/4/26.
 //
 
 import Foundation
+import GeckoView
 
-final class UserAgentController {
-    static let shared = UserAgentController()
+enum WebsiteModeNavigationAction {
+    case reload
+    case load(String)
+}
+
+final class GeckoSessionController {
+    static let shared = GeckoSessionController()
+    
+    private enum SessionMode {
+        static let mobile = 0
+        static let desktop = 1
+    }
+    
     private var tabHostDesktopOverrides: [UUID: [String: Bool]] = [:]
     
     private init() {}
     
-    func userAgent(for urlString: String) -> String? {
-        userAgent(for: urlString, tabID: nil)
-    }
-    
     // It's sad to have this function, because Gecko + iOS
     // is a super weird combination that websites don't expect!
-    func userAgent(for urlString: String, tabID: UUID?) -> String? {
+    func sessionSettings(for urlString: String, tabID: UUID?) -> GeckoSessionSettings {
         let host = extractHost(from: urlString)
         
         let geckoVersion = Bundle.main.object(forInfoDictionaryKey: "GeckoVersion") as? String ?? ""
@@ -28,23 +36,30 @@ final class UserAgentController {
         
         let androidMobileUserAgent = "Mozilla/5.0 (Android 15; Mobile; rv:\(geckoMajorVersion).0) Gecko/\(geckoMajorVersion).0 Firefox/\(geckoMajorVersion).0"
         let androidDesktopUserAgent = "Mozilla/5.0 (X11; Linux x86_64; rv:\(geckoMajorVersion).0) Gecko/20100101 Firefox/\(geckoMajorVersion).0"
-        let defaultMobileUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X; Mobile; rv:\(geckoMajorVersion).0) Gecko/\(geckoMajorVersion).0 Firefox/\(geckoMajorVersion).0"
-        let defaultDesktopUserAgent = "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X; rv:\(geckoMajorVersion).0) Gecko/\(geckoMajorVersion).0 Firefox/\(geckoMajorVersion).0"
         let googleMobileUserAgent = "Mozilla/5.0 (Linux; Android 15; Nexus 5 Build/MRA58N) FxQuantum/\(geckoMajorVersion).0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/\(chromeMajorVersion).0.0.0 Mobile Safari/537.36"
         
         let requestDesktopWebsite = tabID.flatMap { tabID in
             isDesktopMode(for: urlString, tabID: tabID)
         } ?? Prefs.BrowsingSettings.requestDesktopWebsite
+        let requestedMode = requestDesktopWebsite ? SessionMode.desktop : SessionMode.mobile
         
         // Always use the Android mobile user agent for AMO to
         // allow addons installation.
         if host == "addons.mozilla.org" {
-            return androidMobileUserAgent
+            return GeckoSessionSettings(
+                userAgentOverride: androidMobileUserAgent,
+                userAgentMode: SessionMode.mobile,
+                viewportMode: SessionMode.mobile
+            )
         }
         
         // Addon setting pages also require the Android user agent to work properly.
         if urlString.starts(with: "moz-extension://") {
-            return androidMobileUserAgent
+            return GeckoSessionSettings(
+                userAgentOverride: androidMobileUserAgent,
+                userAgentMode: SessionMode.mobile,
+                viewportMode: SessionMode.mobile
+            )
         }
         
         // I have so many people reporting broken UI issues, login
@@ -52,7 +67,11 @@ final class UserAgentController {
         // hack stolen from the Google Search Fixer extension.
         if Prefs.CompatibilitySettings.useAndroidUserAgent && !requestDesktopWebsite,
            host?.split(separator: ".").contains("google") == true {
-            return googleMobileUserAgent
+            return GeckoSessionSettings(
+                userAgentOverride: googleMobileUserAgent,
+                userAgentMode: SessionMode.mobile,
+                viewportMode: SessionMode.mobile
+            )
         }
         
         let shouldUseAndroidUserAgent = Prefs.CompatibilitySettings.useAndroidUserAgent || (host.map { host in
@@ -61,13 +80,23 @@ final class UserAgentController {
         
         switch (shouldUseAndroidUserAgent, requestDesktopWebsite) {
         case (true, true):
-            return androidDesktopUserAgent
+            return GeckoSessionSettings(
+                userAgentOverride: androidDesktopUserAgent,
+                userAgentMode: requestedMode,
+                viewportMode: requestedMode
+            )
         case (true, false):
-            return androidMobileUserAgent
-        case (false, true):
-            return defaultDesktopUserAgent
+            return GeckoSessionSettings(
+                userAgentOverride: androidMobileUserAgent,
+                userAgentMode: requestedMode,
+                viewportMode: requestedMode
+            )
         default:
-            return defaultMobileUserAgent
+            return GeckoSessionSettings(
+                userAgentOverride: nil,
+                userAgentMode: requestedMode,
+                viewportMode: requestedMode
+            )
         }
     }
     
@@ -84,23 +113,37 @@ final class UserAgentController {
         })?.value ?? Prefs.BrowsingSettings.requestDesktopWebsite
     }
     
-    func changeWebsiteMode(for urlString: String, tabID: UUID) {
+    func changeWebsiteMode(for urlString: String, tabID: UUID) -> WebsiteModeNavigationAction? {
         guard let host = extractHost(from: urlString),
               let isDesktop = isDesktopMode(for: urlString, tabID: tabID) else {
-            return
+            return nil
         }
         
         let newSetting = !isDesktop
+        let overrideURL = desktopModeOverrideURL(for: urlString, isDesktopModeEnabled: newSetting)
+        let overrideHost = overrideURL.flatMap(extractHost)
+        var overrides = tabHostDesktopOverrides[tabID] ?? [:]
+        
+        for relatedHost in overrideHostsToUpdate(for: host, overrideHost: overrideHost, existingOverrides: overrides) {
+            overrides.removeValue(forKey: relatedHost)
+        }
+        
         if newSetting == Prefs.BrowsingSettings.requestDesktopWebsite {
-            tabHostDesktopOverrides[tabID]?.removeValue(forKey: host)
-            if tabHostDesktopOverrides[tabID]?.isEmpty == true {
+            if overrides.isEmpty {
                 tabHostDesktopOverrides.removeValue(forKey: tabID)
+            } else {
+                tabHostDesktopOverrides[tabID] = overrides
             }
         } else {
-            var overrides = tabHostDesktopOverrides[tabID] ?? [:]
-            overrides[host] = newSetting
+            overrides[overrideHost ?? host] = newSetting
             tabHostDesktopOverrides[tabID] = overrides
         }
+        
+        if let overrideURL {
+            return .load(overrideURL)
+        }
+        
+        return .reload
     }
     
     func clearOverrides(forTabID tabID: UUID) {
@@ -119,8 +162,49 @@ final class UserAgentController {
         return nil
     }
     
+    func checkForMobileSite(_ urlString: String) -> String? {
+        guard var components = URLComponents(string: urlString),
+              let host = components.host else {
+            return nil
+        }
+        
+        let normalizedHost = host.lowercased()
+        let prefixes = ["m.", "mobile."]
+        guard let prefix = prefixes.first(where: { normalizedHost.hasPrefix($0) }) else {
+            return nil
+        }
+        
+        components.host = String(normalizedHost.dropFirst(prefix.count))
+        return components.url?.absoluteString
+    }
+    
     private func domainMatches(host: String, domain: String) -> Bool {
         let normalizedDomain = domain.lowercased()
         return host == normalizedDomain || host.hasSuffix("." + normalizedDomain)
+    }
+    
+    private func desktopModeOverrideURL(for urlString: String, isDesktopModeEnabled: Bool) -> String? {
+        guard isDesktopModeEnabled else {
+            return nil
+        }
+        
+        return checkForMobileSite(urlString)
+    }
+    
+    private func overrideHostsToUpdate(for host: String, overrideHost: String?, existingOverrides: [String: Bool]) -> Set<String> {
+        var relatedHosts: Set<String> = [host]
+        if let overrideHost {
+            relatedHosts.insert(overrideHost)
+        }
+        
+        for existingHost in existingOverrides.keys {
+            if relatedHosts.contains(where: {
+                domainMatches(host: existingHost, domain: $0) || domainMatches(host: $0, domain: existingHost)
+            }) {
+                relatedHosts.insert(existingHost)
+            }
+        }
+        
+        return relatedHosts
     }
 }

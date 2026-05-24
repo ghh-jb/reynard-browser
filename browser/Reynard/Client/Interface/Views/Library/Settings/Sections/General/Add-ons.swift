@@ -45,6 +45,14 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
         return sections
     }
     
+    private var visibleAddonCount: Int {
+        installedAddons.count + unsupportedAddons.count
+    }
+    
+    private var shouldShowUpdateAction: Bool {
+        visibleAddonCount > 0
+    }
+    
     private var updateActionTitle: String {
         if isUpdatingAddons {
             return "Updating Add-ons..."
@@ -98,7 +106,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
         case .unsupported:
             return unsupportedAddons.count
         case .more:
-            return 3
+            return shouldShowUpdateAction ? 3 : 2
         }
     }
     
@@ -129,6 +137,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
             cell.detailTextLabel?.textColor = .secondaryLabel
             cell.accessoryType = .disclosureIndicator
             cell.imageView?.image = Self.sharedIconCache.object(forKey: addon.id as NSString) ?? UIImage(systemName: "puzzlepiece.extension")
+            applyVisualState(to: cell, for: addon)
             loadIconIfNeeded(for: addon)
             return cell
         case .unsupported:
@@ -144,6 +153,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
             cell.detailTextLabel?.textColor = .secondaryLabel
             cell.accessoryType = .disclosureIndicator
             cell.imageView?.image = Self.sharedIconCache.object(forKey: addon.id as NSString) ?? UIImage(systemName: "puzzlepiece.extension")
+            applyVisualState(to: cell, for: addon)
             loadIconIfNeeded(for: addon)
             return cell
         case .more:
@@ -225,6 +235,9 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
     
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
         guard visibleSections.indices.contains(section), visibleSections[section] == .more else {
+            return nil
+        }
+        guard shouldShowUpdateAction else {
             return nil
         }
         if let footerSummaryText {
@@ -438,6 +451,19 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
             return "Unsupported"
         }
         return nil
+    }
+    
+    private func applyVisualState(to cell: UITableViewCell, for addon: Addon) {
+        guard addon.metaData.enabled == false else {
+            cell.textLabel?.textColor = .label
+            cell.detailTextLabel?.textColor = .secondaryLabel
+            cell.imageView?.alpha = 1
+            return
+        }
+        
+        cell.textLabel?.textColor = .secondaryLabel
+        cell.detailTextLabel?.textColor = .tertiaryLabel
+        cell.imageView?.alpha = 0.5
     }
     
     private func resetDisplayedUpdateState() {

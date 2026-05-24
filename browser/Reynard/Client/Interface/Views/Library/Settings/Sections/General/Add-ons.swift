@@ -313,9 +313,21 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
     private func presentAddonFilePicker() {
         let picker: UIDocumentPickerViewController
         if #available(iOS 14.0, *) {
-            picker = UIDocumentPickerViewController(forOpeningContentTypes: Self.allowedAddonFileTypes(), asCopy: true)
+            picker = UIDocumentPickerViewController(
+                forOpeningContentTypes: [
+                    UTType(importedAs: "org.mozilla.xpi-extension"),
+                    .zip,
+                ],
+                asCopy: true
+            )
         } else {
-            picker = UIDocumentPickerViewController(documentTypes: Self.allowedAddonDocumentTypeIdentifiers(), in: .import)
+            picker = UIDocumentPickerViewController(
+                documentTypes: [
+                    "org.mozilla.xpi-extension",
+                    kUTTypeZipArchive as String,
+                ],
+                in: .import
+            )
         }
         if #available(iOS 13.0, *) {
             picker.shouldShowFileExtensions = true
@@ -358,32 +370,6 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
                 }
             }
         }
-    }
-    
-    @available(iOS 14.0, *)
-    private static func allowedAddonFileTypes() -> [UTType] {
-        if let xpiType = UTType(filenameExtension: "xpi") {
-            return [xpiType]
-        }
-        
-        return [UTType(importedAs: "org.mozilla.xpi-extension")]
-    }
-    
-    private static func allowedAddonDocumentTypeIdentifiers() -> [String] {
-        var identifiers: [String] = []
-        
-        ["xpi"].forEach { ext in
-            if let typeIdentifier = UTTypeCreatePreferredIdentifierForTag(
-                kUTTagClassFilenameExtension,
-                ext as CFString,
-                nil
-            )?.takeRetainedValue() as String?,
-               !identifiers.contains(typeIdentifier) {
-                identifiers.append(typeIdentifier)
-            }
-        }
-        
-        return identifiers
     }
     
     private static func stageAddonPackage(from sourceURL: URL) throws -> URL {

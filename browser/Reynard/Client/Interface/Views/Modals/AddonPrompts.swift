@@ -9,9 +9,10 @@ import GeckoView
 import UIKit
 
 final class AddonPromptViewController: UITableViewController {
-    private enum Section: Int, CaseIterable {
+    private enum Section {
         case message
         case permissions
+        case dataCollection
         case options
     }
     
@@ -19,7 +20,6 @@ final class AddonPromptViewController: UITableViewController {
         case domainHeader(String)
         case showAllSites
         case permission(String)
-        case dataCollection(String)
     }
     
     private let prompt: AddonPermissionPrompt
@@ -31,6 +31,19 @@ final class AddonPromptViewController: UITableViewController {
     private var buttonTrailingConstraint: NSLayoutConstraint?
     private var hasResolvedDecision = false
     private let privateBrowsingSwitch = UISwitch()
+    private var visibleSections: [Section] {
+        var sections: [Section] = [.message]
+        if !displayItems.isEmpty {
+            sections.append(.permissions)
+        }
+        if dataCollectionDescription != nil {
+            sections.append(.dataCollection)
+        }
+        if prompt.kind == .install {
+            sections.append(.options)
+        }
+        return sections
+    }
     private lazy var actionButton: UIButton = {
         let button = UIButton(type: .system)
         button.backgroundColor = view.tintColor
@@ -93,7 +106,7 @@ final class AddonPromptViewController: UITableViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         
-        let rowRect = tableView.rectForRow(at: IndexPath(row: 0, section: Section.message.rawValue))
+        let rowRect = tableView.rectForRow(at: IndexPath(row: 0, section: 0))
         guard rowRect.width > 0 else {
             return
         }
@@ -113,32 +126,42 @@ final class AddonPromptViewController: UITableViewController {
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
-        prompt.kind == .install ? Section.allCases.count : 2
+        visibleSections.count
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch Section(rawValue: section) {
+        guard visibleSections.indices.contains(section) else {
+            return 0
+        }
+        
+        switch visibleSections[section] {
         case .message:
             return 1
         case .permissions:
             return displayItems.count
+        case .dataCollection:
+            return dataCollectionDescription == nil ? 0 : 1
         case .options:
-            return prompt.kind == .install ? 1 : 0
-        case nil:
-            return 0
+            return 1
         }
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        switch Section(rawValue: section) {
+        guard visibleSections.indices.contains(section) else {
+            return nil
+        }
+        
+        switch visibleSections[section] {
         case .permissions:
             guard !displayItems.isEmpty else {
                 return nil
             }
             return "Required Permissions"
+        case .dataCollection:
+            return dataCollectionDescription == nil ? nil : "Required Data Collection"
         case .options:
-            return prompt.kind == .install ? "Additional Options" : nil
-        case .message, nil:
+            return "Additional Options"
+        case .message:
             return nil
         }
     }
@@ -153,7 +176,12 @@ final class AddonPromptViewController: UITableViewController {
         cell.textLabel?.textColor = .label
         cell.selectionStyle = .none
         
-        switch Section(rawValue: indexPath.section) {
+        guard visibleSections.indices.contains(indexPath.section) else {
+            cell.textLabel?.text = nil
+            return cell
+        }
+        
+        switch visibleSections[indexPath.section] {
         case .message:
             cell.textLabel?.font = .preferredFont(forTextStyle: .headline)
             cell.textLabel?.text = promptMessage()
@@ -171,23 +199,24 @@ final class AddonPromptViewController: UITableViewController {
             case .permission(let value):
                 cell.textLabel?.font = .preferredFont(forTextStyle: .body)
                 cell.textLabel?.text = value
-            case .dataCollection(let value):
+            }
+        case .dataCollection:
+            if let dataCollectionDescription {
                 cell.textLabel?.font = .preferredFont(forTextStyle: .body)
-                cell.textLabel?.text = value
+                cell.textLabel?.text = dataCollectionDescription
             }
         case .options:
             cell.textLabel?.font = .preferredFont(forTextStyle: .body)
             cell.textLabel?.text = "Allow in Private Browsing"
             cell.accessoryView = privateBrowsingSwitch
-        case nil:
-            cell.textLabel?.text = nil
         }
         
         return cell
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        guard Section(rawValue: indexPath.section) == .permissions else {
+        guard visibleSections.indices.contains(indexPath.section),
+              visibleSections[indexPath.section] == .permissions else {
             tableView.deselectRow(at: indexPath, animated: true)
             return
         }
@@ -246,10 +275,6 @@ final class AddonPromptViewController: UITableViewController {
         }
         
         permissionRows.forEach { items.append(.permission($0)) }
-        
-        if let dataCollectionDescription {
-            items.append(.dataCollection(dataCollectionDescription))
-        }
         
         return items
     }

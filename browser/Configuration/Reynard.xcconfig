@@ -7,7 +7,6 @@ VALID_ARCHS = arm64
 
 ENABLE_BITCODE = NO
 
-GECKO_VERSION = 150.0.2
 GECKO_DIST = $(SRCROOT)/../engine/firefox/obj-aarch64-apple-ios/dist
 
 HEADER_SEARCH_PATHS = $(inherited) $(GECKO_DIST)/include $(GECKO_DIST)/include/GeckoView $(SRCROOT)/GeckoView

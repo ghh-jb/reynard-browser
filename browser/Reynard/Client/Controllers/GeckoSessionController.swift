@@ -30,8 +30,7 @@ final class GeckoSessionController {
     func sessionSettings(for urlString: String, tabID: UUID?) -> GeckoSessionSettings {
         let host = extractHost(from: urlString)
         
-        let geckoVersion = Bundle.main.object(forInfoDictionaryKey: "GeckoVersion") as? String ?? ""
-        let geckoMajorVersion = geckoVersion.split(whereSeparator: { !$0.isNumber }).first.map(String.init) ?? "0"
+        let geckoMajorVersion = GeckoRuntime.version.split(whereSeparator: { !$0.isNumber }).first.map(String.init) ?? "0"
         let chromeMajorVersion = (Int(geckoMajorVersion) ?? 0) + 4
         
         let androidMobileUserAgent = "Mozilla/5.0 (Android 15; Mobile; rv:\(geckoMajorVersion).0) Gecko/\(geckoMajorVersion).0 Firefox/\(geckoMajorVersion).0"

@@ -5,6 +5,7 @@
 //  Created by Minh Ton on 9/3/26.
 //
 
+import GeckoView
 import UIKit
 
 class SettingsTableViewController: UITableViewController {
@@ -151,9 +152,7 @@ final class SettingsRootViewController: SettingsTableViewController {
                 return cell
             case 1:
                 cell.textLabel?.text = "Engine Version"
-                let info = Bundle.main.infoDictionary
-                let geckoTag = info?["GeckoVersion"] as? String ?? "Unknown"
-                cell.detailTextLabel?.text = geckoTag
+                cell.detailTextLabel?.text = GeckoRuntime.version
                 cell.detailTextLabel?.textColor = .secondaryLabel
                 cell.selectionStyle = .none
                 cell.accessoryType = .none

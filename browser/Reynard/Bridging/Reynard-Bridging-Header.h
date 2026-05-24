@@ -9,9 +9,10 @@
 #define Reynard_Bridging_Header_h
 
 #import "ExtensionBridge.h"
+#import "GeckoRuntimeBridge.h"
 #import "JITEnabler.h"
-#import "UIKit+Private.h"
 #import "TSUtils.h"
+#import "UIKit+Private.h"
 #import <GeckoView/GeckoViewSwiftSupport.h>
 #import <GeckoView/IOSBootstrap.h>
 

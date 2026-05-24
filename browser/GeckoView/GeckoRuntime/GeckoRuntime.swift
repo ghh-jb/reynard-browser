@@ -21,7 +21,7 @@ class GeckoRuntimeImpl: NSObject, SwiftGeckoViewRuntime {
     func childProcessDidStart(withPID pid: Int32, processType: String) {
         // Update jetsam limit for the child process
         updateJetsamControl(pid)
-
+        
         NotificationCenter.default.post(
             name: Notification.Name("GeckoRuntimeChildProcessDidStart"),
             object: nil,
@@ -35,6 +35,10 @@ class GeckoRuntimeImpl: NSObject, SwiftGeckoViewRuntime {
 
 public class GeckoRuntime {
     static let runtime = GeckoRuntimeImpl()
+    
+    public static var version: String {
+        return GeckoRuntimeBridge.version()
+    }
     
     public static func main(
         argc: Int32,

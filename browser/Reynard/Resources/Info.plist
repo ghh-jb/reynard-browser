@@ -15,8 +15,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>GeckoVersion</key>
-	<string>$(GECKO_VERSION)</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

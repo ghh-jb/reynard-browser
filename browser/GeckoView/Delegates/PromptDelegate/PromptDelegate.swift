@@ -179,6 +179,39 @@ private func presentTextPrompt(
     }
 }
 
+@MainActor
+private func presentFolderUploadPrompt(
+    session: GeckoSession,
+    directoryName: String
+) async -> [String: Any]? {
+    guard let presenter = resolvePromptPresenter(session: session) else {
+        return nil
+    }
+    
+    let title = "Confirm Upload"
+    let message: String
+    if directoryName.isEmpty {
+        message = "Are you sure you want to upload all files? Only do this if you trust the site."
+    } else {
+        message = "Are you sure you want to upload all files from \"\(directoryName)\"? Only do this if you trust the site."
+    }
+    
+    return await withCheckedContinuation { continuation in
+        let alert = UIAlertController(
+            title: title,
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in
+            continuation.resume(returning: ["allow": false])
+        })
+        alert.addAction(UIAlertAction(title: "Upload", style: .default) { _ in
+            continuation.resume(returning: ["allow": true])
+        })
+        presenter.present(alert, animated: true)
+    }
+}
+
 private func resolvePromptAnchor(
     from promptData: [String: Any],
     session: GeckoSession
@@ -249,6 +282,14 @@ func newPromptHandler(_ session: GeckoSession) -> GeckoSessionHandler {
                     title: title,
                     message: promptMessage,
                     value: value
+                )
+            }
+            
+            if promptType == "folderUpload" {
+                let directoryName = promptData["directoryName"] as? String ?? ""
+                return await presentFolderUploadPrompt(
+                    session: session,
+                    directoryName: directoryName
                 )
             }
             

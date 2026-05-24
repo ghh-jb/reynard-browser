@@ -2,7 +2,7 @@
 
 # Reynard Browser
 
-Reynard is a **Gecko-based** mobile web browser for iOS 14+.
+Reynard is a **Gecko-based** mobile web browser for iOS 13+.
 
 Unlike other browsers on iOS that are forced to use Apple's **WebKit** engine (including Safari and all third-party browsers), Reynard uses **Gecko**. This is the same engine that powers the Firefox browser on desktop and Android devices.
 
@@ -12,7 +12,7 @@ This project is mainly for users on older iOS versions who are stuck with an out
 
 The latest builds are available on the [Releases](https://github.com/minh-ton/reynard-browser/releases) page.
 
-For the best performance and automatic JIT enablement, it is recommended to sideload Reynard via [TrollStore](https://github.com/opa334/TrollStore) using the `Reynard-TrollStore.tipa` build.
+For the best performance and automatic JIT enablement, sideload Reynard via [TrollStore](https://github.com/opa334/TrollStore) on iOS 14+ using the `Reynard-TrollStore.tipa` build. On iOS 13, sideload the `Reynard-Jailbroken.ipa` build on a **jailbroken device** using [Filza File Manager](https://www.tigisoftware.com/default/?page_id=78) with [AppSync](https://github.com/akemin-dayo/AppSync) for the same benefits.
 
 If TrollStore is not available, use [AltStore](https://altstore.io/) or [SideStore](https://sidestore.io/) to sideload the `Reynard.ipa` build. Please note that you must select the **Keep App Extensions** option during installation, as Reynard relies on its extensions to function and will not work without them. After sideloading, you may want to enable JIT by following [this guide](https://github.com/minh-ton/reynard-browser/wiki/2.-Enabling-JIT).
 

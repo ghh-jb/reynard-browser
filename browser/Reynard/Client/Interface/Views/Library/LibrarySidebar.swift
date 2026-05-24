@@ -85,7 +85,23 @@ final class LibrarySidebarViewController: UIViewController, UICollectionViewDele
     }
     
     private func configureDataSource() {
-        dataSource = UICollectionViewDiffableDataSource<String, LibrarySection>(collectionView: collectionView) { (collectionView: UICollectionView, indexPath: IndexPath, item: LibrarySection) in
+        if #available(iOS 14.0, *) {
+            let cellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, LibrarySection> { cell, _, section in
+                var content = cell.defaultContentConfiguration()
+                content.text = section.title
+                content.image = UIImage(systemName: section.symbolName)
+                content.imageProperties.tintColor = .label
+                cell.contentConfiguration = content
+                cell.accessories = []
+            }
+            
+            dataSource = UICollectionViewDiffableDataSource<String, LibrarySection>(collectionView: collectionView) { collectionView, indexPath, item in
+                collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: item)
+            }
+            return
+        }
+        
+        dataSource = UICollectionViewDiffableDataSource<String, LibrarySection>(collectionView: collectionView) { collectionView, indexPath, item in
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseIdentifier, for: indexPath)
             if let sidebarCell = cell as? LibrarySidebarCell {
                 sidebarCell.configure(title: item.title, symbolName: item.symbolName)
@@ -157,16 +173,18 @@ final class LibrarySidebarViewController: UIViewController, UICollectionViewDele
 private final class LibrarySidebarCell: UICollectionViewCell {
     private let iconView = UIImageView()
     private let titleLabel = UILabel()
-
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.backgroundColor = .clear
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.tintColor = .label
+        iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .body)
         contentView.addSubview(iconView)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.textColor = .label
-        titleLabel.font = .systemFont(ofSize: 16, weight: .regular)
+        titleLabel.font = .preferredFont(forTextStyle: .body)
+        titleLabel.adjustsFontForContentSizeCategory = true
         contentView.addSubview(titleLabel)
         NSLayoutConstraint.activate([
             iconView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
@@ -178,12 +196,12 @@ private final class LibrarySidebarCell: UICollectionViewCell {
             titleLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
         ])
     }
-
+    
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     func configure(title: String, symbolName: String) {
         titleLabel.text = title
         iconView.image = UIImage(systemName: symbolName)
@@ -250,18 +268,11 @@ private final class LibrarySidebarDetailViewController: UIViewController {
         contentViewController.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(contentViewController.view)
         
-        let safeArea = view.safeAreaLayoutGuide
-        let fillWidthConstraint = contentViewController.view.widthAnchor.constraint(equalTo: safeArea.widthAnchor)
-        fillWidthConstraint.priority = .defaultHigh
-        
         NSLayoutConstraint.activate([
             contentViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            contentViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            contentViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             contentViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            contentViewController.view.centerXAnchor.constraint(equalTo: safeArea.centerXAnchor),
-            contentViewController.view.leadingAnchor.constraint(greaterThanOrEqualTo: safeArea.leadingAnchor),
-            contentViewController.view.trailingAnchor.constraint(lessThanOrEqualTo: safeArea.trailingAnchor),
-            contentViewController.view.widthAnchor.constraint(lessThanOrEqualToConstant: maximumContentWidth),
-            fillWidthConstraint,
         ])
         contentViewController.didMove(toParent: self)
     }
@@ -271,5 +282,70 @@ private final class LibrarySidebarDetailViewController: UIViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
         navigationItem.leftItemsSupplementBackButton = false
         navigationItem.leftBarButtonItem = nil
+    }
+}
+
+final class LibraryEmptyBackgroundView: UIView {
+    private var contentInsets: UIEdgeInsets = .zero {
+        didSet {
+            guard oldValue != contentInsets else {
+                return
+            }
+            
+            setNeedsLayout()
+        }
+    }
+    
+    private let label: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        return label
+    }()
+    
+    var message: String? {
+        get {
+            label.text
+        }
+        set {
+            label.text = newValue
+            setNeedsLayout()
+        }
+    }
+    
+    init(message: String) {
+        super.init(frame: .zero)
+        label.text = message
+        addSubview(label)
+        isUserInteractionEnabled = false
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    func updateContentInsets(from tableView: UITableView) {
+        let contentFrame = tableView.layoutMarginsGuide.layoutFrame
+        contentInsets = UIEdgeInsets(
+            top: 0,
+            left: contentFrame.minX,
+            bottom: 0,
+            right: max(tableView.bounds.width - contentFrame.maxX, 0)
+        )
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let availableWidth = max(bounds.width - contentInsets.left - contentInsets.right, 0)
+        let fittingSize = CGSize(width: availableWidth, height: CGFloat.greatestFiniteMagnitude)
+        let labelSize = label.sizeThatFits(fittingSize)
+        label.frame = CGRect(
+            x: contentInsets.left,
+            y: (bounds.height - labelSize.height) / 2,
+            width: availableWidth,
+            height: labelSize.height
+        ).integral
     }
 }

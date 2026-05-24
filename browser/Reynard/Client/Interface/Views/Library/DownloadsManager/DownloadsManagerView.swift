@@ -73,7 +73,7 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
         return view
     }()
     
-    private let emptyStateView = EmptyDownloadsBackgroundView()
+    private let emptyStateView = LibraryEmptyBackgroundView(message: "Files you download appear here")
     private var sections: [Section] = []
     private var notificationToken: NSObjectProtocol?
     private var applicationActiveToken: NSObjectProtocol?
@@ -127,6 +127,7 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
         super.layoutSubviews()
         updateHeaderSizeIfNeeded()
         tableView.backgroundView?.frame = tableView.bounds
+        emptyStateView.updateContentInsets(from: tableView)
     }
     
     override func didMoveToWindow() {
@@ -382,6 +383,7 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
     private func updateBackgroundView() {
         emptyStateView.message = currentSearchTerm.isEmpty ? "Files you download appear here" : "No matching downloads"
         tableView.backgroundView = sections.isEmpty ? emptyStateView : nil
+        emptyStateView.updateContentInsets(from: tableView)
     }
     
     private func refreshVisibleCells(previousSections: [Section]) {
@@ -755,47 +757,3 @@ private let monthYearTitleFormatter: DateFormatter = {
     return formatter
 }()
 
-private final class EmptyDownloadsBackgroundView: UIView {
-    private let label: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 16, weight: .medium)
-        label.textColor = .secondaryLabel
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.text = "Files you download appear here"
-        return label
-    }()
-    
-    var message: String? {
-        get {
-            label.text
-        }
-        set {
-            label.text = newValue
-            setNeedsLayout()
-        }
-    }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        addSubview(label)
-        isUserInteractionEnabled = false
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let maxWidth = max(bounds.width - 48, 0)
-        let fittingSize = CGSize(width: maxWidth, height: CGFloat.greatestFiniteMagnitude)
-        let labelSize = label.sizeThatFits(fittingSize)
-        label.frame = CGRect(
-            x: (bounds.width - min(labelSize.width, maxWidth)) / 2,
-            y: (bounds.height - labelSize.height) / 2,
-            width: min(labelSize.width, maxWidth),
-            height: labelSize.height
-        ).integral
-    }
-}

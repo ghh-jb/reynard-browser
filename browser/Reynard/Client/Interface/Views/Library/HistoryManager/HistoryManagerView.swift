@@ -122,17 +122,7 @@ private final class HistoryManagerViewController: UIViewController, UITableViewD
         return view
     }()
     
-    private let emptyStateLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "Your browsing history appears here"
-        label.font = .systemFont(ofSize: 16, weight: .medium)
-        label.textColor = .secondaryLabel
-        label.textAlignment = .center
-        return label
-    }()
-    
-    private let emptyStateView = UIView()
+    private let emptyStateView = LibraryEmptyBackgroundView(message: "Your browsing history appears here")
     private var sections: [Section] = []
     private var historyObserver: NSObjectProtocol?
     private var currentFetchOffset = 0
@@ -151,14 +141,6 @@ private final class HistoryManagerViewController: UIViewController, UITableViewD
         super.viewDidLoad()
         
         view.backgroundColor = .systemGroupedBackground
-        
-        emptyStateView.addSubview(emptyStateLabel)
-        NSLayoutConstraint.activate([
-            emptyStateLabel.centerXAnchor.constraint(equalTo: emptyStateView.centerXAnchor),
-            emptyStateLabel.centerYAnchor.constraint(equalTo: emptyStateView.centerYAnchor),
-            emptyStateLabel.leadingAnchor.constraint(greaterThanOrEqualTo: emptyStateView.leadingAnchor, constant: 24),
-            emptyStateLabel.trailingAnchor.constraint(lessThanOrEqualTo: emptyStateView.trailingAnchor, constant: -24),
-        ])
         
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
@@ -206,6 +188,7 @@ private final class HistoryManagerViewController: UIViewController, UITableViewD
         super.viewDidLayoutSubviews()
         updateHeaderSizeIfNeeded()
         tableView.backgroundView?.frame = tableView.bounds
+        emptyStateView.updateContentInsets(from: tableView)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -499,8 +482,9 @@ private final class HistoryManagerViewController: UIViewController, UITableViewD
     
     private func updateBackgroundView() {
         let hasHistory = !sections.isEmpty
-        emptyStateLabel.text = currentSearchTerm.isEmpty ? "Your browsing history appears here" : "No matching history"
+        emptyStateView.message = currentSearchTerm.isEmpty ? "Your browsing history appears here" : "No matching history"
         tableView.backgroundView = hasHistory ? nil : emptyStateView
+        emptyStateView.updateContentInsets(from: tableView)
     }
     
     private func makeSections(from items: [HistorySiteSnapshot]) -> [Section] {
@@ -756,3 +740,4 @@ private final class HistoryManagerViewController: UIViewController, UITableViewD
         return true
     }
 }
+

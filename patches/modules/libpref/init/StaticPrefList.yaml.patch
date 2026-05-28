@@ -1,5 +1,5 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index 990f1dc23e1f..4b23e8168877 100644
+index 990f1dc23e1f..35296a362aff 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
 @@ -5805,7 +5805,7 @@
@@ -108,6 +108,15 @@ index 990f1dc23e1f..4b23e8168877 100644
    value: true
  #elif defined(MOZ_X11)
    value: false  # we'd like this to be @IS_NIGHTLY_BUILD@, see Bug 1927058
+@@ -10155,7 +10165,7 @@
+ 
+ - name: layout.accessiblecaret.margin-left
+   type: float
+-  value: -18.5f
++  value: -17.0f
+   mirror: always
+ 
+ - name: layout.accessiblecaret.transition-duration
 @@ -11656,7 +11666,7 @@
  - name: media.cubeb.sandbox
    type: bool

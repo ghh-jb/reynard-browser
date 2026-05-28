@@ -86,6 +86,12 @@ public class GeckoSession {
         return handler
     }()
     
+    lazy var selectionActionHandler: GeckoSessionHandler = {
+        let handler = newSelectionActionHandler(self)
+        handler.setDelegate(true as AnyObject)
+        return handler
+    }()
+    
     lazy var mediaSessionHandler = newMediaSessionHandler(self)
     public var mediaSessionDelegate: MediaSessionDelegate? {
         get { mediaSessionHandler.delegate(as: MediaSessionDelegate.self) }
@@ -99,6 +105,7 @@ public class GeckoSession {
         navigationHandler,
         progressHandler,
         promptHandler,
+        selectionActionHandler,
         mediaSessionHandler,
     ]
     
@@ -155,6 +162,10 @@ public class GeckoSession {
     public func close() {
         guard let window else {
             return
+        }
+        
+        Task { @MainActor in
+            dismissSelectionActionMenu(for: self)
         }
         
         contentDelegate = nil

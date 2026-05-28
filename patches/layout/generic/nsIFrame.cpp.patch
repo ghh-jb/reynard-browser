@@ -1,15 +1,29 @@
 diff --git a/layout/generic/nsIFrame.cpp b/layout/generic/nsIFrame.cpp
-index 3e3a98c3795b..f13090bc3efe 100644
+index 3e3a98c3795b..2725352c2c80 100644
 --- a/layout/generic/nsIFrame.cpp
 +++ b/layout/generic/nsIFrame.cpp
-@@ -4957,6 +4957,12 @@ bool nsIFrame::IsSelectable(StyleUserSelect* aSelectStyle) const {
+@@ -4956,7 +4956,26 @@ bool nsIFrame::IsSelectable(StyleUserSelect* aSelectStyle) const {
+   return style != StyleUserSelect::None;
  }
  
- bool nsIFrame::ShouldPaintNormalSelection() const {
-+// REYNARD: Hide the selection highlight because we use
-+// iOS's native selection highlight instead.
-+#if defined(XP_IOS)
++static bool IsInEditableTextSelectionContext(const nsIFrame* aFrame) {
++  for (const nsIFrame* frame = aFrame; frame; frame = frame->GetParent()) {
++    if (frame->IsTextInputFrame() || frame->ContentIsEditable()) {
++      return true;
++    }
++    if (frame->Style()->GetPseudoType() ==
++        PseudoStyleType::MozTextControlEditingRoot) {
++      return true;
++    }
++  }
 +  return false;
++}
++
+ bool nsIFrame::ShouldPaintNormalSelection() const {
++#if defined(XP_IOS)
++  if (IsInEditableTextSelectionContext(this)) {
++    return false;
++  }
 +#endif
 +
    if (IsSelectable()) {

@@ -1,0 +1,27 @@
+name: Question
+description: 'Ask a question about using Reynard Browser or its development.'
+title: "[Question] <Short description>"
+labels: [question]
+body:
+- type: markdown
+  attributes:
+    value: |
+      Before you fill out this question form, please **[search in GitHub Issues](https://github.com/minh-ton/reynard-browser/issues)** to see if your question has already been asked. If this is a bug that you are experiencing, please report it in a bug report instead of asking about it here.
+
+- type: checkboxes
+  attributes:
+    label: Before continuing, please confirm the following
+    options:
+      - label: This is not a bug.
+      - label: This question has not been asked before.
+  validations:
+    required: true
+
+- type: textarea
+  id: version
+  attributes:
+    label: Ask the question here.
+    description: |
+      Please ask your question in as much detail as possible. Include any relevant information that could help the developer understand your question and provide a helpful answer. This could include screenshots, code snippets, or a detailed description that explains your question clearly.
+  validations:
+    required: true

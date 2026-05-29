@@ -1,0 +1,14 @@
+diff --git a/dom/media/systemservices/CamerasParent.h b/dom/media/systemservices/CamerasParent.h
+index aed0ebd2c2d8..75525c3fdc35 100644
+--- a/dom/media/systemservices/CamerasParent.h
++++ b/dom/media/systemservices/CamerasParent.h
+@@ -175,7 +175,8 @@ class CamerasParent : public PCamerasParent {
+    *   The returned promise will never be rejected.
+    */
+   static RefPtr<CameraAccessRequestPromise> RequestCameraAccess(
+-      bool aAllowPermissionRequest);
++      bool aAllowPermissionRequest, bool aRequestCamera,
++      bool aRequestMicrophone);
+ 
+   // Messages received from the child. These run on the IPC/PBackground thread.
+   mozilla::ipc::IPCResult RecvPCamerasConstructor();

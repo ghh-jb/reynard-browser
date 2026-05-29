@@ -74,6 +74,12 @@ public class GeckoSession {
         set { navigationHandler.setDelegate(newValue) }
     }
     
+    lazy var permissionHandler: GeckoSessionHandler = {
+        let handler = newPermissionHandler(self)
+        handler.setDelegate(true as AnyObject)
+        return handler
+    }()
+    
     lazy var progressHandler = newProgressHandler(self)
     public var progressDelegate: ProgressDelegate? {
         get { progressHandler.delegate(as: ProgressDelegate.self) }
@@ -103,6 +109,7 @@ public class GeckoSession {
         contentHandler,
         processHangHandler,
         navigationHandler,
+        permissionHandler,
         progressHandler,
         promptHandler,
         selectionActionHandler,

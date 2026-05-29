@@ -1,0 +1,19 @@
+diff --git a/ipc/glue/BackgroundParentImpl.cpp b/ipc/glue/BackgroundParentImpl.cpp
+index a9470a8d8dc3..34cabf79195f 100644
+--- a/ipc/glue/BackgroundParentImpl.cpp
++++ b/ipc/glue/BackgroundParentImpl.cpp
+@@ -1411,10 +1411,11 @@ BackgroundParentImpl::RecvEnsureUtilityProcessAndCreateBridge(
+ }
+ 
+ mozilla::ipc::IPCResult BackgroundParentImpl::RecvRequestCameraAccess(
+-    const bool& aAllowPermissionRequest,
+-    RequestCameraAccessResolver&& aResolver) {
++    const bool& aAllowPermissionRequest, const bool& aRequestCamera,
++    const bool& aRequestMicrophone, RequestCameraAccessResolver&& aResolver) {
+ #ifdef MOZ_WEBRTC
+-  mozilla::camera::CamerasParent::RequestCameraAccess(aAllowPermissionRequest)
++  mozilla::camera::CamerasParent::RequestCameraAccess(
++      aAllowPermissionRequest, aRequestCamera, aRequestMicrophone)
+       ->Then(GetCurrentSerialEventTarget(), __func__,
+              [resolver = std::move(aResolver)](
+                  const mozilla::camera::CamerasParent::

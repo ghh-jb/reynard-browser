@@ -42,7 +42,6 @@ body:
   attributes:
     label: Steps to reproduce
     description: Please include consistent instructions for reproducing the bug.
-    render: markdown
   validations:
     required: true
 
@@ -67,7 +66,6 @@ body:
         - Device model: 
         - Sideloading method:
         - Reynard Browser version: 
-    render: markdown
   validations:
     required: true
 

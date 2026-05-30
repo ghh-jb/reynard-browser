@@ -1,17 +1,15 @@
 diff --git a/widget/uikit/CompositorWidgetChild.cpp b/widget/uikit/CompositorWidgetChild.cpp
 new file mode 100644
-index 000000000000..e41ae606e976
+index 000000000000..6b34e25315d4
 --- /dev/null
 +++ b/widget/uikit/CompositorWidgetChild.cpp
-@@ -0,0 +1,50 @@
-+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+@@ -0,0 +1,48 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 +
-+/* This source code is introduced during the work of an iOS 15+ browser
-+ * https://github.com/minh-ton/reynard-browser using the Gecko fork
-+ * https://github.com/minh-ton/truefox in Feb 2026. */
++/* This source code is introduced during the work of an iOS 13+ browser
++ * https://github.com/minh-ton/reynard-browser in Feb 2026. */
 +
 +#include "CompositorWidgetChild.h"
 +#include "gfxPlatform.h"

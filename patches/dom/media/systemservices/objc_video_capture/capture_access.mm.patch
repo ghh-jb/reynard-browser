@@ -1,12 +1,15 @@
 diff --git a/dom/media/systemservices/objc_video_capture/capture_access.mm b/dom/media/systemservices/objc_video_capture/capture_access.mm
 new file mode 100644
-index 000000000000..51efb2262dc8
+index 000000000000..9fa548821181
 --- /dev/null
 +++ b/dom/media/systemservices/objc_video_capture/capture_access.mm
-@@ -0,0 +1,164 @@
+@@ -0,0 +1,167 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this file,
 + * You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++/* This source code is introduced during the work of an iOS 13+ browser
++ * https://github.com/minh-ton/reynard-browser in Feb 2026. */
 +
 +#include "capture_access.h"
 +

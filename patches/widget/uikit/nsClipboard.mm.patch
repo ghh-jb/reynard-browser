@@ -1,13 +1,15 @@
 diff --git a/widget/uikit/nsClipboard.mm b/widget/uikit/nsClipboard.mm
 new file mode 100644
-index 000000000000..d3ca27491f3e
+index 000000000000..3ccc3e0e3e2e
 --- /dev/null
 +++ b/widget/uikit/nsClipboard.mm
-@@ -0,0 +1,277 @@
-+/* -*- Mode: c++; c-basic-offset: 2; tab-width: 20; indent-tabs-mode: nil; -*-
-+ * This Source Code Form is subject to the terms of the Mozilla Public
+@@ -0,0 +1,279 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++/* This source code is introduced during the work of an iOS 13+ browser
++ * https://github.com/minh-ton/reynard-browser in Feb 2026. */
 +
 +#import <UIKit/UIKit.h>
 +

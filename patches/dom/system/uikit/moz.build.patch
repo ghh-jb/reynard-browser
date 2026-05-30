@@ -1,14 +1,15 @@
 diff --git a/dom/system/uikit/moz.build b/dom/system/uikit/moz.build
 new file mode 100644
-index 000000000000..8bce68d0da24
+index 000000000000..7764b0c868bf
 --- /dev/null
 +++ b/dom/system/uikit/moz.build
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,19 @@
 +# This Source Code Form is subject to the terms of the Mozilla Public
 +# License, v. 2.0. If a copy of the MPL was not distributed with this
 +# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 +
 +SOURCES += [
++    "../mac/CoreLocationLocationProvider.mm",
 +    "nsOSPermissionRequest.mm",
 +]
 +
@@ -19,3 +20,6 @@ index 000000000000..8bce68d0da24
 +include("/ipc/chromium/chromium-config.mozbuild")
 +
 +FINAL_LIBRARY = "xul"
++LOCAL_INCLUDES += [
++    "/dom/geolocation",
++]

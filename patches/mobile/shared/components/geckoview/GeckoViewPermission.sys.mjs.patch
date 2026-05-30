@@ -1,0 +1,13 @@
+diff --git a/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs b/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
+index e974c454a66d..421b62064e93 100644
+--- a/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
++++ b/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
+@@ -145,7 +145,7 @@ export class GeckoViewPermission {
+ 
+       if (allowOrDeny === Services.perms.ALLOW_ACTION) {
+         // Ask for app permission after asking for content permission.
+-        if (perm.type === "geolocation") {
++        if (perm.type === "geolocation" && Services.appinfo.OS === "Android") {
+           const granted = await actor.getAppPermissions([
+             PERM_ACCESS_FINE_LOCATION,
+           ]);

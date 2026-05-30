@@ -80,6 +80,7 @@ public struct ContentPermission {
 }
 
 private enum PermissionEvents: String, CaseIterable {
+    case contentPermission = "GeckoView:ContentPermission"
     case mediaPermission = "GeckoView:MediaPermission"
 }
 
@@ -101,7 +102,7 @@ private func resolvePermissionPresenter(session: GeckoSession) -> UIViewControll
     return geckoView.nearestViewController()?.topPresentedController()
 }
 
-private func mediaPermissionHost(from rawURI: String?) -> String {
+private func permissionHost(from rawURI: String?) -> String {
     guard let rawURI,
           let url = URL(string: rawURI),
           let host = url.host,
@@ -122,6 +123,41 @@ private func mediaPermissionResourceName(videoRequested: Bool, audioRequested: B
         return "Microphone"
     case (false, false):
         return "Device"
+    }
+}
+
+@MainActor
+private func requestContentPermission(
+    session: GeckoSession,
+    permission: ContentPermission
+) async -> ContentPermission.Value {
+    guard permission.permission == .geolocation,
+          let presenter = resolvePermissionPresenter(session: session) else {
+        return .deny
+    }
+    
+    let host = permissionHost(from: permission.uri)
+    return await withCheckedContinuation { continuation in
+        let title = "\"\(host)\" Would Like to Use Your Location"
+        let alert = UIAlertController(
+            title: title,
+            message: nil,
+            preferredStyle: .alert
+        )
+        let attributedTitle = NSAttributedString(
+            string: title,
+            attributes: [
+                .font: UIFont.boldSystemFont(ofSize: 17)
+            ]
+        )
+        alert.setValue(attributedTitle, forKey: "attributedTitle")
+        alert.addAction(UIAlertAction(title: "Don't Allow", style: .cancel) { _ in
+            continuation.resume(returning: .deny)
+        })
+        alert.addAction(UIAlertAction(title: "Allow", style: .default) { _ in
+            continuation.resume(returning: .allow)
+        })
+        presenter.present(alert, animated: true)
     }
 }
 
@@ -170,6 +206,17 @@ func newPermissionHandler(_ session: GeckoSession) -> GeckoSessionHandler {
         }
         
         switch event {
+        case .contentPermission:
+            let permission = ContentPermission.fromDictionary(message ?? [:])
+            guard permission.permission == .geolocation else {
+                return ContentPermission.Value.prompt.rawValue
+            }
+            
+            return await requestContentPermission(
+                session: session,
+                permission: permission
+            ).rawValue
+            
         case .mediaPermission:
             let videoSources = (message?["video"] as? [[String: Any?]])?.map(MediaPermissionSource.fromDictionary)
             let audioSources = (message?["audio"] as? [[String: Any?]])?.map(MediaPermissionSource.fromDictionary)
@@ -184,7 +231,7 @@ func newPermissionHandler(_ session: GeckoSession) -> GeckoSessionHandler {
                 return false
             }
             
-            let host = mediaPermissionHost(from: message?["uri"] as? String)
+            let host = permissionHost(from: message?["uri"] as? String)
             let resourceName = mediaPermissionResourceName(
                 videoRequested: videoRequested,
                 audioRequested: audioRequested

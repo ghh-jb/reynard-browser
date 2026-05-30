@@ -501,9 +501,10 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Reynard;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Reynard uses your camera to take photos and video.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Some websites may use the microphone.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "This lets you save photos.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access lets websites in this browser scan QR codes, capture photos, and start video calls.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location access lets websites in this browser provide location-based content such as maps, directions, and nearby places.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access lets websites in this browser capture your voice for calls and audio recordings.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Photo library access lets this browser save images and other media you download from websites to Photos.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -567,9 +568,10 @@
 				INFOPLIST_KEY_CFBundleDisplayName = Reynard;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
-				INFOPLIST_KEY_NSCameraUsageDescription = "Reynard uses your camera to take photos and video.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Some websites may use the microphone.";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "This lets you save photos.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access lets websites in this browser scan QR codes, capture photos, and start video calls.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Location access lets websites in this browser provide location-based content such as maps, directions, and nearby places.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Microphone access lets websites in this browser capture your voice for calls and audio recordings.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Photo library access lets this browser save images and other media you download from websites to Photos.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

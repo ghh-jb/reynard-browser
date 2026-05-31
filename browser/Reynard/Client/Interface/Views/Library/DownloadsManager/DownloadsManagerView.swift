@@ -629,7 +629,7 @@ final class DownloadsManagerView: UIView, UITableViewDataSource, UITableViewDele
             return
         }
         
-        openDownloadedFile(item)
+        self.presentShareSheet(for: item, from: indexPath)
     }
     
     func tableView(_ tableView: UITableView, willBeginEditingRowAt indexPath: IndexPath) {

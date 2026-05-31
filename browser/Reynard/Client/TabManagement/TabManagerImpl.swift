@@ -52,6 +52,7 @@ final class TabManagerImplementation: NSObject, TabManager {
     }
     
     private func closeSession(_ session: GeckoSession) {
+        SitePermissionStore.shared.removePrivateTabPerms(for: session)
         if session.isOpen() {
             session.setActive(false)
         }
@@ -682,8 +683,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         }
         
         let oldSession = tab.session
-        oldSession.setActive(false)
-        oldSession.close()
+        closeSession(oldSession)
         
         bindDelegates(to: session, for: tab)
         tab.session = session
@@ -874,6 +874,7 @@ extension TabManagerImplementation: NavigationDelegate {
         
         if let url {
             session.updateSettings(GeckoSessionController.shared.sessionSettings(for: url, tabID: tab.id))
+            SitePermissionController.shared.applyPermissions(to: session, urlString: url)
         }
         
         tab.url = url
@@ -938,6 +939,7 @@ extension TabManagerImplementation: NavigationDelegate {
         newSession.updateSettings(GeckoSessionController.shared.sessionSettings(for: uri, tabID: newTab.id))
         let controller = NowPlayingController(session: newSession)
         newSession.mediaSessionDelegate = controller
+        SitePermissionController.shared.applyPermissions(to: newSession, urlString: uri)
         newTab.nowPlayingController = controller
         newTab.url = uri
         newTab.favicon = cachedFavicon(for: uri)

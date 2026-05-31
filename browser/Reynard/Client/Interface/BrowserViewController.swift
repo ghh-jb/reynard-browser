@@ -77,6 +77,12 @@ final class BrowserViewController: UIViewController {
         )
         NotificationCenter.default.addObserver(
             self,
+            selector: #selector(presentWebsiteSettingsRequested),
+            name: AddressBarMenu.presentWebsiteSettingsNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
             selector: #selector(presentAddBookmarkRequested(_:)),
             name: AddressBarMenu.addBookmarkNotification,
             object: nil
@@ -110,6 +116,8 @@ final class BrowserViewController: UIViewController {
                 return
             }
             
+            SitePermissionController.shared.attach(controller: self)
+            SitePermissionController.shared.start()
             await self.addonController.start()
             self.tabManager.selectedTab?.session.setAddonTabActive(true)
         }
@@ -376,5 +384,4 @@ final class BrowserViewController: UIViewController {
         UIDevice.current.setValue(deviceOrientation.rawValue, forKey: "orientation")
         UIViewController.attemptRotationToDeviceOrientation()
     }
-    
 }

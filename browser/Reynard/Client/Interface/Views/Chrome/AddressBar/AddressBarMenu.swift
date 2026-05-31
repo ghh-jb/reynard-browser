@@ -16,6 +16,7 @@ enum AddressBarMenu {
     private static let rootIdentifier = UIMenu.Identifier("me.minh-ton.reynard.address-bar-menu")
     private static let manageAddonsIdentifier = UIMenu.Identifier("me.minh-ton.reynard.address-bar-menu.manage-addons")
     static let presentAddonSettingsNotification = Notification.Name("me.minh-ton.reynard.address-bar-menu.present-addon-settings")
+    static let presentWebsiteSettingsNotification = Notification.Name("me.minh-ton.reynard.address-bar-menu.present-website-settings")
     static let changeWebsiteModeNotification = Notification.Name("me.minh-ton.reynard.address-bar-menu.toggle-website-mode")
     static let addBookmarkNotification = Notification.Name("me.minh-ton.reynard.address-bar-menu.add-bookmark")
     
@@ -85,7 +86,14 @@ enum AddressBarMenu {
             })
         }
         
-        let children = tabActions + [UIMenu(options: .displayInline, children: pageActions)]
+        var settingsActions: [UIMenuElement] = []
+        if url?.host != nil {
+            settingsActions.append(UIAction(title: "Website Settings", image: UIImage(systemName: "gear")) { _ in
+                NotificationCenter.default.post(name: presentWebsiteSettingsNotification, object: nil)
+            })
+        }
+        
+        let children = tabActions + [UIMenu(options: .displayInline, children: pageActions)] + [UIMenu(options: .displayInline, children: settingsActions)]
         
         guard !children.isEmpty else {
             return nil

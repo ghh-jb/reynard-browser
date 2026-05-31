@@ -1,8 +1,17 @@
 diff --git a/mobile/shared/components/geckoview/GeckoViewStartup.sys.mjs b/mobile/shared/components/geckoview/GeckoViewStartup.sys.mjs
-index f1495cbe4f79..624baea18931 100644
+index f1495cbe4f79..07548650a2f1 100644
 --- a/mobile/shared/components/geckoview/GeckoViewStartup.sys.mjs
 +++ b/mobile/shared/components/geckoview/GeckoViewStartup.sys.mjs
-@@ -247,18 +247,22 @@ export class GeckoViewStartup {
+@@ -126,6 +126,8 @@ export class GeckoViewStartup {
+             "GeckoView:GetPermissionsByURI",
+             "GeckoView:SetPermission",
+             "GeckoView:SetPermissionByURI",
++            "GeckoView:RemovePermission",
++            "GeckoView:RemovePermissionByURI",
+             "GeckoView:GetCookieBannerModeForDomain",
+             "GeckoView:SetCookieBannerModeForDomain",
+             "GeckoView:RemoveCookieBannerModeForDomain",
+@@ -247,18 +249,22 @@ export class GeckoViewStartup {
            ged: ["GeckoView:Autofill:GetAddressStructure"],
          });
  

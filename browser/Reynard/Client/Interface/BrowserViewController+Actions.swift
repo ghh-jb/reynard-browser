@@ -219,6 +219,19 @@ extension BrowserViewController {
         addonController.presentCurrentSiteSettings(for: item)
     }
     
+    @objc func presentWebsiteSettingsRequested() {
+        guard let selectedTab = tabManager.selectedTab,
+              let urlString = selectedTab.url?.trimmingCharacters(in: .whitespacesAndNewlines),
+              let url = URL(string: urlString),
+              let viewController = SiteSettingsViewController(url: url, session: selectedTab.session) else {
+            return
+        }
+        
+        let navigationController = UINavigationController(rootViewController: viewController)
+        navigationController.modalPresentationStyle = .pageSheet
+        present(navigationController, animated: true)
+    }
+    
     @objc func presentAddBookmarkRequested(_ notification: Notification) {
         guard let selectedTab = tabManager.selectedTab,
               let urlString = selectedTab.url?.trimmingCharacters(in: .whitespacesAndNewlines),

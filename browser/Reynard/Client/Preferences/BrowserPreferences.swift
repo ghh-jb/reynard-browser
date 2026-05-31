@@ -56,6 +56,16 @@ final class BrowserPreferences {
             // Add-ons
             key("AddonSettings", "lastGlobalCheckAt"): "",
             key("AddonSettings", "pendingApprovalAddonIDs"): Data(),
+            
+            // Site Permissions
+            key("SitePermissionSettings", "defaultAutoplayPermission"): SitePermissionAction.askToAllow.rawValue,
+            key("SitePermissionSettings", "defaultCameraPermission"): SitePermissionAction.askToAllow.rawValue,
+            key("SitePermissionSettings", "defaultMicrophonePermission"): SitePermissionAction.askToAllow.rawValue,
+            key("SitePermissionSettings", "defaultLocationPermission"): SitePermissionAction.askToAllow.rawValue,
+            key("SitePermissionSettings", "defaultPersistentStoragePermission"): SitePermissionAction.askToAllow.rawValue,
+            key("SitePermissionSettings", "defaultCrossOriginStorageAccessPermission"): SitePermissionAction.askToAllow.rawValue,
+            key("SitePermissionSettings", "defaultLocalDeviceAccessPermission"): SitePermissionAction.askToAllow.rawValue,
+            key("SitePermissionSettings", "defaultLocalNetworkAccessPermission"): SitePermissionAction.askToAllow.rawValue,
         ])
     }
     
@@ -113,6 +123,121 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue, forSetting: "BrowsingSettings", key: "requestDesktopWebsite")
+            }
+        }
+    }
+    
+    // MARK: - Site Permissions
+    struct SitePermissionSettings {
+        static var defaultAutoplayPermission: SitePermissionAction {
+            get {
+                let rawValue = prefs.string(forSetting: "SitePermissionSettings", key: "defaultAutoplayPermission")
+                guard let rawValue,
+                      let action = SitePermissionAction(rawValue: rawValue) else {
+                    return .askToAllow
+                }
+                return action
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultAutoplayPermission")
+            }
+        }
+        
+        static var defaultCameraPermission: SitePermissionAction {
+            get {
+                let rawValue = prefs.string(forSetting: "SitePermissionSettings", key: "defaultCameraPermission")
+                guard let rawValue,
+                      let action = SitePermissionAction(rawValue: rawValue) else {
+                    return .askToAllow
+                }
+                return action
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultCameraPermission")
+            }
+        }
+        
+        static var defaultMicrophonePermission: SitePermissionAction {
+            get {
+                let rawValue = prefs.string(forSetting: "SitePermissionSettings", key: "defaultMicrophonePermission")
+                guard let rawValue,
+                      let action = SitePermissionAction(rawValue: rawValue) else {
+                    return .askToAllow
+                }
+                return action
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultMicrophonePermission")
+            }
+        }
+        
+        static var defaultLocationPermission: SitePermissionAction {
+            get {
+                let rawValue = prefs.string(forSetting: "SitePermissionSettings", key: "defaultLocationPermission")
+                guard let rawValue,
+                      let action = SitePermissionAction(rawValue: rawValue) else {
+                    return .askToAllow
+                }
+                return action
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultLocationPermission")
+            }
+        }
+        
+        static var defaultPersistentStoragePermission: SitePermissionAction {
+            get {
+                let rawValue = prefs.string(forSetting: "SitePermissionSettings", key: "defaultPersistentStoragePermission")
+                guard let rawValue,
+                      let action = SitePermissionAction(rawValue: rawValue) else {
+                    return .askToAllow
+                }
+                return action
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultPersistentStoragePermission")
+            }
+        }
+        
+        static var defaultCrossOriginStorageAccessPermission: SitePermissionAction {
+            get {
+                let rawValue = prefs.string(forSetting: "SitePermissionSettings", key: "defaultCrossOriginStorageAccessPermission")
+                guard let rawValue,
+                      let action = SitePermissionAction(rawValue: rawValue) else {
+                    return .askToAllow
+                }
+                return action
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultCrossOriginStorageAccessPermission")
+            }
+        }
+        
+        static var defaultLocalDeviceAccessPermission: SitePermissionAction {
+            get {
+                let rawValue = prefs.string(forSetting: "SitePermissionSettings", key: "defaultLocalDeviceAccessPermission")
+                guard let rawValue,
+                      let action = SitePermissionAction(rawValue: rawValue) else {
+                    return .askToAllow
+                }
+                return action
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultLocalDeviceAccessPermission")
+            }
+        }
+        
+        static var defaultLocalNetworkAccessPermission: SitePermissionAction {
+            get {
+                let rawValue = prefs.string(forSetting: "SitePermissionSettings", key: "defaultLocalNetworkAccessPermission")
+                guard let rawValue,
+                      let action = SitePermissionAction(rawValue: rawValue) else {
+                    return .askToAllow
+                }
+                return action
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SitePermissionSettings", key: "defaultLocalNetworkAccessPermission")
             }
         }
     }

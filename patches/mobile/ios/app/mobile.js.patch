@@ -1,5 +1,5 @@
 diff --git a/mobile/ios/app/mobile.js b/mobile/ios/app/mobile.js
-index e835b1c33d86..d89e1b8a9d74 100644
+index e835b1c33d86..db9f3f6c210c 100644
 --- a/mobile/ios/app/mobile.js
 +++ b/mobile/ios/app/mobile.js
 @@ -5,6 +5,36 @@
@@ -39,3 +39,13 @@ index e835b1c33d86..d89e1b8a9d74 100644
  // Use software webrender on simulator due to missing APIs.
  #if TARGET_OS_SIMULATOR
    pref("gfx.webrender.software", true);
+@@ -13,6 +43,9 @@ pref("toolkit.defaultChromeURI", "chrome://geckoview/content/geckoview.xhtml");
+ // Enable the restricted sandbox for content processes.
+ pref("security.sandbox.content.level", 1);
+ 
++// Allow autoplay configuration
++pref("media.geckoview.autoplay.request", true);
++
+ // Complete the page load progress bar at different places according to this pref.
+ // See the possible values below:
+ // 0 no change

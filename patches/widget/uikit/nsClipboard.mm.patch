@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/nsClipboard.mm b/widget/uikit/nsClipboard.mm
 new file mode 100644
-index 000000000000..3ccc3e0e3e2e
+index 000000000000..dbbd7971780e
 --- /dev/null
 +++ b/widget/uikit/nsClipboard.mm
-@@ -0,0 +1,279 @@
+@@ -0,0 +1,296 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -48,6 +48,19 @@ index 000000000000..3ccc3e0e3e2e
 +  return [NSString stringWithCharacters:reinterpret_cast<const unichar*>(
 +                                            aSource.BeginReading())
 +                                 length:aSource.Length()];
++}
++
++static NSString* WrapHtmlForSystemPasteboard(NSString* aString) {
++  return [NSString stringWithFormat:@"<html>"
++                                     "<head>"
++                                     "<meta http-equiv=\"content-type\" "
++                                     "content=\"text/html; charset=utf-8\">"
++                                     "</head>"
++                                     "<body>"
++                                     "%@"
++                                     "</body>"
++                                     "</html>",
++                                    aString];
 +}
 +
 +static NSString* StringFromPasteboardValue(id aValue) {
@@ -176,7 +189,11 @@ index 000000000000..3ccc3e0e3e2e
 +    item[kUIKitClipboardTextType] = textValue;
 +  }
 +  if (!html.IsEmpty()) {
-+    item[kUIKitClipboardHTMLType] = ToNSString(html);
++    NSData* htmlData = [WrapHtmlForSystemPasteboard(ToNSString(html))
++        dataUsingEncoding:NSUTF8StringEncoding];
++    if (htmlData) {
++      item[kUIKitClipboardHTMLType] = htmlData;
++    }
 +  }
 +  if (![item count]) {
 +    return NS_OK;

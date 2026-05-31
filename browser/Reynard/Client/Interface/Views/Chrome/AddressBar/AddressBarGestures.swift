@@ -62,13 +62,13 @@ final class AddressBarGestures: NSObject {
         guard !controller.usesPadChrome,
               !controller.tabOverviewPresentation.isVisible,
               !controller.tabOverviewPresentation.isTransitionRunning else {
-            completion()
+            DispatchQueue.main.async(execute: completion)
             return
         }
         
         let width = controller.browserUI.geckoView.bounds.width
         guard width > 1 else {
-            completion()
+            DispatchQueue.main.async(execute: completion)
             return
         }
         
@@ -89,13 +89,13 @@ final class AddressBarGestures: NSObject {
         guard !controller.usesPadChrome,
               !controller.tabOverviewPresentation.isVisible,
               !controller.tabOverviewPresentation.isTransitionRunning else {
-            completion()
+            DispatchQueue.main.async(execute: completion)
             return
         }
         
         let width = controller.browserUI.geckoView.bounds.width
         guard width > 1 else {
-            completion()
+            DispatchQueue.main.async(execute: completion)
             return
         }
         

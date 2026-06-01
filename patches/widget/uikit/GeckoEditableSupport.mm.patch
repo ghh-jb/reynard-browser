@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..e3d5d97c5685
+index 000000000000..cef3606cd080
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,2713 @@
+@@ -0,0 +1,3373 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -449,6 +449,36 @@ index 000000000000..e3d5d97c5685
 +
 +@end
 +
++// Apparently, in simple terms, the Vietnamese keyboard works by checking the
++// typed characters for a word repeatedly to see if they can form a valid
++// Vietnamese word, then do some select / delete / insert magic to turn those
++// characters into the correct Vietnamese word. So the problem here is that
++// Gecko is lagging behind in terms of text updates, so the repeated checks and
++// edits would stay out of sync and produce incorrect results.
++
++// So the solution that I use here is to maintain a mirror of the text and
++// selection for the currently composing word, make UIKit interact with the
++// mirror instead. Once the composition is committed and Gecko's state catches
++// up, the mirror is cleared.
++
++@interface ChildView (Vietnamese)
++
++- (void)clearVietnameseBuffer;
++- (BOOL)hasVietnameseBuffer;
++- (BOOL)shouldUseVietnameseIMEPath;
++- (void)clearVietnameseMarkedRange;
++- (BOOL)ensureVietnameseBufferWithHandler:(widget::TextInputHandler*)aHandler;
++- (BOOL)tryClearSyncedVietnameseBufferWithHandler:
++    (widget::TextInputHandler*)aHandler;
++- (NSString*)vietnameseBufferTextInRange:(NSRange)aRange;
++- (NSRange)geckoRangeForVietnameseBufferRange:(NSRange)aRange;
++- (NSRange)geckoRangeForVisibleRange:(NSRange)aRange;
++- (void)replaceVietnameseBufferRange:(NSRange)aRange withText:(NSString*)aText;
++- (NSRange)vietnameseBufferDeleteBackwardRange;
++- (void)flushVietnamesePendingDelete;
++
++@end
++
 +// MARK: - ChildView (Shared)
 +
 +@implementation ChildView (Shared)
@@ -464,6 +494,8 @@ index 000000000000..e3d5d97c5685
 +  mEditable.mSelectionHandlePanRecognizer = nil;
 +  mEditable.mTextInteractionInProgress = NO;
 +  mEditable.mPendingSelectionGeometryRefresh = NO;
++  // The other Vietnamese fields are meaningful only while this buffer exists.
++  mEditable.mVietnameseBufferText = nil;
 +  [self resetHandleState];
 +
 +  mEditable.mEditableTextInteraction = [[UITextInteraction
@@ -490,6 +522,8 @@ index 000000000000..e3d5d97c5685
 +  [mEditable.mNonEditableTextInteraction release];
 +  mEditable.mNonEditableTextInteraction = nil;
 +  mEditable.mTextInteractionInProgress = NO;
++  // Drop any temporary Vietnamese mirror before releasing UIKit interactions.
++  [self clearVietnameseBuffer];
 +
 +  [self teardownModernTextInput];
 +  [self resetHandleState];
@@ -513,6 +547,12 @@ index 000000000000..e3d5d97c5685
 +}
 +
 +- (NSUInteger)documentLength {
++  // During Vietnamese composition, answer length from the mirror so UIKit
++  // sees the text that the keyboard just edited, not stale Gecko state.
++  if ([self hasVietnameseBuffer]) {
++    return [mEditable.mVietnameseBufferText length];
++  }
++
 +  widget::TextInputHandler* handler = [self textHandler];
 +  if (!handler) {
 +    return 0;
@@ -707,8 +747,14 @@ index 000000000000..e3d5d97c5685
 +    return NO;
 +  }
 +
++  NSRange geckoRange = [self geckoRangeForVisibleRange:NSMakeRange(aOffset, 0)];
++  if (geckoRange.location == NSNotFound || geckoRange.location > UINT32_MAX) {
++    *aRect = CGRectZero;
++    return NO;
++  }
++
 +  LayoutDeviceIntRect caretRect;
-+  if (!aHandler->CaretRectForOffset(static_cast<uint32_t>(aOffset),
++  if (!aHandler->CaretRectForOffset(static_cast<uint32_t>(geckoRange.location),
 +                                    caretRect)) {
 +    *aRect = CGRectZero;
 +    return NO;
@@ -857,6 +903,9 @@ index 000000000000..e3d5d97c5685
 +- (void)startHandleTrackingAtPoint:(CGPoint)aPoint
 +                             range:(NSRange)aRange
 +                           handler:(widget::TextInputHandler*)aHandler {
++  [NSObject cancelPreviousPerformRequestsWithTarget:self
++                                           selector:@selector(resetHandleState)
++                                             object:nil];
 +  [self resetHandleState];
 +
 +  GeckoSelectionHandle handle = [self closestHandleToPoint:aPoint
@@ -1043,6 +1092,10 @@ index 000000000000..e3d5d97c5685
 +      mEditable.mShadowSelectedRange.location != NSNotFound) {
 +    return [self textRangeForRange:mEditable.mShadowSelectedRange];
 +  }
++  if ([self hasVietnameseBuffer] &&
++      mEditable.mVietnameseBufferSelection.location != NSNotFound) {
++    return [self textRangeForExactRange:mEditable.mVietnameseBufferSelection];
++  }
 +  NSRange range = [self selectedRange];
 +  if (range.location == NSNotFound) {
 +    return nil;
@@ -1054,6 +1107,27 @@ index 000000000000..e3d5d97c5685
 +- (void)setSelectedTextRange:(UITextRange*)aSelectedTextRange {
 +  NSRange range = [self rangeForTextRange:aSelectedTextRange];
 +  if (range.location == NSNotFound) {
++    return;
++  }
++
++  if ([self hasVietnameseBuffer]) {
++    // Keep selection changes inside the buffer. Gecko will be updated when the
++    // keyboard commits an edit command against this selection.
++    NSUInteger bufferLength = [mEditable.mVietnameseBufferText length];
++    NSUInteger location = std::min(range.location, bufferLength);
++    NSUInteger length = std::min(range.length, bufferLength - location);
++    mEditable.mVietnameseBufferSelection = NSMakeRange(location, length);
++    if (length) {
++      mEditable.mVietnameseBufferMarkedRange =
++          mEditable.mVietnameseBufferSelection;
++    } else if (mEditable.mVietnameseBufferMarkedRange.location != NSNotFound &&
++               (location < mEditable.mVietnameseBufferMarkedRange.location ||
++                location >
++                    NSMaxRange(mEditable.mVietnameseBufferMarkedRange))) {
++      // If we move the caret outside the current marked range, that means we no
++      // longer do composing a word.
++      [self clearVietnameseMarkedRange];
++    }
 +    return;
 +  }
 +
@@ -1076,6 +1150,17 @@ index 000000000000..e3d5d97c5685
 +  [mEditable.mTextInputDelegate selectionWillChange:self];
 +  handler->SetSelectedRange(range);
 +  [mEditable.mTextInputDelegate selectionDidChange:self];
++  if (mEditable.mSelectionDisplayInteraction == nil &&
++      mEditable.mActiveSelectionHandle != GeckoSelectionHandleNone) {
++    [NSObject
++        cancelPreviousPerformRequestsWithTarget:self
++                                       selector:@selector(resetHandleState)
++                                         object:nil];
++    [self performSelector:@selector(resetHandleState)
++               withObject:nil
++               afterDelay:0.25
++                  inModes:@[ NSRunLoopCommonModes ]];
++  }
 +  if (mEditable.mSelectionDisplayInteraction != nil) {
 +    [self updateEditMenu];
 +  }
@@ -1103,7 +1188,10 @@ index 000000000000..e3d5d97c5685
 +  }
 +
 +  LayoutDeviceIntRect rect;
-+  if (handler->TextRectForRange(queryRange, rect)) {
++  // Menu anchors are Gecko rects; visible ranges from the Vietnamese buffer
++  // need Gecko-offset translation before asking for geometry.
++  NSRange geckoQueryRange = [self geckoRangeForVisibleRange:queryRange];
++  if (handler->TextRectForRange(geckoQueryRange, rect)) {
 +    CGRect uiRect = DevPixelsToUIKitPoints(rect, [self contentScaleFactor]);
 +    if ([self clipToSelectionBounds:&uiRect]) {
 +      return uiRect;
@@ -1125,7 +1213,9 @@ index 000000000000..e3d5d97c5685
 +    return CGRectZero;
 +  }
 +
-+  NSRange selectedRange = [self selectedRange];
++  NSRange selectedRange = [self hasVietnameseBuffer]
++                              ? mEditable.mVietnameseBufferSelection
++                              : [self selectedRange];
 +  CGRect uiRect = CGRectZero;
 +  GeckoSelectionHandle handle = GeckoSelectionHandleNone;
 +  if (selectedRange.location != NSNotFound && selectedRange.length > 0) {
@@ -1394,7 +1484,8 @@ index 000000000000..e3d5d97c5685
 +
 +  // If endpoint geometry is missing, fall back to Gecko's aggregate text rect.
 +  LayoutDeviceIntRect rect;
-+  if (handler->TextRectForRange(queryRange, rect)) {
++  NSRange geckoQueryRange = [self geckoRangeForVisibleRange:queryRange];
++  if (handler->TextRectForRange(geckoQueryRange, rect)) {
 +    CGRect uiRect = DevPixelsToUIKitPoints(rect, [self contentScaleFactor]);
 +    if (ClipCGRectToBounds(uiRect, visibleBounds)) {
 +      AppendSelectionRect(selectionRects, uiRect, NO, NO);
@@ -1759,6 +1850,21 @@ index 000000000000..e3d5d97c5685
 +      mGeckoChild->Destroyed()) {
 +    return;
 +  }
++  // If the Vietnamese buffer is still ahead of Gecko, keep the deferred
++  // selection notification alive until the two states match.
++  widget::TextInputHandler* handler =
++      [self hasVietnameseBuffer] ? [self textHandler] : nullptr;
++  if (handler && ![self tryClearSyncedVietnameseBufferWithHandler:handler]) {
++    [NSObject
++        cancelPreviousPerformRequestsWithTarget:self
++                                       selector:@selector(
++                                                    applyEditSelectionUpdate)
++                                         object:nil];
++    [self performSelector:@selector(applyEditSelectionUpdate)
++               withObject:nil
++               afterDelay:0.03
++                  inModes:@[ NSRunLoopCommonModes ]];
++  }
 +  if (mEditable.mSelectionDisplayInteraction != nil) {
 +    [self refreshSelectionUI];
 +  }
@@ -1842,6 +1948,13 @@ index 000000000000..e3d5d97c5685
 +    return @"";
 +  }
 +
++  NSString* bufferText = [self vietnameseBufferTextInRange:queryRange];
++  if (bufferText) {
++    // UITextInput ask for the just-edited Vietnamese text before Gecko has
++    // finished applying it. Return the buffer for that short window.
++    return bufferText;
++  }
++
 +  widget::TextInputHandler* handler = [self textHandler];
 +  if (!handler) {
 +    return @"";
@@ -1866,6 +1979,13 @@ index 000000000000..e3d5d97c5685
 +
 +  widget::TextInputHandler* handler = [self textHandler];
 +  if (!handler) {
++    return;
++  }
++
++  if ([self hasVietnameseBuffer]) {
++    handler->ReplaceRange([self geckoRangeForVisibleRange:replacementRange],
++                          aText ?: @"");
++    [self replaceVietnameseBufferRange:replacementRange withText:aText ?: @""];
 +    return;
 +  }
 +
@@ -1992,6 +2112,20 @@ index 000000000000..e3d5d97c5685
 +}
 +
 +- (UITextRange*)markedTextRange {
++  // Vietnamese IM use the marked range to keep the composing word active while
++  // accents are being decided.
++  if ([self hasVietnameseBuffer] &&
++      mEditable.mVietnameseBufferMarkedRange.location != NSNotFound &&
++      mEditable.mActiveSelectionHandle == GeckoSelectionHandleNone) {
++    NSUInteger bufferLength = [mEditable.mVietnameseBufferText length];
++    NSRange range = mEditable.mVietnameseBufferMarkedRange;
++    if (range.location != NSNotFound && range.location <= bufferLength &&
++        range.length <= bufferLength - range.location) {
++      return [self textRangeForExactRange:range];
++    }
++    [self clearVietnameseMarkedRange];
++  }
++
 +  widget::TextInputHandler* handler = [self textHandler];
 +  if (!handler) {
 +    return nil;
@@ -2025,6 +2159,16 @@ index 000000000000..e3d5d97c5685
 +  }
 +
 +  mEditable.mCaretMenuActive = NO;
++  if ([self shouldUseVietnameseIMEPath]) {
++    // On the Vietnamese path, avoid delegate change notifications here. UIKit
++    // re-enters text queries during composition, and those notifications make
++    // the keyboard observe partially-applied Gecko state.
++    [self clearVietnameseBuffer];
++    handler->SetMarkedText(aMarkedText ?: @"", aSelectedRange);
++    [self scheduleEditSelectionUpdate];
++    return;
++  }
++
 +  [mEditable.mTextInputDelegate textWillChange:self];
 +  [mEditable.mTextInputDelegate selectionWillChange:self];
 +  handler->SetMarkedText(aMarkedText ?: @"", aSelectedRange);
@@ -2036,10 +2180,29 @@ index 000000000000..e3d5d97c5685
 +- (void)unmarkText {
 +  widget::TextInputHandler* handler = [self textHandler];
 +  if (!handler) {
++    if ([self hasVietnameseBuffer]) {
++      [self clearVietnameseMarkedRange];
++    }
++    return;
++  }
++
++  BOOL useVietnameseIMEPath = [self shouldUseVietnameseIMEPath];
++  NSRange markedRange = NSMakeRange(NSNotFound, 0);
++  if (useVietnameseIMEPath && (!handler->MarkedRange(markedRange) ||
++                               markedRange.location == NSNotFound)) {
++    [self clearVietnameseMarkedRange];
 +    return;
 +  }
 +
 +  mEditable.mCaretMenuActive = NO;
++  if (useVietnameseIMEPath) {
++    // Same as setMarkedText: do the Gecko operation without delegate calls
++    // while the Vietnamese IM is using the buffer.
++    handler->UnmarkText();
++    [self scheduleEditSelectionUpdate];
++    return;
++  }
++
 +  [mEditable.mTextInputDelegate textWillChange:self];
 +  [mEditable.mTextInputDelegate selectionWillChange:self];
 +  handler->UnmarkText();
@@ -2237,12 +2400,41 @@ index 000000000000..e3d5d97c5685
 +    return;
 +  }
 +
++  NSRange bufferEditRange = NSMakeRange(NSNotFound, 0);
++  BOOL hasBuffer = [self ensureVietnameseBufferWithHandler:handler];
 +  mEditable.mCaretMenuActive = NO;
-+  [mEditable.mTextInputDelegate textWillChange:self];
-+  [mEditable.mTextInputDelegate selectionWillChange:self];
-+  handler->InsertText(aText);
-+  [mEditable.mTextInputDelegate textDidChange:self];
-+  [mEditable.mTextInputDelegate selectionDidChange:self];
++  if (!hasBuffer) {
++    [mEditable.mTextInputDelegate textWillChange:self];
++    [mEditable.mTextInputDelegate selectionWillChange:self];
++    handler->InsertText(aText);
++    [mEditable.mTextInputDelegate textDidChange:self];
++    [mEditable.mTextInputDelegate selectionDidChange:self];
++    [self scheduleEditSelectionUpdate];
++    return;
++  }
++
++  // The buffer uses visible UIKit offsets; translate back to Gecko offsets
++  // before committing the text change.
++  BOOL hasPendingDelete =
++      mEditable.mVietnamesePendingDeleteRange.location != NSNotFound;
++  NSRange pendingDeleteRange = hasPendingDelete
++                                   ? mEditable.mVietnamesePendingDeleteRange
++                                   : NSMakeRange(NSNotFound, 0);
++  bufferEditRange = mEditable.mVietnameseBufferSelection;
++  NSRange geckoEditRange = [self
++      geckoRangeForVietnameseBufferRange:hasPendingDelete ? pendingDeleteRange
++                                                          : bufferEditRange];
++  handler->SetSelectedRange(geckoEditRange);
++
++  if (hasPendingDelete) {
++    // A previous selected delete was deferred; this insert is the replacement.
++    NSRange geckoPendingDeleteRange =
++        [self geckoRangeForVietnameseBufferRange:pendingDeleteRange];
++    handler->ReplaceRange(geckoPendingDeleteRange, aText ?: @"");
++  } else {
++    handler->InsertText(aText);
++  }
++  [self replaceVietnameseBufferRange:bufferEditRange withText:aText ?: @""];
 +  [self scheduleEditSelectionUpdate];
 +}
 +
@@ -2255,10 +2447,46 @@ index 000000000000..e3d5d97c5685
 +    return;
 +  }
 +
++  BOOL hasBuffer = [self ensureVietnameseBufferWithHandler:handler];
 +  mEditable.mCaretMenuActive = NO;
-+  [mEditable.mTextInputDelegate textWillChange:self];
-+  handler->HandleCommand(Command::DeleteCharBackward);
-+  [mEditable.mTextInputDelegate textDidChange:self];
++  if (!hasBuffer) {
++    [mEditable.mTextInputDelegate textWillChange:self];
++    handler->HandleCommand(Command::DeleteCharBackward);
++    [mEditable.mTextInputDelegate textDidChange:self];
++    [self scheduleEditSelectionUpdate];
++    return;
++  }
++
++  if (mEditable.mVietnamesePendingDeleteRange.location != NSNotFound) {
++    // Flush any older deferred delete before processing the next one.
++    [self flushVietnamesePendingDelete];
++  }
++
++  NSRange bufferSelection = mEditable.mVietnameseBufferSelection;
++  NSRange deleteRange = [self vietnameseBufferDeleteBackwardRange];
++  if (deleteRange.location == NSNotFound) {
++    return;
++  }
++
++  [self replaceVietnameseBufferRange:deleteRange withText:@""];
++  if (bufferSelection.length) {
++    // Vietnamese IM follow selected deleteBackward with insertText
++    // as a replacement, so defer the Gecko delete briefly.
++    mEditable.mVietnamesePendingDeleteRange = deleteRange;
++    [NSObject
++        cancelPreviousPerformRequestsWithTarget:self
++                                       selector:
++                                           @selector(
++                                               flushVietnamesePendingDelete)
++                                         object:nil];
++    [self performSelector:@selector(flushVietnamesePendingDelete)
++               withObject:nil
++               afterDelay:0.08
++                  inModes:@[ NSRunLoopCommonModes ]];
++  } else {
++    handler->ReplaceRange([self geckoRangeForVietnameseBufferRange:deleteRange],
++                          @"");
++  }
 +  [self scheduleEditSelectionUpdate];
 +}
 +
@@ -2714,6 +2942,438 @@ index 000000000000..e3d5d97c5685
 +  for (UIView* grabberView in grabberViews) {
 +    grabberView.hidden = aHidden;
 +  }
++}
++
++@end
++
++// MARK: - ChildView (Vietnamese)
++
++@implementation ChildView (Vietnamese)
++
++- (BOOL)isVietnameseInputMode {
++  NSString* primaryLanguage = self.textInputMode.primaryLanguage;
++  return primaryLanguage && [primaryLanguage hasPrefix:@"vi"];
++}
++
++- (BOOL)hasVietnameseBuffer {
++  if (!mEditable.mVietnameseBufferText) {
++    return NO;
++  }
++  if ([self isVietnameseInputMode]) {
++    return YES;
++  }
++
++  // Also clear the buffer if the IM changes.
++  [self clearVietnameseBuffer];
++  return NO;
++}
++
++- (BOOL)shouldUseVietnameseIMEPath {
++  return [self hasVietnameseBuffer] || [self isVietnameseInputMode];
++}
++
++// Simply detect the Vietnamese word boundaries using whitespace.
++- (BOOL)isVietnameseWordSeparator:(unichar)aChar {
++  return [[NSCharacterSet whitespaceAndNewlineCharacterSet]
++      characterIsMember:aChar];
++}
++
++// Clears the temporary mirror
++- (void)clearVietnameseBuffer {
++  if (!mEditable.mVietnameseBufferText) {
++    return;
++  }
++  [mEditable.mVietnameseBufferText release];
++  mEditable.mVietnameseBufferText = nil;
++  mEditable.mVietnameseBufferSelection = NSMakeRange(NSNotFound, 0);
++  mEditable.mVietnameseBufferMarkedRange = NSMakeRange(NSNotFound, 0);
++  mEditable.mVietnamesePendingDeleteRange = NSMakeRange(NSNotFound, 0);
++  mEditable.mVietnameseBufferGeckoOffset = 0;
++  mEditable.mVietnameseBufferSyncAttempts = 0;
++}
++
++// Finds the current composing word around a UIKit-visible buffer offset.
++- (NSRange)vietnameseWordRangeAroundOffset:(NSUInteger)aOffset {
++  if (!mEditable.mVietnameseBufferText) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++
++  NSUInteger textLength = [mEditable.mVietnameseBufferText length];
++  if (!textLength) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++
++  NSUInteger offset = std::min(aOffset, textLength);
++  NSUInteger start = offset;
++  // Walk left until the beginning of the word or a separator.
++  while (start > 0 &&
++         ![self isVietnameseWordSeparator:[mEditable.mVietnameseBufferText
++                                              characterAtIndex:start - 1]]) {
++    start--;
++  }
++
++  NSUInteger end = offset;
++  // Walk right for the other half of the same composing word.
++  while (end < textLength &&
++         ![self isVietnameseWordSeparator:[mEditable.mVietnameseBufferText
++                                              characterAtIndex:end]]) {
++    end++;
++  }
++
++  if (start == end) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++  return NSMakeRange(start, end - start);
++}
++
++// Stops reporting local marked text while keeping the buffer text itself.
++- (void)clearVietnameseMarkedRange {
++  if (mEditable.mVietnameseBufferMarkedRange.location == NSNotFound) {
++    return;
++  }
++  mEditable.mVietnameseBufferMarkedRange = NSMakeRange(NSNotFound, 0);
++}
++
++// Maintains the marked word after an edit to the buffer. Empty edits and
++// whitespace commits end Vietnamese word composition.
++- (void)updateVietnameseMarkedRangeAfterReplacingRange:(NSRange)aRange
++                                              withText:(NSString*)aText {
++  if (![self isVietnameseInputMode]) {
++    [self clearVietnameseMarkedRange];
++    return;
++  }
++
++  NSString* text = aText ?: @"";
++  if (![text length]) {
++    [self clearVietnameseMarkedRange];
++    return;
++  }
++
++  for (NSUInteger i = 0; i < [text length]; i++) {
++    // Any separator in the committed text means the composing word is done.
++    if ([self isVietnameseWordSeparator:[text characterAtIndex:i]]) {
++      [self clearVietnameseMarkedRange];
++      return;
++    }
++  }
++
++  NSRange wordRange =
++      [self vietnameseWordRangeAroundOffset:aRange.location + [text length]];
++  if (wordRange.location == NSNotFound) {
++    [self clearVietnameseMarkedRange];
++    return;
++  }
++
++  mEditable.mVietnameseBufferMarkedRange = wordRange;
++}
++
++// Converts a full Gecko text snapshot into the visible text that UIKit expects.
++- (NSString*)normalizedVietnameseBufferText:(NSString*)aText
++                                  selection:(NSRange*)aSelection
++                           geckoStartOffset:(NSUInteger*)aGeckoStartOffset {
++  if (aGeckoStartOffset) {
++    *aGeckoStartOffset = 0;
++  }
++  if (!aText || !mGeckoChild || mGeckoChild->Destroyed()) {
++    return aText ?: @"";
++  }
++
++  // Gecko text queries may include sentinel newlines that are not visible to
++  // UIKit. The Vietnamese buffer stores only visible text.
++  widget::InputContext context = mGeckoChild->GetInputContext();
++  NSString* text = aText;
++  NSUInteger length = [text length];
++  if (!length) {
++    return text;
++  }
++
++  if ([text characterAtIndex:0] == 0x0a) {
++    // Some Gecko text controls expose a leading newline sentinel. Track the
++    // offset so later buffer ranges can be converted back to Gecko ranges.
++    if (aGeckoStartOffset) {
++      *aGeckoStartOffset = 1;
++    }
++    if (aSelection && aSelection->location != NSNotFound) {
++      NSUInteger textLength = length - 1;
++      NSUInteger selectionLocation = std::min(aSelection->location, length);
++      NSUInteger selectionEnd =
++          std::min(aSelection->length, length - selectionLocation) +
++          selectionLocation;
++      NSUInteger location = selectionLocation > 1 ? selectionLocation - 1 : 0;
++      NSUInteger end = selectionEnd > 1 ? selectionEnd - 1 : 0;
++      location = std::min(location, textLength);
++      end = std::min(end, textLength);
++      if (end < location) {
++        end = location;
++      }
++      *aSelection = NSMakeRange(location, end - location);
++    }
++    text = [text substringFromIndex:1];
++    length = [text length];
++  }
++
++  if (!length) {
++    return text;
++  }
++
++  BOOL singleNewline = length == 1 && [text characterAtIndex:0] == 0x0a;
++  // Non-textarea controls may expose a trailing newline sentinel. Drop it when
++  // the current UIKit selection is at that visible end boundary.
++  if ((!singleNewline && context.mHTMLInputType.EqualsLiteral("textarea")) ||
++      [text characterAtIndex:length - 1] != 0x0a || !aSelection ||
++      aSelection->location == NSNotFound || aSelection->location > length) {
++    return text;
++  }
++
++  NSUInteger selectionEnd =
++      std::min(aSelection->length, length - aSelection->location) +
++      aSelection->location;
++  if (selectionEnd != length - 1 && selectionEnd != length) {
++    return text;
++  }
++
++  text = [text substringToIndex:length - 1];
++  if (aSelection && aSelection->location != NSNotFound) {
++    NSUInteger textLength = [text length];
++    NSUInteger location = std::min(aSelection->location, textLength);
++    NSUInteger selectionLength =
++        std::min(aSelection->length, textLength - location);
++    *aSelection = NSMakeRange(location, selectionLength);
++  }
++  return text;
++}
++
++// Starts the Vietnamese mirror from Gecko's current visible text and selection.
++// If the buffer already exists, only cancel pending cleanup work.
++- (BOOL)ensureVietnameseBufferWithHandler:(widget::TextInputHandler*)aHandler {
++  if (![self isVietnameseInputMode]) {
++    [self clearVietnameseBuffer];
++    return NO;
++  }
++
++  if ([self hasVietnameseBuffer]) {
++    [NSObject
++        cancelPreviousPerformRequestsWithTarget:self
++                                       selector:
++                                           @selector(
++                                               flushVietnamesePendingDelete)
++                                         object:nil];
++    [NSObject
++        cancelPreviousPerformRequestsWithTarget:self
++                                       selector:@selector(clearVietnameseBuffer)
++                                         object:nil];
++    return YES;
++  }
++  if (!aHandler) {
++    return NO;
++  }
++
++  NSRange selection = NSMakeRange(NSNotFound, 0);
++  BOOL usedUIKitSelection = NO;
++
++  // Prefer a UIKit selection that was just set by text interaction,
++  // because, once again, Gecko is lagging behind.
++  if (mEditable.mActiveSelectionHandle == GeckoSelectionHandleNone &&
++      mEditable.mShadowSelectedRange.location != NSNotFound) {
++    selection = mEditable.mShadowSelectedRange;
++    usedUIKitSelection = YES;
++  } else if (!aHandler->SelectedRange(selection) ||
++             selection.location == NSNotFound) {
++    return NO;
++  }
++
++  nsString text;
++  if (!aHandler->TextInRange(NSMakeRange(0, UINT32_MAX), text)) {
++    return NO;
++  }
++
++  NSString* liveText = [NSString
++      stringWithCharacters:reinterpret_cast<const unichar*>(text.BeginReading())
++                    length:text.Length()];
++  NSUInteger geckoStartOffset = 0;
++  liveText = [self normalizedVietnameseBufferText:liveText
++                                        selection:&selection
++                                 geckoStartOffset:&geckoStartOffset];
++  NSUInteger liveLength = [liveText length];
++  NSUInteger location = std::min(selection.location, liveLength);
++  NSUInteger length = std::min(selection.length, liveLength - location);
++
++  mEditable.mVietnameseBufferText = [liveText mutableCopy];
++  mEditable.mVietnameseBufferSelection = NSMakeRange(location, length);
++  mEditable.mVietnameseBufferMarkedRange = NSMakeRange(NSNotFound, 0);
++  mEditable.mVietnamesePendingDeleteRange = NSMakeRange(NSNotFound, 0);
++  mEditable.mVietnameseBufferGeckoOffset = geckoStartOffset;
++  mEditable.mVietnameseBufferSyncAttempts = 0;
++  if (usedUIKitSelection) {
++    mEditable.mShadowSelectedRange = NSMakeRange(NSNotFound, 0);
++  }
++  return YES;
++}
++
++// Clears the mirror only after Gecko has caught up to the same text and
++// selection. Until then, UIKit queries continue to read from the buffer.
++- (BOOL)tryClearSyncedVietnameseBufferWithHandler:
++    (widget::TextInputHandler*)aHandler {
++  if (![self hasVietnameseBuffer] || !aHandler) {
++    return YES;
++  }
++
++  // Keep serving the buffer until Gecko reports matching text and selection.
++  mEditable.mVietnameseBufferSyncAttempts++;
++
++  NSRange liveSelection = NSMakeRange(NSNotFound, 0);
++  nsString liveText;
++  if (!aHandler->SelectedRange(liveSelection) ||
++      !aHandler->TextInRange(NSMakeRange(0, UINT32_MAX), liveText)) {
++    return NO;
++  }
++
++  NSString* liveString =
++      [NSString stringWithCharacters:reinterpret_cast<const unichar*>(
++                                         liveText.BeginReading())
++                              length:liveText.Length()];
++  liveString = [self normalizedVietnameseBufferText:liveString
++                                          selection:&liveSelection
++                                   geckoStartOffset:nullptr];
++  BOOL textMatches =
++      [liveString isEqualToString:mEditable.mVietnameseBufferText];
++  BOOL selectionMatches =
++      NSEqualRanges(liveSelection, mEditable.mVietnameseBufferSelection);
++  if (textMatches && selectionMatches) {
++    if (mEditable.mVietnameseBufferMarkedRange.location != NSNotFound) {
++      // A marked word is still active, so keep the mirror even though Gecko has
++      // the same plain text.
++      return YES;
++    }
++    [NSObject
++        cancelPreviousPerformRequestsWithTarget:self
++                                       selector:@selector(clearVietnameseBuffer)
++                                         object:nil];
++    [self performSelector:@selector(clearVietnameseBuffer)
++               withObject:nil
++               afterDelay:0.25
++                  inModes:@[ NSRunLoopCommonModes ]];
++    return YES;
++  }
++
++  if (mEditable.mVietnameseBufferSyncAttempts >= 10) {
++    // Avoid keeping stale state forever if Gecko never reports a matching
++    // snapshot for this composition.
++    [self clearVietnameseBuffer];
++    return YES;
++  }
++
++  return NO;
++}
++
++// Answers UITextInput text queries from the mirror when the requested range is
++// in UIKit-visible coordinates.
++- (NSString*)vietnameseBufferTextInRange:(NSRange)aRange {
++  if (![self hasVietnameseBuffer] || aRange.location == NSNotFound) {
++    return nil;
++  }
++
++  NSUInteger bufferLength = [mEditable.mVietnameseBufferText length];
++  if (aRange.location >= bufferLength) {
++    return @"";
++  }
++
++  NSUInteger length = std::min(aRange.length, bufferLength - aRange.location);
++  return [mEditable.mVietnameseBufferText
++      substringWithRange:NSMakeRange(aRange.location, length)];
++}
++
++// Converts a buffer range back to Gecko coordinates by restoring any hidden
++// leading sentinel offset removed during normalization.
++- (NSRange)geckoRangeForVietnameseBufferRange:(NSRange)aRange {
++  if (aRange.location == NSNotFound) {
++    return aRange;
++  }
++
++  NSUInteger geckoStartOffset = mEditable.mVietnameseBufferGeckoOffset;
++  if (aRange.location > NSUIntegerMax - geckoStartOffset) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++
++  return NSMakeRange(aRange.location + geckoStartOffset, aRange.length);
++}
++
++- (NSRange)geckoRangeForVisibleRange:(NSRange)aRange {
++  if ([self hasVietnameseBuffer]) {
++    return [self geckoRangeForVietnameseBufferRange:aRange];
++  }
++  return aRange;
++}
++
++// Applies an edit to the local mirror first, then updates the local selection
++// and marked word so the next UIKit query sees a consistent state.
++- (void)replaceVietnameseBufferRange:(NSRange)aRange withText:(NSString*)aText {
++  if (![self hasVietnameseBuffer] || aRange.location == NSNotFound) {
++    return;
++  }
++
++  NSUInteger bufferLength = [mEditable.mVietnameseBufferText length];
++  NSUInteger location = std::min(aRange.location, bufferLength);
++  NSUInteger length = std::min(aRange.length, bufferLength - location);
++  NSString* text = aText ?: @"";
++  [mEditable.mVietnameseBufferText
++      replaceCharactersInRange:NSMakeRange(location, length)
++                    withString:text];
++  mEditable.mVietnameseBufferSelection =
++      NSMakeRange(location + [text length], 0);
++  [self updateVietnameseMarkedRangeAfterReplacingRange:NSMakeRange(location,
++                                                                   length)
++                                              withText:text];
++  mEditable.mVietnamesePendingDeleteRange = NSMakeRange(NSNotFound, 0);
++  mEditable.mVietnameseBufferSyncAttempts = 0;
++  [NSObject
++      cancelPreviousPerformRequestsWithTarget:self
++                                     selector:@selector(
++                                                  flushVietnamesePendingDelete)
++                                       object:nil];
++  [NSObject
++      cancelPreviousPerformRequestsWithTarget:self
++                                     selector:@selector(clearVietnameseBuffer)
++                                       object:nil];
++}
++
++// Computes the exact composed-character range that deleteBackward should remove
++// from the mirror.
++- (NSRange)vietnameseBufferDeleteBackwardRange {
++  if (![self hasVietnameseBuffer] ||
++      mEditable.mVietnameseBufferSelection.location == NSNotFound) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++
++  NSRange selection = mEditable.mVietnameseBufferSelection;
++  if (selection.length) {
++    return selection;
++  }
++  if (selection.location == 0) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++
++  return [mEditable.mVietnameseBufferText
++      rangeOfComposedCharacterSequenceAtIndex:selection.location - 1];
++}
++
++// Applies a deferred Gecko delete when a Vietnamese selected delete was not
++// followed by replacement text.
++- (void)flushVietnamesePendingDelete {
++  if (mEditable.mVietnamesePendingDeleteRange.location == NSNotFound) {
++    return;
++  }
++
++  widget::TextInputHandler* handler = [self textHandler];
++  if (!handler) {
++    return;
++  }
++
++  NSRange deleteRange = mEditable.mVietnamesePendingDeleteRange;
++  mEditable.mVietnamesePendingDeleteRange = NSMakeRange(NSNotFound, 0);
++  NSRange geckoDeleteRange =
++      [self geckoRangeForVietnameseBufferRange:deleteRange];
++  handler->ReplaceRange(geckoDeleteRange, @"");
 +}
 +
 +@end

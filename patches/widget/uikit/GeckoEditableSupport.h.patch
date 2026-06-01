@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.h b/widget/uikit/GeckoEditableSupport.h
 new file mode 100644
-index 000000000000..b31b3980c6e7
+index 000000000000..81134f99e3ac
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.h
-@@ -0,0 +1,173 @@
+@@ -0,0 +1,179 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -80,6 +80,12 @@ index 000000000000..b31b3980c6e7
 +  CGFloat mVerticalBoundaryTop;
 +  CGFloat mVerticalBoundaryBottom;
 +  BOOL mVerticalBoundariesComputed;
++  NSMutableString* mVietnameseBufferText;
++  NSRange mVietnameseBufferSelection;
++  NSRange mVietnameseBufferMarkedRange;
++  NSRange mVietnamesePendingDeleteRange;
++  NSUInteger mVietnameseBufferGeckoOffset;
++  NSUInteger mVietnameseBufferSyncAttempts;
 +};
 +
 +// Recursively collects subviews whose class name matches aClassName.

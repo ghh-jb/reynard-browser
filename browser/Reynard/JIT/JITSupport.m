@@ -262,15 +262,12 @@ BOOL connectDebugSession(DeviceProvider *provider, DebugSession *session, NSStri
     return YES;
 }
 
-static BOOL prepareMemoryRegion(DebugProxyHandle *debugProxy, uint64_t startAddress, uint64_t regionSize, uint64_t writableSourceAddress, NSError **error) {
+static BOOL prepareMemoryRegion(DebugProxyHandle *debugProxy, uint64_t startAddress, uint64_t regionSize, NSError **error) {
     uint64_t size = regionSize == 0 ? 0x4000 : regionSize;
     
     for (uint64_t currentAddress = startAddress; currentAddress < startAddress + size; currentAddress += 0x4000) {
-        uint64_t sourceAddress = currentAddress;
-        if (writableSourceAddress != 0) sourceAddress = writableSourceAddress + (currentAddress - startAddress);
-        
         NSString *existingByte = nil;
-        NSString *readCommand = [NSString stringWithFormat:@"m%llx,1", sourceAddress];
+        NSString *readCommand = [NSString stringWithFormat:@"m%llx,1", currentAddress];
         if (!sendDebugCommand(debugProxy, readCommand, &existingByte, error)) return NO;
         
         if (!existingByte || existingByte.length < 2) {
@@ -339,12 +336,12 @@ void runDebugService(int32_t pid, DebugSession *session) {
         NSString *pcField = packetField(stopResponse, @"20");
         NSString *x0Field = packetField(stopResponse, @"00");
         NSString *x1Field = packetField(stopResponse, @"01");
-        NSString *x2Field = packetField(stopResponse, @"02");
+        NSString *x16Field = packetField(stopResponse, @"10");
         
         uint64_t pc = parseLittleEndianHex64(pcField);
         uint64_t x0 = x0Field ? parseLittleEndianHex64(x0Field) : 0;
         uint64_t x1 = x1Field ? parseLittleEndianHex64(x1Field) : 0;
-        uint64_t x2 = x2Field ? parseLittleEndianHex64(x2Field) : 0;
+        uint64_t x16 = x16Field ? parseLittleEndianHex64(x16Field) : 0;
         
         NSString *instructionResponse = nil;
         NSString *readInstruction = [NSString stringWithFormat:@"m%llx,4", pc];
@@ -361,15 +358,19 @@ void runDebugService(int32_t pid, DebugSession *session) {
         
         uint16_t breakpointImmediate = (instruction >> 5) & 0xffff;
         
-        if (breakpointImmediate == 0x69) {
-            if (!x0Field || !x1Field) break;
+        if (breakpointImmediate == 0xf00d) {
+            if (!x0Field || !x1Field || !x16Field) break;
+            if (x16 != 1) continue;
             
-            uint64_t regionSize = x2 != 0 ? x2 : x1;
-            uint64_t writableSourceAddress = x2 != 0 ? x1 : 0;
+            if (x0 == 0 && x1 == 0) {
+                if (!writeRegisterValue(session->debugProxy, @"20", pc + 4, threadID, &commandError)) break;
+                continue;
+            }
             
-            // ProcessExecutableMemory has already allocated a region, so we just need to prepare it
-            // without allocating first like the universal jit script in StikDebug/Amethyst
-            if (!prepareMemoryRegion(session->debugProxy, x0, regionSize, writableSourceAddress, &commandError)) break;
+            if (x0 == 0) break;
+            
+            if (!prepareMemoryRegion(session->debugProxy, x0, x1, &commandError)) break;
+            if (!writeRegisterValue(session->debugProxy, @"00", x0, threadID, &commandError)) break;
             
             // jump over breakpoint
             if (!writeRegisterValue(session->debugProxy, @"20", pc + 4, threadID, &commandError)) break;

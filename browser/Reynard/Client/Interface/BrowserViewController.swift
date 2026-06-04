@@ -162,6 +162,7 @@ final class BrowserViewController: UIViewController {
         syncSidebarButtonItem()
         refreshAddressBar()
         browserUI.applyChromeLayout(animated: false)
+        updateSuggestionsLayoutIfNeeded()
         browserUI.tabOverviewCollection.tabsCollection.collectionViewLayout.invalidateLayout()
         browserUI.tabOverviewCollection.privateTabsCollection.collectionViewLayout.invalidateLayout()
         browserUI.tabBar.collectionView.collectionViewLayout.invalidateLayout()
@@ -191,6 +192,7 @@ final class BrowserViewController: UIViewController {
                     return
                 }
                 self.browserUI.applyChromeLayout(animated: false)
+                self.updateSuggestionsLayoutIfNeeded()
             }
         }
     }

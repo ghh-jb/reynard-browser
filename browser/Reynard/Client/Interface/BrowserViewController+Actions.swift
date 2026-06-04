@@ -69,6 +69,10 @@ extension BrowserViewController {
     }
     
     func createNewTab() {
+        browserUI.addressBar.resetOverlayState()
+        restoreSearchChrome(clearSuggestions: true)
+        view.endEditing(true)
+        
         if tabOverviewPresentation.isVisible {
             let overviewMode = browserUI.tabOverviewCollection.mode
             prepareOverviewFakeInsertionSlot(for: overviewMode) { [weak self] in
@@ -84,6 +88,12 @@ extension BrowserViewController {
     }
     
     func dismissKeyboard() {
+        if isSearchScrollMode && searchViewController.parent != nil {
+            restoreSearchChrome(clearSuggestions: true)
+            return
+        }
+        
+        browserUI.addressBar.resetOverlayState()
         view.endEditing(true)
     }
     

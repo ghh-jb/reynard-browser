@@ -41,6 +41,16 @@ final class BottomToolbar: UIView {
         MakeButtons.makeToolbarButton(target: self, imageName: "square.on.square", action: #selector(tabsButtonClicked))
     }()
     
+    private lazy var buttonsStack: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [backButton, forwardButton, shareButton, menuButton, downloadButton, tabsButton])
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.alignment = .center
+        stack.spacing = 8
+        return stack
+    }()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -48,20 +58,13 @@ final class BottomToolbar: UIView {
         shareButton.isEnabled = false
         downloadButton.isHidden = true
         
-        let stack = UIStackView(arrangedSubviews: [backButton, forwardButton, shareButton, menuButton, downloadButton, tabsButton])
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.axis = .horizontal
-        stack.distribution = .fillEqually
-        stack.alignment = .center
-        stack.spacing = 8
-        
-        addSubview(stack)
+        addSubview(buttonsStack)
         
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
+            buttonsStack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            buttonsStack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            buttonsStack.topAnchor.constraint(equalTo: topAnchor),
+            buttonsStack.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
     }
     
@@ -112,5 +115,10 @@ final class BottomToolbar: UIView {
     
     func setMenuButtonIndicatesUpdate(_ hasUpdate: Bool) {
         menuButton.setImage(hasUpdate ? UIImage(named: "ellipsis.circle.badge") : UIImage(systemName: "ellipsis.circle"), for: .normal)
+    }
+    
+    func setButtonsHidden(_ hidden: Bool) {
+        buttonsStack.alpha = hidden ? 0 : 1
+        buttonsStack.isUserInteractionEnabled = !hidden
     }
 }

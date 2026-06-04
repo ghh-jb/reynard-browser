@@ -183,6 +183,12 @@ final class TabManagementStore {
         }
     }
     
+    func searchTabs(matching query: String, limit: Int, isPrivate: Bool) -> [TabSnapshot] {
+        stateQueue.sync {
+            searchTabsLocked(matching: query, limit: limit, isPrivate: isPrivate)
+        }
+    }
+    
     private func prepareStorageLocked() {
         try? fileManager.createDirectory(at: storage.directoryURL, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: storage.thumbCacheDirectoryURL, withIntermediateDirectories: true)
@@ -356,6 +362,36 @@ final class TabManagementStore {
         return tabs
     }
     
+    private func searchTabsLocked(matching query: String, limit: Int, isPrivate: Bool) -> [TabSnapshot] {
+        let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !normalizedQuery.isEmpty, limit > 0 else {
+            return []
+        }
+        
+        let strippedQuery = strippedURLString(from: normalizedQuery)
+        let tabs = fetchTabsLocked(isPrivate: isPrivate)
+        var matches: [TabSnapshot] = []
+        matches.reserveCapacity(min(limit, tabs.count))
+        
+        for tab in tabs {
+            let title = tab.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let urlValue = tab.url?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let strippedURL = strippedURLString(from: urlValue)
+            let titleMatches = !title.isEmpty && title.contains(normalizedQuery)
+            let urlMatches = !strippedURL.isEmpty && !strippedQuery.isEmpty && strippedURL.hasPrefix(strippedQuery)
+            guard titleMatches || urlMatches else {
+                continue
+            }
+            
+            matches.append(tab)
+            if matches.count >= limit {
+                break
+            }
+        }
+        
+        return matches
+    }
+    
     private func insertTabsLocked(_ tabs: [PersistedTab], isPrivate: Bool) -> Bool {
         guard let statement = prepareStatementLocked(
             """
@@ -474,5 +510,20 @@ final class TabManagementStore {
         }
         
         return string(from: statement, at: index)
+    }
+    
+    private func strippedURLString(from value: String) -> String {
+        let lowercased = value.lowercased()
+        if lowercased.hasPrefix("https://") {
+            return String(lowercased.dropFirst("https://".count))
+        }
+        if lowercased.hasPrefix("http://") {
+            return String(lowercased.dropFirst("http://".count))
+        }
+        if lowercased.hasPrefix("ftp://") {
+            return String(lowercased.dropFirst("ftp://".count))
+        }
+        
+        return lowercased
     }
 }

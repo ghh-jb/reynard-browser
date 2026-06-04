@@ -7,10 +7,34 @@
 
 import UIKit
 
+private final class AutocompleteTextField: UITextField {
+    var isAutocompleteActive = false
+    private var suppressTextActions = false
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        if isAutocompleteActive {
+            suppressTextActions = true
+            DispatchQueue.main.async { [weak self] in
+                self?.suppressTextActions = false
+            }
+            return
+        }
+        super.touchesBegan(touches, with: event)
+    }
+    
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if isAutocompleteActive || suppressTextActions {
+            return false
+        }
+        return super.canPerformAction(action, withSender: sender)
+    }
+}
+
 protocol AddressBarDelegate: AnyObject {
     func addressBarDidSubmit(_ searchTerm: String)
     func addressBarDidBeginEditing(_ addressBar: AddressBar)
     func addressBarDidEndEditing(_ addressBar: AddressBar)
+    func addressBar(_ addressBar: AddressBar, didChangeText text: String, previousText: String, isDelete: Bool)
     func addressBarDidTapTrailingButton(_ addressBar: AddressBar)
 }
 
@@ -25,7 +49,14 @@ final class AddressBar: UIView {
     private var currentLocationTitle: String?
     private var canShowBarMenu = false
     private var isLoading = false
+    private var forceComposingAppearanceWhenUnfocused = false
+    private var preservesAutocompleteWhenUnfocused = false
     private var addonsMenu: UIMenu?
+    private var lastEditingText = ""
+    private var lastEditWasDelete = false
+    private var showsFocusPreview = false
+    private var autocompleteCommittedText: String?
+    private var autocompleteSubmissionText: String?
     private var urlFieldLeadingToIconConstraint: NSLayoutConstraint!
     private var urlFieldLeadingToBarConstraint: NSLayoutConstraint!
     private var urlFieldTrailingToButtonConstraint: NSLayoutConstraint!
@@ -67,8 +98,8 @@ final class AddressBar: UIView {
         return button
     }()
     
-    private let urlField: UITextField = {
-        let field = UITextField()
+    private let urlField: AutocompleteTextField = {
+        let field = AutocompleteTextField()
         field.translatesAutoresizingMaskIntoConstraints = false
         field.borderStyle = .none
         field.backgroundColor = .clear
@@ -92,6 +123,26 @@ final class AddressBar: UIView {
         label.numberOfLines = 1
         label.isUserInteractionEnabled = false
         return label
+    }()
+    
+    private let autocompleteLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.textAlignment = .left
+        label.textColor = .label
+        label.font = .systemFont(ofSize: 17)
+        label.lineBreakMode = .byTruncatingTail
+        label.numberOfLines = 1
+        label.isHidden = true
+        return label
+    }()
+    
+    private let overlayButton: UIButton = {
+        let button = UIButton(type: .custom)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.backgroundColor = .clear
+        button.isHidden = true
+        return button
     }()
     
     private let progressView: UIProgressView = {
@@ -139,6 +190,7 @@ final class AddressBar: UIView {
         if !urlField.isFirstResponder {
             urlField.text = currentText
         }
+        clearAutocomplete()
         updateDisplayState()
     }
     
@@ -152,6 +204,23 @@ final class AddressBar: UIView {
         updateDisplayState()
     }
     
+    func setForceComposingAppearanceWhenUnfocused(_ force: Bool) {
+        forceComposingAppearanceWhenUnfocused = force
+        updateDisplayState()
+    }
+    
+    func setPreservesAutocompleteWhenUnfocused(_ preserve: Bool) {
+        preservesAutocompleteWhenUnfocused = preserve
+        if !preserve && !urlField.isFirstResponder {
+            clearAutocomplete()
+        }
+    }
+    
+    func resetOverlayState() {
+        showsFocusPreview = false
+        clearAutocomplete()
+    }
+    
     func setShadowEnabled(_ enabled: Bool) {
         shadowEnabled = enabled
         layer.shadowOpacity = enabled ? 0.12 : 0
@@ -160,6 +229,37 @@ final class AddressBar: UIView {
     
     func getText() -> String? {
         urlField.text
+    }
+    
+    func setAutocomplete(displayText: NSAttributedString, committedText: String, submissionText: String) {
+        guard urlField.isFirstResponder else {
+            return
+        }
+        
+        showsFocusPreview = false
+        autocompleteLabel.attributedText = displayText
+        autocompleteLabel.isHidden = false
+        autocompleteCommittedText = committedText
+        autocompleteSubmissionText = submissionText
+        updateOverlayState()
+    }
+    
+    func clearAutocomplete() {
+        autocompleteCommittedText = nil
+        autocompleteSubmissionText = nil
+        if !showsFocusPreview {
+            autocompleteLabel.attributedText = nil
+            autocompleteLabel.isHidden = true
+        }
+        updateOverlayState()
+    }
+    
+    var isShowingAutocomplete: Bool {
+        autocompleteSubmissionText != nil
+    }
+    
+    private var isShowingOverlay: Bool {
+        isShowingAutocomplete || showsFocusPreview
     }
     
     func setLoadingProgress(_ progress: Float, isLoading: Bool) {
@@ -198,7 +298,7 @@ final class AddressBar: UIView {
     
     private func setupView() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleBarTap))
-        tapGesture.cancelsTouchesInView = false
+        tapGesture.cancelsTouchesInView = true
         tapGesture.delegate = self
         addGestureRecognizer(tapGesture)
         
@@ -206,7 +306,9 @@ final class AddressBar: UIView {
         backgroundFillView.addSubview(leadingButton)
         backgroundFillView.addSubview(trailingButton)
         backgroundFillView.addSubview(urlField)
+        backgroundFillView.addSubview(overlayButton)
         backgroundFillView.addSubview(displayLabel)
+        backgroundFillView.addSubview(autocompleteLabel)
         backgroundFillView.addSubview(progressView)
         
         NSLayoutConstraint.activate([
@@ -227,6 +329,16 @@ final class AddressBar: UIView {
             
             urlField.topAnchor.constraint(equalTo: backgroundFillView.topAnchor),
             urlField.bottomAnchor.constraint(equalTo: backgroundFillView.bottomAnchor),
+            
+            overlayButton.leadingAnchor.constraint(equalTo: urlField.leadingAnchor),
+            overlayButton.trailingAnchor.constraint(equalTo: urlField.trailingAnchor, constant: -30),
+            overlayButton.topAnchor.constraint(equalTo: urlField.topAnchor),
+            overlayButton.bottomAnchor.constraint(equalTo: urlField.bottomAnchor),
+            
+            autocompleteLabel.leadingAnchor.constraint(equalTo: urlField.leadingAnchor),
+            autocompleteLabel.trailingAnchor.constraint(equalTo: urlField.trailingAnchor, constant: -30),
+            autocompleteLabel.topAnchor.constraint(equalTo: urlField.topAnchor),
+            autocompleteLabel.bottomAnchor.constraint(equalTo: urlField.bottomAnchor),
             
             displayLabel.topAnchor.constraint(equalTo: backgroundFillView.topAnchor),
             displayLabel.bottomAnchor.constraint(equalTo: backgroundFillView.bottomAnchor),
@@ -251,22 +363,28 @@ final class AddressBar: UIView {
         displayLabelTrailingToBarConstraint.isActive = true
         
         trailingButton.addTarget(self, action: #selector(handleTrailingButtonTap), for: .touchUpInside)
+        overlayButton.addTarget(self, action: #selector(handleOverlayButtonTap), for: .touchUpInside)
         
         updateDisplayState()
     }
     
     private func updateDisplayState() {
         let isEditing = urlField.isFirstResponder
+        let usesComposingAppearance = isEditing || forceComposingAppearanceWhenUnfocused
         let hasCommittedText = !(currentText?.isEmpty ?? true)
         let hasTypedText = !(urlField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
-        let isPlaceholderMode = isEditing ? !hasTypedText : !hasCommittedText
-        let leadingButtonVisible = !isEditing && !(hidePlaceholderIcon && isPlaceholderMode)
-        let trailingButtonVisible = !isEditing && (hasCommittedText || isLoading)
-        let leadingButtonShowsSearchIcon = !hidePlaceholderIcon && !isEditing && isPlaceholderMode
-        let leadingButtonShowsMenu = canShowBarMenu && !isEditing
+        let isPlaceholderMode = usesComposingAppearance ? !hasTypedText : !hasCommittedText
+        let leadingButtonVisible = !usesComposingAppearance && !(hidePlaceholderIcon && isPlaceholderMode)
+        let trailingButtonVisible = !usesComposingAppearance && (hasCommittedText || isLoading)
+        let leadingButtonShowsSearchIcon = !hidePlaceholderIcon && !usesComposingAppearance && isPlaceholderMode
+        let leadingButtonShowsMenu = canShowBarMenu && !usesComposingAppearance
         let displayText = displayAttributedText()
         
-        updateTextVisibility(isEditing: isEditing, hasCommittedText: hasCommittedText, displayText: displayText)
+        updateTextVisibility(
+            usesComposingAppearance: usesComposingAppearance,
+            hasCommittedText: hasCommittedText,
+            displayText: displayText
+        )
         updateLeadingButton(
             leadingButtonVisible: leadingButtonVisible,
             leadingButtonShowsSearchIcon: leadingButtonShowsSearchIcon,
@@ -293,8 +411,8 @@ final class AddressBar: UIView {
         ])
     }
     
-    private func updateTextVisibility(isEditing: Bool, hasCommittedText: Bool, displayText: NSAttributedString?) {
-        if isEditing {
+    private func updateTextVisibility(usesComposingAppearance: Bool, hasCommittedText: Bool, displayText: NSAttributedString?) {
+        if usesComposingAppearance {
             displayLabel.isHidden = true
             urlField.isHidden = false
         } else {
@@ -389,7 +507,10 @@ final class AddressBar: UIView {
     
     @objc
     private func handleBarTap() {
-        guard !urlField.isFirstResponder else {
+        if urlField.isFirstResponder {
+            if isShowingOverlay {
+                handleOverlayTap()
+            }
             return
         }
         
@@ -398,6 +519,13 @@ final class AddressBar: UIView {
     
     @objc
     private func textFieldDidChange() {
+        let previousText = lastEditingText
+        showsFocusPreview = false
+        clearAutocomplete()
+        let currentText = urlField.text ?? ""
+        lastEditingText = currentText
+        delegate?.addressBar(self, didChangeText: currentText, previousText: previousText, isDelete: lastEditWasDelete)
+        lastEditWasDelete = false
         if urlField.isFirstResponder {
             updateDisplayState()
         }
@@ -408,17 +536,131 @@ final class AddressBar: UIView {
         delegate?.addressBarDidTapTrailingButton(self)
     }
     
+    @objc
+    private func handleOverlayButtonTap() {
+        handleOverlayTap()
+    }
+    
+    private func handleOverlayTap() {
+        if !urlField.isFirstResponder {
+            _ = urlField.becomeFirstResponder()
+        }
+        
+        if isShowingAutocomplete {
+            commitAutocompleteForEditing()
+            return
+        }
+        
+        if showsFocusPreview {
+            clearFocusPreview()
+            selectAllText()
+        }
+    }
+    
     private func symbolImage(primary: String, fallback: String) -> UIImage? {
         if let image = UIImage(systemName: primary) {
             return image
         }
         return UIImage(systemName: fallback)
     }
+    
+    private func commitAutocompleteForEditing() {
+        let committedText = autocompleteCommittedText ?? autocompleteSubmissionText ?? urlField.text ?? ""
+        clearAutocomplete()
+        urlField.text = committedText
+        lastEditingText = committedText
+        restoreCaretToEnd()
+    }
+    
+    private func showFocusPreview() {
+        guard let text = urlField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !text.isEmpty else {
+            return
+        }
+        
+        let attributedText = NSAttributedString(
+            string: text,
+            attributes: [
+                .foregroundColor: UIColor.label,
+                .backgroundColor: UIColor.systemGray4
+            ]
+        )
+        autocompleteLabel.attributedText = attributedText
+        autocompleteLabel.isHidden = false
+        showsFocusPreview = true
+        updateOverlayState()
+    }
+    
+    private func clearFocusPreview() {
+        showsFocusPreview = false
+        if !isShowingAutocomplete {
+            autocompleteLabel.attributedText = nil
+            autocompleteLabel.isHidden = true
+        }
+        updateOverlayState()
+    }
+    
+    private func updateOverlayState() {
+        urlField.isAutocompleteActive = isShowingOverlay
+        urlField.textColor = isShowingOverlay ? .clear : .label
+        urlField.tintColor = isShowingOverlay ? .clear : tintColor
+        overlayButton.isHidden = !isShowingOverlay
+    }
+    
+    private func restoreCaretToEnd() {
+        let end = urlField.endOfDocument
+        urlField.selectedTextRange = urlField.textRange(from: end, to: end)
+    }
+    
+    private func selectAllText() {
+        let start = urlField.beginningOfDocument
+        let end = urlField.endOfDocument
+        urlField.selectedTextRange = urlField.textRange(from: start, to: end)
+    }
 }
 
 extension AddressBar: UITextFieldDelegate {
+    func textField(
+        _ textField: UITextField,
+        shouldChangeCharactersIn range: NSRange,
+        replacementString string: String
+    ) -> Bool {
+        if showsFocusPreview {
+            clearFocusPreview()
+            let previousText = lastEditingText
+            if string.isEmpty {
+                urlField.text = ""
+                lastEditWasDelete = true
+            } else {
+                urlField.text = string
+                lastEditWasDelete = false
+            }
+            let currentText = urlField.text ?? ""
+            lastEditingText = currentText
+            delegate?.addressBar(self, didChangeText: currentText, previousText: previousText, isDelete: lastEditWasDelete)
+            lastEditWasDelete = false
+            if urlField.isFirstResponder {
+                updateDisplayState()
+            }
+            return false
+        }
+        
+        guard isShowingAutocomplete,
+              string.isEmpty,
+              range.length > 0 else {
+            lastEditWasDelete = string.isEmpty && range.length > 0
+            return true
+        }
+        
+        clearAutocomplete()
+        restoreCaretToEnd()
+        lastEditWasDelete = true
+        return false
+    }
+    
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        guard let searchText = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines), !searchText.isEmpty else {
+        let searchText = autocompleteSubmissionText ?? textField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let searchText, !searchText.isEmpty else {
             return false
         }
         
@@ -431,40 +673,28 @@ extension AddressBar: UITextFieldDelegate {
            !currentText.isEmpty {
             textField.text = currentText
         }
+        lastEditingText = textField.text ?? ""
+        let preservesAutocomplete = preservesAutocompleteWhenUnfocused && isShowingAutocomplete
+        preservesAutocompleteWhenUnfocused = false
+        if !preservesAutocomplete {
+            clearAutocomplete()
+        } else {
+            updateOverlayState()
+        }
         updateDisplayState()
         delegate?.addressBarDidBeginEditing(self)
-        
-        guard let value = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !value.isEmpty else {
-            return
-        }
-        
-        DispatchQueue.main.async {
-            guard textField.isFirstResponder,
-                  let text = textField.text,
-                  !text.isEmpty else { return }
-            
-            let start = textField.beginningOfDocument
-            if let caretRange = textField.textRange(from: start, to: start) {
-                textField.selectedTextRange = caretRange
-            }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                guard textField.isFirstResponder,
-                      let text = textField.text,
-                      !text.isEmpty else { return }
-                
-                let start = textField.beginningOfDocument
-                let end = textField.endOfDocument
-                if let range = textField.textRange(from: start, to: end) {
-                    textField.selectedTextRange = range
-                }
-            }
+        if !preservesAutocomplete {
+            showFocusPreview()
         }
     }
     
-    
     func textFieldDidEndEditing(_ textField: UITextField) {
+        showsFocusPreview = false
+        if !preservesAutocompleteWhenUnfocused {
+            clearAutocomplete()
+        } else {
+            updateOverlayState()
+        }
         currentText = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines)
         currentLocationText = nil
         currentLocationTitle = nil

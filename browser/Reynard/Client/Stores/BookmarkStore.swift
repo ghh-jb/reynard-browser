@@ -137,6 +137,12 @@ final class BookmarkStore {
         }
     }
     
+    func searchBookmarksPrefix(matching query: String, limit: Int) -> [BookmarkSnapshot] {
+        stateQueue.sync {
+            searchBookmarksPrefixLocked(matching: query, limit: limit)
+        }
+    }
+    
     func searchBookmarks(matching query: String, limit: Int) -> [BookmarkSnapshot] {
         stateQueue.sync {
             searchBookmarksLocked(matching: query, limit: limit)
@@ -525,6 +531,42 @@ final class BookmarkStore {
             rollbackTransactionLocked()
             return
         }
+    }
+    
+    private func searchBookmarksPrefixLocked(matching query: String, limit: Int) -> [BookmarkSnapshot] {
+        let normalizedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedQuery.isEmpty, limit > 0 else {
+            return []
+        }
+        
+        let escapedTitlePrefix = "\(escapedLikePattern(normalizedQuery))%"
+        let escapedURLPrefix = "\(escapedLikePattern(strippedURLString(from: normalizedQuery)))%"
+        
+        guard let statement = prepareStatementLocked(
+   """
+   SELECT id, guid, date_added, parentid, parentName, title, url
+   FROM \(Constants.bookmarkTableName)
+   WHERE type = ?
+     AND (
+       title LIKE ? COLLATE NOCASE ESCAPE '\\'
+       OR stripped_url LIKE ? COLLATE NOCASE ESCAPE '\\'
+     )
+   ORDER BY date_added DESC, id DESC
+   LIMIT ?;
+   """
+        ) else {
+            return []
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_int64(statement, 1, BookmarkNodeType.bookmark.rawValue)
+        bind(escapedTitlePrefix, to: statement, at: 2)
+        bind(escapedURLPrefix, to: statement, at: 3)
+        sqlite3_bind_int64(statement, 4, Int64(limit))
+        return readBookmarkSnapshotsLocked(from: statement)
     }
     
     private func searchBookmarksLocked(matching query: String, limit: Int) -> [BookmarkSnapshot] {

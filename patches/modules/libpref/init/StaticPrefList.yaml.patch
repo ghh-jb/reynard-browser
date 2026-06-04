@@ -1,8 +1,26 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index 990f1dc23e1f..35296a362aff 100644
+index 990f1dc23e1f..0b33fa3edada 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
-@@ -5805,7 +5805,7 @@
+@@ -5720,7 +5720,7 @@
+ # document.createEvent("TouchEvent").
+ - name: dom.w3c_touch_events.legacy_apis.enabled
+   type: bool
+-  value: @IS_ANDROID@
++  value: true
+   mirror: always
+ 
+ # W3C touch events
+@@ -5731,6 +5731,8 @@
+   type: int32_t
+ #if defined(XP_MACOSX)
+   value: 0
++#elif defined(XP_IOS)
++  value: 1
+ #else
+   value: 2
+ #endif
+@@ -5805,7 +5807,7 @@
  # on aarch64 (Apple Silicon) MacOS.
  - name: dom.webgpu.enabled
    type: RelaxedAtomicBool
@@ -11,7 +29,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: true
  #else
    value: @IS_EARLY_BETA_OR_EARLIER@
-@@ -5816,7 +5816,7 @@
+@@ -5816,7 +5818,7 @@
  # on a platform that supports the GPU process, else true.
  - name: dom.webgpu.allow-in-parent
    type: bool
@@ -20,7 +38,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: false
  #else
    value: true
-@@ -5826,7 +5826,7 @@
+@@ -5826,7 +5828,7 @@
  # Is support for the Web GPU API enabled on service workers?
  - name: dom.webgpu.service-workers.enabled
    type: RelaxedAtomicBool
@@ -29,7 +47,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: true
  #else
    value: @IS_EARLY_BETA_OR_EARLIER@
-@@ -5853,7 +5853,7 @@
+@@ -5853,7 +5855,7 @@
  
  - name: dom.webgpu.allow-present-without-readback
    type: RelaxedAtomicBool
@@ -38,7 +56,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: true
  #else
    value: false
-@@ -5863,7 +5863,7 @@
+@@ -5863,7 +5865,7 @@
  # Whether WebGPU's GPUExternalTexture API is enabled.
  - name: dom.webgpu.external-texture.enabled
    type: bool
@@ -47,7 +65,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: true
  #else
    value: false
-@@ -6377,7 +6377,7 @@
+@@ -6377,7 +6379,7 @@
  # or the parent/main process (false)
  - name: extensions.webextensions.remote
    type: RelaxedAtomicBool
@@ -56,7 +74,7 @@ index 990f1dc23e1f..35296a362aff 100644
    mirror: always
  
  # Whether to expose the MockExtensionAPI test interface in tests.
-@@ -6996,6 +6996,8 @@
+@@ -6996,6 +6998,8 @@
    type: bool
  #if defined(XP_MACOSX) || defined(XP_LINUX) && !defined(ANDROID)
    value: true
@@ -65,7 +83,7 @@ index 990f1dc23e1f..35296a362aff 100644
  #elif defined(MOZ_WIDGET_ANDROID)
    value: true
  #elif defined(XP_WIN)
-@@ -7007,7 +7009,7 @@
+@@ -7007,7 +7011,7 @@
  
  - name: gfx.canvas.accelerated.allow-in-parent
    type: bool
@@ -74,7 +92,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: false
  #else
    value: true
-@@ -7541,7 +7543,13 @@
+@@ -7541,7 +7545,13 @@
    # backend.
  -   name: gfx.font_rendering.coretext.enabled
      type: RelaxedAtomicBool
@@ -88,7 +106,7 @@ index 990f1dc23e1f..35296a362aff 100644
      mirror: always
  #endif
  
-@@ -9757,7 +9765,7 @@
+@@ -9757,7 +9767,7 @@
  # or executable but never both at the same time. OpenBSD defaults to W^X.
  - name: javascript.options.content_process_write_protect_code
    type: bool
@@ -97,7 +115,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: true
  #else
    value: false
-@@ -9932,7 +9940,9 @@
+@@ -9932,7 +9942,9 @@
  
  - name: layers.gpu-process.enabled
    type: bool
@@ -108,7 +126,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: true
  #elif defined(MOZ_X11)
    value: false  # we'd like this to be @IS_NIGHTLY_BUILD@, see Bug 1927058
-@@ -10155,7 +10165,7 @@
+@@ -10155,7 +10167,7 @@
  
  - name: layout.accessiblecaret.margin-left
    type: float
@@ -117,7 +135,7 @@ index 990f1dc23e1f..35296a362aff 100644
    mirror: always
  
  - name: layout.accessiblecaret.transition-duration
-@@ -11656,7 +11666,7 @@
+@@ -11656,7 +11668,7 @@
  - name: media.cubeb.sandbox
    type: bool
    mirror: always
@@ -126,7 +144,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: true
  #else
    value: false
-@@ -12010,6 +12020,8 @@
+@@ -12010,6 +12022,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -135,7 +153,7 @@ index 990f1dc23e1f..35296a362aff 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12054,6 +12066,8 @@
+@@ -12054,6 +12068,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -144,7 +162,7 @@ index 990f1dc23e1f..35296a362aff 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12087,6 +12101,8 @@
+@@ -12087,6 +12103,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -153,7 +171,7 @@ index 990f1dc23e1f..35296a362aff 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12106,6 +12122,8 @@
+@@ -12106,6 +12124,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -162,7 +180,7 @@ index 990f1dc23e1f..35296a362aff 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12125,6 +12143,8 @@
+@@ -12125,6 +12145,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -171,7 +189,7 @@ index 990f1dc23e1f..35296a362aff 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12144,6 +12164,8 @@
+@@ -12144,6 +12166,8 @@
    value: true
  #elif defined(XP_MACOSX)
    value: true
@@ -180,7 +198,7 @@ index 990f1dc23e1f..35296a362aff 100644
  #elif defined(XP_LINUX) && !defined(ANDROID)
    value: true
  #elif defined(XP_FREEBSD)
-@@ -12170,7 +12192,7 @@
+@@ -12170,7 +12194,7 @@
    type: RelaxedAtomicBool
  #if defined(XP_WIN)
    value: true
@@ -189,7 +207,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: true
  #elif defined(XP_LINUX) || defined(ANDROID)
    value: true
-@@ -12241,7 +12263,7 @@
+@@ -12241,7 +12265,7 @@
  #ifdef MOZ_FFMPEG
  -   name: media.ffmpeg.enabled
      type: RelaxedAtomicBool
@@ -198,7 +216,7 @@ index 990f1dc23e1f..35296a362aff 100644
      value: false
    #else
      value: true
-@@ -14612,7 +14634,10 @@
+@@ -14612,7 +14636,10 @@
  - name: network.process.enabled
    type: RelaxedAtomicBool
    mirror: always
@@ -210,7 +228,7 @@ index 990f1dc23e1f..35296a362aff 100644
    value: false # see bug 1641427
  #else
    value: true
-@@ -14661,7 +14686,13 @@
+@@ -14661,7 +14688,13 @@
  - name: network.http.network_access_on_socket_process.enabled
    type: RelaxedAtomicBool
    mirror: always
@@ -224,7 +242,7 @@ index 990f1dc23e1f..35296a362aff 100644
  
  # Telemetry of traffic categories. Whether or not to enable HttpTrafficAnalyzer.
  - name: network.traffic_analyzer.enabled
-@@ -19368,14 +19399,16 @@
+@@ -19368,14 +19401,16 @@
  # on a platform that supports the GPU process, else true.
  - name: webgl.allow-in-parent
    type: bool

@@ -731,7 +731,7 @@ final class BrowserUI {
         ui.bottomContainerHeightConstraint.constant = compactPad ? 44 : (controller.isSearchFocused ? 58 : 94)
         ui.bottomContainer.containerView.backgroundColor = controller.isSearchFocused && !pad ? .clear : .systemGray6
         ui.bottomContainer.bottomSafeAreaFillView.backgroundColor = controller.isSearchFocused && !pad ? .clear : .systemGray6
-        ui.bottomToolbar.alpha = compactPad ? 1 : ui.bottomToolbar.alpha
+        ui.bottomToolbar.alpha = compactPad ? 1 : (controller.isSearchFocused ? 0 : 1)
         ui.bottomToolbar.setButtonsHidden(false)
         
         ui.tabOverviewTopBar.barView.isHidden = phoneOverview
@@ -2207,6 +2207,13 @@ extension BrowserViewController: SearchViewControllerDelegate {
             return
         }
         
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else {
+            hideSuggestionsIfNeeded()
+            searchController.fetchSuggestions(for: text)
+            return
+        }
+        
         showSuggestionsIfNeeded()
         searchController.fetchSuggestions(for: text)
     }
@@ -2301,7 +2308,9 @@ extension BrowserViewController: SearchViewControllerDelegate {
     
     private func showSuggestionsIfNeeded() {
         let overlayController = searchViewController
-        guard overlayController.parent == nil else {
+        let text = browserUI.addressBar.getText() ?? ""
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              overlayController.parent == nil else {
             return
         }
         overlayController.setUsesTopAddressBarMode(usesTopPhoneAddressBar)

@@ -2631,8 +2631,13 @@ extension BrowserViewController: SearchViewControllerDelegate {
     }
     
     private func domainCompletion(for query: String, url: URL) -> String? {
-        let host = url.host?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard !host.isEmpty else {
+        let displayURL = strippedURLString(url.absoluteString, trimsTrailingSlash: true)
+        var host = url.host?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if host.lowercased().hasPrefix("www.") {
+            host = String(host.dropFirst("www.".count))
+        }
+        guard !host.isEmpty,
+              displayURL.lowercased().hasPrefix(host.lowercased()) else {
             return nil
         }
         
@@ -2647,6 +2652,7 @@ extension BrowserViewController: SearchViewControllerDelegate {
             return nil
         }
         
-        return matchedHost
+        let path = String(displayURL.dropFirst(host.count))
+        return matchedHost + path
     }
 }

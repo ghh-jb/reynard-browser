@@ -66,6 +66,16 @@ final class SitePermissionController: NSObject, PermissionEmbedderDelegate {
     
     @MainActor
     func permissionDelegate(_ delegate: PermissionDelegate, decideContentPermission permission: ContentPermission, session: GeckoSession) async -> ContentPermission.Value {
+        if permission.permission == .deviceSensors,
+           let title = permission.alertTitle {
+            let allowed = await presentPermissionAlert(
+                title: title,
+                message: permission.alertMessage,
+                isMedia: false
+            )
+            return allowed ? .allow : .deny
+        }
+        
         guard let sitePermission = SitePermission(contentPermission: permission),
               let host = host(from: permission.uri) else {
             return .prompt

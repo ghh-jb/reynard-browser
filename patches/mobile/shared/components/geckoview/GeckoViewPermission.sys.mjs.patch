@@ -1,5 +1,5 @@
 diff --git a/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs b/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
-index e974c454a66d..421b62064e93 100644
+index e974c454a66d..4ab8cfff82ef 100644
 --- a/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
 +++ b/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
 @@ -145,7 +145,7 @@ export class GeckoViewPermission {
@@ -11,3 +11,28 @@ index e974c454a66d..421b62064e93 100644
            const granted = await actor.getAppPermissions([
              PERM_ACCESS_FINE_LOCATION,
            ]);
+@@ -164,6 +164,24 @@ export class GeckoViewPermission {
+ 
+     const allow = allowOrDeny === Services.perms.ALLOW_ACTION;
+ 
++    if (perm.type === "device-sensors") {
++      const browserId = actor.browsingContext.top.browserId;
++      if (
++        browserId &&
++        (allowOrDeny === Services.perms.ALLOW_ACTION ||
++          allowOrDeny === Services.perms.DENY_ACTION)
++      ) {
++        Services.perms.addFromPrincipalForBrowser(
++          principal,
++          perm.type,
++          allowOrDeny,
++          browserId
++        );
++      }
++
++      return { allow };
++    }
++
+     // The storage access code adds itself to the perm manager; no need for us to do it.
+     if (perm.type === "storage-access") {
+       if (allow) {

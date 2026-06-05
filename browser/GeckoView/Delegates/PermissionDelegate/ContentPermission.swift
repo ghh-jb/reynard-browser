@@ -21,6 +21,7 @@ public struct ContentPermission {
         case storageAccess = "storage-access"
         case localDeviceAccess = "loopback-network"
         case localNetworkAccess = "local-network"
+        case deviceSensors = "device-sensors"
     }
     
     public enum Value: Int32 {
@@ -101,6 +102,8 @@ public struct ContentPermission {
             return "Allow \(host) to access other apps and services on this device?"
         case .localNetworkAccess:
             return "Allow \(host) to access apps and services on devices connected to your local network?"
+        case .deviceSensors:
+            return "Allow \(host) to use motion & orientation sensors?"
         case .camera,
                 .microphone,
                 .webxr,
@@ -126,6 +129,7 @@ public struct ContentPermission {
                 .tracking,
                 .localDeviceAccess,
                 .localNetworkAccess,
+                .deviceSensors,
             nil:
             return nil
         }

@@ -1,5 +1,5 @@
 diff --git a/dom/media/webrtc/MediaEngineWebRTC.cpp b/dom/media/webrtc/MediaEngineWebRTC.cpp
-index dcccab772da1..5183ec75985b 100644
+index 7e629d5bb468..d4910830fc73 100644
 --- a/dom/media/webrtc/MediaEngineWebRTC.cpp
 +++ b/dom/media/webrtc/MediaEngineWebRTC.cpp
 @@ -5,6 +5,7 @@
@@ -27,7 +27,7 @@ index dcccab772da1..5183ec75985b 100644
  using camera::GetChildAndCall;
  using dom::MediaSourceEnum;
  
-@@ -68,7 +70,7 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
+@@ -69,7 +71,7 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
    bool canRequestOsLevelPrompt =
        mozilla::StaticPrefs::media_webrtc_capture_allow_pipewire() &&
        webrtc::DesktopCapturer::IsRunningUnderWayland() && desktopKind;
@@ -36,7 +36,7 @@ index dcccab772da1..5183ec75985b 100644
    bool canRequestOsLevelPrompt =
        mozilla::StaticPrefs::
            media_getdisplaymedia_screencapturekit_enabled_AtStartup() &&
-@@ -113,6 +115,8 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
+@@ -114,6 +116,8 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
      char deviceName[MediaEngineSource::kMaxDeviceNameLength];
      char uniqueId[MediaEngineSource::kMaxUniqueIdLength];
      bool scarySource = false;
@@ -45,7 +45,7 @@ index dcccab772da1..5183ec75985b 100644
  
      // paranoia
      deviceName[0] = '\0';
-@@ -121,7 +125,7 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
+@@ -122,7 +126,7 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
  
      error = GetChildAndCall(&CamerasChild::GetCaptureDevice, capEngine, i,
                              deviceName, sizeof(deviceName), uniqueId,
@@ -54,7 +54,7 @@ index dcccab772da1..5183ec75985b 100644
      if (error) {
        LOG(("camera:GetCaptureDevice: Failed %d", error));
        continue;
-@@ -145,15 +149,27 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
+@@ -146,15 +150,27 @@ void MediaEngineWebRTC::EnumerateVideoDevices(
  
      NS_ConvertUTF8toUTF16 name(deviceName);
      NS_ConvertUTF8toUTF16 uuid(uniqueId);

@@ -1,5 +1,5 @@
 diff --git a/media/libcubeb/src/cubeb_resampler_internal.h b/media/libcubeb/src/cubeb_resampler_internal.h
-index b35ec4f79449..1c4b569d44fa 100644
+index dfc93f15b488..fb38db9cbcc3 100644
 --- a/media/libcubeb/src/cubeb_resampler_internal.h
 +++ b/media/libcubeb/src/cubeb_resampler_internal.h
 @@ -561,6 +561,11 @@ cubeb_resampler_create_internal(cubeb_stream * stream,

@@ -1,5 +1,5 @@
 diff --git a/js/src/jit/arm64/MacroAssembler-arm64.cpp b/js/src/jit/arm64/MacroAssembler-arm64.cpp
-index e6a958a98489..62b3e0a62d3e 100644
+index 8188ba444345..4a2a2867775d 100644
 --- a/js/src/jit/arm64/MacroAssembler-arm64.cpp
 +++ b/js/src/jit/arm64/MacroAssembler-arm64.cpp
 @@ -8,11 +8,13 @@

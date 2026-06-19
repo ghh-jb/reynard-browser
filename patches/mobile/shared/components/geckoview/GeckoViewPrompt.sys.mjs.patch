@@ -1,8 +1,8 @@
 diff --git a/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs b/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs
-index 51ce0b4bd1b7..9733d36da989 100644
+index e195b48ca75b..c69983a1611a 100644
 --- a/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs
 +++ b/mobile/shared/components/geckoview/GeckoViewPrompt.sys.mjs
-@@ -72,6 +72,17 @@ export class PromptFactory {
+@@ -73,6 +73,17 @@ export class PromptFactory {
      }
  
      const type = target.type;
@@ -20,7 +20,7 @@ index 51ce0b4bd1b7..9733d36da989 100644
      if (type === "month" || type === "week") {
        // TODO(bug 888320, bug 1283382, bug 1283383): Remove this once we
        // support UA widgets for month/week inputs.
-@@ -158,11 +169,22 @@ export class PromptFactory {
+@@ -160,11 +171,22 @@ export class PromptFactory {
        mozSystemGroup: true,
      });
  
@@ -43,10 +43,12 @@ index 51ce0b4bd1b7..9733d36da989 100644
        },
        result => {
          deferredUpdate.disarm();
-@@ -228,26 +250,36 @@ export class PromptFactory {
+@@ -229,28 +251,38 @@ export class PromptFactory {
+   }
  
    _handleDateTime(aElement) {
-     const win = aElement.ownerGlobal;
+-    const win = aElement.documentGlobal;
++    const win = aElement.ownerGlobal;
 +    const elemRect = aElement.getBoundingClientRect();
 +    const winUtils = win.windowUtils;
 +    const screenRect = winUtils.toScreenRectInCSSUnits(
@@ -57,7 +59,8 @@ index 51ce0b4bd1b7..9733d36da989 100644
 +    );
      const prompt = new lazy.GeckoViewPrompter(win);
  
-     const chromeEventHandler = aElement.ownerGlobal.docShell.chromeEventHandler;
+     const chromeEventHandler =
+       aElement.documentGlobal.docShell.chromeEventHandler;
      const dismissPrompt = () => prompt.dismiss();
 -    // Some controls don't have UA widget (bug 888320)
 +
@@ -87,7 +90,7 @@ index 51ce0b4bd1b7..9733d36da989 100644
        }
      }
  
-@@ -259,15 +291,16 @@ export class PromptFactory {
+@@ -262,15 +294,16 @@ export class PromptFactory {
          min: aElement.min,
          max: aElement.max,
          step: aElement.step,
@@ -110,7 +113,7 @@ index 51ce0b4bd1b7..9733d36da989 100644
            chromeEventHandler.removeEventListener(
              "MozCloseDateTimePicker",
              dismissPrompt
-@@ -275,6 +308,10 @@ export class PromptFactory {
+@@ -278,6 +311,10 @@ export class PromptFactory {
            dateTimeBoxElement.dispatchEvent(
              new win.CustomEvent("MozSetDateTimePickerState", { detail: false })
            );
@@ -121,7 +124,7 @@ index 51ce0b4bd1b7..9733d36da989 100644
          }
  
          // OK: result
-@@ -292,6 +329,50 @@ export class PromptFactory {
+@@ -295,6 +332,50 @@ export class PromptFactory {
      );
    }
  

@@ -1,5 +1,5 @@
 diff --git a/mobile/shared/modules/geckoview/GeckoViewContent.sys.mjs b/mobile/shared/modules/geckoview/GeckoViewContent.sys.mjs
-index 42df6bf8722a..156f4b612760 100644
+index c850b03ad280..fa4689abf2ad 100644
 --- a/mobile/shared/modules/geckoview/GeckoViewContent.sys.mjs
 +++ b/mobile/shared/modules/geckoview/GeckoViewContent.sys.mjs
 @@ -14,6 +14,7 @@ export class GeckoViewContent extends GeckoViewModule {

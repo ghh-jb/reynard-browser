@@ -1,8 +1,8 @@
 diff --git a/toolkit/modules/ActorManagerParent.sys.mjs b/toolkit/modules/ActorManagerParent.sys.mjs
-index 7eb11b5cd879..cca681f63140 100644
+index 4d232e78fc01..36cf1c722b48 100644
 --- a/toolkit/modules/ActorManagerParent.sys.mjs
 +++ b/toolkit/modules/ActorManagerParent.sys.mjs
-@@ -685,7 +685,7 @@ if (!Services.prefs.getBoolPref("browser.pagedata.enabled", false)) {
+@@ -699,7 +699,7 @@ if (!Services.prefs.getBoolPref("browser.pagedata.enabled", false)) {
    };
  }
  

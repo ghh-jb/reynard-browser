@@ -1,8 +1,8 @@
 diff --git a/dom/media/systemservices/moz.build b/dom/media/systemservices/moz.build
-index 8617e00a84e2..5c0bc055994c 100644
+index f0d6241a8e83..a790efea11b5 100644
 --- a/dom/media/systemservices/moz.build
 +++ b/dom/media/systemservices/moz.build
-@@ -35,6 +35,7 @@ if CONFIG["MOZ_WEBRTC"]:
+@@ -36,6 +36,7 @@ if CONFIG["MOZ_WEBRTC"]:
          ]
      elif CONFIG["OS_TARGET"] == "Darwin":
          UNIFIED_SOURCES += [
@@ -10,7 +10,7 @@ index 8617e00a84e2..5c0bc055994c 100644
              "objc_video_capture/device_info.mm",
              "objc_video_capture/device_info_avfoundation.mm",
              "objc_video_capture/device_info_objc.mm",
-@@ -50,9 +51,10 @@ if CONFIG["MOZ_WEBRTC"]:
+@@ -51,9 +52,10 @@ if CONFIG["MOZ_WEBRTC"]:
              "-fobjc-arc",
          ]
  

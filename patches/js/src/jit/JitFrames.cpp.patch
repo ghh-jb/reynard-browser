@@ -1,5 +1,5 @@
 diff --git a/js/src/jit/JitFrames.cpp b/js/src/jit/JitFrames.cpp
-index e22a41994f38..f18d091c703b 100644
+index 3653af3a21f4..63d2a1898107 100644
 --- a/js/src/jit/JitFrames.cpp
 +++ b/js/src/jit/JitFrames.cpp
 @@ -14,7 +14,9 @@

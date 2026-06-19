@@ -1,5 +1,5 @@
 diff --git a/js/src/jit/arm64/Assembler-arm64.h b/js/src/jit/arm64/Assembler-arm64.h
-index 33e9690d37d1..e96862b25be9 100644
+index e8ef2354a79e..0a206cef0e77 100644
 --- a/js/src/jit/arm64/Assembler-arm64.h
 +++ b/js/src/jit/arm64/Assembler-arm64.h
 @@ -6,8 +6,8 @@

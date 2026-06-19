@@ -1,5 +1,5 @@
 diff --git a/modules/libpref/init/all.js b/modules/libpref/init/all.js
-index e0b2092b7a92..6c050f3941be 100644
+index d186a3c7056d..7aa7f6488697 100644
 --- a/modules/libpref/init/all.js
 +++ b/modules/libpref/init/all.js
 @@ -66,6 +66,10 @@ pref("security.crash_tracking.js_load_1.maxCrashes", 1);
@@ -13,7 +13,7 @@ index e0b2092b7a92..6c050f3941be 100644
  pref("general.config.obscure_value", 13); // for MCD .cfg files
  
  // Whether middle button click with a modifier key starts to autoscroll or
-@@ -2537,6 +2541,11 @@ pref("font.size.monospace.x-math", 13);
+@@ -2525,6 +2529,11 @@ pref("font.size.monospace.x-math", 13);
    // For non-Latin/Greek/Cyrillic scripts, there may not be any serif/sans-serif
    // distinction available, so both generics resolve to the same font.
  
@@ -25,7 +25,7 @@ index e0b2092b7a92..6c050f3941be 100644
    pref("font.name-list.emoji", "Apple Color Emoji");
  
    pref("font.name-list.serif.ar", "Al Nile");
-@@ -2635,11 +2644,11 @@ pref("font.size.monospace.x-math", 13);
+@@ -2623,11 +2632,11 @@ pref("font.size.monospace.x-math", 13);
    pref("font.name-list.monospace.x-tibt", "Menlo, Kailasa");
  
    pref("font.name-list.serif.x-unicode", "Times New Roman");

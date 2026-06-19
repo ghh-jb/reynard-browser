@@ -1,5 +1,5 @@
 diff --git a/dom/media/systemservices/CamerasChild.cpp b/dom/media/systemservices/CamerasChild.cpp
-index 12d1aceb0625..c2aa1ddf81aa 100644
+index 615eb7ddf819..d7de07071183 100644
 --- a/dom/media/systemservices/CamerasChild.cpp
 +++ b/dom/media/systemservices/CamerasChild.cpp
 @@ -297,7 +297,7 @@ mozilla::ipc::IPCResult CamerasChild::RecvReplyGetCaptureCapability(

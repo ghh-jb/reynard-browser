@@ -1,5 +1,5 @@
 diff --git a/ipc/glue/GeckoChildProcessHost.h b/ipc/glue/GeckoChildProcessHost.h
-index d3e8b775421b..a21b0d0e9beb 100644
+index 41d972963e3e..3fd2e6c79fdb 100644
 --- a/ipc/glue/GeckoChildProcessHost.h
 +++ b/ipc/glue/GeckoChildProcessHost.h
 @@ -33,7 +33,7 @@

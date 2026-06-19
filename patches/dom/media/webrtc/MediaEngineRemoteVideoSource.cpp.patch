@@ -1,5 +1,5 @@
 diff --git a/dom/media/webrtc/MediaEngineRemoteVideoSource.cpp b/dom/media/webrtc/MediaEngineRemoteVideoSource.cpp
-index e1c85aefac2d..758b507c59ab 100644
+index 1b7c214abee9..9b312d08dd52 100644
 --- a/dom/media/webrtc/MediaEngineRemoteVideoSource.cpp
 +++ b/dom/media/webrtc/MediaEngineRemoteVideoSource.cpp
 @@ -192,12 +192,13 @@ MediaEngineRemoteVideoSource::MediaEngineRemoteVideoSource(

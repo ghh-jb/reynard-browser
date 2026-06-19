@@ -1,8 +1,8 @@
 diff --git a/gfx/thebes/gfxPlatform.cpp b/gfx/thebes/gfxPlatform.cpp
-index e0b9542a13da..d7921f049d07 100644
+index 61bc156c1064..74a92a2f73f1 100644
 --- a/gfx/thebes/gfxPlatform.cpp
 +++ b/gfx/thebes/gfxPlatform.cpp
-@@ -3359,7 +3359,7 @@ void gfxPlatform::InitWebGPUConfig() {
+@@ -3377,7 +3377,7 @@ void gfxPlatform::InitWebGPUConfig() {
      featureExternalTexture.Disable(FeatureStatus::Blocklisted, message.get(),
                                     failureId);
    }

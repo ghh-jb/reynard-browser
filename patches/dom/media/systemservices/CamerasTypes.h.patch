@@ -1,5 +1,5 @@
 diff --git a/dom/media/systemservices/CamerasTypes.h b/dom/media/systemservices/CamerasTypes.h
-index 74e727612c78..8db2050a2008 100644
+index 969379521882..68a508e53bcc 100644
 --- a/dom/media/systemservices/CamerasTypes.h
 +++ b/dom/media/systemservices/CamerasTypes.h
 @@ -5,6 +5,8 @@
@@ -11,7 +11,7 @@ index 74e727612c78..8db2050a2008 100644
  #include "PerformanceRecorder.h"
  #include "ipc/EnumSerializer.h"
  
-@@ -35,6 +37,12 @@ enum class CamerasAccessStatus {
+@@ -39,6 +41,12 @@ enum class CamerasAccessStatus {
    Error,
  };
  

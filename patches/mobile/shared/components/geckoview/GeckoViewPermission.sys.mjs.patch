@@ -1,5 +1,5 @@
 diff --git a/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs b/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
-index e974c454a66d..4ab8cfff82ef 100644
+index 31789c65d0aa..444cb623375e 100644
 --- a/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
 +++ b/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
 @@ -145,7 +145,7 @@ export class GeckoViewPermission {

@@ -1,5 +1,5 @@
 diff --git a/netwerk/protocol/http/HttpConnectionMgrParent.h b/netwerk/protocol/http/HttpConnectionMgrParent.h
-index 7437e737edcd..fac9fa1f8b23 100644
+index 63b67dfcdd8a..76134b58973b 100644
 --- a/netwerk/protocol/http/HttpConnectionMgrParent.h
 +++ b/netwerk/protocol/http/HttpConnectionMgrParent.h
 @@ -6,9 +6,12 @@

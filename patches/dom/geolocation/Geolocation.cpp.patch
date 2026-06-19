@@ -1,5 +1,5 @@
 diff --git a/dom/geolocation/Geolocation.cpp b/dom/geolocation/Geolocation.cpp
-index 434072238368..f0e21632dec3 100644
+index 20a3eded3ad1..68fa2a8c0efb 100644
 --- a/dom/geolocation/Geolocation.cpp
 +++ b/dom/geolocation/Geolocation.cpp
 @@ -48,7 +48,7 @@ class nsIPrincipal;
@@ -32,37 +32,7 @@ index 434072238368..f0e21632dec3 100644
  }
  
  NS_IMETHODIMP
-@@ -410,11 +417,11 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
-     if (ContentChild* cc = ContentChild::GetSingleton()) {
-       cc->SendRequestGeolocationPermissionFromUser(
-           browsingContext,
--          [self = RefPtr{this}](GeolocationPermissionStatus aResult)
-+          [self = RefPtr{this}](GeolocationPermissionStatus)
-               MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                 self->Allow(JS::UndefinedHandleValue);
-               },
--          [self = RefPtr{this}](mozilla::ipc::ResponseRejectReason aReason)
-+          [self = RefPtr{this}](mozilla::ipc::ResponseRejectReason)
-               MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-                 self->Allow(JS::UndefinedHandleValue);
-               });
-@@ -422,11 +429,10 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
-     }
- 
-     Geolocation::ReallowWithSystemPermissionOrCancel(
--        browsingContext,
--        [self = RefPtr{this}](GeolocationPermissionStatus aResult)
--            MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
--              self->Allow(JS::UndefinedHandleValue);
--            });
-+        browsingContext, [self = RefPtr{this}](GeolocationPermissionStatus)
-+                             MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-+                               self->Allow(JS::UndefinedHandleValue);
-+                             });
-     return NS_OK;
-   }
- 
-@@ -768,7 +774,7 @@ nsresult nsGeolocationService::Init() {
+@@ -771,7 +778,7 @@ nsresult nsGeolocationService::Init() {
  #  endif
  #endif
  

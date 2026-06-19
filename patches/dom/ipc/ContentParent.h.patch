@@ -1,8 +1,8 @@
 diff --git a/dom/ipc/ContentParent.h b/dom/ipc/ContentParent.h
-index 7fc464ceb107..cbc3bd78bc4c 100644
+index 4c84f111374a..9ca57a0da5a7 100644
 --- a/dom/ipc/ContentParent.h
 +++ b/dom/ipc/ContentParent.h
-@@ -744,6 +744,9 @@ class ContentParent final : public PContentParent,
+@@ -749,6 +749,9 @@ class ContentParent final : public PContentParent,
        const OriginAttributes& aOriginAttributes, uint64_t aInnerWindowId,
        const nsCString& aPartitionKey, BlobURLDataRequestResolver&& aResolver);
  

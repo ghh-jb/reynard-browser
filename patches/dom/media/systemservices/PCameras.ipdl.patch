@@ -1,8 +1,8 @@
 diff --git a/dom/media/systemservices/PCameras.ipdl b/dom/media/systemservices/PCameras.ipdl
-index 123ed52b7270..748f8dc004b3 100644
+index fb0875701900..bb12521230da 100644
 --- a/dom/media/systemservices/PCameras.ipdl
 +++ b/dom/media/systemservices/PCameras.ipdl
-@@ -69,7 +69,8 @@ child:
+@@ -70,7 +70,8 @@ child:
    async ReplyNumberOfCapabilities(int capabilityCount);
    async ReplyAllocateCapture(int streamId);
    async ReplyGetCaptureCapability(VideoCaptureCapability cap);

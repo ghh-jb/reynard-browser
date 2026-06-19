@@ -14,10 +14,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property(class, nonatomic, readonly) JITEnabler *shared;
 
 - (BOOL)enableJITForPID:(int32_t)pid
-               hasTXM26:(BOOL)hasTXM26
+          hasTXMSupport:(BOOL)hasTXMSupport
                   error:(NSError *_Nullable *_Nullable)error
 
-NS_SWIFT_NAME(enableJIT(forPID:hasTXM26:));
+NS_SWIFT_NAME(enableJIT(forPID:hasTXMSupport:));
 
 - (void)detachAllJITSessions NS_SWIFT_NAME(detachAllJITSessions());
 

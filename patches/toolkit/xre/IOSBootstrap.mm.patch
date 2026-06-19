@@ -1,5 +1,5 @@
 diff --git a/toolkit/xre/IOSBootstrap.mm b/toolkit/xre/IOSBootstrap.mm
-index 264320aed775..755b11eeaa97 100644
+index 264320aed775..2fc51beabfae 100644
 --- a/toolkit/xre/IOSBootstrap.mm
 +++ b/toolkit/xre/IOSBootstrap.mm
 @@ -8,13 +8,24 @@
@@ -19,9 +19,9 @@ index 264320aed775..755b11eeaa97 100644
  
  #include "application.ini.h"
  
-+// For reporting TXM to ProcessExecutableMemory
++// For reporting TXM support and device OS version to ProcessExecutableMemory.
 +namespace js::jit {
-+void SetHasTXM26(bool aHasTXM26);
++void SetJITRuntimeInfo(const JITRuntimeInfo& aRuntimeInfo);
 +}
 +
  static id<SwiftGeckoViewRuntime> gRuntime;
@@ -63,7 +63,7 @@ index 264320aed775..755b11eeaa97 100644
 +    return finish(false);
 +  }
 +
-+  mozilla::widget::ChildJITStatus status = {0, 0};
++  mozilla::widget::ChildJITStatus status = {0, {0, {0, 0, 0}}};
 +  const ssize_t bytesRead = read(gJITReadySignalFd, &status, sizeof(status));
 +
 +  if (bytesRead != sizeof(status)) {
@@ -105,20 +105,19 @@ index 264320aed775..755b11eeaa97 100644
  int MainProcessInit(int aArgc, char** aArgv,
                      id<SwiftGeckoViewRuntime> aRuntime) {
    auto bootstrap = mozilla::GetBootstrap();
-@@ -85,6 +162,12 @@ void ChildProcessInit(xpc_connection_t aXpcConnection,
+@@ -85,6 +162,11 @@ void ChildProcessInit(xpc_connection_t aXpcConnection,
    xpc_connection_activate(aXpcConnection);
  }
  
-+MOZ_EXPORT __attribute__((used)) void ReportJITStatusForChild(int32_t aPid,
-+                                                              bool aEnabled,
-+                                                              bool aHasTXM26) {
-+  mozilla::widget::ReportJITStatusForChild(aPid, aEnabled, aHasTXM26);
++MOZ_EXPORT __attribute__((used)) void ReportJITStatusForChild(
++    int32_t aPid, bool aEnabled, JITRuntimeInfo aRuntimeInfo) {
++  mozilla::widget::ReportJITStatusForChild(aPid, aEnabled, aRuntimeInfo);
 +}
 +
  static int ChildProcessInitImpl(int aArgc, char** aArgv) {
    auto bootstrap = mozilla::GetBootstrap();
    if (bootstrap.isErr()) {
-@@ -111,12 +194,77 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
+@@ -111,12 +193,79 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
        /* aRandomizeSmall */ !XRE_IsContentProcess());
  #endif
  
@@ -127,17 +126,19 @@ index 264320aed775..755b11eeaa97 100644
 +  // JIT gating independent from the NSExtension bootstrap path.
 +  const bool isContentProcess = XRE_IsContentProcess();
 +  if (isContentProcess) {
-+    mozilla::widget::ChildJITStatus status = {0, 0};
++    mozilla::widget::ChildJITStatus status = {0, {0, {0, 0, 0}}};
 +    bool isJITReady = WaitForJITReadySignal(&status);
-+    js::jit::SetHasTXM26(status.hasTXM26 != 0);
++    js::jit::SetJITRuntimeInfo(status.runtimeInfo);
 +
 +    if (isJITReady) {
-+      fprintf(stderr, "[JIT]: Ready pid=%d, txm26=%u\n", getpid(),
-+              unsigned(status.hasTXM26));
++      fprintf(stderr, "[JIT]: Ready pid=%d, txm=%u, major=%d\n", getpid(),
++              unsigned(status.runtimeInfo.hasTXMSupport),
++              status.runtimeInfo.deviceOSVersion.majorVersion);
 +      fflush(stderr);
 +    } else {
-+      fprintf(stderr, "[JIT]: Failed pid=%d, txm26=%u\n", getpid(),
-+              unsigned(status.hasTXM26));
++      fprintf(stderr, "[JIT]: Failed pid=%d, txm=%u, major=%d\n", getpid(),
++              unsigned(status.runtimeInfo.hasTXMSupport),
++              status.runtimeInfo.deviceOSVersion.majorVersion);
 +      fflush(stderr);
 +      JS::DisableJitBackend();
 +    }
@@ -196,7 +197,7 @@ index 264320aed775..755b11eeaa97 100644
  void HandleBootstrapMessage(xpc_object_t aEvent) {
    // Set up stdout and stderr if they were provided.
    int fd = xpc_dictionary_dup_fd(aEvent, "stdout");
-@@ -132,6 +280,11 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+@@ -132,6 +281,11 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
      close(fd);
    }
  
@@ -208,7 +209,7 @@ index 264320aed775..755b11eeaa97 100644
    // Immediately send a reply with our pid
    auto reply = mozilla::AdoptDarwinObject(xpc_dictionary_create_reply(aEvent));
    xpc_dictionary_set_int64(reply.get(), "pid", getpid());
-@@ -198,6 +351,18 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
+@@ -198,6 +352,18 @@ void HandleBootstrapMessage(xpc_object_t aEvent) {
    }
    argv[argc] = nullptr;
  

@@ -72,20 +72,61 @@ final class JITController {
         return "\(path)/\(file)"
     }
     
-    // Also from StikDebug
-    private func hasTXM26() -> Bool {
-        guard #available(iOS 26, *) else {
-            return false
+    // Adapted from StikDebug
+    private func hasTXMSupport() -> Bool {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let hardware = withUnsafePointer(to: &systemInfo.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+                String(cString: $0)
+            }
         }
         
-        if let boot = filePath(atPath: "/System/Volumes/Preboot", withLength: 36),
-           let file = filePath(atPath: "\(boot)/boot", withLength: 96) {
-            return access("\(file)/usr/standalone/firmware/FUD/Ap,TrustedExecutionMonitor.img4", F_OK) == 0
+        if #available(iOS 27.0, *) {
+            return hardware != "iPad8,11" && hardware != "iPad8,12"
         }
         
-        return (filePath(atPath: "/private/preboot", withLength: 96).map {
-            access("\($0)/usr/standalone/firmware/FUD/Ap,TrustedExecutionMonitor.img4", F_OK) == 0
-        }) ?? false
+        if #available(iOS 26.0, *) {
+            let pattern = hardware.hasPrefix("iPad")
+            ? #"iPad(\d+),(\d+)"#
+            : #"iPhone(\d+),(\d+)"#
+            let threshold: Double = hardware.hasPrefix("iPad") ? 14.5 : 14.2
+            
+            guard let regex = try? NSRegularExpression(pattern: pattern),
+                  let match = regex.firstMatch(
+                    in: hardware,
+                    range: NSRange(hardware.startIndex..., in: hardware)
+                  ),
+                  let majorRange = Range(match.range(at: 1), in: hardware),
+                  let minorRange = Range(match.range(at: 2), in: hardware),
+                  let major = Double(hardware[majorRange]),
+                  let minor = Double(hardware[minorRange])
+            else {
+                return false
+            }
+            
+            let divisor = pow(10.0, Double(String(Int(minor)).count))
+            let ver = major + (minor / divisor)
+            return ver >= threshold
+        }
+        
+        return false
+    }
+    
+    private func newDeviceOSVersion() -> DeviceOSVersion {
+        let operatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
+        return DeviceOSVersion(
+            majorVersion: Int32(operatingSystemVersion.majorVersion),
+            minorVersion: Int32(operatingSystemVersion.minorVersion),
+            patchVersion: Int32(operatingSystemVersion.patchVersion)
+        )
+    }
+    
+    private func newJITRuntimeInfo() -> JITRuntimeInfo {
+        return JITRuntimeInfo(
+            hasTXMSupport: hasTXMSupport() ? 1 : 0,
+            deviceOSVersion: newDeviceOSVersion()
+        )
     }
     
     func childProcessDidStart(pid: Int32, processType: String) {
@@ -94,17 +135,17 @@ final class JITController {
         }
         
         guard !isJITLessModeActive, !hasHandledFailure else {
-            ReportJITStatusForChild(pid, false, hasTXM26())
+            ReportJITStatusForChild(pid, false, newJITRuntimeInfo())
             return
         }
         
         guard usePtraceJIT() || Prefs.JITSettings.isJITEnabled else {
-            ReportJITStatusForChild(pid, false, hasTXM26())
+            ReportJITStatusForChild(pid, false, newJITRuntimeInfo())
             return
         }
         
         guard shouldAttach(to: processType) else {
-            ReportJITStatusForChild(pid, false, hasTXM26())
+            ReportJITStatusForChild(pid, false, newJITRuntimeInfo())
             return
         }
         
@@ -120,13 +161,13 @@ final class JITController {
     
     private func attachToProcess(pid: Int32) {
         do {
-            try JITEnabler.shared.enableJIT(forPID: pid, hasTXM26: hasTXM26())
+            try JITEnabler.shared.enableJIT(forPID: pid, hasTXMSupport: hasTXMSupport())
             cancelPreflightWatchdog(for: pid)
-            ReportJITStatusForChild(pid, true, hasTXM26())
+            ReportJITStatusForChild(pid, true, newJITRuntimeInfo())
         } catch {
             let nsError = error as NSError
             cancelPreflightWatchdog(for: pid)
-            ReportJITStatusForChild(pid, false, hasTXM26())
+            ReportJITStatusForChild(pid, false, newJITRuntimeInfo())
             handleJITFailure(error: nsError)
         }
     }
@@ -142,7 +183,7 @@ final class JITController {
                 return
             }
             
-            ReportJITStatusForChild(pid, false, hasTXM26())
+            ReportJITStatusForChild(pid, false, newJITRuntimeInfo())
             self.handleJITFailure(error: NSError(domain: "Reynard.JIT", code: Int(ETIMEDOUT), userInfo: nil))
         }
         
@@ -319,7 +360,7 @@ final class JITController {
         }
         
         if let pid = (notification.userInfo?["pid"] as? NSNumber)?.int32Value, pid > 0 {
-            ReportJITStatusForChild(pid, false, hasTXM26())
+            ReportJITStatusForChild(pid, false, newJITRuntimeInfo())
         }
         
         DispatchQueue.main.async {

@@ -1,5 +1,5 @@
 diff --git a/ipc/glue/GeckoChildProcessHost.cpp b/ipc/glue/GeckoChildProcessHost.cpp
-index 8bfc08afb169..827a6f0c6199 100644
+index 8bfc08afb169..785a90cc36a8 100644
 --- a/ipc/glue/GeckoChildProcessHost.cpp
 +++ b/ipc/glue/GeckoChildProcessHost.cpp
 @@ -32,6 +32,13 @@
@@ -25,7 +25,7 @@ index 8bfc08afb169..827a6f0c6199 100644
  using mozilla::MonitorAutoLock;
  using mozilla::Preferences;
  using mozilla::StaticMutexAutoLock;
-@@ -127,13 +136,53 @@ extern char** environ;
+@@ -127,13 +136,54 @@ extern char** environ;
  namespace mozilla {
  namespace ipc {
  
@@ -40,9 +40,10 @@ index 8bfc08afb169..827a6f0c6199 100644
 +
 +namespace widget {
 +
-+void ReportJITStatusForChild(int32_t aPid, bool aEnabled, bool aHasTXM26) {
++void ReportJITStatusForChild(int32_t aPid, bool aEnabled,
++                             JITRuntimeInfo aRuntimeInfo) {
 +  UniqueFileHandle writePipe;
-+  
++
 +  {
 +    StaticMutexAutoLock lock(ipc::sChildJITPipeMutex);
 +    auto it = ipc::sChildJITPipeWriters.find(aPid);
@@ -59,7 +60,7 @@ index 8bfc08afb169..827a6f0c6199 100644
 +
 +  const ChildJITStatus status = {
 +      uint8_t(aEnabled ? 1 : 0),
-+      uint8_t(aHasTXM26 ? 1 : 0),
++      aRuntimeInfo,
 +  };
 +  write(writePipe.get(), &status, sizeof(status));
 +}
@@ -80,7 +81,7 @@ index 8bfc08afb169..827a6f0c6199 100644
    DarwinObjectPtr<xpc_connection_t> mXPCConnection;
    UniqueBEProcessCapabilityGrant mForegroundCapabilityGrant;
  #endif
-@@ -354,6 +403,7 @@ class IosProcessLauncher : public PosixProcessLauncher {
+@@ -354,6 +404,7 @@ class IosProcessLauncher : public PosixProcessLauncher {
    virtual RefPtr<ProcessLaunchPromise> DoLaunch() override;
  
    DarwinObjectPtr<xpc_object_t> mBootstrapMessage;
@@ -88,7 +89,7 @@ index 8bfc08afb169..827a6f0c6199 100644
  };
  typedef IosProcessLauncher ProcessLauncher;
  #  else
-@@ -434,8 +484,8 @@ GeckoChildProcessHost::~GeckoChildProcessHost() {
+@@ -434,8 +485,8 @@ GeckoChildProcessHost::~GeckoChildProcessHost() {
      if (mForegroundCapabilityGrant) {
        mForegroundCapabilityGrant.reset();
      }
@@ -99,7 +100,7 @@ index 8bfc08afb169..827a6f0c6199 100644
      }
      if (mXPCConnection) {
        xpc_connection_cancel(mXPCConnection.get());
-@@ -787,7 +837,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
+@@ -787,7 +838,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
                      this->mChildTask = aResults.mChildTask;
  #endif
  #ifdef XP_IOS
@@ -108,7 +109,7 @@ index 8bfc08afb169..827a6f0c6199 100644
                      this->mXPCConnection = aResults.mXPCConnection;
                      this->mForegroundCapabilityGrant =
                          std::move(aResults.mForegroundCapabilityGrant);
-@@ -935,6 +985,7 @@ bool GeckoChildProcessHost::InitializeChannel(
+@@ -935,6 +986,7 @@ bool GeckoChildProcessHost::InitializeChannel(
  
  void GeckoChildProcessHost::SetAlreadyDead() {
    mozilla::AutoWriteLock handleLock(mHandleLock);
@@ -116,7 +117,7 @@ index 8bfc08afb169..827a6f0c6199 100644
    if (mChildProcessHandle &&
        mChildProcessHandle != base::kInvalidProcessHandle) {
      base::CloseProcessHandle(mChildProcessHandle);
-@@ -943,6 +994,30 @@ void GeckoChildProcessHost::SetAlreadyDead() {
+@@ -943,6 +995,30 @@ void GeckoChildProcessHost::SetAlreadyDead() {
    mChildProcessHandle = 0;
  }
  
@@ -147,7 +148,7 @@ index 8bfc08afb169..827a6f0c6199 100644
  void BaseProcessLauncher::GetChildLogName(const char* origLogName,
                                            nsACString& buffer) {
  #ifdef XP_WIN
-@@ -1391,20 +1466,26 @@ Result<Ok, LaunchError> IosProcessLauncher::DoSetup() {
+@@ -1391,20 +1467,26 @@ Result<Ok, LaunchError> IosProcessLauncher::DoSetup() {
  }
  
  RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
@@ -183,7 +184,7 @@ index 8bfc08afb169..827a6f0c6199 100644
    for (auto& [envKey, envValue] : mLaunchOptions->env_map) {
      xpc_dictionary_set_string(environDict.get(), envKey.c_str(),
                                envValue.c_str());
-@@ -1417,7 +1498,7 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
+@@ -1417,7 +1499,7 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
    xpc_dictionary_set_fd(bootstrapMessage.get(), "stderr", STDERR_FILENO);
  
    DarwinObjectPtr<xpc_object_t> argsArray =
@@ -192,7 +193,7 @@ index 8bfc08afb169..827a6f0c6199 100644
    for (auto& argv : mChildArgs.mArgs) {
      xpc_array_set_string(argsArray.get(), XPC_ARRAY_APPEND, argv.c_str());
    }
-@@ -1425,7 +1506,7 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
+@@ -1425,7 +1507,7 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
    xpc_dictionary_set_value(bootstrapMessage.get(), "argv", argsArray.get());
  
    DarwinObjectPtr<xpc_object_t> fdsArray =
@@ -201,7 +202,7 @@ index 8bfc08afb169..827a6f0c6199 100644
    for (auto& file : mChildArgs.mFiles) {
      xpc_array_set_fd(fdsArray.get(), XPC_ARRAY_APPEND, file.get());
    }
-@@ -1433,12 +1514,12 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
+@@ -1433,12 +1515,12 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
    xpc_dictionary_set_value(bootstrapMessage.get(), "fds", fdsArray.get());
  
    DarwinObjectPtr<xpc_object_t> sendRightsArray =
@@ -216,7 +217,7 @@ index 8bfc08afb169..827a6f0c6199 100644
      xpc_dictionary_set_mach_send(sendRightWrapper.get(), "port",
                                   sendRight.get());
      xpc_array_set_value(sendRightsArray.get(), XPC_ARRAY_APPEND,
-@@ -1450,34 +1531,36 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
+@@ -1450,34 +1532,36 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
                             sendRightsArray.get());
  
    auto promise = MakeRefPtr<ProcessLaunchPromise::Private>(__func__);
@@ -272,7 +273,7 @@ index 8bfc08afb169..827a6f0c6199 100644
  
      // Send our bootstrap message to the content and wait for it to reply with
      // the task port before resolving.
-@@ -1487,22 +1570,28 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
+@@ -1487,22 +1571,28 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
      xpc_connection_send_message_with_reply(
          self->mResults.mXPCConnection.get(), bootstrapMessage.get(), nullptr,
          ^(xpc_object_t reply) {
@@ -310,7 +311,7 @@ index 8bfc08afb169..827a6f0c6199 100644
              return;
            }
  
-@@ -1515,10 +1604,30 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
+@@ -1515,10 +1605,30 @@ RefPtr<ProcessLaunchPromise> IosProcessLauncher::DoLaunch() {
            // this point, so we should be able to trust it.
            pid_t pid =
                static_cast<pid_t>(xpc_dictionary_get_int64(reply, "pid"));
@@ -327,8 +328,8 @@ index 8bfc08afb169..827a6f0c6199 100644
 +          {
 +            StaticMutexAutoLock lock(sChildJITPipeMutex);
 +            sChildJITPipeWriters.insert_or_assign(
-+              static_cast<int32_t>(pid),
-+              std::move(self->mJITReadySignalWriteFd));
++                static_cast<int32_t>(pid),
++                std::move(self->mJITReadySignalWriteFd));
 +          }
 +
 +          // REYNARD: Notify child process start

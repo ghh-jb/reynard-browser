@@ -44,7 +44,7 @@
     return self;
 }
 
-- (BOOL)enableJITForPID:(int32_t)pid hasTXM26:(BOOL)hasTXM26 error:(NSError **)error {
+- (BOOL)enableJITForPID:(int32_t)pid hasTXMSupport:(BOOL)hasTXMSupport error:(NSError **)error {
     // TrollStore or jailbroken devices
     if (getEntitlementValue(@"com.apple.private.security.no-sandbox")) {
         NSBundle *bundle = NSBundle.mainBundle;
@@ -139,7 +139,7 @@
         
         logger([NSString stringWithFormat:@"Attach response for pid %d: %@", pid, attachResponse.length > 0 ? @"<stop packet>" : @"<no response>"]);
         
-        if (hasTXM26) {
+        if (hasTXMSupport) {
             registerJITEndpointForPID(pid, @"10.7.0.1", 49152);
             
             DebugSession *persistentSession = malloc(sizeof(*persistentSession));

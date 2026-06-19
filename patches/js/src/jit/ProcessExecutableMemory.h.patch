@@ -1,15 +1,16 @@
 diff --git a/js/src/jit/ProcessExecutableMemory.h b/js/src/jit/ProcessExecutableMemory.h
-index 4a08d4a6238f..bc9791b275d4 100644
+index 4a08d4a6238f..2ca5fbaa0f29 100644
 --- a/js/src/jit/ProcessExecutableMemory.h
 +++ b/js/src/jit/ProcessExecutableMemory.h
-@@ -7,16 +7,16 @@
+@@ -7,16 +7,18 @@
  
  #include "util/Poison.h"
  
 -#ifdef XP_IOS
 -#  include <BrowserEngineCore/BEMemory.h>
 -#endif
--
++struct JITRuntimeInfo;
+ 
  namespace js {
  namespace jit {
  
@@ -24,7 +25,7 @@ index 4a08d4a6238f..bc9791b275d4 100644
  static const size_t MaxCodeBytesPerProcess = 140 * 1024 * 1024;
  #else
  // This is the largest number which satisfies various alignment static
-@@ -77,10 +77,26 @@ enum class MustFlushICache { No, Yes };
+@@ -77,10 +79,26 @@ enum class MustFlushICache { No, Yes };
                                            ProtectionSetting protection,
                                            MustFlushICache flushICache);
  
@@ -47,11 +48,11 @@ index 4a08d4a6238f..bc9791b275d4 100644
  // executable memory region.
  [[nodiscard]] extern bool InitProcessExecutableMemory();
  extern void ReleaseProcessExecutableMemory();
-+extern void SetHasTXM26(bool aHasTXM26);
++extern void SetJITRuntimeInfo(const JITRuntimeInfo& aRuntimeInfo);
  
  // Allocate/deallocate executable pages.
  extern void* AllocateExecutableMemory(size_t bytes,
-@@ -123,22 +139,14 @@ class MOZ_RAII AutoMarkJitCodeWritableForThread {
+@@ -123,22 +141,14 @@ class MOZ_RAII AutoMarkJitCodeWritableForThread {
  
   public:
    MOZ_ALWAYS_INLINE_EVEN_DEBUG AutoMarkJitCodeWritableForThread() {

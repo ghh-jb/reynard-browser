@@ -8,6 +8,8 @@
 import Foundation
 import MediaPlayer
 
+// MARK: - Media Session Models
+
 public struct MediaSessionMetadata {
     public let title: String?
     public let artist: String?
@@ -37,6 +39,8 @@ public struct MediaSessionFeatures: OptionSet {
     public static let muteAudio = MediaSessionFeatures(rawValue: 1 << 9)
 }
 
+// MARK: - Media Session Delegate
+
 public protocol MediaSessionDelegate: AnyObject {
     func onActivated(session: GeckoSession)
     func onDeactivated(session: GeckoSession)
@@ -58,6 +62,8 @@ public extension MediaSessionDelegate {
     func onFeatures(session: GeckoSession, features: MediaSessionFeatures) {}
     func onPositionState(session: GeckoSession, state: MediaSessionPositionState) {}
 }
+
+// MARK: - Media Session Commands
 
 // Allows the host app to send playback control commands to Gecko.
 public class MediaSession {
@@ -103,6 +109,8 @@ public class MediaSession {
     }
 }
 
+// MARK: - Media Session Events
+
 private enum MediaSessionEvent: String, CaseIterable {
     case activated = "GeckoView:MediaSession:Activated"
     case deactivated = "GeckoView:MediaSession:Deactivated"
@@ -113,6 +121,8 @@ private enum MediaSessionEvent: String, CaseIterable {
     case features = "GeckoView:MediaSession:Features"
     case positionState = "GeckoView:MediaSession:PositionState"
 }
+
+// MARK: - Media Session Handler
 
 func newMediaSessionHandler(_ session: GeckoSession) -> GeckoSessionHandler {
     GeckoSessionHandler(
@@ -134,13 +144,13 @@ func newMediaSessionHandler(_ session: GeckoSession) -> GeckoSessionHandler {
             delegate?.onDeactivated(session: session)
             
         case .metadata:
-            if let metaDict = message?["metadata"] as? [String: Any] {
-                let artworkUrl = (metaDict["artwork"] as? [[String: Any]])?.first?["src"] as? String
+            if let metadataPayload = message?["metadata"] as? [String: Any] {
+                let artworkURL = (metadataPayload["artwork"] as? [[String: Any]])?.first?["src"] as? String
                 let metadata = MediaSessionMetadata(
-                    title: metaDict["title"] as? String,
-                    artist: metaDict["artist"] as? String,
-                    album: metaDict["album"] as? String,
-                    artworkUrl: artworkUrl
+                    title: metadataPayload["title"] as? String,
+                    artist: metadataPayload["artist"] as? String,
+                    album: metadataPayload["album"] as? String,
+                    artworkUrl: artworkURL
                 )
                 delegate?.onMetadata(session: session, metadata: metadata)
             }
@@ -155,26 +165,26 @@ func newMediaSessionHandler(_ session: GeckoSession) -> GeckoSessionHandler {
             delegate?.onPlaybackNone(session: session)
             
         case .features:
-            let featDict = message?["features"] as? [String: Any] ?? [:]
+            let featurePayload = message?["features"] as? [String: Any] ?? [:]
             var features = MediaSessionFeatures()
-            if featDict["play"] as? Bool == true { features.insert(.play) }
-            if featDict["pause"] as? Bool == true { features.insert(.pause) }
-            if featDict["stop"] as? Bool == true { features.insert(.stop) }
-            if featDict["seekforward"] as? Bool == true { features.insert(.seekForward) }
-            if featDict["seekbackward"] as? Bool == true { features.insert(.seekBackward) }
-            if featDict["seekto"] as? Bool == true { features.insert(.seekTo) }
-            if featDict["skipad"] as? Bool == true { features.insert(.skipAd) }
-            if featDict["nexttrack"] as? Bool == true { features.insert(.nextTrack) }
-            if featDict["previoustrack"] as? Bool == true { features.insert(.prevTrack) }
-            if featDict["muteaudio"] as? Bool == true { features.insert(.muteAudio) }
+            if featurePayload["play"] as? Bool == true { features.insert(.play) }
+            if featurePayload["pause"] as? Bool == true { features.insert(.pause) }
+            if featurePayload["stop"] as? Bool == true { features.insert(.stop) }
+            if featurePayload["seekforward"] as? Bool == true { features.insert(.seekForward) }
+            if featurePayload["seekbackward"] as? Bool == true { features.insert(.seekBackward) }
+            if featurePayload["seekto"] as? Bool == true { features.insert(.seekTo) }
+            if featurePayload["skipad"] as? Bool == true { features.insert(.skipAd) }
+            if featurePayload["nexttrack"] as? Bool == true { features.insert(.nextTrack) }
+            if featurePayload["previoustrack"] as? Bool == true { features.insert(.prevTrack) }
+            if featurePayload["muteaudio"] as? Bool == true { features.insert(.muteAudio) }
             delegate?.onFeatures(session: session, features: features)
             
         case .positionState:
-            if let stateDict = message?["state"] as? [String: Any] {
+            if let positionPayload = message?["state"] as? [String: Any] {
                 let positionState = MediaSessionPositionState(
-                    duration: stateDict["duration"] as? Double ?? 0,
-                    playbackRate: stateDict["playbackRate"] as? Double ?? 1,
-                    position: stateDict["position"] as? Double ?? 0
+                    duration: positionPayload["duration"] as? Double ?? 0,
+                    playbackRate: positionPayload["playbackRate"] as? Double ?? 1,
+                    position: positionPayload["position"] as? Double ?? 0
                 )
                 delegate?.onPositionState(session: session, state: positionState)
             }

@@ -7,8 +7,6 @@
 
 import Foundation
 import GeckoView
-import AVFoundation
-import CoreLocation
 import SQLite3
 
 enum SitePermission: String, CaseIterable {
@@ -123,10 +121,12 @@ final class SitePermissionStore {
     
     private let fileManager: FileManager
     private let storage: StorageURLs
-    private let stateQueue = DispatchQueue(label: "com.minh-ton.site-permission-store", qos: .utility)
+    private let stateQueue = DispatchQueue(label: "com.minh-ton.Reynard.SitePermissionStore.Queue", qos: .utility)
     private var database: OpaquePointer?
     private var privateActions: [ObjectIdentifier: [String: [SitePermission: SitePermissionAction]]] = [:]
     private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+    
+    // MARK: - Lifecycle
     
     init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
@@ -163,17 +163,19 @@ final class SitePermissionStore {
         }
     }
     
-    func action(for permission: SitePermission, host: String, session: GeckoSession) -> SitePermissionAction {
-        let host = normalizedHost(host)
+    // MARK: - Permissions
+    
+    func resolvedAction(for permission: SitePermission, host: String, session: GeckoSession) -> SitePermissionAction {
+        let host = URLUtils.normalizedHost(host) ?? ""
         return stateQueue.sync {
             let resolvedAction: SitePermissionAction
             if session.isPrivateMode {
-                resolvedAction = privateActions[ObjectIdentifier(session)]?[host]?[permission] ?? defaultAction(for: permission)
+                resolvedAction = privateActions[ObjectIdentifier(session)]?[host]?[permission] ?? SiteSettingsUtils.defaultAction(for: permission)
             } else {
-                resolvedAction = actionLocked(for: permission, host: host) ?? defaultAction(for: permission)
+                resolvedAction = actionLocked(for: permission, host: host) ?? SiteSettingsUtils.defaultAction(for: permission)
             }
             
-            if isPermissionForcedBlocked(permission) {
+            if SiteSettingsUtils.isSystemDisabled(permission) {
                 return .blocked
             }
             
@@ -181,22 +183,22 @@ final class SitePermissionStore {
         }
     }
     
-    func setAction(_ action: SitePermissionAction, for permission: SitePermission, host: String, session: GeckoSession) {
-        let host = normalizedHost(host)
+    func scheduleActionUpdate(_ action: SitePermissionAction, for permission: SitePermission, host: String, session: GeckoSession) {
+        let host = URLUtils.normalizedHost(host) ?? ""
         stateQueue.async {
             self.setActionLocked(action, for: permission, host: host, session: session)
         }
     }
     
-    func setActionAndWait(_ action: SitePermissionAction, for permission: SitePermission, host: String, session: GeckoSession) {
-        let host = normalizedHost(host)
+    func updateAction(_ action: SitePermissionAction, for permission: SitePermission, host: String, session: GeckoSession) {
+        let host = URLUtils.normalizedHost(host) ?? ""
         stateQueue.sync {
             self.setActionLocked(action, for: permission, host: host, session: session)
         }
     }
     
-    func removeActionAndWait(for permission: SitePermission, host: String, session: GeckoSession) {
-        let host = normalizedHost(host)
+    func removeAction(for permission: SitePermission, host: String, session: GeckoSession) {
+        let host = URLUtils.normalizedHost(host) ?? ""
         stateQueue.sync {
             if session.isPrivateMode {
                 self.removePrivateActionLocked(for: permission, host: host, session: session)
@@ -206,7 +208,7 @@ final class SitePermissionStore {
         }
     }
     
-    func removePrivateTabPerms(for session: GeckoSession) {
+    func removePrivateActions(for session: GeckoSession) {
         guard session.isPrivateMode else {
             return
         }
@@ -216,18 +218,20 @@ final class SitePermissionStore {
         }
     }
     
-    func hosts(for permission: SitePermission, action: SitePermissionAction) -> [(host: String, updatedAt: Date)] {
+    func storedHosts(for permission: SitePermission, action: SitePermissionAction) -> [(host: String, updatedAt: Date)] {
         return stateQueue.sync {
             hostsLocked(for: permission, action: action)
         }
     }
     
-    func removePersistedActionAndWait(for permission: SitePermission, host: String) {
-        let host = normalizedHost(host)
+    func removePersistedAction(for permission: SitePermission, host: String) {
+        let host = URLUtils.normalizedHost(host) ?? ""
         stateQueue.sync {
             _ = deleteActionLocked(for: permission, host: host)
         }
     }
+    
+    // MARK: - Storage
     
     private func prepareStorageLocked() {
         try? fileManager.createDirectory(at: storage.directoryURL, withIntermediateDirectories: true)
@@ -279,6 +283,8 @@ final class SitePermissionStore {
         
         _ = executeLocked(sql)
     }
+    
+    // MARK: - Permission Records
     
     private func actionLocked(for permission: SitePermission, host: String) -> SitePermissionAction? {
         guard let statement = prepareStatementLocked(
@@ -368,59 +374,6 @@ final class SitePermissionStore {
         return sqlite3_step(statement) == SQLITE_DONE
     }
     
-    private func defaultAction(for permission: SitePermission) -> SitePermissionAction {
-        switch permission {
-        case .autoplay:
-            return Prefs.SitePermissionSettings.defaultAutoplayPermission
-        case .camera:
-            return Prefs.SitePermissionSettings.defaultCameraPermission
-        case .microphone:
-            return Prefs.SitePermissionSettings.defaultMicrophonePermission
-        case .location:
-            return Prefs.SitePermissionSettings.defaultLocationPermission
-        case .persistentStorage:
-            return Prefs.SitePermissionSettings.defaultPersistentStoragePermission
-        case .crossOriginStorageAccess:
-            return Prefs.SitePermissionSettings.defaultCrossOriginStorageAccessPermission
-        case .localDeviceAccess:
-            return Prefs.SitePermissionSettings.defaultLocalDeviceAccessPermission
-        case .localNetworkAccess:
-            return Prefs.SitePermissionSettings.defaultLocalNetworkAccessPermission
-        case .notification:
-            return .askToAllow
-        case .mediaKeySystemAccess:
-            return .askToAllow
-        }
-    }
-    
-    private func isPermissionForcedBlocked(_ permission: SitePermission) -> Bool {
-        switch permission {
-        case .camera:
-            return isCameraPermissionDisabled()
-        case .microphone:
-            return isMicrophonePermissionDisabled()
-        case .location:
-            return isLocationPermissionDisabled()
-        default:
-            return false
-        }
-    }
-    
-    private func isCameraPermissionDisabled() -> Bool {
-        let status = AVCaptureDevice.authorizationStatus(for: .video)
-        return status == .restricted || status == .denied
-    }
-    
-    private func isMicrophonePermissionDisabled() -> Bool {
-        let status = AVCaptureDevice.authorizationStatus(for: .audio)
-        return status == .restricted || status == .denied
-    }
-    
-    private func isLocationPermissionDisabled() -> Bool {
-        let status = CLLocationManager.authorizationStatus()
-        return status == .restricted || status == .denied
-    }
-    
     private func hostsLocked(for permission: SitePermission, action: SitePermissionAction) -> [(host: String, updatedAt: Date)] {
         guard let statement = prepareStatementLocked(
             """
@@ -451,18 +404,7 @@ final class SitePermissionStore {
         return entries
     }
     
-    private func normalizedHost(_ host: String?) -> String? {
-        guard let host = host?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
-              !host.isEmpty else {
-            return nil
-        }
-        
-        return host
-    }
-    
-    private func normalizedHost(_ host: String) -> String {
-        normalizedHost(Optional(host)) ?? ""
-    }
+    // MARK: - SQLite
     
     private func prepareStatementLocked(_ sql: String) -> OpaquePointer? {
         guard let database else {

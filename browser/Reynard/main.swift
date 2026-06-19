@@ -18,16 +18,16 @@ private func configureUnsandboxedAppDataDirectories() {
     ).first else {
         return
     }
-
+    
     guard let bundleIdentifier = Bundle.main.bundleIdentifier else {
         return
     }
-
+    
     let appDataDirectory = cachesDirectory
         .appendingPathComponent(bundleIdentifier, isDirectory: true)
         .appendingPathComponent(".mozilla", isDirectory: true)
         .appendingPathComponent("firefox", isDirectory: true)
-
+    
     do {
         try FileManager.default.createDirectory(
             at: appDataDirectory,
@@ -36,12 +36,12 @@ private func configureUnsandboxedAppDataDirectories() {
     } catch {
         return
     }
-
+    
     setenv("MOZ_APP_DATA", appDataDirectory.path, 1)
     setenv("MOZ_LOCAL_APP_DATA", appDataDirectory.path, 1)
 }
 
-MigrationController.shared.run()
+UserDataMigration.shared.run()
 JITController.shared.start()
 if #unavailable(iOS 14.0),
    getEntitlementValue("com.apple.private.security.no-sandbox") {

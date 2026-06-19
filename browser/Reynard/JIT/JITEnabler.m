@@ -6,10 +6,10 @@
 //
 
 #import "JITEnabler.h"
+#import "JITErrors.h"
 #import "JITSupport.h"
 #import "JITUtils.h"
-#import "TSRoot.h"
-#import "TSUtils.h"
+#import "Utils.h"
 #include <sys/stat.h>
 #include <errno.h>
 
@@ -38,7 +38,7 @@
     self = [super init];
     if (self) {
         _sharedProvider = NULL;
-        _providerQueue = dispatch_queue_create("me.minh-ton.jit.enabler.provider", DISPATCH_QUEUE_SERIAL);
+        _providerQueue = dispatch_queue_create("com.minh-ton.Reynard.JITEnabler.ProviderQueue", DISPATCH_QUEUE_SERIAL);
         _didEnsureDDIMounted = NO;
     }
     return self;
@@ -167,36 +167,6 @@
             freeDebugSession(&session);
         }
         
-        return YES;
-    } else {
-        DeviceProvider *provider = [self getProvider:error];
-        if (!provider) return NO;
-        
-        uint16_t debugPort = 0;
-        if (!startLegacyDebugService(provider, &debugPort, error)) return NO;
-        
-        LegacyDebugConnection connection = {
-            .socketFD = -1,
-            .sslContext = NULL,
-        };
-        
-        if (!connectLegacyDebugSocket(@"10.7.0.1", debugPort, &connection, error)) {
-            return NO;
-        }
-        
-        NSString *attachResponse = nil;
-        NSString *attachCommand = [NSString stringWithFormat:@"vAttach;%08X", (uint32_t)pid];
-        if (!sendLegacyDebugCommand(&connection, attachCommand, &attachResponse, error)) {
-            closeLegacyDebugConnection(&connection);
-            return NO;
-        }
-        
-        logger([NSString stringWithFormat:@"Legacy attach response for pid %d: %@", pid, attachResponse.length > 0 ? attachResponse : @"<no response>"]);
-        
-        // detach immediately
-        if (!detachLegacyDebuggerSession(&connection, pid)) {
-            closeLegacyDebugConnection(&connection);
-        }
         return YES;
     }
     

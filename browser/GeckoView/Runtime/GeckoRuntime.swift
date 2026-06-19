@@ -23,7 +23,7 @@ class GeckoRuntimeImpl: NSObject, SwiftGeckoViewRuntime {
         updateJetsamControl(pid)
         
         NotificationCenter.default.post(
-            name: Notification.Name("GeckoRuntimeChildProcessDidStart"),
+            name: Notification.Name("GeckoRuntime.ChildProcessDidStart"),
             object: nil,
             userInfo: [
                 "pid": NSNumber(value: pid),

@@ -11,8 +11,11 @@ protocol SidebarContentController: AnyObject {
     var sidebarContentViewController: UIViewController { get }
     var sidebarContentChrome: BrowserChrome { get }
     var sidebarContentLayout: BrowserLayout { get }
+    var isCompactPadLayout: Bool { get }
+    var isSidebarOverlayLayout: Bool { get }
     
     func updateBrowserLayout(animated: Bool, duration: TimeInterval)
+    func updateBrowserLayoutIfNeeded(animated: Bool, duration: TimeInterval)
     func openExternalURL(_ url: URL)
 }
 
@@ -31,6 +34,7 @@ final class SidebarCoordinator {
     private weak var host: SidebarCoordinatorHost?
     private let canHostSidebar: Bool
     private var sidebar: SidebarViewController?
+    private var overridesSidebarSizeClass: Bool?
     private var preFullscreenVisibility: Bool?
     
     var statusBarController: UIViewController? {
@@ -85,7 +89,28 @@ final class SidebarCoordinator {
         ])
         sidebar.didMove(toParent: host.sidebarHostViewController)
         self.sidebar = sidebar
+        updateSidebarSizeClassOverride()
         return true
+    }
+    
+    // MARK: - Trait Overrides
+    
+    private func updateSidebarSizeClassOverride() {
+        guard let host,
+              let sidebar else {
+            return
+        }
+        
+        let shouldOverrideSidebarSizeClass = !(contentBrowser?.isCompactPadLayout ?? UIApplication.shared.shouldUseCompactPadLayout)
+        guard overridesSidebarSizeClass != shouldOverrideSidebarSizeClass else {
+            return
+        }
+        
+        overridesSidebarSizeClass = shouldOverrideSidebarSizeClass
+        let sidebarSizeClassOverride = shouldOverrideSidebarSizeClass
+        ? UITraitCollection(horizontalSizeClass: .regular)
+        : nil
+        host.sidebarHostViewController.setOverrideTraitCollection(sidebarSizeClassOverride, forChild: sidebar)
     }
     
     // MARK: - Visibility
@@ -123,6 +148,7 @@ final class SidebarCoordinator {
             return false
         }
         
+        updateSidebarSizeClassOverride()
         refreshVisibility()
         return true
     }
@@ -158,6 +184,7 @@ final class SidebarCoordinator {
     }
     
     func updateContentLayout(animated: Bool, duration: TimeInterval) {
+        updateSidebarSizeClassOverride()
         contentBrowser?.updateBrowserLayout(animated: animated, duration: duration)
     }
     

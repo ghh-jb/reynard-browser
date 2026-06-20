@@ -28,6 +28,7 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
     }
     
     var showChromeSidebarButton: Bool {
+        updateSplitBehavior()
         guard sidebarVisible else {
             return true
         }
@@ -78,6 +79,7 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
     
     override func viewWillLayoutSubviews() {
         super.viewWillLayoutSubviews()
+        updateContentLayoutIfNeeded(animated: false, duration: UX.layoutAnimationDuration)
         updateSplitBehavior()
     }
     
@@ -156,6 +158,11 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
     
     @objc private func applicationDidBecomeActive() {
         refreshVisibility()
+        menuController.refreshSidebarButton()
+    }
+    
+    @objc private func applicationWillResignActive() {
+        menuController.refreshSidebarButton()
     }
     
     // MARK: - View Setup
@@ -189,7 +196,15 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
             name: UIApplication.didBecomeActiveNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationWillResignActive),
+            name: UIApplication.willResignActiveNotification,
+            object: nil
+        )
     }
+    
+    // MARK: - Layout
     
     private func updateSplitBehavior() {
         guard #available(iOS 14.0, *) else {
@@ -198,7 +213,7 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
         
         let browserLayout = contentController.sidebarContentLayout
         let shouldOverlay = browserLayout.orientation == .portrait
-        || (UIApplication.shared.isSidebarOverlayWidth && browserLayout.chromeMode != .compact)
+        || (contentController.isSidebarOverlayLayout && browserLayout.chromeMode != .compact)
         let splitBehavior: UISplitViewController.SplitBehavior = shouldOverlay ? .overlay : .tile
         
         if preferredSplitBehavior != splitBehavior {
@@ -210,5 +225,13 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
         if contentController.sidebarContentViewController.isViewLoaded {
             contentController.updateBrowserLayout(animated: false, duration: UX.layoutAnimationDuration)
         }
+    }
+    
+    private func updateContentLayoutIfNeeded(animated: Bool, duration: TimeInterval) {
+        guard contentController.sidebarContentViewController.isViewLoaded else {
+            return
+        }
+        
+        contentController.updateBrowserLayoutIfNeeded(animated: animated, duration: duration)
     }
 }

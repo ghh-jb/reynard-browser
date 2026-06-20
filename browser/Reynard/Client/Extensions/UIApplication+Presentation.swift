@@ -18,10 +18,30 @@ extension UIApplication {
             return false
         }
         
-        let screenWidth = max(window.screen.bounds.width, window.screen.bounds.height)
-        let windowWidth = window.bounds.width
+        return isSidebarOverlayWidth(forWindowWidth: window.bounds.width, screen: window.screen)
+    }
+    
+    var shouldUseCompactPadLayout: Bool {
+        guard
+            let windowScene = connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive }),
+            let window = windowScene.windows.first(where: { $0.isKeyWindow })
+        else {
+            return false
+        }
         
+        return shouldUseCompactPadLayout(forWindowWidth: window.bounds.width, screen: window.screen)
+    }
+    
+    func isSidebarOverlayWidth(forWindowWidth windowWidth: CGFloat, screen: UIScreen) -> Bool {
+        let screenWidth = max(screen.bounds.width, screen.bounds.height)
         return windowWidth <= (3.0 / 4.0) * screenWidth + 0.5
+    }
+    
+    func shouldUseCompactPadLayout(forWindowWidth windowWidth: CGFloat, screen: UIScreen) -> Bool {
+        let screenWidth = max(screen.bounds.width, screen.bounds.height)
+        return windowWidth <= (2.0 / 5.0) * screenWidth + 0.5
     }
     
     func topViewController() -> UIViewController? {

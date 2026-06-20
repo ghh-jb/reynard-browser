@@ -296,6 +296,17 @@ final class BrowserViewController: UIViewController {
         : layoutBlock()
     }
     
+    func updateBrowserLayoutIfNeeded(
+        animated: Bool,
+        duration: TimeInterval = UX.layoutAnimationDuration
+    ) {
+        guard browserLayout != resolveBrowserLayout() else {
+            return
+        }
+        
+        updateBrowserLayout(animated: animated, duration: duration)
+    }
+    
     func applyBrowserLayout() {
         if isShowingFullscreenMedia {
             applyFullscreenLayout()
@@ -399,7 +410,7 @@ final class BrowserViewController: UIViewController {
         let orientation = currentViewportOrientation()
         
         if interfaceIdiom == .pad {
-            return traitCollection.horizontalSizeClass == .compact
+            return isCompactPadLayout
             ? resolveCompactLayout(interfaceIdiom: .pad, orientation: orientation)
             : resolvePadLayout(interfaceIdiom: .pad, orientation: orientation)
         }
@@ -420,6 +431,37 @@ final class BrowserViewController: UIViewController {
         }
         
         return view.bounds.width > view.bounds.height ? .landscape : .portrait
+    }
+    
+    var isCompactPadLayout: Bool {
+        guard let window = view.window else {
+            return UIApplication.shared.shouldUseCompactPadLayout
+        }
+        
+        return UIApplication.shared.shouldUseCompactPadLayout(
+            forWindowWidth: browserWindowWidth(fallback: window.bounds.width),
+            screen: window.screen
+        )
+    }
+    
+    var isSidebarOverlayLayout: Bool {
+        guard let window = view.window else {
+            return UIApplication.shared.isSidebarOverlayWidth
+        }
+        
+        return UIApplication.shared.isSidebarOverlayWidth(
+            forWindowWidth: browserWindowWidth(fallback: window.bounds.width),
+            screen: window.screen
+        )
+    }
+    
+    private func browserWindowWidth(fallback: CGFloat) -> CGFloat {
+        guard let rootView = view.window?.rootViewController?.view,
+              rootView.bounds.width > 0 else {
+            return fallback
+        }
+        
+        return rootView.bounds.width
     }
     
     private func resolvePhoneLayout() -> BrowserLayout {

@@ -9,17 +9,18 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
     private enum UX {
         static let topContentInset: CGFloat = 32
         static let legacyItemHeight: CGFloat = 48
-        static let collapseButtonSize: CGFloat = 30
+        static let sidebarButtonSize: CGFloat = 30
     }
     
     private let mainSection = "main"
     private let cellReuseIdentifier = "SidebarActionCell"
+    private let childSidebarButtonTag = 9101
     private var dataSource: UICollectionViewDiffableDataSource<String, LibrarySection>!
     
-    private lazy var collapseButton: UIButton = {
+    private lazy var sidebarButton: UIButton = {
         let button = ToolbarButton(buttonType: .sidebar, target: self, action: #selector(collapseFromRoot))
-        button.widthAnchor.constraint(equalToConstant: UX.collapseButtonSize).isActive = true
-        button.heightAnchor.constraint(equalToConstant: UX.collapseButtonSize).isActive = true
+        button.widthAnchor.constraint(equalToConstant: UX.sidebarButtonSize).isActive = true
+        button.heightAnchor.constraint(equalToConstant: UX.sidebarButtonSize).isActive = true
         return button
     }()
     
@@ -66,38 +67,17 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
         super.viewWillAppear(animated)
         navigationController?.delegate = self
         navigationController?.setNavigationBarHidden(false, animated: animated)
-        if (splitViewController as? SidebarViewController)?.showChromeSidebarButton == true {
-            navigationItem.leftBarButtonItem = nil
-        } else {
-            configureCollapseButton(collapseButton)
-            navigationItem.leftBarButtonItem = UIBarButtonItem(customView: collapseButton)
-        }
-        navigationItem.rightBarButtonItem = nil
+        refreshSidebarButton()
     }
     
     // MARK: - UINavigationControllerDelegate
     
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        let showChromeSidebarButton = (splitViewController as? SidebarViewController)?.showChromeSidebarButton == true
-        if viewController === self {
-            if showChromeSidebarButton {
-                navigationItem.leftBarButtonItem = nil
-            } else {
-                configureCollapseButton(collapseButton)
-                navigationItem.leftBarButtonItem = UIBarButtonItem(customView: collapseButton)
-            }
-            navigationItem.rightBarButtonItem = nil
-            return
-        }
-        
-        guard !showChromeSidebarButton else {
-            viewController.navigationItem.rightBarButtonItem = nil
-            return
-        }
-        
-        let button = makeCollapseButton(action: #selector(collapseFromChild(_:)))
-        configureCollapseButton(button)
-        viewController.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: button)
+        refreshSidebarButton(for: viewController)
+    }
+    
+    func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
+        refreshSidebarButton(for: viewController)
     }
     
     // MARK: - UICollectionViewDelegate
@@ -145,6 +125,64 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
             title: section.title,
             contentViewController: contentViewController
         )
+    }
+    
+    // MARK: - Navigation Items
+    
+    func refreshSidebarButton() {
+        guard let viewController = navigationController?.topViewController else {
+            return
+        }
+        
+        refreshSidebarButton(for: viewController)
+    }
+    
+    private func refreshSidebarButton(for viewController: UIViewController) {
+        let showChromeSidebarButton = (splitViewController as? SidebarViewController)?.showChromeSidebarButton == true
+        if viewController === self {
+            if showChromeSidebarButton {
+                navigationItem.leftBarButtonItem = nil
+            } else {
+                configureSidebarButton(sidebarButton)
+                navigationItem.leftBarButtonItem = UIBarButtonItem(customView: sidebarButton)
+            }
+            navigationItem.rightBarButtonItem = nil
+            return
+        }
+        
+        guard !showChromeSidebarButton else {
+            removeSidebarButton(from: viewController.navigationItem)
+            return
+        }
+        
+        let button = makeSidebarButton(action: #selector(collapseFromChild(_:)))
+        configureSidebarButton(button)
+        let item = UIBarButtonItem(customView: button)
+        item.tag = childSidebarButtonTag
+        viewController.navigationItem.rightBarButtonItems = rightBarButtonItemsExcludingSidebarButton(
+            from: viewController.navigationItem
+        ) + [item]
+    }
+    
+    private func makeSidebarButton(action: Selector) -> UIButton {
+        let button = ToolbarButton(buttonType: .sidebar, target: self, action: action)
+        button.widthAnchor.constraint(equalToConstant: UX.sidebarButtonSize).isActive = true
+        button.heightAnchor.constraint(equalToConstant: UX.sidebarButtonSize).isActive = true
+        return button
+    }
+    
+    private func configureSidebarButton(_ button: UIButton) {
+        button.setImage(splitViewController?.displayModeButtonItem.image ?? UIImage(named: "reynard.sidebar.left"), for: .normal)
+        button.accessibilityLabel = splitViewController?.displayModeButtonItem.accessibilityLabel
+    }
+    
+    private func rightBarButtonItemsExcludingSidebarButton(from navigationItem: UINavigationItem) -> [UIBarButtonItem] {
+        return navigationItem.rightBarButtonItems?.filter { $0.tag != childSidebarButtonTag } ?? []
+    }
+    
+    private func removeSidebarButton(from navigationItem: UINavigationItem) {
+        let remainingItems = rightBarButtonItemsExcludingSidebarButton(from: navigationItem)
+        navigationItem.rightBarButtonItems = remainingItems.isEmpty ? nil : remainingItems
     }
     
     // MARK: - Actions
@@ -207,17 +245,5 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
         snapshot.appendSections([mainSection])
         snapshot.appendItems(LibrarySection.allCases, toSection: mainSection)
         dataSource.apply(snapshot, animatingDifferences: false)
-    }
-    
-    private func makeCollapseButton(action: Selector) -> UIButton {
-        let button = ToolbarButton(buttonType: .sidebar, target: self, action: action)
-        button.widthAnchor.constraint(equalToConstant: UX.collapseButtonSize).isActive = true
-        button.heightAnchor.constraint(equalToConstant: UX.collapseButtonSize).isActive = true
-        return button
-    }
-    
-    private func configureCollapseButton(_ button: UIButton) {
-        button.setImage(splitViewController?.displayModeButtonItem.image ?? UIImage(named: "reynard.sidebar.left"), for: .normal)
-        button.accessibilityLabel = splitViewController?.displayModeButtonItem.accessibilityLabel
     }
 }

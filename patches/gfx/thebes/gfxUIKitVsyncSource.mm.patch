@@ -1,0 +1,227 @@
+diff --git a/gfx/thebes/gfxUIKitVsyncSource.mm b/gfx/thebes/gfxUIKitVsyncSource.mm
+new file mode 100644
+index 000000000000..43940f26a1e2
+--- /dev/null
++++ b/gfx/thebes/gfxUIKitVsyncSource.mm
+@@ -0,0 +1,221 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++/* This source code is introduced during the work of an iOS 13+ browser
++ * https://github.com/minh-ton/reynard-browser in Feb 2026. */
++
++#include "gfxUIKitVsyncSource.h"
++
++#include "VsyncSource.h"
++#include "gfxPlatform.h"
++#include "mozilla/TimeStamp.h"
++#include "nsDebug.h"
++#include "nsObjCExceptions.h"
++#include "nsThreadUtils.h"
++
++#import <Foundation/NSInvocation.h>
++#import <QuartzCore/CADisplayLink.h>
++#import <UIKit/UIScreen.h>
++
++#include <mach/mach_time.h>
++
++using mozilla::TimeDuration;
++using mozilla::TimeStamp;
++
++namespace mozilla::gfx {
++class UIKitVsyncSource;
++}
++
++@interface UIKitVsyncTarget : NSObject {
++ @private
++  mozilla::gfx::UIKitVsyncSource* mVsyncSource;
++}
++- (id)initWithVsyncSource:(mozilla::gfx::UIKitVsyncSource*)aVsyncSource;
++- (void)displayLinkFired:(CADisplayLink*)aDisplayLink;
++@end
++
++namespace mozilla::gfx {
++
++struct FrameRateRange {
++  float minimum;
++  float maximum;
++  float preferred;
++};
++
++static TimeStamp TimeStampFromCASeconds(CFTimeInterval aSeconds) {
++  static const mach_timebase_info_data_t timebaseInfo = [] {
++    mach_timebase_info_data_t resultInfo;
++    kern_return_t result = mach_timebase_info(&resultInfo);
++    MOZ_RELEASE_ASSERT(result == KERN_SUCCESS);
++    return resultInfo;
++  }();
++
++  double ticks =
++      (aSeconds * 1000000000.0 * timebaseInfo.denom) / timebaseInfo.numer;
++  return TimeStamp::FromSystemTime(static_cast<int64_t>(ticks));
++}
++
++class UIKitVsyncSource final : public VsyncSource {
++ public:
++  UIKitVsyncSource() = default;
++
++  ~UIKitVsyncSource() override {
++    MOZ_ASSERT(NS_IsMainThread());
++    Shutdown();
++  }
++
++  void EnableVsync() override {
++    MOZ_ASSERT(NS_IsMainThread());
++    if (IsVsyncEnabled()) {
++      return;
++    }
++
++    NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
++
++    UIScreen* screen = [UIScreen mainScreen];
++    CADisplayLink* displayLink =
++        [screen displayLinkWithTarget:mTarget
++                             selector:@selector(displayLinkFired:)];
++    if (!displayLink) {
++      NS_WARNING("Could not create UIKit CADisplayLink.");
++      return;
++    }
++
++    mDisplayLink = [displayLink retain];
++    ConfigureFrameRate();
++    [mDisplayLink addToRunLoop:[NSRunLoop mainRunLoop]
++                       forMode:NSRunLoopCommonModes];
++
++    NS_OBJC_END_TRY_IGNORE_BLOCK;
++  }
++
++  void DisableVsync() override {
++    MOZ_ASSERT(NS_IsMainThread());
++    if (!mDisplayLink) {
++      return;
++    }
++
++    NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
++
++    [mDisplayLink invalidate];
++    [mDisplayLink release];
++    mDisplayLink = nil;
++
++    NS_OBJC_END_TRY_IGNORE_BLOCK;
++  }
++
++  bool IsVsyncEnabled() override {
++    MOZ_ASSERT(NS_IsMainThread());
++    return mDisplayLink != nil;
++  }
++
++  TimeDuration GetVsyncRate() override { return mVsyncRate; }
++
++  void Shutdown() override {
++    MOZ_ASSERT(NS_IsMainThread());
++    DisableVsync();
++    [mTarget release];
++    mTarget = nil;
++  }
++
++  bool Initialize() {
++    MOZ_ASSERT(NS_IsMainThread());
++
++    NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
++
++    mTarget = [[UIKitVsyncTarget alloc] initWithVsyncSource:this];
++    UpdateVsyncRate([UIScreen mainScreen]);
++    return mTarget != nil;
++
++    NS_OBJC_END_TRY_BLOCK_RETURN(false);
++  }
++
++  void OnDisplayLinkFired(CADisplayLink* aDisplayLink) {
++    TimeStamp vsyncTime = TimeStampFromCASeconds([aDisplayLink timestamp]);
++    TimeStamp outputTime =
++        TimeStampFromCASeconds([aDisplayLink targetTimestamp]);
++    TimeStamp now = TimeStamp::Now();
++
++    if (vsyncTime > now) {
++      vsyncTime = now;
++    }
++    if (outputTime <= vsyncTime) {
++      outputTime = vsyncTime + GetVsyncRate();
++    }
++
++    VsyncSource::NotifyVsync(vsyncTime, outputTime);
++  }
++
++ private:
++  void ConfigureFrameRate() {
++    UIScreen* screen = [UIScreen mainScreen];
++    UpdateVsyncRate(screen);
++
++    NSInteger maximumFramesPerSecond = [screen maximumFramesPerSecond];
++    if (maximumFramesPerSecond <= 0) {
++      maximumFramesPerSecond = 60;
++    }
++
++    if ([mDisplayLink
++            respondsToSelector:@selector(setPreferredFrameRateRange:)]) {
++      FrameRateRange frameRateRange = {
++          static_cast<float>(maximumFramesPerSecond),
++          static_cast<float>(maximumFramesPerSecond),
++          static_cast<float>(maximumFramesPerSecond)};
++      NSInvocation* invocation = [NSInvocation
++          invocationWithMethodSignature:
++              [mDisplayLink
++                  methodSignatureForSelector:@selector(
++                                                 setPreferredFrameRateRange:)]];
++      [invocation setSelector:@selector(setPreferredFrameRateRange:)];
++      [invocation setTarget:mDisplayLink];
++      [invocation setArgument:&frameRateRange atIndex:2];
++      [invocation invoke];
++    } else {
++      mDisplayLink.preferredFramesPerSecond = maximumFramesPerSecond;
++    }
++  }
++
++  void UpdateVsyncRate(UIScreen* aScreen) {
++    NSInteger maximumFramesPerSecond = [aScreen maximumFramesPerSecond];
++    if (maximumFramesPerSecond <= 0) {
++      maximumFramesPerSecond = 60;
++    }
++    mVsyncRate =
++        TimeDuration::FromMilliseconds(1000.0 / maximumFramesPerSecond);
++  }
++
++  UIKitVsyncTarget* mTarget = nil;
++  CADisplayLink* mDisplayLink = nil;
++  TimeDuration mVsyncRate = TimeDuration::FromMilliseconds(1000.0 / 60.0);
++};
++
++already_AddRefed<VsyncSource> CreateUIKitVsyncSource() {
++  MOZ_ASSERT(NS_IsMainThread());
++
++  RefPtr<UIKitVsyncSource> vsyncSource = new UIKitVsyncSource();
++  if (!vsyncSource->Initialize()) {
++    return nullptr;
++  }
++
++  return vsyncSource.forget();
++}
++
++}  // namespace mozilla::gfx
++
++@implementation UIKitVsyncTarget
++
++- (id)initWithVsyncSource:(mozilla::gfx::UIKitVsyncSource*)aVsyncSource {
++  self = [super init];
++  if (self) {
++    mVsyncSource = aVsyncSource;
++  }
++  return self;
++}
++
++- (void)displayLinkFired:(CADisplayLink*)aDisplayLink {
++  mVsyncSource->OnDisplayLinkFired(aDisplayLink);
++}
++
++@end

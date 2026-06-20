@@ -455,6 +455,17 @@ final class BrowserViewController: UIViewController {
         )
     }
     
+    private var shouldUseBottomTabOverviewToolbar: Bool {
+        guard let window = view.window else {
+            return UIApplication.shared.shouldUseBottomTabOverviewToolbar
+        }
+        
+        return UIApplication.shared.shouldUseBottomTabOverviewToolbar(
+            forWindowWidth: browserWindowWidth(fallback: window.bounds.width),
+            screen: window.screen
+        )
+    }
+    
     private func browserWindowWidth(fallback: CGFloat) -> CGFloat {
         guard let rootView = view.window?.rootViewController?.view,
               rootView.bounds.width > 0 else {
@@ -484,7 +495,7 @@ final class BrowserViewController: UIViewController {
             orientation: orientation,
             chromeMode: .compact,
             chromePosition: interfaceIdiom == .phone ? .top : .bottom,
-            tabOverviewToolbarPosition: interfaceIdiom == .phone ? .bottom : .top,
+            tabOverviewToolbarPosition: .bottom,
             overlayHost: .embedded
         )
     }
@@ -498,7 +509,7 @@ final class BrowserViewController: UIViewController {
             orientation: orientation,
             chromeMode: .pad,
             chromePosition: .bottom,
-            tabOverviewToolbarPosition: .top,
+            tabOverviewToolbarPosition: shouldUseBottomTabOverviewToolbar ? .bottom : .top,
             overlayHost: .detached
         )
     }

@@ -14,6 +14,26 @@ final class TabOverviewCollectionLayout: UICollectionViewFlowLayout {
     
     private var insertedCardIndexPaths = Set<IndexPath>()
     
+    override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        guard let collectionView else {
+            return super.shouldInvalidateLayout(forBoundsChange: newBounds)
+        }
+        
+        return collectionView.bounds.size != newBounds.size
+        || super.shouldInvalidateLayout(forBoundsChange: newBounds)
+    }
+    
+    override func invalidationContext(forBoundsChange newBounds: CGRect) -> UICollectionViewLayoutInvalidationContext {
+        let context = super.invalidationContext(forBoundsChange: newBounds)
+        guard let flowContext = context as? UICollectionViewFlowLayoutInvalidationContext,
+              let collectionView else {
+            return context
+        }
+        
+        flowContext.invalidateFlowLayoutDelegateMetrics = collectionView.bounds.size != newBounds.size
+        return flowContext
+    }
+    
     override func prepare(forCollectionViewUpdates updateItems: [UICollectionViewUpdateItem]) {
         super.prepare(forCollectionViewUpdates: updateItems)
         insertedCardIndexPaths = Set(updateItems.compactMap { updateItem in

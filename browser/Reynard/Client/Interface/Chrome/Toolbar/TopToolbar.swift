@@ -106,6 +106,10 @@ final class TopToolbar: UIView {
     private var standardAddressBarConstraints: [NSLayoutConstraint] = []
     private var compactAddressBarConstraints: [NSLayoutConstraint] = []
     
+    private var layoutState: LayoutState = .hidden
+    private var layoutInterfaceIdiom: UIUserInterfaceIdiom = .unspecified
+    private var layoutSidebarButtonVisible = false
+    
     // MARK: - Lifecycle
     
     init() {
@@ -150,6 +154,10 @@ final class TopToolbar: UIView {
         interfaceIdiom: UIUserInterfaceIdiom,
         sidebarButtonVisible: Bool
     ) {
+        layoutState = state
+        layoutInterfaceIdiom = interfaceIdiom
+        layoutSidebarButtonVisible = sidebarButtonVisible
+        
         UIView.performWithoutAnimation {
             contentTopConstraint.constant = topInset
             heightConstraint.constant = topInset + UX.topToolbarContentHeight
@@ -186,6 +194,7 @@ final class TopToolbar: UIView {
     
     func updateDownload(_ summary: DownloadStoreSummary) {
         downloadButton.applyDownloadSummary(summary)
+        updateDownloadButtonVisibility()
     }
     
     func setMenuButtonIndicatesUpdate(_ hasUpdate: Bool) {
@@ -267,5 +276,16 @@ final class TopToolbar: UIView {
         let visibleButtonCount = (sidebarButtonVisible ? 3 : 2) + (showsDownloads ? 1 : 0)
         return (CGFloat(visibleButtonCount) * UX.topToolbarButtonStackHeight)
         + (CGFloat(max(visibleButtonCount - 1, 0)) * UX.topToolbarButtonSpacing)
+    }
+    
+    private func updateDownloadButtonVisibility() {
+        let isCompact = layoutState == .compact
+        downloadButton.isHidden = layoutState != .standard || !downloadButton.isShowingDownloads
+        leadingWidthConstraint.constant = isCompact ? 0 : leadingWidth(
+            interfaceIdiom: layoutInterfaceIdiom,
+            sidebarButtonVisible: layoutSidebarButtonVisible,
+            showsDownloads: downloadButton.isShowingDownloads
+        )
+        layoutIfNeeded()
     }
 }

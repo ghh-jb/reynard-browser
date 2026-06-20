@@ -103,6 +103,17 @@ final class SessionManager {
         close(session)
     }
     
+    // MARK: - Addon Tab State
+    
+    func setAddonTabActive(_ active: Bool, for session: GeckoSession) {
+        session.setAddonTabActive(active)
+    }
+    
+    func transferAddonTabActivation(from previousSession: GeckoSession, to replacementSession: GeckoSession) {
+        setAddonTabActive(false, for: previousSession)
+        setAddonTabActive(true, for: replacementSession)
+    }
+    
     // MARK: - Settings
     
     func updateSettings(of session: GeckoSession, for url: String, tabID: UUID?) {

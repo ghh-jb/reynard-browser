@@ -704,7 +704,6 @@ final class TabManagerImplementation: NSObject, TabManager {
         }
         
         let oldSession = tab.session
-        sessionManager.close(oldSession)
         
         sessionManager.adopt(session, asTab: tab.id, url: url, delegates: sessionDelegates)
         tab.session = session
@@ -715,6 +714,8 @@ final class TabManagerImplementation: NSObject, TabManager {
         sessionManager.activate(session)
         
         delegate?.tabManagerDidChangeTabs(self)
+        delegate?.tabManager(self, didReplaceSelectedSession: oldSession, with: session)
+        sessionManager.close(oldSession)
         delegate?.tabManager(self, didUpdateTabAt: selectedTabIndex, reason: .location)
         delegate?.tabManager(self, didUpdateTabAt: selectedTabIndex, reason: .title)
         scheduleFaviconUpdate(forTabAt: selectedTabIndex)

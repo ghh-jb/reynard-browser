@@ -97,16 +97,22 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
         return true
     }
     
+    // MARK: - Tab State
+    
     func handleTabSelectionChange(selectedIndex: Int, previousIndex: Int?) {
         let activeTabs = dataSource?.addonTabs ?? []
         if let previousIndex,
            activeTabs.indices.contains(previousIndex) {
-            activeTabs[previousIndex].session.setAddonTabActive(false)
+            sessionManager.setAddonTabActive(false, for: activeTabs[previousIndex].session)
         }
         
         if activeTabs.indices.contains(selectedIndex) {
-            activeTabs[selectedIndex].session.setAddonTabActive(true)
+            sessionManager.setAddonTabActive(true, for: activeTabs[selectedIndex].session)
         }
+    }
+    
+    func handleSelectedTabSessionReplacement(from previousSession: GeckoSession, to replacementSession: GeckoSession) {
+        sessionManager.transferAddonTabActivation(from: previousSession, to: replacementSession)
     }
     
     private var menuAddons: [Addon] {

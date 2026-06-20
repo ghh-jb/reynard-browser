@@ -57,6 +57,10 @@ extension BrowserViewController: TabManagerDelegate {
         }
     }
     
+    func tabManager(_ tabManager: TabManager, didReplaceSelectedSession previousSession: GeckoSession, with replacementSession: GeckoSession) {
+        addonCoordinator.handleSelectedTabSessionReplacement(from: previousSession, to: replacementSession)
+    }
+    
     func tabManager(_ tabManager: TabManager, didRequestContextMenuAt point: CGPoint, for element: ContextElement, in session: GeckoSession) {
         guard contentView.isDisplaying(session: session) else {
             return

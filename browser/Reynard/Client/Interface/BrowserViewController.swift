@@ -134,7 +134,9 @@ final class BrowserViewController: UIViewController {
             }
             
             await self.addonCoordinator.start()
-            self.tabManager.selectedTab?.session.setAddonTabActive(true)
+            if let session = self.tabManager.selectedTab?.session {
+                self.sessionManager.setAddonTabActive(true, for: session)
+            }
         }
         
         updateBrowserLayout(animated: false)

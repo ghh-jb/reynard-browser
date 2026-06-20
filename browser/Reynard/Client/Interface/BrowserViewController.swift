@@ -350,12 +350,10 @@ final class BrowserViewController: UIViewController {
     private func applyCompactLayout() {
         contentView.applyLayout(
             ContentView.LayoutState(mode: .standard),
-            topAnchor: tabBar.bottomAnchor,
+            topAnchor: browserChrome.topToolbarBottomAnchor,
             bottomAnchor: browserChrome.bottomToolbarTopAnchor
         )
-        setTabBarVisible(
-            browserLayout.interfaceIdiom == .pad && visibleTabCount > 1
-        )
+        setTabBarVisible(false)
     }
     
     private func applyPadLayout() {

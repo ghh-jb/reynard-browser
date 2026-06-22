@@ -1,5 +1,5 @@
 //
-//  SearchAutocompletePreferencesViewController.swift
+//  SearchSuggestionProviderPreferencesViewController.swift
 //  Reynard
 //
 //  Created by Minh Ton on 22/6/26.
@@ -7,21 +7,21 @@
 
 import UIKit
 
-final class SearchAutocompletePreferencesViewController: SettingsTableViewController {
+final class SearchSuggestionProviderPreferencesViewController: SettingsTableViewController {
     private enum Section: CaseIterable {
         case providers
         
         var text: SettingsSectionText {
             switch self {
             case .providers:
-                return SettingsSectionText(headerTitle: "Search Autocomplete")
+                return SettingsSectionText(headerTitle: "Search Suggestion Provider")
             }
         }
     }
     
     init() {
         super.init(style: .insetGrouped)
-        title = "Search Autocomplete"
+        title = "Search Suggestion Provider"
     }
     
     required init?(coder: NSCoder) {
@@ -34,7 +34,7 @@ final class SearchAutocompletePreferencesViewController: SettingsTableViewContro
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
-        Section.allCases.count
+        return Section.allCases.count
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -58,7 +58,7 @@ final class SearchAutocompletePreferencesViewController: SettingsTableViewContro
         let provider = SearchCompletion.Provider.allCases[indexPath.row]
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
         cell.textLabel?.text = provider.name
-        cell.accessoryType = Prefs.SearchSettings.searchAutocompleteProvider == provider ? .checkmark : .none
+        cell.accessoryType = Prefs.SearchSettings.searchSuggestionProvider == provider ? .checkmark : .none
         return cell
     }
     
@@ -70,7 +70,7 @@ final class SearchAutocompletePreferencesViewController: SettingsTableViewContro
             return
         }
         
-        Prefs.SearchSettings.searchAutocompleteProvider = SearchCompletion.Provider.allCases[indexPath.row]
+        Prefs.SearchSettings.searchSuggestionProvider = SearchCompletion.Provider.allCases[indexPath.row]
         tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
     }
     

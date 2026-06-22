@@ -9,17 +9,35 @@ import UIKit
 
 final class SearchPreferencesViewController: SettingsTableViewController {
     private enum Section: CaseIterable {
-        case search
+        case searchEngine
+        case searchSuggestions
         
         var text: SettingsSectionText {
-            return SettingsSectionText()
+            switch self {
+            case .searchEngine:
+                return SettingsSectionText(headerTitle: "Search Engine")
+            case .searchSuggestions:
+                return SettingsSectionText(headerTitle: "Search Suggestions")
+            }
         }
     }
     
-    private enum Row: CaseIterable {
-        case searchEngine
-        case searchAutocomplete
+    private enum SearchSuggestionsRow: CaseIterable {
+        case showSearchSuggestions
+        case showInPrivateBrowsing
+        case searchBrowsingHistory
+        case searchBookmarks
+        case searchOpenedTabs
+        case searchSuggestionProvider
     }
+    
+    private let showSearchSuggestionsSwitch = UISwitch()
+    private let showInPrivateBrowsingSwitch = UISwitch()
+    private let searchBrowsingHistorySwitch = UISwitch()
+    private let searchBookmarksSwitch = UISwitch()
+    private let searchOpenedTabsSwitch = UISwitch()
+    
+    // MARK: - Lifecycle
     
     init() {
         super.init(style: .insetGrouped)
@@ -32,16 +50,20 @@ final class SearchPreferencesViewController: SettingsTableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        registerCells()
+        configureSwitches()
+        refreshDisplayedState()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        refreshDisplayedState()
         tableView.reloadData()
     }
     
+    // MARK: - Table View
+    
     override func numberOfSections(in tableView: UITableView) -> Int {
-        Section.allCases.count
+        return Section.allCases.count
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -50,8 +72,10 @@ final class SearchPreferencesViewController: SettingsTableViewController {
         }
         
         switch Section.allCases[section] {
-        case .search:
-            return Row.allCases.count
+        case .searchEngine:
+            return 1
+        case .searchSuggestions:
+            return SearchSuggestionsRow.allCases.count
         }
     }
     
@@ -63,45 +87,119 @@ final class SearchPreferencesViewController: SettingsTableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard Section.allCases.indices.contains(indexPath.section),
-              Row.allCases.indices.contains(indexPath.row) else {
+        guard Section.allCases.indices.contains(indexPath.section) else {
             return UITableViewCell()
         }
         
-        switch Row.allCases[indexPath.row] {
+        switch Section.allCases[indexPath.section] {
         case .searchEngine:
+            guard indexPath.row == 0 else {
+                return UITableViewCell()
+            }
+            
             let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
             cell.textLabel?.text = "Search Engine"
             cell.detailTextLabel?.text = Prefs.SearchSettings.searchEngine.displayName
             cell.detailTextLabel?.textColor = .secondaryLabel
             cell.accessoryType = .disclosureIndicator
             return cell
-        case .searchAutocomplete:
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: "SearchAutocompleteProviderCell", for: indexPath) as? SearchAutocompleteProviderCell else {
+        case .searchSuggestions:
+            guard SearchSuggestionsRow.allCases.indices.contains(indexPath.row) else {
                 return UITableViewCell()
             }
-            cell.display(provider: Prefs.SearchSettings.searchAutocompleteProvider)
-            cell.accessoryType = .disclosureIndicator
-            return cell
+            
+            switch SearchSuggestionsRow.allCases[indexPath.row] {
+            case .showSearchSuggestions:
+                return switchCell(title: "Show Search Suggestions", accessoryView: showSearchSuggestionsSwitch)
+            case .showInPrivateBrowsing:
+                return switchCell(title: "Show in Private Browsing", accessoryView: showInPrivateBrowsingSwitch)
+            case .searchBrowsingHistory:
+                return switchCell(title: "Search Browsing History", accessoryView: searchBrowsingHistorySwitch)
+            case .searchBookmarks:
+                return switchCell(title: "Search Bookmarks", accessoryView: searchBookmarksSwitch)
+            case .searchOpenedTabs:
+                return switchCell(title: "Search Opened Tabs", accessoryView: searchOpenedTabsSwitch)
+            case .searchSuggestionProvider:
+                let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+                cell.textLabel?.text = "Search Suggestion Provider"
+                cell.detailTextLabel?.text = Prefs.SearchSettings.searchSuggestionProvider.name
+                cell.detailTextLabel?.textColor = .secondaryLabel
+                cell.accessoryType = .disclosureIndicator
+                return cell
+            }
         }
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         defer { tableView.deselectRow(at: indexPath, animated: true) }
-        guard Section.allCases.indices.contains(indexPath.section),
-              Row.allCases.indices.contains(indexPath.row) else {
+        guard Section.allCases.indices.contains(indexPath.section) else {
             return
         }
         
-        switch Row.allCases[indexPath.row] {
+        switch Section.allCases[indexPath.section] {
         case .searchEngine:
+            guard indexPath.row == 0 else {
+                return
+            }
             navigationController?.pushViewController(SearchEnginePreferencesViewController(), animated: true)
-        case .searchAutocomplete:
-            navigationController?.pushViewController(SearchAutocompletePreferencesViewController(), animated: true)
+        case .searchSuggestions:
+            guard SearchSuggestionsRow.allCases.indices.contains(indexPath.row) else {
+                return
+            }
+            switch SearchSuggestionsRow.allCases[indexPath.row] {
+            case .showSearchSuggestions, .showInPrivateBrowsing, .searchBrowsingHistory, .searchBookmarks, .searchOpenedTabs:
+                return
+            case .searchSuggestionProvider:
+                navigationController?.pushViewController(SearchSuggestionProviderPreferencesViewController(), animated: true)
+            }
         }
     }
     
-    private func registerCells() {
-        tableView.register(SearchAutocompleteProviderCell.self, forCellReuseIdentifier: "SearchAutocompleteProviderCell")
+    // MARK: - Switches
+    
+    private func configureSwitches() {
+        showSearchSuggestionsSwitch.addTarget(self, action: #selector(showSearchSuggestionsSwitchDidChange(_:)), for: .valueChanged)
+        showInPrivateBrowsingSwitch.addTarget(self, action: #selector(showInPrivateBrowsingSwitchDidChange(_:)), for: .valueChanged)
+        searchBrowsingHistorySwitch.addTarget(self, action: #selector(searchBrowsingHistorySwitchDidChange(_:)), for: .valueChanged)
+        searchBookmarksSwitch.addTarget(self, action: #selector(searchBookmarksSwitchDidChange(_:)), for: .valueChanged)
+        searchOpenedTabsSwitch.addTarget(self, action: #selector(searchOpenedTabsSwitchDidChange(_:)), for: .valueChanged)
+    }
+    
+    private func refreshDisplayedState() {
+        showSearchSuggestionsSwitch.isOn = Prefs.SearchSettings.showSearchSuggestions
+        showInPrivateBrowsingSwitch.isOn = Prefs.SearchSettings.showSearchSuggestionsInPrivateBrowsing
+        searchBrowsingHistorySwitch.isOn = Prefs.SearchSettings.searchBrowsingHistory
+        searchBookmarksSwitch.isOn = Prefs.SearchSettings.searchBookmarks
+        searchOpenedTabsSwitch.isOn = Prefs.SearchSettings.searchOpenedTabs
+    }
+    
+    @objc private func showSearchSuggestionsSwitchDidChange(_ sender: UISwitch) {
+        Prefs.SearchSettings.showSearchSuggestions = sender.isOn
+    }
+    
+    @objc private func showInPrivateBrowsingSwitchDidChange(_ sender: UISwitch) {
+        Prefs.SearchSettings.showSearchSuggestionsInPrivateBrowsing = sender.isOn
+    }
+    
+    @objc private func searchBrowsingHistorySwitchDidChange(_ sender: UISwitch) {
+        Prefs.SearchSettings.searchBrowsingHistory = sender.isOn
+    }
+    
+    @objc private func searchBookmarksSwitchDidChange(_ sender: UISwitch) {
+        Prefs.SearchSettings.searchBookmarks = sender.isOn
+    }
+    
+    @objc private func searchOpenedTabsSwitchDidChange(_ sender: UISwitch) {
+        Prefs.SearchSettings.searchOpenedTabs = sender.isOn
+    }
+    
+    // MARK: - Cells
+    
+    private func switchCell(title: String, accessoryView: UISwitch) -> UITableViewCell {
+        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        cell.selectionStyle = .none
+        cell.textLabel?.text = title
+        cell.accessoryView = accessoryView
+        return cell
     }
 }

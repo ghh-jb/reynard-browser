@@ -23,7 +23,7 @@ struct SearchResults {
 
 final class SearchViewModel {
     var resultsDidChange: ((SearchResults) -> Void)?
-    var searchAutocompleteProvider: SearchCompletion.Provider {
+    var searchSuggestionProvider: SearchCompletion.Provider {
         return searchCompletion.provider
     }
     
@@ -35,7 +35,7 @@ final class SearchViewModel {
     
     init(
         userDataSearch: UserDataSearch = UserDataSearch(),
-        searchCompletion: SearchCompletion = SearchCompletion(provider: Prefs.SearchSettings.searchAutocompleteProvider)
+        searchCompletion: SearchCompletion = SearchCompletion(provider: Prefs.SearchSettings.searchSuggestionProvider)
     ) {
         self.userDataSearch = userDataSearch
         self.searchCompletion = searchCompletion
@@ -106,7 +106,7 @@ final class SearchViewModel {
     }
     
     private func updateSearchCompletionProviderIfNeeded() {
-        let provider = Prefs.SearchSettings.searchAutocompleteProvider
+        let provider = Prefs.SearchSettings.searchSuggestionProvider
         guard searchCompletion.provider != provider else {
             return
         }

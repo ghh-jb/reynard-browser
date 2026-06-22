@@ -73,13 +73,19 @@ final class UserDataSearch {
         excludingTabID: UUID?
     ) -> UserDataSearchResult? {
         let limit = Limits.bestMatchCandidateCount
-        let tabMatches = tabManagementStore.tabs(
+        let tabMatches = Prefs.SearchSettings.searchOpenedTabs
+        ? tabManagementStore.tabs(
             matching: query,
             limit: limit,
             isPrivate: activeTabMode == .private
         ).filter { $0.id != excludingTabID }
-        let historyMatches = historyStore.search(matching: query, limit: limit).items
-        let bookmarkMatches = bookmarkStore.bookmarks(matchingPrefix: query, limit: limit)
+        : []
+        let historyMatches = Prefs.SearchSettings.searchBrowsingHistory
+        ? historyStore.search(matching: query, limit: limit).items
+        : []
+        let bookmarkMatches = Prefs.SearchSettings.searchBookmarks
+        ? bookmarkStore.bookmarks(matchingPrefix: query, limit: limit)
+        : []
         
         var bestMatchCandidates: [UserDataSearchResult] = []
         bestMatchCandidates += bookmarkMatches
@@ -102,13 +108,19 @@ final class UserDataSearch {
         excludingTabID: UUID?
     ) -> [UserDataSearchResult] {
         let limit = Limits.resultCount
-        let tabMatches = tabManagementStore.tabs(
+        let tabMatches = Prefs.SearchSettings.searchOpenedTabs
+        ? tabManagementStore.tabs(
             matching: query,
             limit: limit,
             isPrivate: activeTabMode == .private
         ).filter { $0.id != excludingTabID }
-        let historyMatches = historyStore.search(matching: query, limit: limit).items
-        let bookmarkMatches = bookmarkStore.bookmarks(matching: query, limit: limit)
+        : []
+        let historyMatches = Prefs.SearchSettings.searchBrowsingHistory
+        ? historyStore.search(matching: query, limit: limit).items
+        : []
+        let bookmarkMatches = Prefs.SearchSettings.searchBookmarks
+        ? bookmarkStore.bookmarks(matching: query, limit: limit)
+        : []
         
         var matches: [UserDataSearchResult] = []
         matches += tabMatches.compactMap(tabResult)

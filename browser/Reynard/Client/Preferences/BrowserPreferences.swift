@@ -34,7 +34,12 @@ final class BrowserPreferences {
             // Search
             key("SearchSettings", "searchEngine"): SearchEngine.google.rawValue,
             key("SearchSettings", "customSearchTemplate"): "",
-            key("SearchSettings", "searchAutocompleteProvider"): SearchCompletion.Provider.google.rawValue,
+            key("SearchSettings", "searchSuggestionProvider"): SearchCompletion.Provider.google.rawValue,
+            key("SearchSettings", "showSearchSuggestions"): true,
+            key("SearchSettings", "showSearchSuggestionsInPrivateBrowsing"): true,
+            key("SearchSettings", "searchBrowsingHistory"): true,
+            key("SearchSettings", "searchBookmarks"): true,
+            key("SearchSettings", "searchOpenedTabs"): true,
             
             // JIT
             key("JITSettings", "isJITEnabled"): false,
@@ -117,13 +122,58 @@ final class BrowserPreferences {
             }
         }
         
-        static var searchAutocompleteProvider: SearchCompletion.Provider {
+        static var searchSuggestionProvider: SearchCompletion.Provider {
             get {
-                let rawValue = prefs.string(forSetting: "SearchSettings", key: "searchAutocompleteProvider") ?? SearchCompletion.Provider.google.rawValue
+                let rawValue = prefs.string(forSetting: "SearchSettings", key: "searchSuggestionProvider") ?? SearchCompletion.Provider.google.rawValue
                 return SearchCompletion.Provider(rawValue: rawValue) ?? .google
             }
             set {
-                prefs.set(newValue.rawValue, forSetting: "SearchSettings", key: "searchAutocompleteProvider")
+                prefs.set(newValue.rawValue, forSetting: "SearchSettings", key: "searchSuggestionProvider")
+            }
+        }
+        
+        static var showSearchSuggestions: Bool {
+            get {
+                return prefs.bool(forSetting: "SearchSettings", key: "showSearchSuggestions")
+            }
+            set {
+                prefs.set(newValue, forSetting: "SearchSettings", key: "showSearchSuggestions")
+            }
+        }
+        
+        static var showSearchSuggestionsInPrivateBrowsing: Bool {
+            get {
+                return prefs.bool(forSetting: "SearchSettings", key: "showSearchSuggestionsInPrivateBrowsing")
+            }
+            set {
+                prefs.set(newValue, forSetting: "SearchSettings", key: "showSearchSuggestionsInPrivateBrowsing")
+            }
+        }
+        
+        static var searchBrowsingHistory: Bool {
+            get {
+                return prefs.bool(forSetting: "SearchSettings", key: "searchBrowsingHistory")
+            }
+            set {
+                prefs.set(newValue, forSetting: "SearchSettings", key: "searchBrowsingHistory")
+            }
+        }
+        
+        static var searchBookmarks: Bool {
+            get {
+                return prefs.bool(forSetting: "SearchSettings", key: "searchBookmarks")
+            }
+            set {
+                prefs.set(newValue, forSetting: "SearchSettings", key: "searchBookmarks")
+            }
+        }
+        
+        static var searchOpenedTabs: Bool {
+            get {
+                return prefs.bool(forSetting: "SearchSettings", key: "searchOpenedTabs")
+            }
+            set {
+                prefs.set(newValue, forSetting: "SearchSettings", key: "searchOpenedTabs")
             }
         }
     }

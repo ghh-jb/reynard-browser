@@ -106,6 +106,14 @@ final class SearchOverlayCoordinator {
         }
         
         delegate.searchChrome.recordAddressBarEdit(previousText: previousText, currentText: query, isDelete: isDelete)
+        guard shouldShowSearchSuggestions(in: delegate.searchSelectedTabMode) else {
+            self.query = query
+            overlayCoordinator.dismiss(.search, animated: true) { [weak self] in
+                self?.searchViewController.clearSuggestions()
+            }
+            return
+        }
+        
         guard !query.isEmpty else {
             overlayCoordinator.dismiss(.search, animated: true) { [weak self] in
                 self?.clearSuggestions()
@@ -155,6 +163,7 @@ final class SearchOverlayCoordinator {
     
     private func presentSearchIfNeeded() {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              shouldShowSearchSuggestions(in: delegate?.searchSelectedTabMode),
               !isVisible else {
             return
         }
@@ -202,6 +211,10 @@ final class SearchOverlayCoordinator {
     // MARK: - Layout
     
     private func presentSearch(animated: Bool) {
+        guard shouldShowSearchSuggestions(in: delegate?.searchSelectedTabMode) else {
+            return
+        }
+        
         guard let targetHost = searchContentMode?.overlayHost else {
             return
         }
@@ -262,6 +275,14 @@ final class SearchOverlayCoordinator {
         }
         
         delegate.selectSearchTab(at: index, mode: delegate.searchSelectedTabMode)
+    }
+    
+    private func shouldShowSearchSuggestions(in tabMode: TabMode?) -> Bool {
+        guard Prefs.SearchSettings.showSearchSuggestions else {
+            return false
+        }
+        
+        return tabMode != .private || Prefs.SearchSettings.showSearchSuggestionsInPrivateBrowsing
     }
 }
 

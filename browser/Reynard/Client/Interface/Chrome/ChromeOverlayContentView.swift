@@ -10,7 +10,11 @@ import UIKit
 final class ChromeOverlayContentView: UIView {
     private enum UX {
         static let presentationAnimationDuration: TimeInterval = 0.12
-        static let maximumContentHeightRatio: CGFloat = 9.0 / 10.0
+        static let phoneLandscapeMaximumHeightRatio: CGFloat = 9.0 / 10.0
+        static let padLandscapeMaximumHeightRatio: CGFloat = 8.0 / 10.0
+        static let padPortraitMaximumHeightRatio: CGFloat = 7.0 / 10.0
+        static let addressBarWidthExtension: CGFloat = 32
+        static let padPortraitWidthExtensionMultiplier: CGFloat = 5
         static let modernCornerRadius: CGFloat = 36
         static let cornerRadius: CGFloat = 12
         static let backgroundAlpha: CGFloat = 0.28
@@ -33,8 +37,36 @@ final class ChromeOverlayContentView: UIView {
         case content
     }
     
+    enum LayoutMode: Equatable {
+        case phoneLandscape
+        case padLandscape
+        case padConstrained
+        case padPortrait
+        
+        var maximumHeightRatio: CGFloat {
+            switch self {
+            case .phoneLandscape:
+                return UX.phoneLandscapeMaximumHeightRatio
+            case .padLandscape, .padConstrained:
+                return UX.padLandscapeMaximumHeightRatio
+            case .padPortrait:
+                return UX.padPortraitMaximumHeightRatio
+            }
+        }
+        
+        func resolvedWidth(addressBarWidth: CGFloat) -> CGFloat {
+            switch self {
+            case .phoneLandscape, .padLandscape:
+                return addressBarWidth + UX.addressBarWidthExtension
+            case .padConstrained, .padPortrait:
+                return addressBarWidth + (UX.addressBarWidthExtension * UX.padPortraitWidthExtensionMultiplier)
+            }
+        }
+    }
+    
     private(set) var presentation: PresentationState = .hidden
     private(set) var heightMode: HeightMode = .default
+    private(set) var layoutMode: LayoutMode = .padLandscape
     private(set) var contentHeight: CGFloat = 0
     private(set) var availableContentHeight: CGFloat = 0
     private var pageControllers: [Page: UIViewController] = [:]
@@ -45,6 +77,15 @@ final class ChromeOverlayContentView: UIView {
         view.contentView.backgroundColor = UIColor.systemBackground.withAlphaComponent(UX.backgroundAlpha)
         view.layer.cornerCurve = .continuous
         view.layer.masksToBounds = true
+        return view
+    }()
+    
+    private let contentClipView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .clear
+        view.clipsToBounds = true
+        view.layer.cornerCurve = .continuous
         return view
     }()
     
@@ -70,6 +111,7 @@ final class ChromeOverlayContentView: UIView {
         let cornerRadius = overlayCornerRadius
         layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: cornerRadius).cgPath
         backgroundView.layer.cornerRadius = cornerRadius
+        contentClipView.layer.cornerRadius = cornerRadius
     }
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -103,10 +145,11 @@ final class ChromeOverlayContentView: UIView {
     
     private func configureHierarchy() {
         addSubview(backgroundView)
+        addSubview(contentClipView)
         [homepageView, searchSuggestionView].forEach { contentView in
             contentView.translatesAutoresizingMaskIntoConstraints = false
             contentView.backgroundColor = .clear
-            addSubview(contentView)
+            contentClipView.addSubview(contentView)
         }
     }
     
@@ -116,14 +159,19 @@ final class ChromeOverlayContentView: UIView {
             backgroundView.leadingAnchor.constraint(equalTo: leadingAnchor),
             backgroundView.trailingAnchor.constraint(equalTo: trailingAnchor),
             backgroundView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            
+            contentClipView.topAnchor.constraint(equalTo: topAnchor),
+            contentClipView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            contentClipView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            contentClipView.bottomAnchor.constraint(equalTo: bottomAnchor),
         ])
         
         [homepageView, searchSuggestionView].forEach { contentView in
             NSLayoutConstraint.activate([
-                contentView.topAnchor.constraint(equalTo: topAnchor),
-                contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
-                contentView.trailingAnchor.constraint(equalTo: trailingAnchor),
-                contentView.bottomAnchor.constraint(equalTo: bottomAnchor),
+                contentView.topAnchor.constraint(equalTo: contentClipView.topAnchor),
+                contentView.leadingAnchor.constraint(equalTo: contentClipView.leadingAnchor),
+                contentView.trailingAnchor.constraint(equalTo: contentClipView.trailingAnchor),
+                contentView.bottomAnchor.constraint(equalTo: contentClipView.bottomAnchor),
             ])
         }
     }
@@ -165,6 +213,10 @@ final class ChromeOverlayContentView: UIView {
         self.heightMode = heightMode
     }
     
+    func setLayoutMode(_ layoutMode: LayoutMode) {
+        self.layoutMode = layoutMode
+    }
+    
     func setContentHeight(_ contentHeight: CGFloat) {
         self.contentHeight = max(0, contentHeight)
     }
@@ -174,7 +226,7 @@ final class ChromeOverlayContentView: UIView {
     }
     
     var resolvedHeight: CGFloat {
-        let maximumHeight = availableContentHeight * UX.maximumContentHeightRatio
+        let maximumHeight = availableContentHeight * layoutMode.maximumHeightRatio
         switch heightMode {
         case .default:
             return maximumHeight
@@ -238,14 +290,15 @@ final class ChromeOverlayContentView: UIView {
     // MARK: - Hosted Content
     
     func setController(_ viewController: UIViewController, for page: Page, in parentViewController: UIViewController) {
-        if pageControllers[page] === viewController {
+        let containerView = containerView(for: page)
+        if pageControllers[page] === viewController,
+           viewController.view.isDescendant(of: containerView) {
             return
         }
         
         removeController(for: page)
         detachIfNeeded(viewController)
         
-        let containerView = containerView(for: page)
         parentViewController.addChild(viewController)
         viewController.view.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(viewController.view)
@@ -269,6 +322,10 @@ final class ChromeOverlayContentView: UIView {
         }
         
         guard let viewController = pageControllers.removeValue(forKey: page) else {
+            return
+        }
+        
+        guard viewController.view.isDescendant(of: containerView(for: page)) else {
             return
         }
         

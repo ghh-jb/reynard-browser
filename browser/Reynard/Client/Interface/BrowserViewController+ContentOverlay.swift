@@ -7,10 +7,14 @@
 
 import UIKit
 
-extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoordinatorDelegate {
+extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoordinatorDelegate, HomepageOverlayCoordinatorDelegate, AddressBarSearchDelegate {
+    // MARK: - Content Overlay Host
+    
     var overlayParentViewController: UIViewController {
         return self
     }
+    
+    // MARK: - Search Overlay Delegate
     
     var searchLayout: BrowserLayout {
         return browserLayout
@@ -40,8 +44,8 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
         return browserChrome.isAddressBarEditing
     }
     
-    var isSearchAddressBarShowingAutocomplete: Bool {
-        return browserChrome.isShowingAddressBarAutocomplete
+    var searchWidthMode: SearchWidthMode {
+        return isHalfSplitScreenOrSmaller ? .halfSplitScreenOrSmaller : .standard
     }
     
     func refreshSearchAddressBar() {
@@ -62,5 +66,80 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
     
     func endSearchEditing() {
         view.endEditing(true)
+    }
+    
+    // MARK: - Homepage Overlay Delegate
+    
+    var homepageLayout: BrowserLayout {
+        return browserLayout
+    }
+    
+    var homepageGridWidth: HomepageGridWidth {
+        if isHalfSplitScreenOrSmaller {
+            return .fourColumn
+        }
+        if isSidebarOverlayLayout {
+            return .sixColumn
+        }
+        return .eightColumn
+    }
+    
+    var homepageSelectedTab: Tab? {
+        return tabManager.selectedTab
+    }
+    
+    var isHomepageTabOverviewPresented: Bool {
+        return tabOverview.isPresented
+    }
+    
+    var isHomepageShowingFullscreenMedia: Bool {
+        return isShowingFullscreenMedia
+    }
+    
+    var homepageChrome: BrowserChrome {
+        return browserChrome
+    }
+    
+    var homepageContentView: ContentView {
+        return contentView
+    }
+    
+    func browseHomepageFavorite(_ favorite: BookmarkSnapshot) {
+        tabManager.browse(to: favorite.url.absoluteString)
+    }
+    
+    func endHomepageEditing() {
+        view.endEditing(true)
+    }
+    
+    func updateHomepageLayout(animated: Bool, duration: TimeInterval) {
+        updateBrowserLayout(animated: animated, duration: duration)
+    }
+    
+    // MARK: - Address Bar Search Delegate
+    
+    func addressBarDidSubmit(_ searchTerm: String) {
+        homepageOverlayCoordinator.addressBarDidSubmit(searchTerm)
+        searchOverlayCoordinator.addressBarDidSubmit(searchTerm)
+    }
+    
+    func addressBarDidTapDismiss(_ addressBar: AddressBar) {
+        homepageOverlayCoordinator.addressBarDidTapDismiss(addressBar)
+        searchOverlayCoordinator.addressBarDidTapDismiss(addressBar)
+    }
+    
+    func addressBarDidBeginEditing(_ addressBar: AddressBar) {
+        homepageOverlayCoordinator.addressBarDidBeginEditing(addressBar)
+        searchOverlayCoordinator.addressBarDidBeginEditing(addressBar)
+    }
+    
+    func addressBarDidEndEditing(_ addressBar: AddressBar) {
+        homepageOverlayCoordinator.addressBarDidEndEditing(addressBar)
+        searchOverlayCoordinator.addressBarDidEndEditing(addressBar)
+    }
+    
+    func addressBar(_ addressBar: AddressBar, didChangeText text: String, previousText: String, isDelete: Bool) {
+        searchOverlayCoordinator.addressBar(addressBar, didChangeText: text, previousText: previousText, isDelete: isDelete)
+        homepageOverlayCoordinator.addressBar(addressBar, didChangeText: text, previousText: previousText, isDelete: isDelete)
     }
 }

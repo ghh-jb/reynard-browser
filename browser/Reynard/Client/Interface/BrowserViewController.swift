@@ -43,6 +43,10 @@ final class BrowserViewController: UIViewController {
     lazy var browserChrome = BrowserChrome()
     
     lazy var overlayCoordinator = OverlayCoordinator(host: self)
+    lazy var homepageOverlayCoordinator = HomepageOverlayCoordinator(
+        delegate: self,
+        overlayCoordinator: overlayCoordinator
+    )
     lazy var searchOverlayCoordinator = SearchOverlayCoordinator(
         delegate: self,
         overlayCoordinator: overlayCoordinator
@@ -127,6 +131,7 @@ final class BrowserViewController: UIViewController {
         
         tabManager.createInitialTab()
         refreshAddressBar()
+        homepageOverlayCoordinator.updatePresentation(animated: false)
         
         Task { @MainActor [weak self] in
             guard let self else {
@@ -209,7 +214,7 @@ final class BrowserViewController: UIViewController {
     private func configureBrowserInterface() {
         browserChrome.configureAddressBar(
             delegate: self,
-            searchDelegate: searchOverlayCoordinator,
+            searchDelegate: self,
             gestureDelegate: self
         )
         configureBrowserChromeActions()
@@ -268,6 +273,9 @@ final class BrowserViewController: UIViewController {
         browserChrome.onTabOverview = { [weak self] in
             self?.setTabOverviewVisible(true, animated: true)
         }
+        browserChrome.onOverlayDismiss = { [weak self] in
+            self?.dismissAddressBarEditingAndChromeOverlay()
+        }
     }
     
     func updateBrowserLayout(
@@ -282,9 +290,15 @@ final class BrowserViewController: UIViewController {
             return
         }
         
+        let previousLayout = browserLayout
         browserLayout = resolveBrowserLayout()
-        applyBrowserLayout()
-        searchOverlayCoordinator.updateLayoutIfNeeded()
+        if browserLayout != previousLayout {
+            dismissAddressBarEditingAndOverlays()
+        }
+        applyBrowserLayout(animated: animated)
+        homepageOverlayCoordinator.updatePresentedLayout()
+        homepageOverlayCoordinator.updatePresentation(animated: false)
+        searchOverlayCoordinator.updatePresentedLayout()
         
         let layoutBlock = {
             self.view.layoutIfNeeded()
@@ -294,6 +308,21 @@ final class BrowserViewController: UIViewController {
         animated
         ? UIView.animate(withDuration: duration, animations: layoutBlock)
         : layoutBlock()
+    }
+    
+    func dismissAddressBarEditingAndOverlays() {
+        browserChrome.resetAddressBarEditing()
+        homepageOverlayCoordinator.resetPresentationSession()
+        searchOverlayCoordinator.resetPresentationSession()
+        overlayCoordinator.discardAll(animated: false)
+    }
+    
+    func dismissAddressBarEditingAndChromeOverlay() {
+        browserChrome.resetAddressBarEditing()
+        homepageOverlayCoordinator.resetPresentationSession()
+        searchOverlayCoordinator.resetPresentationSession()
+        overlayCoordinator.dismiss(.homepage, on: .detached, animated: false)
+        overlayCoordinator.dismiss(.search, on: .detached, animated: false)
     }
     
     func updateBrowserLayoutIfNeeded(
@@ -307,7 +336,7 @@ final class BrowserViewController: UIViewController {
         updateBrowserLayout(animated: animated, duration: duration)
     }
     
-    func applyBrowserLayout() {
+    func applyBrowserLayout(animated: Bool = false) {
         if isShowingFullscreenMedia {
             applyFullscreenLayout()
         } else {
@@ -322,7 +351,7 @@ final class BrowserViewController: UIViewController {
         }
         
         applyTabOverviewLayout()
-        applyBrowserChromeLayout()
+        applyBrowserChromeLayout(animated: animated)
         updateNavigationButtons()
     }
     
@@ -389,17 +418,23 @@ final class BrowserViewController: UIViewController {
         )
     }
     
-    private func applyBrowserChromeLayout() {
+    private func applyBrowserChromeLayout(animated: Bool) {
+        let searchState = isShowingFullscreenMedia
+        ? BrowserChrome.SearchState.inactive
+        : (overlayCoordinator.chromeStateForAddressBarScrollDismissal(layout: browserLayout) ?? searchOverlayCoordinator.chromeState)
         browserChrome.apply(state: BrowserChrome.State(
             position: browserLayout.chromePosition,
             mode: browserLayout.chromeMode,
             presentation: isShowingFullscreenMedia
             ? .fullscreenMedia
             : (tabOverview.isPresented ? .tabOverview : .browsing),
-            search: isShowingFullscreenMedia ? .inactive : searchOverlayCoordinator.chromeState,
+            search: searchState,
             topInset: browserTopInset(),
             interfaceIdiom: browserLayout.interfaceIdiom,
-            sidebarButtonVisible: sidebarCoordinator.showChromeSidebarButton
+            orientation: browserLayout.orientation,
+            isTwoThirdSplitScreenOrSmaller: isSidebarOverlayLayout,
+            sidebarButtonVisible: sidebarCoordinator.showChromeSidebarButton,
+            animatesChromeStateChanges: animated
         ))
     }
     
@@ -433,10 +468,10 @@ final class BrowserViewController: UIViewController {
     
     var isCompactPadLayout: Bool {
         guard let window = view.window else {
-            return UIApplication.shared.shouldUseCompactPadLayout
+            return UIApplication.shared.isOneThirdSplitScreenOrSmaller
         }
         
-        return UIApplication.shared.shouldUseCompactPadLayout(
+        return UIApplication.shared.isOneThirdSplitScreenOrSmaller(
             forWindowWidth: browserWindowWidth(fallback: window.bounds.width),
             screen: window.screen
         )
@@ -444,21 +479,21 @@ final class BrowserViewController: UIViewController {
     
     var isSidebarOverlayLayout: Bool {
         guard let window = view.window else {
-            return UIApplication.shared.isSidebarOverlayWidth
+            return UIApplication.shared.isTwoThirdSplitScreenOrSmaller
         }
         
-        return UIApplication.shared.isSidebarOverlayWidth(
+        return UIApplication.shared.isTwoThirdSplitScreenOrSmaller(
             forWindowWidth: browserWindowWidth(fallback: window.bounds.width),
             screen: window.screen
         )
     }
     
-    private var shouldUseBottomTabOverviewToolbar: Bool {
+    var isHalfSplitScreenOrSmaller: Bool {
         guard let window = view.window else {
-            return UIApplication.shared.shouldUseBottomTabOverviewToolbar
+            return UIApplication.shared.isHalfSplitScreenOrSmaller
         }
         
-        return UIApplication.shared.shouldUseBottomTabOverviewToolbar(
+        return UIApplication.shared.isHalfSplitScreenOrSmaller(
             forWindowWidth: browserWindowWidth(fallback: window.bounds.width),
             screen: window.screen
         )
@@ -507,7 +542,7 @@ final class BrowserViewController: UIViewController {
             orientation: orientation,
             chromeMode: .pad,
             chromePosition: .bottom,
-            tabOverviewToolbarPosition: shouldUseBottomTabOverviewToolbar ? .bottom : .top,
+            tabOverviewToolbarPosition: isHalfSplitScreenOrSmaller ? .bottom : .top,
             overlayHost: .detached
         )
     }

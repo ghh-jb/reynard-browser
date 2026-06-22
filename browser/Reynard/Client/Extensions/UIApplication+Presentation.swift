@@ -8,7 +8,7 @@
 import UIKit
 
 extension UIApplication {
-    var isSidebarOverlayWidth: Bool {
+    var isTwoThirdSplitScreenOrSmaller: Bool {
         guard
             let windowScene = connectedScenes
                 .compactMap({ $0 as? UIWindowScene })
@@ -18,10 +18,10 @@ extension UIApplication {
             return false
         }
         
-        return isSidebarOverlayWidth(forWindowWidth: window.bounds.width, screen: window.screen)
+        return isTwoThirdSplitScreenOrSmaller(forWindowWidth: window.bounds.width, screen: window.screen)
     }
     
-    var shouldUseCompactPadLayout: Bool {
+    var isOneThirdSplitScreenOrSmaller: Bool {
         guard
             let windowScene = connectedScenes
                 .compactMap({ $0 as? UIWindowScene })
@@ -31,10 +31,10 @@ extension UIApplication {
             return false
         }
         
-        return shouldUseCompactPadLayout(forWindowWidth: window.bounds.width, screen: window.screen)
+        return isOneThirdSplitScreenOrSmaller(forWindowWidth: window.bounds.width, screen: window.screen)
     }
     
-    var shouldUseBottomTabOverviewToolbar: Bool {
+    var isHalfSplitScreenOrSmaller: Bool {
         guard
             let windowScene = connectedScenes
                 .compactMap({ $0 as? UIWindowScene })
@@ -44,20 +44,20 @@ extension UIApplication {
             return false
         }
         
-        return shouldUseBottomTabOverviewToolbar(forWindowWidth: window.bounds.width, screen: window.screen)
+        return isHalfSplitScreenOrSmaller(forWindowWidth: window.bounds.width, screen: window.screen)
     }
     
-    func isSidebarOverlayWidth(forWindowWidth windowWidth: CGFloat, screen: UIScreen) -> Bool {
+    func isTwoThirdSplitScreenOrSmaller(forWindowWidth windowWidth: CGFloat, screen: UIScreen) -> Bool {
         let screenWidth = max(screen.bounds.width, screen.bounds.height)
         return windowWidth <= (3.0 / 4.0) * screenWidth + 0.5
     }
     
-    func shouldUseCompactPadLayout(forWindowWidth windowWidth: CGFloat, screen: UIScreen) -> Bool {
+    func isOneThirdSplitScreenOrSmaller(forWindowWidth windowWidth: CGFloat, screen: UIScreen) -> Bool {
         let screenWidth = max(screen.bounds.width, screen.bounds.height)
         return windowWidth <= (2.0 / 5.0) * screenWidth + 0.5
     }
     
-    func shouldUseBottomTabOverviewToolbar(forWindowWidth windowWidth: CGFloat, screen: UIScreen) -> Bool {
+    func isHalfSplitScreenOrSmaller(forWindowWidth windowWidth: CGFloat, screen: UIScreen) -> Bool {
         let screenWidth = max(screen.bounds.width, screen.bounds.height)
         return windowWidth <= (3.0 / 5.0) * screenWidth + 0.5
     }

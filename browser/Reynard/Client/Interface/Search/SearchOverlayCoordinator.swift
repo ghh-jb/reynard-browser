@@ -7,14 +7,6 @@
 
 import UIKit
 
-protocol AddressBarSearchDelegate: AnyObject {
-    func addressBarDidSubmit(_ searchTerm: String)
-    func addressBarDidTapDismiss(_ addressBar: AddressBar)
-    func addressBarDidBeginEditing(_ addressBar: AddressBar)
-    func addressBarDidEndEditing(_ addressBar: AddressBar)
-    func addressBar(_ addressBar: AddressBar, didChangeText text: String, previousText: String, isDelete: Bool)
-}
-
 protocol SearchOverlayCoordinatorDelegate: AnyObject {
     var searchLayout: BrowserLayout { get }
     var searchChrome: BrowserChrome { get }
@@ -23,7 +15,7 @@ protocol SearchOverlayCoordinatorDelegate: AnyObject {
     var searchSelectedTabID: UUID? { get }
     var searchActiveTabs: [Tab] { get }
     var isSearchAddressBarEditing: Bool { get }
-    var isSearchAddressBarShowingAutocomplete: Bool { get }
+    var searchWidthMode: SearchWidthMode { get }
     
     func refreshSearchAddressBar()
     func updateSearchLayout(animated: Bool, duration: TimeInterval)
@@ -41,11 +33,9 @@ final class SearchOverlayCoordinator {
     private let overlayCoordinator: OverlayCoordinator
     private let searchViewController: SearchViewController
     private var query = ""
-    private var pendingScrollDismissal = false
     private var restoresSuggestionsOnFocus = false
     
     private(set) var isFocused = false
-    private var isScrollDismissed = false
     
     // MARK: - Lifecycle
     
@@ -60,19 +50,34 @@ final class SearchOverlayCoordinator {
     }
     
     private var isVisible: Bool {
-        return overlayCoordinator.isPresented(.search)
+        guard let host = searchContentMode?.overlayHost else {
+            return false
+        }
+        
+        return overlayCoordinator.isPresented(.search, on: host)
+    }
+    
+    private var searchContentMode: SearchContentMode? {
+        guard let layout = delegate?.searchLayout else {
+            return nil
+        }
+        
+        return SearchContentMode.current(
+            layout: layout,
+            widthMode: delegate?.searchWidthMode ?? .standard
+        )
     }
     
     var preservesAddressBarText: Bool {
-        return isScrollDismissed && isVisible
+        return overlayCoordinator.isAddressBarScrollDismissed(for: .search) && isVisible
     }
     
     var chromeState: BrowserChrome.SearchState {
         guard isFocused else { return .inactive }
-        guard preservesAddressBarText else { return .focused }
-        return delegate?.searchLayout.overlayHost == .detached
-        ? .scrollingDetachedSuggestions
-        : .scrollingEmbeddedSuggestions
+        if let scrollDismissalState = overlayCoordinator.chromeStateForAddressBarScrollDismissal(for: .search, layout: delegate?.searchLayout ?? .initial(interfaceIdiom: .phone)) {
+            return scrollDismissalState
+        }
+        return .focused
     }
     
     private func clearSuggestions() {
@@ -84,11 +89,11 @@ final class SearchOverlayCoordinator {
     
     func addressBarDidBeginEditing(_ addressBar: AddressBar) {
         delegate?.refreshSearchAddressBar()
-        isScrollDismissed = false
-        updateLayoutIfNeeded()
+        overlayCoordinator.clearAddressBarScrollDismissal(for: .search)
+        updatePresentedLayout()
         if restoresSuggestionsOnFocus {
             restoresSuggestionsOnFocus = false
-            showIfNeeded()
+            presentSearchIfNeeded()
         } else {
             clearSuggestions()
         }
@@ -121,7 +126,7 @@ final class SearchOverlayCoordinator {
         }
         
         self.query = query
-        showIfNeeded()
+        presentSearchIfNeeded()
         searchViewController.updateQuery(
             query,
             activeTabMode: delegate.searchSelectedTabMode,
@@ -130,13 +135,9 @@ final class SearchOverlayCoordinator {
     }
     
     func addressBarDidEndEditing(_ addressBar: AddressBar) {
-        if pendingScrollDismissal {
-            pendingScrollDismissal = false
+        if overlayCoordinator.consumeAddressBarScrollDismissal(for: .search) {
             restoresSuggestionsOnFocus = true
-            isScrollDismissed = true
-            delegate?.searchChrome.setAddressBarEditingState(.composing)
-            delegate?.searchChrome.setPreservesAddressBarAutocompleteAfterResign(true)
-            updateLayoutIfNeeded()
+            updatePresentedLayout()
             delegate?.updateSearchLayout(animated: false, duration: UX.layoutAnimationDuration)
             return
         }
@@ -152,43 +153,43 @@ final class SearchOverlayCoordinator {
     
     // MARK: - Presentation
     
-    private func showIfNeeded() {
+    private func presentSearchIfNeeded() {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !isVisible else {
             return
         }
         
-        show(animated: true)
+        presentSearch(animated: true)
     }
     
-    private func hideNow() {
+    private func dismissSearchImmediately() {
         overlayCoordinator.dismiss(.search, animated: false)
     }
     
-    func updateLayoutIfNeeded() {
+    func updatePresentedLayout() {
         guard isVisible else {
             return
         }
         
-        guard let targetHost = delegate?.searchLayout.overlayHost else {
+        guard let targetHost = searchContentMode?.overlayHost else {
             return
         }
-        guard overlayCoordinator.host(for: .search) != targetHost else {
+        guard !overlayCoordinator.isPresented(.search, on: targetHost) else {
             configureOverlay()
             return
         }
         
-        hideNow()
-        show(animated: false)
+        dismissSearchImmediately()
+        presentSearch(animated: false)
     }
     
     // MARK: - Search Session
     
     func endSearchSession() {
         restoresSuggestionsOnFocus = false
-        isScrollDismissed = false
+        overlayCoordinator.clearAddressBarScrollDismissal(for: .search)
         delegate?.searchChrome.setAddressBarEditingState(.inactive)
-        delegate?.searchChrome.setPreservesAddressBarAutocompleteAfterResign(false)
+        delegate?.updateSearchLayout(animated: true, duration: UX.layoutAnimationDuration)
         overlayCoordinator.dismiss(.search, animated: true) {
             self.clearSuggestions()
         }
@@ -200,8 +201,8 @@ final class SearchOverlayCoordinator {
     
     // MARK: - Layout
     
-    private func show(animated: Bool) {
-        guard let targetHost = delegate?.searchLayout.overlayHost else {
+    private func presentSearch(animated: Bool) {
+        guard let targetHost = searchContentMode?.overlayHost else {
             return
         }
         overlayCoordinator.present(
@@ -225,7 +226,7 @@ final class SearchOverlayCoordinator {
     }
     
     private func updateDetachedContentHeight(_ contentHeight: CGFloat) {
-        guard overlayCoordinator.host(for: .search) == .detached else {
+        guard overlayCoordinator.isPresented(.search, on: .detached) else {
             return
         }
         
@@ -241,9 +242,17 @@ final class SearchOverlayCoordinator {
     }
     
     func tabOverviewWillPresent() {
-        if delegate?.searchLayout.overlayHost == .detached {
-            hideNow()
+        if searchContentMode?.overlayHost == .detached {
+            dismissSearchImmediately()
         }
+    }
+    
+    func resetPresentationSession() {
+        query = ""
+        restoresSuggestionsOnFocus = false
+        isFocused = false
+        overlayCoordinator.clearAddressBarScrollDismissal(for: .search)
+        searchViewController.clearSuggestions()
     }
     
     private func switchToTab(id: UUID) {
@@ -258,11 +267,17 @@ final class SearchOverlayCoordinator {
 
 extension SearchOverlayCoordinator: AddressBarSearchDelegate, SearchViewControllerDelegate {
     func addressBarDidSubmit(_ searchTerm: String) {
+        overlayCoordinator.clearAddressBarScrollDismissal(for: .search)
         delegate?.browseSearchTerm(searchTerm)
         delegate?.endSearchEditing()
     }
     
     func addressBarDidTapDismiss(_ addressBar: AddressBar) {
+        if overlayCoordinator.endAddressBarScrollDismissal(for: .search) {
+            endSearchSession()
+            return
+        }
+        
         if preservesAddressBarText {
             endSearchSession()
             return
@@ -273,19 +288,11 @@ extension SearchOverlayCoordinator: AddressBarSearchDelegate, SearchViewControll
     }
     
     func searchViewControllerDidStartScrolling(_ controller: SearchViewController) {
-        guard delegate?.isSearchAddressBarEditing == true else {
-            return
-        }
-        
-        pendingScrollDismissal = true
-        delegate?.searchChrome.setPreservesAddressBarAutocompleteAfterResign(
-            delegate?.isSearchAddressBarShowingAutocomplete == true
-        )
-        delegate?.searchChrome.resignAddressBarFirstResponder()
+        overlayCoordinator.beginAddressBarScrollDismissal(for: .search)
     }
     
     func searchViewController(_ controller: SearchViewController, didSelectSuggestion suggestion: String, result: UserDataSearchResult?) {
-        if isScrollDismissed {
+        if overlayCoordinator.isAddressBarScrollDismissed(for: .search) {
             endSearchSession()
         }
         

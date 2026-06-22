@@ -184,6 +184,16 @@ final class BookmarkStore {
         }
     }
     
+    func favoritesFolderContents() -> BookmarkFolderContentsSnapshot {
+        stateQueue.sync {
+            let parent = folderSnapshotLocked(guid: Constants.favoritesFolderGUID) ?? rootFolderSnapshotLocked()
+            return BookmarkFolderContentsSnapshot(
+                parent: parent,
+                items: fetchFolderContentsLocked(parentGUID: parent.guid)
+            )
+        }
+    }
+    
     func contents(of parentGUID: String? = nil) -> BookmarkFolderContentsSnapshot {
         stateQueue.sync {
             let requestedParentGUID = resolvedParentGUID(for: parentGUID)

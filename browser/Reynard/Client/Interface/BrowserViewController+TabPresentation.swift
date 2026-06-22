@@ -23,6 +23,7 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
     }
     
     func selectTab(at index: Int, mode: TabMode) {
+        captureSelectedTabThumbnailIfNeeded(targetIndex: index, targetMode: mode)
         tabManager.selectTab(at: index, mode: mode)
     }
     
@@ -90,10 +91,15 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
     
     func setTabOverviewVisible(_ visible: Bool, animated: Bool) {
         if visible {
+            dismissAddressBarEditingAndOverlays()
             contentView.resetFocusedInputRelocation()
+            homepageOverlayCoordinator.tabOverviewWillPresent()
             searchOverlayCoordinator.tabOverviewWillPresent()
         }
         tabOverview.setPresented(visible, animated: animated)
+        if !visible {
+            homepageOverlayCoordinator.updatePresentation(animated: animated)
+        }
     }
     
     // MARK: - Tab Overview Actions

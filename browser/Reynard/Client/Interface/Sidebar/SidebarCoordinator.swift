@@ -101,7 +101,7 @@ final class SidebarCoordinator {
             return
         }
         
-        let shouldOverrideSidebarSizeClass = !(contentBrowser?.isCompactPadLayout ?? UIApplication.shared.shouldUseCompactPadLayout)
+        let shouldOverrideSidebarSizeClass = !(contentBrowser?.isCompactPadLayout ?? UIApplication.shared.isOneThirdSplitScreenOrSmaller)
         guard overridesSidebarSizeClass != shouldOverrideSidebarSizeClass else {
             return
         }

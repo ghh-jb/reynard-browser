@@ -101,6 +101,13 @@ final class OverlayContentView: UIView {
         homepageView.isHidden = presentation != .visible(.homepage)
         searchSuggestionView.isHidden = presentation != .visible(.search)
         
+        if isChangingVisiblePage(from: previousPresentation) {
+            isHidden = false
+            alpha = 1
+            completion?()
+            return
+        }
+        
         switch presentation {
         case .hidden:
             let finish = { [weak self] in
@@ -140,17 +147,35 @@ final class OverlayContentView: UIView {
         }
     }
     
+    private func visiblePage(from presentation: PresentationState?) -> Page? {
+        guard case let .visible(page) = presentation else {
+            return nil
+        }
+        
+        return page
+    }
+    
+    private func isChangingVisiblePage(from previousPresentation: PresentationState?) -> Bool {
+        guard let previousPage = visiblePage(from: previousPresentation),
+              case let .visible(page) = presentation else {
+            return false
+        }
+        
+        return previousPage != page
+    }
+    
     // MARK: - Hosted Content
     
     func setController(_ viewController: UIViewController, for page: Page, in parentViewController: UIViewController) {
-        if pageControllers[page] === viewController {
+        let containerView = containerView(for: page)
+        if pageControllers[page] === viewController,
+           viewController.view.isDescendant(of: containerView) {
             return
         }
         
         removeController(for: page)
         detachIfNeeded(viewController)
         
-        let containerView = containerView(for: page)
         parentViewController.addChild(viewController)
         viewController.view.translatesAutoresizingMaskIntoConstraints = false
         containerView.addSubview(viewController.view)
@@ -174,6 +199,10 @@ final class OverlayContentView: UIView {
         }
         
         guard let viewController = pageControllers.removeValue(forKey: page) else {
+            return
+        }
+        
+        guard viewController.view.isDescendant(of: containerView(for: page)) else {
             return
         }
         
@@ -201,11 +230,4 @@ final class OverlayContentView: UIView {
         }
     }
     
-    private func visiblePage(from presentation: PresentationState?) -> Page? {
-        guard case let .visible(page) = presentation else {
-            return nil
-        }
-        
-        return page
-    }
 }

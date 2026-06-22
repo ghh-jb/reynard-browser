@@ -120,7 +120,9 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     }
     
     func createTabForSwipe() -> Int {
-        return tabManager.createTab(selecting: true)
+        let index = tabManager.createTab(selecting: true)
+        updateHomepageThumbnailForNewTab(at: index)
+        return index
     }
     
     func setPendingTabExpansion(at index: Int?) {

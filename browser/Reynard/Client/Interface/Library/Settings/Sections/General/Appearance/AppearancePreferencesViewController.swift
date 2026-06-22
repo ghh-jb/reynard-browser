@@ -9,11 +9,14 @@ import UIKit
 
 final class AppearancePreferencesViewController: SettingsTableViewController {
     private enum Section: CaseIterable {
+        case appAppearance
         case addressBar
         case tabs
         
         var text: SettingsSectionText {
             switch self {
+            case .appAppearance:
+                return SettingsSectionText()
             case .addressBar:
                 return SettingsSectionText(headerTitle: "Address Bar")
             case .tabs:
@@ -23,6 +26,8 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
         
         var rows: [Row] {
             switch self {
+            case .appAppearance:
+                return [.appAppearance]
             case .addressBar:
                 if UIDevice.current.userInterfaceIdiom == .pad {
                     return [.showFullWebsiteAddress]
@@ -38,6 +43,7 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
     }
     
     private enum Row {
+        case appAppearance
         case BrowserChromePosition
         case showFullWebsiteAddress
         case landscapeTabBar
@@ -98,8 +104,16 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
         }
         
         switch displayedSections[indexPath.section].rows[indexPath.row] {
+        case .appAppearance:
+            let cell = AppAppearancePickerCell(style: .default, reuseIdentifier: nil)
+            cell.display(selectedAppearance: Prefs.AppearanceSettings.appAppearance)
+            cell.onAppearanceChanged = { appearance in
+                Prefs.AppearanceSettings.appAppearance = appearance
+                AppAppearanceController.apply(appearance)
+            }
+            return cell
         case .BrowserChromePosition:
-            let cell = BrowserChromePositionPickerCell(style: .default, reuseIdentifier: nil)
+            let cell = AddressBarPositionPickerCell(style: .default, reuseIdentifier: nil)
             cell.display(selectedPosition: Prefs.AppearanceSettings.addressBarPosition)
             cell.onPositionChanged = { position in
                 Prefs.AppearanceSettings.addressBarPosition = position

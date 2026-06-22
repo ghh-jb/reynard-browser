@@ -1,5 +1,5 @@
 //
-//  BrowserChromePositionOptionControl.swift
+//  AddressBarPositionOptionControl.swift
 //  Reynard
 //
 //  Created by Minh Ton on 18/6/26.
@@ -7,7 +7,7 @@
 
 import UIKit
 
-final class BrowserChromePositionOptionControl: UIControl {
+final class AddressBarPositionOptionControl: UIControl {
     private enum UX {
         static let topInset: CGFloat = 12
         static let previewHeight: CGFloat = 102

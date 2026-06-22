@@ -54,6 +54,7 @@ final class BrowserPreferences {
             key("BrowsingSettings", "showImagePreviews"): true,
             
             // Appearance
+            key("AppearanceSettings", "appAppearance"): AppAppearance.system.rawValue,
             key("AppearanceSettings", "addressBarPosition"): BrowserChromePosition.bottom.rawValue,
             key("AppearanceSettings", "showsFullWebsiteAddress"): false,
             key("AppearanceSettings", "showsLandscapeTabBar"): true,
@@ -352,6 +353,16 @@ final class BrowserPreferences {
     
     // MARK: - Appearance
     struct AppearanceSettings {
+        static var appAppearance: AppAppearance {
+            get {
+                let rawValue = prefs.string(forSetting: "AppearanceSettings", key: "appAppearance") ?? AppAppearance.system.rawValue
+                return AppAppearance(rawValue: rawValue) ?? .system
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "AppearanceSettings", key: "appAppearance")
+            }
+        }
+        
         static var addressBarPosition: BrowserChromePosition {
             get {
                 let rawValue = prefs.string(forSetting: "AppearanceSettings", key: "addressBarPosition") ?? BrowserChromePosition.bottom.rawValue

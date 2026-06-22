@@ -1,5 +1,5 @@
 //
-//  BrowserChromePositionPickerCell.swift
+//  AddressBarPositionPickerCell.swift
 //  Reynard
 //
 //  Created by Minh Ton on 18/6/26.
@@ -7,16 +7,16 @@
 
 import UIKit
 
-final class BrowserChromePositionPickerCell: UITableViewCell {
+final class AddressBarPositionPickerCell: UITableViewCell {
     var onPositionChanged: ((BrowserChromePosition) -> Void)?
     private(set) var selectedPosition: BrowserChromePosition = .bottom
     
-    private let bottomPositionOption = BrowserChromePositionOptionControl(
+    private let bottomPositionOption = AddressBarPositionOptionControl(
         position: .bottom,
         symbolName: "reynard.platter.filled.bottom.iphone",
         title: "Bottom"
     )
-    private let topPositionOption = BrowserChromePositionOptionControl(
+    private let topPositionOption = AddressBarPositionOptionControl(
         position: .top,
         symbolName: "reynard.platter.filled.top.iphone",
         title: "Top"

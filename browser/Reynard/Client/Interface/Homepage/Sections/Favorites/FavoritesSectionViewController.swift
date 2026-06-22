@@ -9,6 +9,7 @@ import UIKit
 
 protocol FavoritesSectionViewControllerDelegate: AnyObject {
     func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFavorite favorite: BookmarkSnapshot)
+    func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFolder folder: BookmarkFolderSnapshot)
 }
 
 final class FavoritesSectionViewController: UIViewController {
@@ -28,7 +29,9 @@ final class FavoritesSectionViewController: UIViewController {
     weak var delegate: FavoritesSectionViewControllerDelegate?
     
     private let bookmarkStore: BookmarkStore
-    private var favoriteBookmarks: [BookmarkSnapshot] = []
+    private let folder: BookmarkFolderSnapshot?
+    private let showsTitle: Bool
+    private var favoriteItems: [BookmarkContentSnapshot] = []
     private var favoritesFolderID: String?
     private var contentMode: HomepageContentMode = .embeddedNarrow
     private var collectionHeightConstraint: NSLayoutConstraint?
@@ -54,14 +57,23 @@ final class FavoritesSectionViewController: UIViewController {
         collectionView.isScrollEnabled = false
         collectionView.dataSource = self
         collectionView.delegate = self
-        collectionView.register(FavoriteCollectionViewCell.self, forCellWithReuseIdentifier: FavoriteCollectionViewCell.reuseIdentifier)
+        collectionView.register(
+            FavoriteSiteCollectionViewCell.self,
+            forCellWithReuseIdentifier: FavoriteSiteCollectionViewCell.reuseIdentifier
+        )
+        collectionView.register(
+            FavoriteFolderCollectionViewCell.self,
+            forCellWithReuseIdentifier: FavoriteFolderCollectionViewCell.reuseIdentifier
+        )
         return collectionView
     }()
     
     // MARK: - Lifecycle
     
-    init(bookmarkStore: BookmarkStore = .shared) {
+    init(bookmarkStore: BookmarkStore = .shared, folder: BookmarkFolderSnapshot? = nil, showsTitle: Bool = true) {
         self.bookmarkStore = bookmarkStore
+        self.folder = folder
+        self.showsTitle = showsTitle
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -103,6 +115,7 @@ final class FavoritesSectionViewController: UIViewController {
     
     private func configureAppearance() {
         view.backgroundColor = .clear
+        titleLabel.isHidden = !showsTitle
     }
     
     private func configureHierarchy() {
@@ -112,6 +125,8 @@ final class FavoritesSectionViewController: UIViewController {
     
     private func configureConstraints() {
         let heightConstraint = collectionView.heightAnchor.constraint(equalToConstant: 1)
+        let collectionTopAnchor = showsTitle ? titleLabel.bottomAnchor : view.topAnchor
+        let collectionTopSpacing = showsTitle ? UX.titleBottomSpacing : 0
         collectionHeightConstraint = heightConstraint
         
         NSLayoutConstraint.activate([
@@ -119,7 +134,7 @@ final class FavoritesSectionViewController: UIViewController {
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: UX.horizontalInset),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -UX.horizontalInset),
             
-            collectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: UX.titleBottomSpacing),
+            collectionView.topAnchor.constraint(equalTo: collectionTopAnchor, constant: collectionTopSpacing),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -145,16 +160,17 @@ final class FavoritesSectionViewController: UIViewController {
     // MARK: - Bookmarks
     
     private func reloadFavorites() {
-        let contents = bookmarkStore.favoritesFolderContents()
-        favoritesFolderID = contents.parent.guid
-        favoriteBookmarks = contents.items.compactMap { item in
-            guard case let .bookmark(bookmark) = item else {
-                return nil
-            }
-            return bookmark
+        let contents: BookmarkFolderContentsSnapshot
+        if let folder {
+            contents = bookmarkStore.contents(of: folder.guid)
+        } else {
+            contents = bookmarkStore.favoritesFolderContents()
         }
+        
+        favoritesFolderID = contents.parent.guid
+        favoriteItems = contents.items
         collectionView.reloadData()
-        view.isHidden = favoriteBookmarks.isEmpty
+        view.isHidden = favoriteItems.isEmpty
         invalidateFavoriteLayout()
     }
     
@@ -190,7 +206,7 @@ final class FavoritesSectionViewController: UIViewController {
             collectionLayout.metrics = metrics
         }
         
-        let rowCount = Int(ceil(CGFloat(favoriteBookmarks.count) / CGFloat(metrics.columnCount)))
+        let rowCount = Int(ceil(CGFloat(favoriteItems.count) / CGFloat(metrics.columnCount)))
         let contentHeight = metrics.contentHeight(rowCount: rowCount)
         guard abs((collectionHeightConstraint?.constant ?? 0) - contentHeight) > 0.5 else {
             return
@@ -228,44 +244,81 @@ final class FavoritesSectionViewController: UIViewController {
 
 extension FavoritesSectionViewController: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return favoriteBookmarks.count
+        return favoriteItems.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: FavoriteCollectionViewCell.reuseIdentifier,
-            for: indexPath
-        ) as! FavoriteCollectionViewCell
-        cell.configure(favorite: favoriteBookmarks[indexPath.item])
-        return cell
+        switch favoriteItems[indexPath.item] {
+        case let .bookmark(bookmark):
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: FavoriteSiteCollectionViewCell.reuseIdentifier,
+                for: indexPath
+            ) as! FavoriteSiteCollectionViewCell
+            cell.configure(favorite: bookmark)
+            return cell
+            
+        case let .folder(folder):
+            let cell = collectionView.dequeueReusableCell(
+                withReuseIdentifier: FavoriteFolderCollectionViewCell.reuseIdentifier,
+                for: indexPath
+            ) as! FavoriteFolderCollectionViewCell
+            cell.configure(folder: folder, previewBookmarks: previewBookmarks(for: folder))
+            return cell
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard favoriteBookmarks.indices.contains(indexPath.item) else {
+        guard favoriteItems.indices.contains(indexPath.item) else {
             return
         }
         
-        delegate?.favoritesSectionViewController(self, didSelectFavorite: favoriteBookmarks[indexPath.item])
+        switch favoriteItems[indexPath.item] {
+        case let .bookmark(bookmark):
+            delegate?.favoritesSectionViewController(self, didSelectFavorite: bookmark)
+        case let .folder(folder):
+            delegate?.favoritesSectionViewController(self, didSelectFolder: folder)
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
-        return favoriteBookmarks.indices.contains(indexPath.item)
+        return favoriteItems.indices.contains(indexPath.item)
     }
     
     func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        guard favoriteBookmarks.indices.contains(sourceIndexPath.item) else {
+        guard favoriteItems.indices.contains(sourceIndexPath.item) else {
             reloadFavorites()
             return
         }
         
-        let targetIndex = min(max(destinationIndexPath.item, 0), favoriteBookmarks.count - 1)
-        let favorite = favoriteBookmarks.remove(at: sourceIndexPath.item)
-        favoriteBookmarks.insert(favorite, at: targetIndex)
+        let targetIndex = min(max(destinationIndexPath.item, 0), favoriteItems.count - 1)
+        let favoriteItem = favoriteItems.remove(at: sourceIndexPath.item)
+        favoriteItems.insert(favoriteItem, at: targetIndex)
         
         guard let favoritesFolderID,
-              bookmarkStore.moveBookmarkItem(guid: favorite.guid, to: targetIndex, in: favoritesFolderID) else {
+              bookmarkStore.moveBookmarkItem(guid: favoriteItem.guid, to: targetIndex, in: favoritesFolderID) else {
             reloadFavorites()
             return
+        }
+    }
+    
+    private func previewBookmarks(for folder: BookmarkFolderSnapshot) -> [BookmarkSnapshot] {
+        let contents = bookmarkStore.contents(of: folder.guid)
+        return contents.items.compactMap { item in
+            guard case let .bookmark(bookmark) = item else {
+                return nil
+            }
+            return bookmark
+        }
+    }
+}
+
+private extension BookmarkContentSnapshot {
+    var guid: String {
+        switch self {
+        case let .bookmark(bookmark):
+            return bookmark.guid
+        case let .folder(folder):
+            return folder.guid
         }
     }
 }

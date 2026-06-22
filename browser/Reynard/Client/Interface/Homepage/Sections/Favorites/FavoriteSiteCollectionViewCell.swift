@@ -1,13 +1,13 @@
 //
-//  FavoriteCollectionViewCell.swift
+//  FavoriteSiteCollectionViewCell.swift
 //  Reynard
 //
-//  Created by Minh Ton on 21/6/26.
+//  Created by Minh Ton on 22/6/26.
 //
 
 import UIKit
 
-final class FavoriteCollectionViewCell: UICollectionViewCell {
+final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
     private enum UX {
         static let maximumIconSize: CGFloat = 74
         static let iconCornerRadius: CGFloat = 17
@@ -18,10 +18,8 @@ final class FavoriteCollectionViewCell: UICollectionViewCell {
         static let shadowOffset = CGSize(width: 0, height: 3)
     }
     
-    static let reuseIdentifier = "FavoriteCollectionViewCell"
+    static let reuseIdentifier = "FavoriteSiteCollectionViewCell"
     
-    private static let faviconStore = FaviconStore.shared
-    private static let fallbackIconName = "reynard.globe"
     private static let titleFont = UIFontMetrics(forTextStyle: .caption1).scaledFont(
         for: .systemFont(ofSize: UX.titleFontSize, weight: .semibold)
     )
@@ -47,18 +45,16 @@ final class FavoriteCollectionViewCell: UICollectionViewCell {
         return view
     }()
     
-    private let iconView: UIImageView = {
-        let view = UIImageView()
+    private let iconView: FavoriteSiteIconView = {
+        let view = FavoriteSiteIconView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.contentMode = .scaleAspectFit
-        view.tintColor = .secondaryLabel
         return view
     }()
     
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = FavoriteCollectionViewCell.titleFont
+        label.font = FavoriteSiteCollectionViewCell.titleFont
         label.textAlignment = .center
         label.textColor = .label
         label.numberOfLines = 2
@@ -66,8 +62,6 @@ final class FavoriteCollectionViewCell: UICollectionViewCell {
         return label
     }()
     
-    private var representedURL: URL?
-    private var faviconTask: Task<Void, Never>?
     private var shadowWidthConstraint: NSLayoutConstraint?
     private var shadowHeightConstraint: NSLayoutConstraint?
     
@@ -84,11 +78,8 @@ final class FavoriteCollectionViewCell: UICollectionViewCell {
     
     override func prepareForReuse() {
         super.prepareForReuse()
-        representedURL = nil
-        faviconTask?.cancel()
-        faviconTask = nil
         titleLabel.text = nil
-        applyFallbackIcon()
+        iconView.reset()
     }
     
     override func layoutSubviews() {
@@ -97,48 +88,9 @@ final class FavoriteCollectionViewCell: UICollectionViewCell {
         updateShadowColor()
     }
     
-    deinit {
-        faviconTask?.cancel()
-    }
-    
-    // MARK: - Public API
-    
     func configure(favorite: BookmarkSnapshot) {
-        representedURL = favorite.url
         titleLabel.text = favorite.title
-        faviconTask?.cancel()
-        faviconTask = nil
-        
-        if let namedImage = UIImage(named: Self.bundledIconName(for: favorite.url)) {
-            applyIcon(namedImage, tintColor: nil)
-            return
-        }
-        
-        if let cachedImage = Self.faviconStore.cachedFavicon(for: favorite.url) {
-            applyIcon(cachedImage, tintColor: nil)
-            return
-        }
-        
-        applyFallbackIcon()
-        let expectedURL = favorite.url
-        faviconTask = Task { [weak self] in
-            guard let self else {
-                return
-            }
-            
-            let image = await Self.faviconStore.favicon(for: expectedURL)
-            guard !Task.isCancelled else {
-                return
-            }
-            
-            await MainActor.run {
-                guard self.representedURL == expectedURL else {
-                    return
-                }
-                
-                self.applyIcon(image ?? UIImage(named: Self.fallbackIconName), tintColor: image == nil ? .secondaryLabel : nil)
-            }
-        }
+        iconView.configure(bookmark: favorite)
     }
     
     // MARK: - Configuration
@@ -147,7 +99,6 @@ final class FavoriteCollectionViewCell: UICollectionViewCell {
         configureAppearance()
         configureHierarchy()
         configureConstraints()
-        applyFallbackIcon()
     }
     
     private func configureAppearance() {
@@ -190,35 +141,6 @@ final class FavoriteCollectionViewCell: UICollectionViewCell {
             titleLabel.topAnchor.constraint(equalTo: shadowView.bottomAnchor),
             titleLabel.heightAnchor.constraint(equalToConstant: UX.titleHeight),
         ])
-    }
-    
-    // MARK: - Icon Loading
-    
-    private func applyIcon(_ image: UIImage?, tintColor: UIColor?) {
-        iconView.image = image
-        iconView.tintColor = tintColor
-    }
-    
-    private func applyFallbackIcon() {
-        applyIcon(UIImage(named: Self.fallbackIconName), tintColor: .secondaryLabel)
-    }
-    
-    private static func bundledIconName(for url: URL) -> String {
-        var value = url.absoluteString
-        
-        if let schemeRange = value.range(of: "://") {
-            value.removeSubrange(value.startIndex..<schemeRange.upperBound)
-        }
-        
-        if value.hasPrefix("www.") {
-            value.removeFirst(4)
-        }
-        
-        while value.hasSuffix("/") {
-            value.removeLast()
-        }
-        
-        return value
     }
     
     // MARK: - Layout

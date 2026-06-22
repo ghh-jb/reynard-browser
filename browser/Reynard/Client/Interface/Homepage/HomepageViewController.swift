@@ -15,17 +15,21 @@ protocol HomepageViewControllerDelegate: AnyObject {
 final class HomepageViewController: UINavigationController {
     weak var homepageDelegate: HomepageViewControllerDelegate? {
         didSet {
-            rootViewController.delegate = homepageDelegate
+            rootViewController.delegate = self
         }
     }
     
     private let rootViewController: HomepageRootViewController
+    private let bookmarkStore: BookmarkStore
+    private var contentMode: HomepageContentMode = .embeddedNarrow
     
     // MARK: - Lifecycle
     
     init(bookmarkStore: BookmarkStore = .shared) {
+        self.bookmarkStore = bookmarkStore
         rootViewController = HomepageRootViewController(bookmarkStore: bookmarkStore)
         super.init(rootViewController: rootViewController)
+        rootViewController.delegate = self
     }
     
     required init?(coder: NSCoder) {
@@ -37,15 +41,31 @@ final class HomepageViewController: UINavigationController {
         configureAppearance()
     }
     
+    override func setViewControllers(_ viewControllers: [UIViewController], animated: Bool) {
+        super.setViewControllers(viewControllers, animated: animated)
+        assignRootDelegates(viewControllers)
+    }
+    
     // MARK: - Public API
     
     func setContentMode(_ contentMode: HomepageContentMode) {
+        self.contentMode = contentMode
         rootViewController.setContentMode(contentMode)
+        viewControllers.forEach { viewController in
+            guard let viewController = viewController as? HomepageRootViewController else {
+                return
+            }
+            
+            viewController.setContentMode(contentMode)
+        }
     }
     
-    func prepareForPresentation() {
+    func prepareForPresentation(resetNavigation: Bool) {
         loadViewIfNeeded()
-        rootViewController.resetScrollPosition()
+        if resetNavigation {
+            popToRootViewController(animated: false)
+            rootViewController.resetScrollPosition()
+        }
         view.setNeedsLayout()
         view.layoutIfNeeded()
     }
@@ -81,6 +101,51 @@ final class HomepageViewController: UINavigationController {
     
     private func configureAppearance() {
         view.backgroundColor = .clear
-        isNavigationBarHidden = true
+        delegate = self
+        navigationBar.isTranslucent = false
+        setNavigationBarHidden(true, animated: false)
+    }
+    
+    private func makeFolderRootViewController(folder: BookmarkFolderSnapshot) -> HomepageRootViewController {
+        let viewController = HomepageRootViewController(
+            bookmarkStore: bookmarkStore,
+            folder: folder,
+            sections: [.favorites]
+        )
+        viewController.delegate = self
+        viewController.setContentMode(contentMode)
+        return viewController
+    }
+    
+    private func assignRootDelegates(_ viewControllers: [UIViewController]) {
+        viewControllers.forEach { viewController in
+            guard let viewController = viewController as? HomepageRootViewController else {
+                return
+            }
+            
+            viewController.delegate = self
+        }
+    }
+}
+
+extension HomepageViewController: UINavigationControllerDelegate {
+    func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        setNavigationBarHidden(viewController === rootViewController, animated: false)
+    }
+}
+
+extension HomepageViewController: HomepageRootViewControllerDelegate {
+    func homepageRootViewControllerDidSelectFavorite(_ favorite: BookmarkSnapshot) {
+        homepageDelegate?.homepageViewControllerDidSelectFavorite(favorite)
+    }
+    
+    func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot) {
+        let viewController = makeFolderRootViewController(folder: folder)
+        setNavigationBarHidden(false, animated: false)
+        pushViewController(viewController, animated: true)
+    }
+    
+    func homepageRootViewControllerDidStartScrolling() {
+        homepageDelegate?.homepageViewControllerDidStartScrolling()
     }
 }

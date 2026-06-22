@@ -177,7 +177,7 @@ final class HomepageOverlayCoordinator {
         guard !overlayCoordinator.contains(.homepage, on: presentation.host),
               !overlayCoordinator.isPresented(.search, on: presentation.host) else {
             homepageViewController.setContentMode(presentation.contentMode)
-            homepageViewController.prepareForPresentation()
+            homepageViewController.prepareForPresentation(resetNavigation: false)
             configureOverlay(for: presentation)
             warmSnapshotCacheIfNeeded()
             return
@@ -190,7 +190,7 @@ final class HomepageOverlayCoordinator {
             animated: animated
         ) { [weak self] in
             self?.homepageViewController.setContentMode(presentation.contentMode)
-            self?.homepageViewController.prepareForPresentation()
+            self?.homepageViewController.prepareForPresentation(resetNavigation: true)
             self?.configureOverlay(for: presentation)
             self?.warmSnapshotCacheIfNeeded()
         }

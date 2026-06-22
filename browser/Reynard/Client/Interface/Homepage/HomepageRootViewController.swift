@@ -7,16 +7,25 @@
 
 import UIKit
 
+protocol HomepageRootViewControllerDelegate: AnyObject {
+    func homepageRootViewControllerDidSelectFavorite(_ favorite: BookmarkSnapshot)
+    func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot)
+    func homepageRootViewControllerDidStartScrolling()
+}
+
 final class HomepageRootViewController: UIViewController {
     private enum UX {
         static let topInset: CGFloat = 48
+        static let folderTopInset: CGFloat = 20
         static let horizontalInset: CGFloat = 16
         static let bottomInset: CGFloat = 24
     }
     
-    weak var delegate: HomepageViewControllerDelegate?
+    weak var delegate: HomepageRootViewControllerDelegate?
     
     private let bookmarkStore: BookmarkStore
+    private let folder: BookmarkFolderSnapshot?
+    private let sections: [HomepageSection]
     private var contentMode: HomepageContentMode = .embeddedNarrow
     private var sectionViewControllers: [HomepageSection: UIViewController] = [:]
     
@@ -41,8 +50,10 @@ final class HomepageRootViewController: UIViewController {
     
     // MARK: - Lifecycle
     
-    init(bookmarkStore: BookmarkStore) {
+    init(bookmarkStore: BookmarkStore, folder: BookmarkFolderSnapshot? = nil, sections: [HomepageSection] = HomepageSection.allCases) {
         self.bookmarkStore = bookmarkStore
+        self.folder = folder
+        self.sections = sections
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -52,6 +63,7 @@ final class HomepageRootViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        title = folder?.title
         configureScrollView()
         configureHierarchy()
         configureConstraints()
@@ -81,8 +93,9 @@ final class HomepageRootViewController: UIViewController {
     
     private func configureScrollView() {
         scrollView.delegate = self
+        scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.contentInset = UIEdgeInsets(
-            top: UX.topInset,
+            top: topContentInset,
             left: 0,
             bottom: UX.bottomInset,
             right: 0
@@ -111,7 +124,7 @@ final class HomepageRootViewController: UIViewController {
     }
     
     private func configureSections() {
-        HomepageSection.allCases.forEach { section in
+        sections.forEach { section in
             let viewController = makeSectionViewController(for: section)
             addChild(viewController)
             viewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -124,7 +137,11 @@ final class HomepageRootViewController: UIViewController {
     private func makeSectionViewController(for section: HomepageSection) -> UIViewController {
         switch section {
         case .favorites:
-            let viewController = FavoritesSectionViewController(bookmarkStore: bookmarkStore)
+            let viewController = FavoritesSectionViewController(
+                bookmarkStore: bookmarkStore,
+                folder: folder,
+                showsTitle: showsSectionTitles
+            )
             viewController.delegate = self
             viewController.setContentMode(contentMode)
             return viewController
@@ -136,20 +153,32 @@ final class HomepageRootViewController: UIViewController {
     private var favoritesSectionViewController: FavoritesSectionViewController? {
         return sectionViewControllers[.favorites] as? FavoritesSectionViewController
     }
-}
-
-// MARK: - Scroll View Delegate
-
-extension HomepageRootViewController: UIScrollViewDelegate {
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        delegate?.homepageViewControllerDidStartScrolling()
+    
+    private var isFolderRoot: Bool {
+        return folder != nil
+    }
+    
+    private var topContentInset: CGFloat {
+        return isFolderRoot ? UX.folderTopInset : UX.topInset
+    }
+    
+    private var showsSectionTitles: Bool {
+        return !isFolderRoot
     }
 }
 
-// MARK: - Favorites Section Delegate
+extension HomepageRootViewController: UIScrollViewDelegate {
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        delegate?.homepageRootViewControllerDidStartScrolling()
+    }
+}
 
 extension HomepageRootViewController: FavoritesSectionViewControllerDelegate {
     func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFavorite favorite: BookmarkSnapshot) {
-        delegate?.homepageViewControllerDidSelectFavorite(favorite)
+        delegate?.homepageRootViewControllerDidSelectFavorite(favorite)
+    }
+    
+    func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFolder folder: BookmarkFolderSnapshot) {
+        delegate?.homepageRootViewControllerDidSelectFolder(folder)
     }
 }

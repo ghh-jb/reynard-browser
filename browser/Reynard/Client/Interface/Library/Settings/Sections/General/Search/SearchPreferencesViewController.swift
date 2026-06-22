@@ -18,6 +18,7 @@ final class SearchPreferencesViewController: SettingsTableViewController {
     
     private enum Row: CaseIterable {
         case searchEngine
+        case searchAutocomplete
     }
     
     init() {
@@ -27,6 +28,11 @@ final class SearchPreferencesViewController: SettingsTableViewController {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        registerCells()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -70,6 +76,13 @@ final class SearchPreferencesViewController: SettingsTableViewController {
             cell.detailTextLabel?.textColor = .secondaryLabel
             cell.accessoryType = .disclosureIndicator
             return cell
+        case .searchAutocomplete:
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: "SearchAutocompleteProviderCell", for: indexPath) as? SearchAutocompleteProviderCell else {
+                return UITableViewCell()
+            }
+            cell.display(provider: Prefs.SearchSettings.searchAutocompleteProvider)
+            cell.accessoryType = .disclosureIndicator
+            return cell
         }
     }
     
@@ -83,7 +96,12 @@ final class SearchPreferencesViewController: SettingsTableViewController {
         switch Row.allCases[indexPath.row] {
         case .searchEngine:
             navigationController?.pushViewController(SearchEnginePreferencesViewController(), animated: true)
+        case .searchAutocomplete:
+            navigationController?.pushViewController(SearchAutocompletePreferencesViewController(), animated: true)
         }
     }
     
+    private func registerCells() {
+        tableView.register(SearchAutocompleteProviderCell.self, forCellReuseIdentifier: "SearchAutocompleteProviderCell")
+    }
 }

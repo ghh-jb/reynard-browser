@@ -23,21 +23,22 @@ struct SearchResults {
 
 final class SearchViewModel {
     var resultsDidChange: ((SearchResults) -> Void)?
-    let completionProvider: SearchCompletion.Provider
+    var searchAutocompleteProvider: SearchCompletion.Provider {
+        return searchCompletion.provider
+    }
     
     private let userDataSearch: UserDataSearch
-    private let searchCompletion: SearchCompletion
+    private var searchCompletion: SearchCompletion
     private var requestID = 0
     private var completionTask: URLSessionDataTask?
     private var results = SearchResults.empty
     
     init(
         userDataSearch: UserDataSearch = UserDataSearch(),
-        searchCompletion: SearchCompletion = SearchCompletion()
+        searchCompletion: SearchCompletion = SearchCompletion(provider: Prefs.SearchSettings.searchAutocompleteProvider)
     ) {
         self.userDataSearch = userDataSearch
         self.searchCompletion = searchCompletion
-        completionProvider = searchCompletion.provider
     }
     
     deinit {
@@ -65,6 +66,7 @@ final class SearchViewModel {
         requestID += 1
         let activeRequestID = requestID
         completionTask?.cancel()
+        updateSearchCompletionProviderIfNeeded()
         results.query = query
         resultsDidChange?(results)
         
@@ -101,5 +103,14 @@ final class SearchViewModel {
                 self.resultsDidChange?(self.results)
             }
         }
+    }
+    
+    private func updateSearchCompletionProviderIfNeeded() {
+        let provider = Prefs.SearchSettings.searchAutocompleteProvider
+        guard searchCompletion.provider != provider else {
+            return
+        }
+        
+        searchCompletion = SearchCompletion(provider: provider)
     }
 }

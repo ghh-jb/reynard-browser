@@ -8,7 +8,7 @@
 import Foundation
 
 final class SearchCompletion {
-    enum Provider {
+    enum Provider: String, CaseIterable {
         case google
         case yahoo
         case bing

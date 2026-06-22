@@ -34,6 +34,7 @@ final class BrowserPreferences {
             // Search
             key("SearchSettings", "searchEngine"): SearchEngine.google.rawValue,
             key("SearchSettings", "customSearchTemplate"): "",
+            key("SearchSettings", "searchAutocompleteProvider"): SearchCompletion.Provider.google.rawValue,
             
             // JIT
             key("JITSettings", "isJITEnabled"): false,
@@ -111,6 +112,16 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "SearchSettings", key: "customSearchTemplate")
+            }
+        }
+        
+        static var searchAutocompleteProvider: SearchCompletion.Provider {
+            get {
+                let rawValue = prefs.string(forSetting: "SearchSettings", key: "searchAutocompleteProvider") ?? SearchCompletion.Provider.google.rawValue
+                return SearchCompletion.Provider(rawValue: rawValue) ?? .google
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "SearchSettings", key: "searchAutocompleteProvider")
             }
         }
     }

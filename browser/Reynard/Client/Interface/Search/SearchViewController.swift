@@ -70,7 +70,6 @@ final class SearchViewController: UIViewController, UITableViewDataSource, UITab
         return view
     }()
     
-    private lazy var completionsHeaderView = makeSectionHeaderView(title: "\(viewModel.completionProvider.name) Suggestions")
     private lazy var userDataHeaderView = makeSectionHeaderView(title: "Bookmarks, History, and Tabs")
     
     // MARK: - Lifecycle
@@ -201,7 +200,7 @@ final class SearchViewController: UIViewController, UITableViewDataSource, UITab
         case .primarySuggestion:
             return results.bestMatch == nil ? nil : bestMatchSpacerView
         case .typedQuery:
-            return hasQuery ? completionsHeaderView : nil
+            return hasQuery ? makeSectionHeaderView(title: "\(viewModel.searchAutocompleteProvider.name) Suggestions") : nil
         case .completions:
             return nil
         case .userDataResults:

@@ -37,8 +37,6 @@ final class SearchPreferencesViewController: SettingsTableViewController {
     private let searchBookmarksSwitch = UISwitch()
     private let searchOpenedTabsSwitch = UISwitch()
     
-    // MARK: - Lifecycle
-    
     init() {
         super.init(style: .insetGrouped)
         title = "Search"
@@ -59,8 +57,6 @@ final class SearchPreferencesViewController: SettingsTableViewController {
         refreshDisplayedState()
         tableView.reloadData()
     }
-    
-    // MARK: - Table View
     
     override func numberOfSections(in tableView: UITableView) -> Int {
         return Section.allCases.count
@@ -155,8 +151,6 @@ final class SearchPreferencesViewController: SettingsTableViewController {
         }
     }
     
-    // MARK: - Switches
-    
     private func configureSwitches() {
         showSearchSuggestionsSwitch.addTarget(self, action: #selector(showSearchSuggestionsSwitchDidChange(_:)), for: .valueChanged)
         showInPrivateBrowsingSwitch.addTarget(self, action: #selector(showInPrivateBrowsingSwitchDidChange(_:)), for: .valueChanged)
@@ -192,8 +186,6 @@ final class SearchPreferencesViewController: SettingsTableViewController {
     @objc private func searchOpenedTabsSwitchDidChange(_ sender: UISwitch) {
         Prefs.SearchSettings.searchOpenedTabs = sender.isOn
     }
-    
-    // MARK: - Cells
     
     private func switchCell(title: String, accessoryView: UISwitch) -> UITableViewCell {
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)

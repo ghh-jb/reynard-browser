@@ -9,17 +9,24 @@ import UIKit
 
 final class BrowsingPreferencesViewController: SettingsTableViewController {
     private enum Section: CaseIterable {
+        case media
         case desktopWebsite
         
         var text: SettingsSectionText {
             switch self {
+            case .media:
+                return SettingsSectionText(headerTitle: "Media")
             case .desktopWebsite:
                 return SettingsSectionText(headerTitle: "Request Desktop Website On")
             }
         }
     }
     
-    private enum Row: CaseIterable {
+    private enum MediaRow: CaseIterable {
+        case autoplay
+    }
+    
+    private enum DesktopWebsiteRow: CaseIterable {
         case allWebsites
     }
     
@@ -43,6 +50,7 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refreshDisplayedState()
+        tableView.reloadData()
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -55,8 +63,10 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
         }
         
         switch Section.allCases[section] {
+        case .media:
+            return MediaRow.allCases.count
         case .desktopWebsite:
-            return Row.allCases.count
+            return DesktopWebsiteRow.allCases.count
         }
     }
     
@@ -68,18 +78,52 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard Section.allCases.indices.contains(indexPath.section),
-              Row.allCases.indices.contains(indexPath.row) else {
+        guard Section.allCases.indices.contains(indexPath.section) else {
             return UITableViewCell()
         }
         
-        switch Row.allCases[indexPath.row] {
-        case .allWebsites:
+        switch Section.allCases[indexPath.section] {
+        case .media:
+            guard MediaRow.allCases.indices.contains(indexPath.row) else {
+                return UITableViewCell()
+            }
+            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            cell.textLabel?.text = "Autoplay"
+            cell.detailTextLabel?.text = SiteSettingsUtils.actionTitle(
+                for: SiteSettingsUtils.defaultAction(for: .autoplay),
+                permission: .autoplay
+            )
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        case .desktopWebsite:
+            guard DesktopWebsiteRow.allCases.indices.contains(indexPath.row) else {
+                return UITableViewCell()
+            }
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
             cell.selectionStyle = .none
             cell.textLabel?.text = "All Website"
             cell.accessoryView = requestDesktopWebsiteSwitch
             return cell
+        }
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        defer { tableView.deselectRow(at: indexPath, animated: true) }
+        guard Section.allCases.indices.contains(indexPath.section) else {
+            return
+        }
+        
+        switch Section.allCases[indexPath.section] {
+        case .media:
+            guard MediaRow.allCases.indices.contains(indexPath.row) else {
+                return
+            }
+            navigationController?.pushViewController(
+                SitePermissionDetailsViewController(permission: .autoplay, title: "Autoplay"),
+                animated: true
+            )
+        case .desktopWebsite:
+            return
         }
     }
     

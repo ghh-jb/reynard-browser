@@ -28,7 +28,6 @@ final class SitePermissionsViewController: SettingsTableViewController {
     }
     
     private enum Row {
-        case autoplay
         case camera
         case microphone
         case location
@@ -39,8 +38,6 @@ final class SitePermissionsViewController: SettingsTableViewController {
         
         var title: String {
             switch self {
-            case .autoplay:
-                return "Autoplay"
             case .camera:
                 return "Camera"
             case .microphone:
@@ -60,8 +57,6 @@ final class SitePermissionsViewController: SettingsTableViewController {
         
         var permission: SitePermission {
             switch self {
-            case .autoplay:
-                return .autoplay
             case .camera:
                 return .camera
             case .microphone:
@@ -81,6 +76,15 @@ final class SitePermissionsViewController: SettingsTableViewController {
     }
     
     private let permissionOptions: [Row] = [
+        .camera,
+        .microphone,
+        .location,
+        .persistentStorage,
+        .crossOriginStorageAccess,
+        .localDeviceAccess,
+        .localNetworkAccess,
+    ]
+    private let resettablePermissions: [SitePermission] = [
         .autoplay,
         .camera,
         .microphone,
@@ -276,12 +280,12 @@ final class SitePermissionsViewController: SettingsTableViewController {
             .blocked,
         ]
         
-        for row in permissionOptions {
+        for permission in resettablePermissions {
             for action in actions {
-                let entries = SitePermissionStore.shared.storedHosts(for: row.permission, action: action)
+                let entries = SitePermissionStore.shared.storedHosts(for: permission, action: action)
                 for entry in entries {
-                    SitePermissionStore.shared.removePersistedAction(for: row.permission, host: entry.host)
-                    SiteSettingsUtils.clearGeckoPermission(for: row.permission, host: entry.host)
+                    SitePermissionStore.shared.removePersistedAction(for: permission, host: entry.host)
+                    SiteSettingsUtils.clearGeckoPermission(for: permission, host: entry.host)
                 }
             }
         }

@@ -13,8 +13,8 @@ final class SiteSettingsViewController: UITableViewController {
     
     private enum Section {
         case availability
+        case media
         case permissions
-        case siteActions
     }
     
     private enum Row: CaseIterable {
@@ -75,8 +75,10 @@ final class SiteSettingsViewController: UITableViewController {
         case loaded
     }
     
-    private let permissionRows: [Row] = [
+    private let mediaRows: [Row] = [
         .autoplay,
+    ]
+    private let permissionRows: [Row] = [
         .camera,
         .microphone,
         .location,
@@ -99,8 +101,8 @@ final class SiteSettingsViewController: UITableViewController {
             sections.append(.availability)
         }
         
+        sections.append(.media)
         sections.append(.permissions)
-        sections.append(.siteActions)
         return sections
     }
     
@@ -141,10 +143,10 @@ final class SiteSettingsViewController: UITableViewController {
         switch visibleSections[section] {
         case .availability:
             return 2
+        case .media:
+            return loadState == .loaded ? mediaRows.count : 0
         case .permissions:
-            return loadState == .loaded ? permissionRows.count : 0
-        case .siteActions:
-            return loadState == .loaded ? 1 : 0
+            return loadState == .loaded ? permissionRows.count + 1 : 0
         }
     }
     
@@ -156,10 +158,10 @@ final class SiteSettingsViewController: UITableViewController {
         switch visibleSections[section] {
         case .availability:
             return nil
+        case .media:
+            return "Media"
         case .permissions:
             return "Permissions"
-        case .siteActions:
-            return "Actions"
         }
     }
     
@@ -174,10 +176,13 @@ final class SiteSettingsViewController: UITableViewController {
         switch visibleSections[indexPath.section] {
         case .availability:
             return availabilityCell(at: indexPath)
-        case .permissions:
+        case .media:
             return permissionCell(at: indexPath)
-        case .siteActions:
-            return resetSitePermissionsCell()
+        case .permissions:
+            if indexPath.row == permissionRows.count {
+                return resetSitePermissionsCell()
+            }
+            return permissionCell(at: indexPath)
         }
     }
     
@@ -189,10 +194,14 @@ final class SiteSettingsViewController: UITableViewController {
         switch visibleSections[indexPath.section] {
         case .availability:
             handleAvailabilitySelection(at: indexPath)
-        case .permissions:
+        case .media:
             handlePermissionSelection(at: indexPath)
-        case .siteActions:
-            resetSitePermissions()
+        case .permissions:
+            if indexPath.row == permissionRows.count {
+                resetSitePermissions()
+            } else {
+                handlePermissionSelection(at: indexPath)
+            }
         }
         
         tableView.deselectRow(at: indexPath, animated: true)
@@ -273,10 +282,11 @@ final class SiteSettingsViewController: UITableViewController {
         }
         
         switch visibleSections[indexPath.section] {
+        case .media:
+            return mediaRows[safe: indexPath.row]
         case .permissions:
             return permissionRows[safe: indexPath.row]
-        case .siteActions,
-                .availability:
+        case .availability:
             return nil
         }
     }

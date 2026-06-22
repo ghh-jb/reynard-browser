@@ -49,8 +49,10 @@ final class UserDataMigration {
         migrateAppDataToApplicationSupport()
         migrateDDIToApplicationSupport()
         removeLegacyUserAgentOverride()
+        createMissingDatabaseVersionFiles()
     }
     
+    // MARK: - Store Migration (0.4.0)
     private func migrateAppDataToApplicationSupport() {
         let sourceURL = documentsAppDataDirectoryURL
         let destinationURL = applicationSupportAppDataDirectoryURL
@@ -111,5 +113,77 @@ final class UserDataMigration {
                 try fileManager.removeItem(at: folderURL)
             }
         }
+    }
+    
+    // MARK: - Database Migration (0.5.0)
+    private func createMissingDatabaseVersionFiles() {
+        guard let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String else {
+            fatalError("App version is unavailable")
+        }
+        
+        let databaseVersionFileName = ".db_version"
+        let sqlStoreFolderNames = [
+            "Bookmarks",
+            "Favicons",
+            "SitePermissions",
+            "TabManagement"
+        ]
+        do {
+            for folderName in sqlStoreFolderNames {
+                let storeFolderURL = applicationSupportAppDataDirectoryURL.appendingPathComponent(folderName, isDirectory: true)
+                guard fileManager.fileExists(atPath: storeFolderURL.path) else {
+                    continue
+                }
+                
+                let databaseVersionFileURL = storeFolderURL.appendingPathComponent(
+                    databaseVersionFileName,
+                    isDirectory: false
+                )
+                guard !fileManager.fileExists(atPath: databaseVersionFileURL.path) else {
+                    continue
+                }
+                
+                try writeDatabaseVersionFile(at: databaseVersionFileURL, appVersion: appVersion)
+            }
+        } catch {
+            fatalError("Database version migration failed")
+        }
+    }
+    
+    private func updateDatabaseVersionFiles() {
+        guard let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String else {
+            fatalError("App version is unavailable")
+        }
+        
+        let databaseVersionFileName = ".db_version"
+        let sqlStoreFolderNames = [
+            "Bookmarks",
+            "Favicons",
+            "SitePermissions",
+            "TabManagement"
+        ]
+        
+        do {
+            for folderName in sqlStoreFolderNames {
+                let storeFolderURL = applicationSupportAppDataDirectoryURL.appendingPathComponent(folderName, isDirectory: true)
+                guard fileManager.fileExists(atPath: storeFolderURL.path) else {
+                    continue
+                }
+                
+                let databaseVersionFileURL = storeFolderURL.appendingPathComponent(
+                    databaseVersionFileName,
+                    isDirectory: false
+                )
+                try writeDatabaseVersionFile(at: databaseVersionFileURL, appVersion: appVersion)
+            }
+        } catch {
+            fatalError("Database version migration failed")
+        }
+    }
+    
+    private func writeDatabaseVersionFile(at databaseVersionFileURL: URL, appVersion: String) throws {
+        let databaseVersion = ["db_version": appVersion]
+        let databaseVersionData = try JSONSerialization.data(withJSONObject: databaseVersion, options: [])
+        try databaseVersionData.write(to: databaseVersionFileURL)
     }
 }

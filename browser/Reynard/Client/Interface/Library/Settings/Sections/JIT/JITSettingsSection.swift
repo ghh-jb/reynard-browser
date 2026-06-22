@@ -54,7 +54,7 @@ final class JITSettingsSection: NSObject {
         case .importPairingFile:
             let cell = SettingsViewUtils.actionCell(title: "Import Pairing File...", tintColor: tintColor)
             
-            if #available(iOS 16.6, *) {
+            if #available(iOS 16.7, *) {
                 if #unavailable(iOS 17.4) {
                     cell.textLabel?.textColor = .secondaryLabel
                     cell.selectionStyle = .none
@@ -81,7 +81,7 @@ final class JITSettingsSection: NSObject {
         }
         stackView.addArrangedSubview(performanceDetailLabel())
         
-        if #available(iOS 16.6, *) {
+        if #available(iOS 16.7, *) {
             if #unavailable(iOS 17.4) {
                 stackView.addArrangedSubview(unsupportedVersionWarningLabel())
             }
@@ -276,7 +276,7 @@ final class JITSettingsSection: NSObject {
         detailLabel.font = UIFont.preferredFont(forTextStyle: .footnote)
         detailLabel.adjustsFontForContentSizeCategory = true
         detailLabel.textColor = .secondaryLabel
-        detailLabel.text = "Enabling JIT improves performance significantly and is required for features like WebAssembly."
+        detailLabel.text = "Enabling JIT improves performance significantly and is required for many websites to work properly."
         return detailLabel
     }
     
@@ -286,7 +286,12 @@ final class JITSettingsSection: NSObject {
         warningLabel.font = UIFont.preferredFont(forTextStyle: .footnote)
         warningLabel.adjustsFontForContentSizeCategory = true
         warningLabel.textColor = .systemRed
-        warningLabel.text = "This pairing-based JIT enablement method is not working properly on the OS version you are using. You can use the browser without JIT; or if you're on an iOS/iPadOS version that supports TrollStore, consider using the TrollStore IPA instead."
+        warningLabel.text = "JIT is not supported on the OS version you are using."
+        if #available(iOS 17.0, *) {
+            if #unavailable(iOS 17.0.1) {
+                warningLabel.text = "JIT is not supported on this build. Please sideload the latest TrollStore build (.tipa) for JIT support."
+            }
+        }
         return warningLabel
     }
 }

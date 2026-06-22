@@ -66,13 +66,13 @@ extension BrowserViewController {
                     target: .end,
                     mode: mode.tabMode
                 )
-                self.updateHomepageThumbnailForNewTab(at: newTabIndex)
+                self.applyNewTabDisplayOption(toTabAt: newTabIndex)
                 self.tabOverview.refreshTab(at: newTabIndex, mode: mode.tabMode)
                 self.tabBar.setPendingExpansion(at: newTabIndex)
             }
         } else {
             let newTabIndex = tabManager.createTab(selecting: true)
-            updateHomepageThumbnailForNewTab(at: newTabIndex)
+            applyNewTabDisplayOption(toTabAt: newTabIndex)
             tabBar.setPendingExpansion(at: newTabIndex)
             setTabOverviewVisible(false, animated: true)
         }

@@ -164,6 +164,20 @@ extension BrowserViewController: TabManagerDelegate {
 }
 
 extension BrowserViewController {
+    func applyNewTabDisplayOption(toTabAt index: Int) {
+        switch Prefs.NewTabSettings.newTabDisplayOption {
+        case .homepage, .blankPage:
+            updateHomepageThumbnailForNewTab(at: index)
+        case .customURL:
+            guard let tab = tabManager.activeTabs[safe: index],
+                  URLUtils.isWebURL(Prefs.NewTabSettings.customNewTabURL) else {
+                return
+            }
+            
+            tabManager.browse(to: Prefs.NewTabSettings.customNewTabURL, in: tab)
+        }
+    }
+    
     func captureSelectedTabThumbnailIfNeeded(targetIndex: Int, targetMode: TabMode) {
         guard targetMode == tabManager.selectedTabMode,
               targetIndex != tabManager.selectedTabIndex else {

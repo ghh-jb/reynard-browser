@@ -594,6 +594,29 @@ final class BrowserViewController: UIViewController {
             name: .appUpdateAvailable,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(newTabDisplayOptionDidChange),
+            name: .newTabDisplayOptionDidChange,
+            object: nil
+        )
+    }
+    
+    @objc private func newTabDisplayOptionDidChange() {
+        homepageOverlayCoordinator.updatePresentation(animated: true)
+        captureThumbnailForVisibleTab(at: tabManager.selectedTabIndex)
+    }
+    
+    @objc func addressBarPositionDidChange() {
+        updateBrowserLayout(animated: true)
+    }
+    
+    @objc func landscapeTabBarDidChange() {
+        updateBrowserLayout(animated: true)
+    }
+    
+    @objc func applyUpdateMenuButtonBadge() {
+        browserChrome.setMenuButtonIndicatesUpdate(BrowserUpdates.shared.hasUpdate)
     }
     
     // MARK: - Keyboard
@@ -655,18 +678,6 @@ final class BrowserViewController: UIViewController {
         UIView.animate(withDuration: animation.duration, delay: 0, options: [animation.curve]) {
             self.view.layoutIfNeeded()
         }
-    }
-    
-    @objc func addressBarPositionDidChange() {
-        updateBrowserLayout(animated: true)
-    }
-    
-    @objc func landscapeTabBarDidChange() {
-        updateBrowserLayout(animated: true)
-    }
-    
-    @objc func applyUpdateMenuButtonBadge() {
-        browserChrome.setMenuButtonIndicatesUpdate(BrowserUpdates.shared.hasUpdate)
     }
     
     // MARK: - Browser UI Updates

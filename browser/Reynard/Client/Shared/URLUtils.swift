@@ -23,6 +23,40 @@ enum URLUtils {
         return scheme == "http" || scheme == "https"
     }
     
+    static func isWebURL(_ value: String) -> Bool {
+        let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedValue.isEmpty else {
+            return false
+        }
+        
+        if let url = URL(string: trimmedValue),
+           isWebURL(url) {
+            return true
+        }
+        
+        let schemePrefixedValue = "https://\(trimmedValue)"
+        guard let url = URL(string: schemePrefixedValue),
+              isWebURL(url) else {
+            return false
+        }
+        
+        return true
+    }
+    
+    static func normalizedCustomURL(from value: String) -> URL? {
+        let trimmedValue = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isWebURL(trimmedValue) else {
+            return nil
+        }
+        
+        if let url = URL(string: trimmedValue),
+           isWebURL(url) {
+            return url
+        }
+        
+        return URL(string: "https://\(trimmedValue)")
+    }
+    
     static func isAbsoluteURL(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.trimmingCharacters(in: .whitespacesAndNewlines),
               !scheme.isEmpty else {

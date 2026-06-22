@@ -75,7 +75,7 @@ final class HomepageOverlayCoordinator {
     }
     
     func tabOverviewWillPresent() {
-        guard !isSelectedTabBlankPage else {
+        guard !showsHomepageForBlankTabs || !isSelectedTabBlankPage else {
             return
         }
         
@@ -162,7 +162,8 @@ final class HomepageOverlayCoordinator {
     }
     
     func snapshotForBlankTab(_ tab: Tab, size: CGSize) -> UIImage? {
-        guard isBlankTab(tab) else {
+        guard showsHomepageForBlankTabs,
+              isBlankTab(tab) else {
             return nil
         }
         
@@ -219,7 +220,7 @@ final class HomepageOverlayCoordinator {
             return nil
         }
         
-        if isSelectedTabBlankPage {
+        if showsHomepageForBlankTabs && isSelectedTabBlankPage {
             return HomepagePresentation(
                 host: .embedded,
                 contentMode: embeddedContentMode(layout: delegate.homepageLayout)
@@ -246,6 +247,10 @@ final class HomepageOverlayCoordinator {
         }
         
         return isBlankTab(tab)
+    }
+    
+    private var showsHomepageForBlankTabs: Bool {
+        return Prefs.NewTabSettings.newTabDisplayOption == .homepage
     }
     
     private func isBlankTab(_ tab: Tab) -> Bool {

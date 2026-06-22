@@ -53,6 +53,10 @@ final class BrowserPreferences {
             key("BrowsingSettings", "showLinkPreviews"): true,
             key("BrowsingSettings", "showImagePreviews"): true,
             
+            // New Tab
+            key("NewTabSettings", "newTabDisplayOption"): NewTabDisplayOption.homepage.rawValue,
+            key("NewTabSettings", "customNewTabURL"): "",
+            
             // Appearance
             key("AppearanceSettings", "appAppearance"): AppAppearance.system.rawValue,
             key("AppearanceSettings", "addressBarPosition"): BrowserChromePosition.bottom.rawValue,
@@ -206,6 +210,29 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue, forSetting: "BrowsingSettings", key: "showImagePreviews")
+            }
+        }
+    }
+    
+    // MARK: - New Tab
+    struct NewTabSettings {
+        static var newTabDisplayOption: NewTabDisplayOption {
+            get {
+                let rawValue = prefs.string(forSetting: "NewTabSettings", key: "newTabDisplayOption") ?? NewTabDisplayOption.homepage.rawValue
+                return NewTabDisplayOption(rawValue: rawValue) ?? .homepage
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "NewTabSettings", key: "newTabDisplayOption")
+                NotificationCenter.default.post(name: .newTabDisplayOptionDidChange, object: nil)
+            }
+        }
+        
+        static var customNewTabURL: String {
+            get {
+                return prefs.string(forSetting: "NewTabSettings", key: "customNewTabURL") ?? ""
+            }
+            set {
+                prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "NewTabSettings", key: "customNewTabURL")
             }
         }
     }

@@ -12,6 +12,7 @@ struct GeneralSettingsSection {
         case addons
         case browsing
         case search
+        case newTab
         case appearance
         case compatibility
     }
@@ -32,6 +33,8 @@ struct GeneralSettingsSection {
             return SettingsViewUtils.disclosureCell(title: "Browsing")
         case .search:
             return SettingsViewUtils.disclosureCell(title: "Search")
+        case .newTab:
+            return SettingsViewUtils.disclosureCell(title: "New Tab")
         case .appearance:
             return SettingsViewUtils.disclosureCell(title: "Appearance")
         case .compatibility:
@@ -52,6 +55,8 @@ struct GeneralSettingsSection {
             destination = BrowsingPreferencesViewController()
         case .search:
             destination = SearchPreferencesViewController()
+        case .newTab:
+            destination = NewTabPreferencesViewController()
         case .appearance:
             destination = AppearancePreferencesViewController()
         case .compatibility:

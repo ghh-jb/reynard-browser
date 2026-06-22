@@ -9,25 +9,47 @@ import UIKit
 
 final class AppearancePreferencesViewController: SettingsTableViewController {
     private enum Section: CaseIterable {
+        case addressBar
         case tabs
         
         var text: SettingsSectionText {
             switch self {
+            case .addressBar:
+                return SettingsSectionText(headerTitle: "Address Bar")
             case .tabs:
                 return SettingsSectionText(headerTitle: "Tabs")
             }
         }
+        
+        var rows: [Row] {
+            switch self {
+            case .addressBar:
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    return [.showFullWebsiteAddress]
+                }
+                return [.BrowserChromePosition, .showFullWebsiteAddress]
+            case .tabs:
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    return []
+                }
+                return [.landscapeTabBar]
+            }
+        }
     }
     
-    private enum Row: CaseIterable {
+    private enum Row {
         case BrowserChromePosition
+        case showFullWebsiteAddress
         case landscapeTabBar
     }
     
+    private let showFullWebsiteAddressSwitch = UISwitch()
     private let landscapeTabBarSwitch = UISwitch()
     
     private var displayedSections: [Section] {
-        return UIDevice.current.userInterfaceIdiom == .pad ? [] : Section.allCases
+        return Section.allCases.filter { section in
+            !section.rows.isEmpty
+        }
     }
     
     init() {
@@ -59,7 +81,7 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
         guard displayedSections.indices.contains(section) else {
             return 0
         }
-        return Row.allCases.count
+        return displayedSections[section].rows.count
     }
     
     override func sectionText(for section: Int) -> SettingsSectionText {
@@ -71,17 +93,23 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard displayedSections.indices.contains(indexPath.section),
-              Row.allCases.indices.contains(indexPath.row) else {
+              displayedSections[indexPath.section].rows.indices.contains(indexPath.row) else {
             return UITableViewCell()
         }
         
-        switch Row.allCases[indexPath.row] {
+        switch displayedSections[indexPath.section].rows[indexPath.row] {
         case .BrowserChromePosition:
             let cell = BrowserChromePositionPickerCell(style: .default, reuseIdentifier: nil)
             cell.display(selectedPosition: Prefs.AppearanceSettings.addressBarPosition)
             cell.onPositionChanged = { position in
                 Prefs.AppearanceSettings.addressBarPosition = position
             }
+            return cell
+        case .showFullWebsiteAddress:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = "Show Full Website Address"
+            cell.selectionStyle = .none
+            cell.accessoryView = showFullWebsiteAddressSwitch
             return cell
         case .landscapeTabBar:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
@@ -93,11 +121,17 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
     }
     
     private func configureSwitch() {
+        showFullWebsiteAddressSwitch.addTarget(self, action: #selector(showFullWebsiteAddressSwitchDidChange), for: .valueChanged)
         landscapeTabBarSwitch.addTarget(self, action: #selector(landscapeTabBarSwitchDidChange), for: .valueChanged)
     }
     
     private func refreshDisplayedState() {
+        showFullWebsiteAddressSwitch.isOn = Prefs.AppearanceSettings.showsFullWebsiteAddress
         landscapeTabBarSwitch.isOn = Prefs.AppearanceSettings.showsLandscapeTabBar
+    }
+    
+    @objc private func showFullWebsiteAddressSwitchDidChange() {
+        Prefs.AppearanceSettings.showsFullWebsiteAddress = showFullWebsiteAddressSwitch.isOn
     }
     
     @objc private func landscapeTabBarSwitchDidChange() {

@@ -224,11 +224,16 @@ final class AddressBar: UIView {
         configureHierarchy()
         configureConstraints()
         configureTargets()
+        configureObservers()
         applyState()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     override var canBecomeFirstResponder: Bool {
@@ -546,6 +551,15 @@ final class AddressBar: UIView {
         dismissButton.addTarget(self, action: #selector(handleDismissButtonTap), for: .touchUpInside)
     }
     
+    private func configureObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(showFullWebsiteAddressDidChange),
+            name: .showFullWebsiteAddressDidChange,
+            object: nil
+        )
+    }
+    
     // MARK: - State Rendering
     
     private func applyState() {
@@ -703,7 +717,8 @@ final class AddressBar: UIView {
             return nil
         }
         
-        guard canShowBarMenu,
+        guard !Prefs.AppearanceSettings.showsFullWebsiteAddress,
+              canShowBarMenu,
               let host = locationHost() else {
             return NSAttributedString(
                 string: currentText,
@@ -741,6 +756,14 @@ final class AddressBar: UIView {
             return nil
         }
         return host
+    }
+    
+    @objc
+    private func showFullWebsiteAddressDidChange() {
+        guard editingState == .inactive else {
+            return
+        }
+        applyState()
     }
     
     // MARK: - Actions

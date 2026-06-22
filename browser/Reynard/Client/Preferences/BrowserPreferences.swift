@@ -55,6 +55,7 @@ final class BrowserPreferences {
             
             // Appearance
             key("AppearanceSettings", "addressBarPosition"): BrowserChromePosition.bottom.rawValue,
+            key("AppearanceSettings", "showsFullWebsiteAddress"): false,
             key("AppearanceSettings", "showsLandscapeTabBar"): true,
             
             // Bookmarks
@@ -369,6 +370,16 @@ final class BrowserPreferences {
             set {
                 prefs.set(newValue, forSetting: "AppearanceSettings", key: "showsLandscapeTabBar")
                 NotificationCenter.default.post(name: .landscapeTabBarDidChange, object: nil)
+            }
+        }
+        
+        static var showsFullWebsiteAddress: Bool {
+            get {
+                prefs.bool(forSetting: "AppearanceSettings", key: "showsFullWebsiteAddress")
+            }
+            set {
+                prefs.set(newValue, forSetting: "AppearanceSettings", key: "showsFullWebsiteAddress")
+                NotificationCenter.default.post(name: .showFullWebsiteAddressDidChange, object: nil)
             }
         }
     }

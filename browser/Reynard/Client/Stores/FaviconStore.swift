@@ -148,6 +148,29 @@ final class FaviconStore {
         return await task.value
     }
     
+    func clearCache() {
+        stateQueue.async {
+            self.activeRequests.values.forEach { $0.cancel() }
+            self.activeRequests.removeAll()
+            
+            let imageKeys = self.fetchImageKeysLocked()
+            _ = self.executeLocked(
+                """
+                DELETE FROM favicon_associations;
+                DELETE FROM favicon_sources;
+                DELETE FROM favicon_images;
+                """
+            )
+            
+            for imageKey in imageKeys {
+                let imageURL = self.imageFileURL(for: imageKey)
+                if self.fileManager.fileExists(atPath: imageURL.path) {
+                    try? self.fileManager.removeItem(at: imageURL)
+                }
+            }
+        }
+    }
+    
     // MARK: - Storage
     
     private func prepareStorageLocked() {

@@ -84,16 +84,6 @@ final class SitePermissionsViewController: SettingsTableViewController {
         .localDeviceAccess,
         .localNetworkAccess,
     ]
-    private let resettablePermissions: [SitePermission] = [
-        .autoplay,
-        .camera,
-        .microphone,
-        .location,
-        .persistentStorage,
-        .crossOriginStorageAccess,
-        .localDeviceAccess,
-        .localNetworkAccess,
-    ]
     private var hasResetAllSitePermissions = false
     
     private var displayedSections: [Section] {
@@ -274,22 +264,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
     }
     
     private func resetSitePermissions() {
-        let actions: [SitePermissionAction] = [
-            .allowed,
-            .askToAllow,
-            .blocked,
-        ]
-        
-        for permission in resettablePermissions {
-            for action in actions {
-                let entries = SitePermissionStore.shared.storedHosts(for: permission, action: action)
-                for entry in entries {
-                    SitePermissionStore.shared.removePersistedAction(for: permission, host: entry.host)
-                    SiteSettingsUtils.clearGeckoPermission(for: permission, host: entry.host)
-                }
-            }
-        }
-        
+        SiteSettingsUtils.resetStoredSitePermissions()
         hasResetAllSitePermissions = true
         tableView.reloadData()
     }

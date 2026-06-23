@@ -226,12 +226,13 @@ final class HistoryViewController: UIViewController, UITableViewDataSource, UITa
     @objc private func showClearHistory() {
         searchBar.resignFirstResponder()
         
-        let browserViewController = findBrowser()
+        let browserViewController = LibrarySharedUtils.resolvedBrowserViewController(from: self)
         let viewController = ClearHistoryViewController(tabCount: browserViewController?.tabManager.regularTabs.count ?? 0) { [weak browserViewController] startDate, shouldCloseTabs in
             HistoryStore.shared.clearVisits(since: startDate)
             
             if shouldCloseTabs {
                 browserViewController?.tabManager.removeAllTabs(mode: .regular)
+                browserViewController?.tabManager.removeAllTabs(mode: .private)
                 browserViewController?.tabManager.createTab(selecting: true, mode: .regular)
             }
         }
@@ -453,7 +454,7 @@ final class HistoryViewController: UIViewController, UITableViewDataSource, UITa
     // MARK: - Navigation
     
     private func openHistoryItem(_ item: HistorySiteSnapshot) {
-        guard let browserViewController = findBrowser() else {
+        guard let browserViewController = LibrarySharedUtils.resolvedBrowserViewController(from: self) else {
             return
         }
         
@@ -463,44 +464,6 @@ final class HistoryViewController: UIViewController, UITableViewDataSource, UITa
         if navigationController?.presentingViewController is BrowserViewController {
             navigationController?.dismiss(animated: true)
         }
-    }
-    
-    private func findBrowser() -> BrowserViewController? {
-        if let sidebarViewController = splitViewController as? SidebarViewController {
-            return sidebarViewController.contentBrowser.sidebarContentViewController as? BrowserViewController
-        }
-        
-        if let browserViewController = navigationController?.presentingViewController as? BrowserViewController {
-            return browserViewController
-        }
-        
-        return view.window?.rootViewController.flatMap { findBrowser(from: $0) }
-    }
-    
-    private func findBrowser(from controller: UIViewController) -> BrowserViewController? {
-        if let browserViewController = controller as? BrowserViewController {
-            return browserViewController
-        }
-        
-        if let navigationController = controller as? UINavigationController {
-            return navigationController.viewControllers.compactMap { findBrowser(from: $0) }.first
-        }
-        
-        if let tabBarController = controller as? UITabBarController,
-           let viewControllers = tabBarController.viewControllers {
-            return viewControllers.compactMap { findBrowser(from: $0) }.first
-        }
-        
-        if let sidebarViewController = controller as? SidebarViewController {
-            return sidebarViewController.contentBrowser.sidebarContentViewController as? BrowserViewController
-        }
-        
-        if let presentedViewController = controller.presentedViewController,
-           let browserViewController = findBrowser(from: presentedViewController) {
-            return browserViewController
-        }
-        
-        return controller.children.compactMap { findBrowser(from: $0) }.first
     }
     
     // MARK: - Deletion

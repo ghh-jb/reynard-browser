@@ -10,6 +10,7 @@ import UIKit
 struct PrivacySettingsSection {
     enum Row: CaseIterable {
         case sitePermissions
+        case clearBrowsingData
     }
     
     var rowCount: Int {
@@ -24,6 +25,8 @@ struct PrivacySettingsSection {
         switch Row.allCases[index] {
         case .sitePermissions:
             return SettingsViewUtils.disclosureCell(title: "Site Permissions")
+        case .clearBrowsingData:
+            return SettingsViewUtils.disclosureCell(title: "Clear Browsing Data")
         }
     }
     
@@ -35,6 +38,9 @@ struct PrivacySettingsSection {
         switch Row.allCases[index] {
         case .sitePermissions:
             let destination = SitePermissionsViewController()
+            viewController.navigationController?.pushViewController(destination, animated: true)
+        case .clearBrowsingData:
+            let destination = ClearBrowsingDataViewController()
             viewController.navigationController?.pushViewController(destination, animated: true)
         }
     }

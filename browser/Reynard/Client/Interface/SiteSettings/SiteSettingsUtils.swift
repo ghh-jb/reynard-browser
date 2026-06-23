@@ -192,6 +192,34 @@ enum SiteSettingsUtils {
         }
     }
     
+    static func resetStoredSitePermissions() {
+        let resettablePermissions: [SitePermission] = [
+            .autoplay,
+            .camera,
+            .microphone,
+            .location,
+            .persistentStorage,
+            .crossOriginStorageAccess,
+            .localDeviceAccess,
+            .localNetworkAccess,
+        ]
+        let actions: [SitePermissionAction] = [
+            .allowed,
+            .askToAllow,
+            .blocked,
+        ]
+        
+        for permission in resettablePermissions {
+            for action in actions {
+                let entries = SitePermissionStore.shared.storedHosts(for: permission, action: action)
+                for entry in entries {
+                    SitePermissionStore.shared.removePersistedAction(for: permission, host: entry.host)
+                    clearGeckoPermission(for: permission, host: entry.host)
+                }
+            }
+        }
+    }
+    
     private static func permissionOrigins(for host: String) -> [String] {
         guard let host = URLUtils.normalizedHost(host) else {
             return []

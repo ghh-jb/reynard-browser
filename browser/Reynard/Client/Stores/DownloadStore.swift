@@ -360,6 +360,36 @@ final class DownloadStore: NSObject {
         }
     }
     
+    func clearCompletedDownloadFiles() {
+        stateQueue.async {
+            let fileURLs = (try? self.fileManager.contentsOfDirectory(
+                at: self.storage.downloadsDirectoryURL,
+                includingPropertiesForKeys: nil
+            )) ?? []
+            
+            for fileURL in fileURLs {
+                try? self.fileManager.removeItem(at: fileURL)
+            }
+            
+            if !self.fileManager.fileExists(atPath: self.storage.downloadsDirectoryURL.path) {
+                try? self.fileManager.createDirectory(
+                    at: self.storage.downloadsDirectoryURL,
+                    withIntermediateDirectories: true
+                )
+            }
+            
+            for active in self.activeDownloads.values {
+                if self.fileManager.fileExists(atPath: active.destinationURL.path) {
+                    try? self.fileManager.removeItem(at: active.destinationURL)
+                }
+            }
+            
+            self.persistedDownloads.removeAll()
+            self.savePersistedDownloadsLocked()
+            self.postDidChange()
+        }
+    }
+    
     func markCompletedAsViewed() {
         stateQueue.async {
             guard self.hasUnviewedCompletedDownloads else {

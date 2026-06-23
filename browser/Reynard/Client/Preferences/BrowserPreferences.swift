@@ -80,6 +80,15 @@ final class BrowserPreferences {
             key("SitePermissionSettings", "defaultCrossOriginStorageAccessPermission"): SitePermissionAction.askToAllow.rawValue,
             key("SitePermissionSettings", "defaultLocalDeviceAccessPermission"): SitePermissionAction.askToAllow.rawValue,
             key("SitePermissionSettings", "defaultLocalNetworkAccessPermission"): SitePermissionAction.askToAllow.rawValue,
+            
+            // Clear Browsing Data
+            key("ClearBrowsingData", "clearsBrowsingHistory"): true,
+            key("ClearBrowsingData", "clearsCookiesAndWebsiteData"): true,
+            key("ClearBrowsingData", "clearsCachedImagesAndFiles"): true,
+            key("ClearBrowsingData", "clearsDownloadsHistory"): false,
+            key("ClearBrowsingData", "clearsDownloadedFiles"): false,
+            key("ClearBrowsingData", "clearsWebsitePermissions"): true,
+            key("ClearBrowsingData", "clearsOpenedTabs"): true,
         ])
     }
     
@@ -210,6 +219,72 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue, forSetting: "BrowsingSettings", key: "showImagePreviews")
+            }
+        }
+    }
+    
+    // MARK: - Clear Browsing Data
+    struct ClearBrowsingData {
+        static var clearsBrowsingHistory: Bool {
+            get {
+                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsBrowsingHistory")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsBrowsingHistory")
+            }
+        }
+        
+        static var clearsCookiesAndWebsiteData: Bool {
+            get {
+                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsCookiesAndWebsiteData")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsCookiesAndWebsiteData")
+            }
+        }
+        
+        static var clearsCachedImagesAndFiles: Bool {
+            get {
+                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsCachedImagesAndFiles")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsCachedImagesAndFiles")
+            }
+        }
+        
+        static var clearsDownloadsHistory: Bool {
+            get {
+                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsDownloadsHistory")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsDownloadsHistory")
+            }
+        }
+        
+        static var clearsDownloadedFiles: Bool {
+            get {
+                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsDownloadedFiles")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsDownloadedFiles")
+            }
+        }
+        
+        static var clearsWebsitePermissions: Bool {
+            get {
+                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsWebsitePermissions")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsWebsitePermissions")
+            }
+        }
+        
+        static var clearsOpenedTabs: Bool {
+            get {
+                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsOpenedTabs")
+            }
+            set {
+                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsOpenedTabs")
             }
         }
     }

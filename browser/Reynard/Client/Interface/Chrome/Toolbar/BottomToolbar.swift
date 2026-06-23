@@ -22,6 +22,7 @@ final class BottomToolbar: UIView {
     
     enum LayoutState {
         case hidden
+        case collapsed // visually hidden but still takes up space
         case standard
         case focused
         case compact
@@ -118,6 +119,8 @@ final class BottomToolbar: UIView {
         switch state {
         case .hidden:
             contentHeight = UX.bottomToolbarStandardContentHeight
+        case .collapsed:
+            contentHeight = UX.bottomToolbarCompactContentHeight
         case .standard:
             contentHeight = UX.bottomToolbarStandardContentHeight
         case .focused:
@@ -129,10 +132,10 @@ final class BottomToolbar: UIView {
         UIView.performWithoutAnimation {
             topConstraint.constant = verticalOffset - contentHeight
             contentHeightConstraint.constant = contentHeight
-            isHidden = state == .hidden
+            isHidden = state == .hidden || state == .collapsed
             backgroundColor = state == .focused ? .clear : .systemGray6
             
-            let isCompact = state == .compact
+            let isCompact = state == .compact || state == .collapsed
             standardButtonsTopConstraint?.isActive = !isCompact
             compactButtonsTopConstraint.isActive = isCompact
             buttonsHeightConstraint.constant = state == .focused ? 0 : UX.bottomToolbarButtonStackHeight

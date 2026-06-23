@@ -147,7 +147,7 @@ final class BrowserChrome: UIView {
         let bottomState: BottomToolbar.LayoutState
         if state.presentation != .browsing {
             topState = .hidden
-            bottomState = .hidden
+            bottomState = state.mode == .compact ? .collapsed : .hidden
         } else {
             topState = resolvedTopState(for: state)
             bottomState = resolvedBottomState(for: state)

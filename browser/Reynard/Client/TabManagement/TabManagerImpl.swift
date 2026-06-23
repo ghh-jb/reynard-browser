@@ -645,6 +645,9 @@ final class TabManagerImplementation: NSObject, TabManager {
         
         tab.state.suppressInitialNavigation = false
         tab.state.displayState = .pending(navigationInput)
+        if let location = tabLocation(for: tab.id) {
+            notifyUpdate(at: location.index, mode: location.mode, reason: .location)
+        }
         
         let navigationInputRange = NSRange(location: 0, length: (navigationInput as NSString).length)
         let shouldNavigateDirectly = lenientURLExpression.firstMatch(in: navigationInput, range: navigationInputRange) != nil

@@ -1,8 +1,8 @@
 diff --git a/mobile/shared/actors/GeckoViewContentChild.sys.mjs b/mobile/shared/actors/GeckoViewContentChild.sys.mjs
-index 9ca6e15bed3e..2e7831c3da85 100644
+index 9ca6e15bed3e..53549f22f8d5 100644
 --- a/mobile/shared/actors/GeckoViewContentChild.sys.mjs
 +++ b/mobile/shared/actors/GeckoViewContentChild.sys.mjs
-@@ -67,6 +67,100 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
+@@ -67,6 +67,107 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
      return windowUtils.SCROLL_MODE_SMOOTH;
    }
  
@@ -11,7 +11,11 @@ index 9ca6e15bed3e..2e7831c3da85 100644
 +      return false;
 +    }
 +
-+    const win = element.ownerGlobal;
++    const win = element.ownerGlobal || element.documentGlobal;
++    if (!win) {
++      return false;
++    }
++
 +    return (
 +      (win.HTMLInputElement?.isInstance(element) &&
 +        element.mozIsTextField(false)) ||
@@ -50,15 +54,18 @@ index 9ca6e15bed3e..2e7831c3da85 100644
 +      });
 +    }
 +
-+    const focusedElement =
-+      Services.focus.focusedElement || contentWindow?.document?.activeElement;
++    const focusedElement = Services.focus.focusedElement || contentWindow?.document?.activeElement;
 +    if (!this.isFocusedEditableElement(focusedElement)) {
 +      return null;
 +    }
 +
++    const win = focusedElement.ownerGlobal || focusedElement.documentGlobal;
++    if (!win) {
++      return null;
++    }
++
 +    const viewportHeight =
-+      focusedElement.ownerGlobal.visualViewport?.height ||
-+      focusedElement.ownerGlobal.innerHeight;
++      win.visualViewport?.height || win.innerHeight;
 +    if (!viewportHeight || viewportHeight <= 0) {
 +      return null;
 +    }
@@ -103,7 +110,7 @@ index 9ca6e15bed3e..2e7831c3da85 100644
    orientation() {
      const currentOrientationType = this.contentWindow?.screen.orientation.type;
      if (!currentOrientationType) {
-@@ -184,6 +278,9 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
+@@ -184,6 +285,9 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
        case "ContainsFormData": {
          return this.containsFormData();
        }

@@ -116,10 +116,12 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     }
     
     func selectTabFromGesture(at index: Int, mode: TabMode) {
+        captureSelectedTabThumbnailIfNeeded(targetIndex: index, targetMode: mode)
         tabManager.selectTab(at: index, mode: mode)
     }
     
     func createTabForSwipe() -> Int {
+        captureThumbnailForVisibleTab(at: tabManager.selectedTabIndex)
         let index = tabManager.createTab(selecting: true)
         applyNewTabDisplayOption(toTabAt: index)
         return index

@@ -107,6 +107,8 @@ final class TabOverview: UIView {
     private var privateTabsCollectionBottomToContainerConstraint: NSLayoutConstraint!
     private var privateTabsCollectionBottomToToolbarConstraint: NSLayoutConstraint!
     
+    private var appliesNextTabChangesWithoutAnimation = false
+    
     // MARK: - Lifecycle
     
     override init(frame: CGRect) {
@@ -194,8 +196,17 @@ final class TabOverview: UIView {
     }
     
     func applyPendingTabChanges() {
-        collection.applyTabCollectionChanges()
+        if appliesNextTabChangesWithoutAnimation {
+            appliesNextTabChangesWithoutAnimation = false
+            collection.reloadTabCards()
+        } else {
+            collection.applyTabCollectionChanges()
+        }
         updateToolbarState()
+    }
+    
+    func prepareNextTabChangesWithoutAnimation() {
+        appliesNextTabChangesWithoutAnimation = true
     }
     
     func refreshTab(at index: Int, mode: TabMode) {

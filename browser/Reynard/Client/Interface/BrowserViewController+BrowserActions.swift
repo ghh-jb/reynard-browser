@@ -57,19 +57,17 @@ extension BrowserViewController {
         
         if tabOverview.isPresented {
             let mode = tabOverview.mode
-            tabOverview.prepareNewTabInsertion { [weak self] in
-                guard let self else {
-                    return
-                }
-                let newTabIndex = self.tabManager.createTab(
-                    selecting: true,
-                    target: .end,
-                    mode: mode.tabMode
-                )
-                self.applyNewTabDisplayOption(toTabAt: newTabIndex)
-                self.tabOverview.refreshTab(at: newTabIndex, mode: mode.tabMode)
-                self.tabBar.setPendingExpansion(at: newTabIndex)
-            }
+            tabOverview.prepareNextTabChangesWithoutAnimation()
+            let newTabIndex = tabManager.createTab(
+                selecting: true,
+                target: .end,
+                mode: mode.tabMode
+            )
+            applyNewTabDisplayOption(toTabAt: newTabIndex)
+            tabOverview.prepareDismissSelection(to: newTabIndex, mode: mode.tabMode, previewImage: nil)
+            scrollTabOverviewToTab(at: newTabIndex)
+            tabBar.setPendingExpansion(at: newTabIndex)
+            setTabOverviewVisible(false, animated: true)
         } else {
             let newTabIndex = tabManager.createTab(selecting: true)
             applyNewTabDisplayOption(toTabAt: newTabIndex)

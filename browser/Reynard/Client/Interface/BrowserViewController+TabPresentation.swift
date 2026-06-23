@@ -28,6 +28,26 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
     }
     
     func closeTab(at index: Int, mode: TabMode) {
+        if tabOverview.isPresented,
+           tabOverview.mode == .regularTabs,
+           mode == .regular,
+           tabManager.regularTabs.count == 1 {
+            tabOverview.prepareNextTabChangesWithoutAnimation()
+            tabManager.removeTab(at: index, mode: mode)
+            tabOverview.prepareNextTabChangesWithoutAnimation()
+            let newTabIndex = tabManager.createTab(
+                selecting: true,
+                target: .end,
+                mode: .regular
+            )
+            applyNewTabDisplayOption(toTabAt: newTabIndex)
+            tabOverview.prepareDismissSelection(to: newTabIndex, mode: .regular, previewImage: nil)
+            scrollTabOverviewToTab(at: newTabIndex)
+            tabBar.setPendingExpansion(at: newTabIndex)
+            setTabOverviewVisible(false, animated: true)
+            return
+        }
+        
         tabManager.removeTab(at: index, mode: mode)
     }
     
@@ -122,6 +142,20 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
         setTabOverviewVisible(false, animated: true)
     }
     
+    func scrollTabOverviewToTab(at index: Int) {
+        guard let itemIndex = tabOverview.itemIndex(forTabAt: index) else {
+            return
+        }
+        
+        let collectionView = tabOverview.currentCollectionView()
+        collectionView.scrollToItem(
+            at: IndexPath(item: itemIndex, section: 0),
+            at: .centeredVertically,
+            animated: false
+        )
+        collectionView.layoutIfNeeded()
+    }
+    
     private func clearTabsForCurrentOverviewMode() {
         tabBar.setPendingExpansion(at: nil)
         
@@ -130,6 +164,26 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
             return
         }
         
-        tabManager.removeAllTabs(mode: tabOverview.mode.tabMode)
+        let mode = tabOverview.mode.tabMode
+        guard mode == .regular else {
+            tabManager.removeAllTabs(mode: mode)
+            return
+        }
+        
+        if !tabManager.regularTabs.isEmpty {
+            tabOverview.prepareNextTabChangesWithoutAnimation()
+        }
+        tabManager.removeAllTabs(mode: .regular)
+        tabOverview.prepareNextTabChangesWithoutAnimation()
+        let newTabIndex = tabManager.createTab(
+            selecting: true,
+            target: .end,
+            mode: .regular
+        )
+        applyNewTabDisplayOption(toTabAt: newTabIndex)
+        tabOverview.prepareDismissSelection(to: newTabIndex, mode: .regular, previewImage: nil)
+        scrollTabOverviewToTab(at: newTabIndex)
+        tabBar.setPendingExpansion(at: newTabIndex)
+        setTabOverviewVisible(false, animated: true)
     }
 }

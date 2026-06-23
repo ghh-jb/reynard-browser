@@ -6,5 +6,6 @@
 //
 
 enum HomepageSection: CaseIterable {
+    case privateBrowsing
     case favorites
 }

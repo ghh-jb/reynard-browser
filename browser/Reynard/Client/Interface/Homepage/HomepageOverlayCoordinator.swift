@@ -69,6 +69,7 @@ final class HomepageOverlayCoordinator {
             return
         }
         
+        homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
         homepageViewController.setContentMode(target.contentMode)
         configureOverlay(for: target)
         warmSnapshotCacheIfNeeded()
@@ -91,11 +92,12 @@ final class HomepageOverlayCoordinator {
     
     private func configureHomepageViewController() {
         homepageViewController.homepageDelegate = self
+        homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
     }
     
     // MARK: - Snapshot
     
-    private func renderSnapshot(size: CGSize) -> UIImage? {
+    private func renderSnapshot(size: CGSize, isPrivateBrowsing: Bool) -> UIImage? {
         guard let delegate,
               size.width > 1,
               size.height > 1 else {
@@ -110,11 +112,13 @@ final class HomepageOverlayCoordinator {
            snapshotCache.matches(
             pixelSize: pixelSize,
             contentMode: contentMode,
+            isPrivateBrowsing: isPrivateBrowsing,
             userInterfaceStyle: userInterfaceStyle
            ) {
             return snapshotCache.image
         }
         
+        homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
         guard let image = homepageViewController.renderSnapshot(size: size, contentMode: contentMode) else {
             return nil
         }
@@ -122,6 +126,7 @@ final class HomepageOverlayCoordinator {
         snapshotCache = HomepageSnapshotCache(
             pixelSize: pixelSize,
             contentMode: contentMode,
+            isPrivateBrowsing: isPrivateBrowsing,
             userInterfaceStyle: userInterfaceStyle,
             image: image
         )
@@ -148,7 +153,7 @@ final class HomepageOverlayCoordinator {
             return
         }
         
-        _ = renderSnapshot(size: size)
+        _ = renderSnapshot(size: size, isPrivateBrowsing: isPrivateBrowsing)
     }
     
     private var resolvedSnapshotSize: CGSize? {
@@ -167,7 +172,7 @@ final class HomepageOverlayCoordinator {
             return nil
         }
         
-        return renderSnapshot(size: size)
+        return renderSnapshot(size: size, isPrivateBrowsing: tab.isPrivate)
     }
     
     // MARK: - Presentation
@@ -177,6 +182,7 @@ final class HomepageOverlayCoordinator {
         
         guard !overlayCoordinator.contains(.homepage, on: presentation.host),
               !overlayCoordinator.isPresented(.search, on: presentation.host) else {
+            homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
             homepageViewController.setContentMode(presentation.contentMode)
             homepageViewController.prepareForPresentation(resetNavigation: false)
             configureOverlay(for: presentation)
@@ -190,6 +196,7 @@ final class HomepageOverlayCoordinator {
             on: presentation.host,
             animated: animated
         ) { [weak self] in
+            self?.homepageViewController.setPrivateBrowsing(self?.isPrivateBrowsing == true)
             self?.homepageViewController.setContentMode(presentation.contentMode)
             self?.homepageViewController.prepareForPresentation(resetNavigation: true)
             self?.configureOverlay(for: presentation)
@@ -247,6 +254,10 @@ final class HomepageOverlayCoordinator {
         }
         
         return isBlankTab(tab)
+    }
+    
+    private var isPrivateBrowsing: Bool {
+        return delegate?.homepageSelectedTab?.isPrivate == true
     }
     
     private var showsHomepageForBlankTabs: Bool {

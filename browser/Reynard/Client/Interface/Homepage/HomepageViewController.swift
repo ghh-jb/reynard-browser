@@ -21,13 +21,18 @@ final class HomepageViewController: UINavigationController {
     
     private let rootViewController: HomepageRootViewController
     private let bookmarkStore: BookmarkStore
+    private var isPrivateBrowsing: Bool
     private var contentMode: HomepageContentMode = .embeddedNarrow
     
     // MARK: - Lifecycle
     
-    init(bookmarkStore: BookmarkStore = .shared) {
+    init(bookmarkStore: BookmarkStore = .shared, isPrivateBrowsing: Bool = false) {
         self.bookmarkStore = bookmarkStore
-        rootViewController = HomepageRootViewController(bookmarkStore: bookmarkStore)
+        self.isPrivateBrowsing = isPrivateBrowsing
+        rootViewController = HomepageRootViewController(
+            bookmarkStore: bookmarkStore,
+            isPrivateBrowsing: isPrivateBrowsing
+        )
         super.init(rootViewController: rootViewController)
         rootViewController.delegate = self
     }
@@ -57,6 +62,22 @@ final class HomepageViewController: UINavigationController {
             }
             
             viewController.setContentMode(contentMode)
+        }
+    }
+    
+    func setPrivateBrowsing(_ isPrivateBrowsing: Bool) {
+        guard self.isPrivateBrowsing != isPrivateBrowsing else {
+            return
+        }
+        
+        self.isPrivateBrowsing = isPrivateBrowsing
+        rootViewController.setPrivateBrowsing(isPrivateBrowsing)
+        viewControllers.forEach { viewController in
+            guard let viewController = viewController as? HomepageRootViewController else {
+                return
+            }
+            
+            viewController.setPrivateBrowsing(isPrivateBrowsing)
         }
     }
     
@@ -110,7 +131,8 @@ final class HomepageViewController: UINavigationController {
         let viewController = HomepageRootViewController(
             bookmarkStore: bookmarkStore,
             folder: folder,
-            sections: [.favorites]
+            sections: [.favorites],
+            isPrivateBrowsing: isPrivateBrowsing
         )
         viewController.delegate = self
         viewController.setContentMode(contentMode)

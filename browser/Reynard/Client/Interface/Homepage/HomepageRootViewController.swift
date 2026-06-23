@@ -26,6 +26,7 @@ final class HomepageRootViewController: UIViewController {
     private let bookmarkStore: BookmarkStore
     private let folder: BookmarkFolderSnapshot?
     private let sections: [HomepageSection]
+    private var isPrivateBrowsing: Bool
     private var contentMode: HomepageContentMode = .embeddedNarrow
     private var sectionViewControllers: [HomepageSection: UIViewController] = [:]
     
@@ -50,10 +51,16 @@ final class HomepageRootViewController: UIViewController {
     
     // MARK: - Lifecycle
     
-    init(bookmarkStore: BookmarkStore, folder: BookmarkFolderSnapshot? = nil, sections: [HomepageSection] = HomepageSection.allCases) {
+    init(
+        bookmarkStore: BookmarkStore,
+        folder: BookmarkFolderSnapshot? = nil,
+        sections: [HomepageSection] = HomepageSection.allCases,
+        isPrivateBrowsing: Bool = false
+    ) {
         self.bookmarkStore = bookmarkStore
         self.folder = folder
         self.sections = sections
+        self.isPrivateBrowsing = isPrivateBrowsing
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -78,7 +85,17 @@ final class HomepageRootViewController: UIViewController {
         }
         
         self.contentMode = contentMode
+        privateBrowsingSectionViewController?.setContentMode(contentMode)
         favoritesSectionViewController?.setContentMode(contentMode)
+    }
+    
+    func setPrivateBrowsing(_ isPrivateBrowsing: Bool) {
+        guard self.isPrivateBrowsing != isPrivateBrowsing else {
+            return
+        }
+        
+        self.isPrivateBrowsing = isPrivateBrowsing
+        privateBrowsingSectionViewController?.setPrivateBrowsing(isPrivateBrowsing)
     }
     
     func resetScrollPosition() {
@@ -136,6 +153,12 @@ final class HomepageRootViewController: UIViewController {
     
     private func makeSectionViewController(for section: HomepageSection) -> UIViewController {
         switch section {
+        case .privateBrowsing:
+            let viewController = PrivateBrowsingSectionViewController()
+            viewController.setContentMode(contentMode)
+            viewController.setPrivateBrowsing(isPrivateBrowsing)
+            return viewController
+            
         case .favorites:
             let viewController = FavoritesSectionViewController(
                 bookmarkStore: bookmarkStore,
@@ -149,6 +172,10 @@ final class HomepageRootViewController: UIViewController {
     }
     
     // MARK: - Helpers
+    
+    private var privateBrowsingSectionViewController: PrivateBrowsingSectionViewController? {
+        return sectionViewControllers[.privateBrowsing] as? PrivateBrowsingSectionViewController
+    }
     
     private var favoritesSectionViewController: FavoritesSectionViewController? {
         return sectionViewControllers[.favorites] as? FavoritesSectionViewController

@@ -1,5 +1,5 @@
 diff --git a/toolkit/components/extensions/Extension.sys.mjs b/toolkit/components/extensions/Extension.sys.mjs
-index 44ad6c9ee529..0634bb26c80c 100644
+index c8cb26a405d1..a090ab07b5cd 100644
 --- a/toolkit/components/extensions/Extension.sys.mjs
 +++ b/toolkit/components/extensions/Extension.sys.mjs
 @@ -198,7 +198,7 @@ const PRIVILEGED_PERMS_ANDROID_ONLY = new Set([

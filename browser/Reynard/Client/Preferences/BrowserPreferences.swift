@@ -83,11 +83,11 @@ final class BrowserPreferences {
             
             // Clear Browsing Data
             key("ClearBrowsingData", "clearsBrowsingHistory"): true,
-            key("ClearBrowsingData", "clearsCookiesAndWebsiteData"): true,
+            key("ClearBrowsingData", "clearsCookiesAndSiteData"): true,
             key("ClearBrowsingData", "clearsCachedImagesAndFiles"): true,
             key("ClearBrowsingData", "clearsDownloadsHistory"): false,
             key("ClearBrowsingData", "clearsDownloadedFiles"): false,
-            key("ClearBrowsingData", "clearsWebsitePermissions"): true,
+            key("ClearBrowsingData", "clearsSitePermissions"): true,
             key("ClearBrowsingData", "clearsOpenedTabs"): true,
         ])
     }
@@ -234,12 +234,12 @@ final class BrowserPreferences {
             }
         }
         
-        static var clearsCookiesAndWebsiteData: Bool {
+        static var clearsCookiesAndSiteData: Bool {
             get {
-                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsCookiesAndWebsiteData")
+                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsCookiesAndSiteData")
             }
             set {
-                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsCookiesAndWebsiteData")
+                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsCookiesAndSiteData")
             }
         }
         
@@ -270,12 +270,12 @@ final class BrowserPreferences {
             }
         }
         
-        static var clearsWebsitePermissions: Bool {
+        static var clearsSitePermissions: Bool {
             get {
-                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsWebsitePermissions")
+                return prefs.bool(forSetting: "ClearBrowsingData", key: "clearsSitePermissions")
             }
             set {
-                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsWebsitePermissions")
+                prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsSitePermissions")
             }
         }
         

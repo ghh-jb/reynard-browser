@@ -20,27 +20,27 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
     
     private enum BrowsingDataCategory: CaseIterable {
         case browsingHistory
-        case cookiesAndWebsiteData
+        case cookiesAndSiteData
         case cachedImagesAndFiles
         case downloadsHistory
         case downloadedFiles
-        case websitePermissions
+        case sitePermissions
         case openedTabs
         
         var title: String {
             switch self {
             case .browsingHistory:
                 return "Browsing History"
-            case .cookiesAndWebsiteData:
-                return "Cookies and Website Data"
+            case .cookiesAndSiteData:
+                return "Cookies and Site Data"
             case .cachedImagesAndFiles:
                 return "Cached Images and Files"
             case .downloadsHistory:
                 return "Downloads History"
             case .downloadedFiles:
                 return "Downloaded Files"
-            case .websitePermissions:
-                return "Website Permissions"
+            case .sitePermissions:
+                return "Site Permissions"
             case .openedTabs:
                 return "Opened Tabs"
             }
@@ -51,7 +51,7 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
             case .browsingHistory:
                 let count = HistoryStore.shared.currentSnapshot().items.count
                 return "\(count) \(count == 1 ? "address" : "addresses")"
-            case .cookiesAndWebsiteData:
+            case .cookiesAndSiteData:
                 return "You'll be logged out of most sites"
             case .cachedImagesAndFiles:
                 return "Frees up storage space"
@@ -59,7 +59,7 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
                 return nil
             case .downloadedFiles:
                 return nil
-            case .websitePermissions:
+            case .sitePermissions:
                 return nil
             case .openedTabs:
                 return nil
@@ -70,16 +70,16 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
             switch self {
             case .browsingHistory:
                 return Prefs.ClearBrowsingData.clearsBrowsingHistory
-            case .cookiesAndWebsiteData:
-                return Prefs.ClearBrowsingData.clearsCookiesAndWebsiteData
+            case .cookiesAndSiteData:
+                return Prefs.ClearBrowsingData.clearsCookiesAndSiteData
             case .cachedImagesAndFiles:
                 return Prefs.ClearBrowsingData.clearsCachedImagesAndFiles
             case .downloadsHistory:
                 return Prefs.ClearBrowsingData.clearsDownloadsHistory
             case .downloadedFiles:
                 return Prefs.ClearBrowsingData.clearsDownloadedFiles
-            case .websitePermissions:
-                return Prefs.ClearBrowsingData.clearsWebsitePermissions
+            case .sitePermissions:
+                return Prefs.ClearBrowsingData.clearsSitePermissions
             case .openedTabs:
                 return Prefs.ClearBrowsingData.clearsOpenedTabs
             }
@@ -89,16 +89,16 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
             switch self {
             case .browsingHistory:
                 Prefs.ClearBrowsingData.clearsBrowsingHistory = isSelected
-            case .cookiesAndWebsiteData:
-                Prefs.ClearBrowsingData.clearsCookiesAndWebsiteData = isSelected
+            case .cookiesAndSiteData:
+                Prefs.ClearBrowsingData.clearsCookiesAndSiteData = isSelected
             case .cachedImagesAndFiles:
                 Prefs.ClearBrowsingData.clearsCachedImagesAndFiles = isSelected
             case .downloadsHistory:
                 Prefs.ClearBrowsingData.clearsDownloadsHistory = isSelected
             case .downloadedFiles:
                 Prefs.ClearBrowsingData.clearsDownloadedFiles = isSelected
-            case .websitePermissions:
-                Prefs.ClearBrowsingData.clearsWebsitePermissions = isSelected
+            case .sitePermissions:
+                Prefs.ClearBrowsingData.clearsSitePermissions = isSelected
             case .openedTabs:
                 Prefs.ClearBrowsingData.clearsOpenedTabs = isSelected
             }
@@ -271,7 +271,7 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
             FaviconStore.shared.clearCache()
         }
         
-        if selectedCategories.contains(.websitePermissions) {
+        if selectedCategories.contains(.sitePermissions) {
             SiteSettingsUtils.resetStoredSitePermissions()
         }
         
@@ -296,7 +296,7 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
     
     private func clearSelectedEngineData(for selectedCategories: Set<BrowsingDataCategory>) async {
         do {
-            if selectedCategories.contains(.cookiesAndWebsiteData) {
+            if selectedCategories.contains(.cookiesAndSiteData) {
                 try await GeckoStorageController.clearData(
                     flags: GeckoStorageClearFlags.cookies | GeckoStorageClearFlags.authSessions
                 )

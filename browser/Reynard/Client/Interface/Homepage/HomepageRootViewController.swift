@@ -26,6 +26,8 @@ final class HomepageRootViewController: UIViewController {
         static let folderTopInset: CGFloat = 20
         static let horizontalInset: CGFloat = 16
         static let bottomInset: CGFloat = 24
+        static let embeddedMaximumWidth: CGFloat = 800
+        static let detachedMaximumWidth: CGFloat = 700
     }
     
     weak var delegate: HomepageRootViewControllerDelegate?
@@ -36,6 +38,7 @@ final class HomepageRootViewController: UIViewController {
     private var isPrivateBrowsing: Bool
     private var contentMode: HomepageContentMode = .embeddedNarrow
     private var sectionViewControllers: [HomepageSection: UIViewController] = [:]
+    private var sectionStackWidthConstraint: NSLayoutConstraint?
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -84,6 +87,11 @@ final class HomepageRootViewController: UIViewController {
         configureSections()
     }
     
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateSectionStackWidth()
+    }
+    
     // MARK: - Public API
     
     func setContentMode(_ contentMode: HomepageContentMode) {
@@ -97,6 +105,7 @@ final class HomepageRootViewController: UIViewController {
         }
         privateBrowsingSectionViewController?.setContentMode(contentMode)
         favoritesSectionViewController?.setContentMode(contentMode)
+        updateSectionStackWidth()
     }
     
     func setPrivateBrowsing(_ isPrivateBrowsing: Bool) {
@@ -139,17 +148,20 @@ final class HomepageRootViewController: UIViewController {
     }
     
     private func configureConstraints() {
+        let widthConstraint = sectionStackView.widthAnchor.constraint(equalToConstant: 1)
+        sectionStackWidthConstraint = widthConstraint
+        
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            scrollView.contentLayoutGuide.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
             
             sectionStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            sectionStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: UX.horizontalInset),
-            sectionStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -UX.horizontalInset),
+            sectionStackView.centerXAnchor.constraint(equalTo: scrollView.frameLayoutGuide.centerXAnchor),
             sectionStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            sectionStackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -(UX.horizontalInset * 2)),
+            widthConstraint,
         ])
     }
     
@@ -192,6 +204,18 @@ final class HomepageRootViewController: UIViewController {
             viewController.setContentMode(contentMode)
             return viewController
         }
+    }
+    
+    // MARK: - Layout
+    
+    private func updateSectionStackWidth() {
+        let width = scrollView.bounds.width - (UX.horizontalInset * 2)
+        guard width > 0 else {
+            return
+        }
+        
+        let maximumWidth = contentMode.isDetached ? UX.detachedMaximumWidth : UX.embeddedMaximumWidth
+        sectionStackWidthConstraint?.constant = min(width, maximumWidth)
     }
     
     // MARK: - Helpers

@@ -845,7 +845,7 @@ final class FaviconStore {
     
     private func string(from data: Data, response: URLResponse) -> String {
         if let encodingName = response.textEncodingName,
-           let encoding = String.Encoding(ianaCharsetName: encodingName),
+           let encoding = String.Encoding.ianaCharacterSetName(encodingName),
            let string = String(data: data, encoding: encoding) {
             return string
         }
@@ -913,16 +913,5 @@ final class FaviconStore {
     
     private static func sha256(_ data: Data) -> String {
         SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
-    }
-}
-
-private extension String.Encoding {
-    init?(ianaCharsetName: String) {
-        let cfEncoding = CFStringConvertIANACharSetNameToEncoding(ianaCharsetName as CFString)
-        guard cfEncoding != kCFStringEncodingInvalidId else {
-            return nil
-        }
-        
-        self.init(rawValue: CFStringConvertEncodingToNSStringEncoding(cfEncoding))
     }
 }

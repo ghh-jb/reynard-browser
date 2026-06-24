@@ -39,7 +39,7 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
         static let buyMeACoffee = URL(string: "https://buymeacoffee.com/hnimnot")!
     }
     
-    weak var delegate: HomepageRecommendationURLOpeningDelegate?
+    weak var delegate: HomepageSectionDelegate?
     
     private var contentMode: HomepageContentMode = .embeddedNarrow
     private var isPrivateBrowsing = false
@@ -256,7 +256,7 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
     // MARK: - Actions
     
     @objc private func openDonationLink() {
-        delegate?.homepageRecommendationViewController(self, didSelectExternalURL: DonationRecommendationLink.buyMeACoffee)
+        delegate?.homepageSection(self, didSelectURL: DonationRecommendationLink.buyMeACoffee)
     }
     
     @objc private func postponeDonationRecommendation() {

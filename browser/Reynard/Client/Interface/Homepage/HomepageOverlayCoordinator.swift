@@ -398,7 +398,7 @@ extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
         dismiss(animated: true)
     }
     
-    func homepageViewControllerDidSelectPerformanceSettings(_ controller: HomepageViewController) {
+    func homepageViewControllerDidSelectSettings(_ controller: HomepageViewController) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
         delegate?.openHomepagePerformanceSettings()
         delegate?.endHomepageEditing()

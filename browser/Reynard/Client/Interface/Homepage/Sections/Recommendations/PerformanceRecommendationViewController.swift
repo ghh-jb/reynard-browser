@@ -7,10 +7,6 @@
 
 import UIKit
 
-protocol PerformanceRecommendationViewControllerDelegate: HomepageRecommendationURLOpeningDelegate {
-    func performanceRecommendationViewControllerDidSelectSettings(_ controller: PerformanceRecommendationViewController)
-}
-
 final class PerformanceRecommendationViewController: UIViewController, HomepageRecommendationViewController {
     private enum UX {
         static let horizontalInset: CGFloat = 2
@@ -119,7 +115,7 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         }
     }
     
-    weak var delegate: PerformanceRecommendationViewControllerDelegate?
+    weak var delegate: HomepageSectionDelegate?
     
     private var contentMode: HomepageContentMode = .embeddedNarrow
     private var currentRecommendation: PerformanceRecommendationContent?
@@ -322,9 +318,9 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         
         switch action {
         case .settings:
-            delegate?.performanceRecommendationViewControllerDidSelectSettings(self)
+            delegate?.homepageSectionDidSelectSettings(self)
         case let .openURL(url):
-            delegate?.homepageRecommendationViewController(self, didSelectExternalURL: url)
+            delegate?.homepageSection(self, didSelectURL: url)
         }
     }
     

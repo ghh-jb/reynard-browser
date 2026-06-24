@@ -10,17 +10,13 @@ import UIKit
 protocol HomepageRootViewControllerDelegate: AnyObject {
     func homepageRootViewController(_ controller: HomepageRootViewController, didSelectURL url: URL)
     func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot)
-    func homepageRootViewControllerDidSelectPerformanceSettings(_ controller: HomepageRootViewController)
+    func homepageRootViewControllerDidSelectSettings(_ controller: HomepageRootViewController)
     func homepageRootViewControllerDidStartScrolling()
 }
 
 protocol HomepageRecommendationViewController: UIViewController {
     func setContentMode(_ contentMode: HomepageContentMode)
     func setPrivateBrowsing(_ isPrivateBrowsing: Bool)
-}
-
-protocol HomepageRecommendationURLOpeningDelegate: AnyObject {
-    func homepageRecommendationViewController(_ controller: UIViewController, didSelectExternalURL url: URL)
 }
 
 final class HomepageRootViewController: UIViewController {
@@ -258,30 +254,18 @@ extension HomepageRootViewController: UIScrollViewDelegate {
     }
 }
 
-extension HomepageRootViewController: FavoritesSectionViewControllerDelegate {
-    func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFavorite favorite: BookmarkSnapshot) {
-        delegate?.homepageRootViewController(self, didSelectURL: favorite.url)
+extension HomepageRootViewController: HomepageSectionDelegate {
+    func homepageSection(_ viewController: UIViewController, didSelectURL url: URL) {
+        delegate?.homepageRootViewController(self, didSelectURL: url)
     }
     
+    func homepageSectionDidSelectSettings(_ viewController: UIViewController) {
+        delegate?.homepageRootViewControllerDidSelectSettings(self)
+    }
+}
+
+extension HomepageRootViewController: FavoritesSectionViewControllerDelegate {
     func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFolder folder: BookmarkFolderSnapshot) {
         delegate?.homepageRootViewControllerDidSelectFolder(folder)
-    }
-}
-
-extension HomepageRootViewController: FrequentlyVisitedSectionViewControllerDelegate {
-    func frequentlyVisitedSectionViewController(_ controller: FrequentlyVisitedSectionViewController, didSelectURL url: URL) {
-        delegate?.homepageRootViewController(self, didSelectURL: url)
-    }
-}
-
-extension HomepageRootViewController: PerformanceRecommendationViewControllerDelegate {
-    func performanceRecommendationViewControllerDidSelectSettings(_ controller: PerformanceRecommendationViewController) {
-        delegate?.homepageRootViewControllerDidSelectPerformanceSettings(self)
-    }
-}
-
-extension HomepageRootViewController: HomepageRecommendationURLOpeningDelegate {
-    func homepageRecommendationViewController(_ controller: UIViewController, didSelectExternalURL url: URL) {
-        delegate?.homepageRootViewController(self, didSelectURL: url)
     }
 }

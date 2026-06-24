@@ -53,8 +53,8 @@ final class FrequentlyVisitedSiteCardView: UIControl {
         return view
     }()
     
-    private let titleLabel: TopAlignedLabel = {
-        let label = TopAlignedLabel()
+    private let titleLabel: FrequentlyVisitedCardLabel = {
+        let label = FrequentlyVisitedCardLabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = FrequentlyVisitedSiteCardView.titleFont
         label.textColor = .label
@@ -177,7 +177,7 @@ final class FrequentlyVisitedSiteCardView: UIControl {
     }
 }
 
-private final class TopAlignedLabel: UILabel {
+private final class FrequentlyVisitedCardLabel: UILabel {
     override func textRect(forBounds bounds: CGRect, limitedToNumberOfLines numberOfLines: Int) -> CGRect {
         var rect = super.textRect(forBounds: bounds, limitedToNumberOfLines: numberOfLines)
         rect.origin.y = bounds.origin.y

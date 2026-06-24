@@ -24,3 +24,8 @@ enum HomepageSection: CaseIterable, Hashable {
         ]
     }
 }
+
+protocol HomepageSectionDelegate: AnyObject {
+    func homepageSection(_ viewController: UIViewController, didSelectURL url: URL)
+    func homepageSectionDidSelectSettings(_ viewController: UIViewController)
+}

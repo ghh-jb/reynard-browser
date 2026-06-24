@@ -7,8 +7,7 @@
 
 import UIKit
 
-protocol FavoritesSectionViewControllerDelegate: AnyObject {
-    func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFavorite favorite: BookmarkSnapshot)
+protocol FavoritesSectionViewControllerDelegate: HomepageSectionDelegate {
     func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFolder folder: BookmarkFolderSnapshot)
 }
 
@@ -272,7 +271,7 @@ extension FavoritesSectionViewController: UICollectionViewDataSource, UICollecti
         
         switch favoriteItems[indexPath.item] {
         case let .bookmark(bookmark):
-            delegate?.favoritesSectionViewController(self, didSelectFavorite: bookmark)
+            delegate?.homepageSection(self, didSelectURL: bookmark.url)
         case let .folder(folder):
             delegate?.favoritesSectionViewController(self, didSelectFolder: folder)
         }

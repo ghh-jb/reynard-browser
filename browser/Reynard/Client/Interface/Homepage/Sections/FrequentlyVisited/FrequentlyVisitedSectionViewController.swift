@@ -7,10 +7,6 @@
 
 import UIKit
 
-protocol FrequentlyVisitedSectionViewControllerDelegate: AnyObject {
-    func frequentlyVisitedSectionViewController(_ controller: FrequentlyVisitedSectionViewController, didSelectURL url: URL)
-}
-
 final class FrequentlyVisitedSectionViewController: UIViewController {
     private enum UX {
         static let horizontalInset: CGFloat = 2
@@ -41,7 +37,7 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
         for: .systemFont(ofSize: UX.titleFontSize, weight: .bold)
     )
     
-    weak var delegate: FrequentlyVisitedSectionViewControllerDelegate?
+    weak var delegate: HomepageSectionDelegate?
     
     private let historyStore: HistoryStore
     private let metadataStore: SiteMetadataStore
@@ -265,6 +261,6 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
             return
         }
         
-        delegate?.frequentlyVisitedSectionViewController(self, didSelectURL: sites[sender.tag].url)
+        delegate?.homepageSection(self, didSelectURL: sites[sender.tag].url)
     }
 }

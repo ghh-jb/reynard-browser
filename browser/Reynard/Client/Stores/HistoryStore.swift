@@ -87,6 +87,12 @@ final class HistoryStore {
         }
     }
     
+    func frequentSites(limit: Int, minVisitCount: Int) -> HistoryStoreSnapshot {
+        stateQueue.sync {
+            HistoryStoreSnapshot(items: fetchFrequentSitesLocked(limit: limit, minVisitCount: minVisitCount))
+        }
+    }
+    
     func search(matching query: String, limit: Int) -> HistoryStoreSnapshot {
         stateQueue.sync {
             HistoryStoreSnapshot(items: searchSitesLocked(matching: query, limit: limit))
@@ -409,6 +415,32 @@ final class HistoryStore {
             sqlite3_bind_int64(statement, 2, Int64(offset))
         }
         
+        return readSnapshotsLocked(from: statement)
+    }
+    
+    private func fetchFrequentSitesLocked(limit: Int, minVisitCount: Int) -> [HistorySiteSnapshot] {
+        guard limit > 0, minVisitCount > 0 else {
+            return []
+        }
+        
+        guard let statement = prepareStatementLocked(
+            """
+            SELECT id, title, url, updated_at
+            FROM history
+            WHERE visit_count >= ?
+            ORDER BY frecency DESC, id DESC
+            LIMIT ?;
+            """
+        ) else {
+            return []
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_int64(statement, 1, Int64(minVisitCount))
+        sqlite3_bind_int64(statement, 2, Int64(limit))
         return readSnapshotsLocked(from: statement)
     }
     

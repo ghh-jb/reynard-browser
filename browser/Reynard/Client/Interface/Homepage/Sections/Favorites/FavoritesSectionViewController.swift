@@ -21,18 +21,17 @@ final class FavoritesSectionViewController: UIViewController {
         static let rowSpacing: CGFloat = 16
     }
     
-    private static let sectionTitle = "Favorites"
+    weak var delegate: FavoritesSectionViewControllerDelegate?
+    
     private static let titleFont = UIFontMetrics(forTextStyle: .title2).scaledFont(
         for: .systemFont(ofSize: UX.titleFontSize, weight: .bold)
     )
     
-    weak var delegate: FavoritesSectionViewControllerDelegate?
-    
     private let bookmarkStore: BookmarkStore
     private let folder: BookmarkFolderSnapshot?
-    private let showsTitle: Bool
+    private let showsSectionTitle: Bool
     private var favoriteItems: [BookmarkContentSnapshot] = []
-    private var favoritesFolderID: String?
+    private var favoritesFolderGUID: String?
     private var contentMode: HomepageContentMode = .embeddedNarrow
     private var collectionHeightConstraint: NSLayoutConstraint?
     private var lastLaidOutWidth: CGFloat = -1
@@ -42,7 +41,7 @@ final class FavoritesSectionViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = FavoritesSectionViewController.titleFont
         label.textColor = .label
-        label.text = FavoritesSectionViewController.sectionTitle
+        label.text = "Favorites"
         label.adjustsFontForContentSizeCategory = true
         return label
     }()
@@ -70,10 +69,10 @@ final class FavoritesSectionViewController: UIViewController {
     
     // MARK: - Lifecycle
     
-    init(bookmarkStore: BookmarkStore = .shared, folder: BookmarkFolderSnapshot? = nil, showsTitle: Bool = true) {
+    init(bookmarkStore: BookmarkStore = .shared, folder: BookmarkFolderSnapshot? = nil, showsSectionTitle: Bool = true) {
         self.bookmarkStore = bookmarkStore
         self.folder = folder
-        self.showsTitle = showsTitle
+        self.showsSectionTitle = showsSectionTitle
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -100,7 +99,6 @@ final class FavoritesSectionViewController: UIViewController {
         updateFavoriteGridLayout()
     }
     
-    // MARK: - Public API
     
     func setContentMode(_ contentMode: HomepageContentMode) {
         guard self.contentMode != contentMode else {
@@ -115,7 +113,7 @@ final class FavoritesSectionViewController: UIViewController {
     
     private func configureAppearance() {
         view.backgroundColor = .clear
-        titleLabel.isHidden = !showsTitle
+        titleLabel.isHidden = !showsSectionTitle
     }
     
     private func configureHierarchy() {
@@ -125,8 +123,8 @@ final class FavoritesSectionViewController: UIViewController {
     
     private func configureConstraints() {
         let heightConstraint = collectionView.heightAnchor.constraint(equalToConstant: 1)
-        let collectionTopAnchor = showsTitle ? titleLabel.bottomAnchor : view.topAnchor
-        let collectionTopSpacing = showsTitle ? UX.titleBottomSpacing : 0
+        let collectionTopAnchor = showsSectionTitle ? titleLabel.bottomAnchor : view.topAnchor
+        let collectionTopSpacing = showsSectionTitle ? UX.titleBottomSpacing : 0
         collectionHeightConstraint = heightConstraint
         
         NSLayoutConstraint.activate([
@@ -167,7 +165,7 @@ final class FavoritesSectionViewController: UIViewController {
             contents = bookmarkStore.favoritesFolderContents()
         }
         
-        favoritesFolderID = contents.parent.guid
+        favoritesFolderGUID = contents.parent.guid
         favoriteItems = contents.items
         collectionView.reloadData()
         view.isHidden = favoriteItems.isEmpty
@@ -218,17 +216,17 @@ final class FavoritesSectionViewController: UIViewController {
     // MARK: - Reorder
     
     @objc private func handleReorderLongPress(_ gestureRecognizer: UILongPressGestureRecognizer) {
-        let location = gestureRecognizer.location(in: collectionView)
+        let pressLocation = gestureRecognizer.location(in: collectionView)
         
         switch gestureRecognizer.state {
         case .began:
-            guard let indexPath = collectionView.indexPathForItem(at: location) else {
+            guard let indexPath = collectionView.indexPathForItem(at: pressLocation) else {
                 return
             }
             collectionView.beginInteractiveMovementForItem(at: indexPath)
             
         case .changed:
-            collectionView.updateInteractiveMovementTargetPosition(location)
+            collectionView.updateInteractiveMovementTargetPosition(pressLocation)
             
         case .ended:
             collectionView.endInteractiveMovement()
@@ -290,12 +288,12 @@ extension FavoritesSectionViewController: UICollectionViewDataSource, UICollecti
             return
         }
         
-        let targetIndex = min(max(destinationIndexPath.item, 0), favoriteItems.count - 1)
+        let destinationIndex = min(max(destinationIndexPath.item, 0), favoriteItems.count - 1)
         let favoriteItem = favoriteItems.remove(at: sourceIndexPath.item)
-        favoriteItems.insert(favoriteItem, at: targetIndex)
+        favoriteItems.insert(favoriteItem, at: destinationIndex)
         
-        guard let favoritesFolderID,
-              bookmarkStore.moveBookmarkItem(guid: favoriteItem.guid, to: targetIndex, in: favoritesFolderID) else {
+        guard let favoritesFolderGUID,
+              bookmarkStore.moveBookmarkItem(guid: favoriteItem.guid, to: destinationIndex, in: favoritesFolderGUID) else {
             reloadFavorites()
             return
         }

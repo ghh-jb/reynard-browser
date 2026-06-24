@@ -15,6 +15,7 @@ final class FavoriteFolderCollectionViewCell: UICollectionViewCell {
         static let titleFontSize: CGFloat = 12
         static let previewInset: CGFloat = 7
         static let previewSpacing: CGFloat = 5
+        static let previewIconCornerRadius: CGFloat = 6
         static let emptyIconSize: CGFloat = 64
     }
     
@@ -152,7 +153,7 @@ final class FavoriteFolderCollectionViewCell: UICollectionViewCell {
             iconView.backgroundColor = .white
             iconView.clipsToBounds = true
             iconView.layer.cornerCurve = .continuous
-            iconView.layer.cornerRadius = 6
+            iconView.layer.cornerRadius = UX.previewIconCornerRadius
             previewGridView.addSubview(iconView)
             previewIconViews.append(iconView)
         }

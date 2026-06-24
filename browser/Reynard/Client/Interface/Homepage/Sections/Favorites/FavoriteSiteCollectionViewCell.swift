@@ -15,7 +15,8 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
         static let titleFontSize: CGFloat = 12
         static let shadowOpacity: Float = 0.18
         static let shadowRadius: CGFloat = 8
-        static let shadowOffset = CGSize(width: 0, height: 3)
+        static let shadowOffsetWidth: CGFloat = 0
+        static let shadowOffsetHeight: CGFloat = 3
     }
     
     static let reuseIdentifier = "FavoriteSiteCollectionViewCell"
@@ -31,7 +32,7 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
         view.clipsToBounds = false
         view.layer.shadowOpacity = UX.shadowOpacity
         view.layer.shadowRadius = UX.shadowRadius
-        view.layer.shadowOffset = UX.shadowOffset
+        view.layer.shadowOffset = CGSize(width: UX.shadowOffsetWidth, height: UX.shadowOffsetHeight)
         return view
     }()
     

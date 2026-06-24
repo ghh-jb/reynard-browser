@@ -8,10 +8,9 @@
 import UIKit
 
 protocol HomepageRootViewControllerDelegate: AnyObject {
-    func homepageRootViewControllerDidSelectFavorite(_ favorite: BookmarkSnapshot)
+    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectURL url: URL)
     func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot)
     func homepageRootViewControllerDidSelectPerformanceSettings(_ controller: HomepageRootViewController)
-    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecommendationExternalURL url: URL)
     func homepageRootViewControllerDidStartScrolling()
 }
 
@@ -138,7 +137,7 @@ final class HomepageRootViewController: UIViewController {
         scrollView.delegate = self
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.contentInset = UIEdgeInsets(
-            top: topContentInset,
+            top: folder == nil ? UX.topInset : UX.folderTopInset,
             left: 0,
             bottom: UX.bottomInset,
             right: 0
@@ -206,10 +205,15 @@ final class HomepageRootViewController: UIViewController {
             let viewController = FavoritesSectionViewController(
                 bookmarkStore: bookmarkStore,
                 folder: folder,
-                showsTitle: showsSectionTitles
+                showsSectionTitle: folder == nil
             )
             viewController.delegate = self
             viewController.setContentMode(contentMode)
+            return viewController
+            
+        case .frequentlyVisited:
+            let viewController = FrequentlyVisitedSectionViewController()
+            viewController.delegate = self
             return viewController
         }
     }
@@ -246,17 +250,6 @@ final class HomepageRootViewController: UIViewController {
         return sectionViewControllers[.favorites] as? FavoritesSectionViewController
     }
     
-    private var isFolderRoot: Bool {
-        return folder != nil
-    }
-    
-    private var topContentInset: CGFloat {
-        return isFolderRoot ? UX.folderTopInset : UX.topInset
-    }
-    
-    private var showsSectionTitles: Bool {
-        return !isFolderRoot
-    }
 }
 
 extension HomepageRootViewController: UIScrollViewDelegate {
@@ -267,11 +260,17 @@ extension HomepageRootViewController: UIScrollViewDelegate {
 
 extension HomepageRootViewController: FavoritesSectionViewControllerDelegate {
     func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFavorite favorite: BookmarkSnapshot) {
-        delegate?.homepageRootViewControllerDidSelectFavorite(favorite)
+        delegate?.homepageRootViewController(self, didSelectURL: favorite.url)
     }
     
     func favoritesSectionViewController(_ controller: FavoritesSectionViewController, didSelectFolder folder: BookmarkFolderSnapshot) {
         delegate?.homepageRootViewControllerDidSelectFolder(folder)
+    }
+}
+
+extension HomepageRootViewController: FrequentlyVisitedSectionViewControllerDelegate {
+    func frequentlyVisitedSectionViewController(_ controller: FrequentlyVisitedSectionViewController, didSelectURL url: URL) {
+        delegate?.homepageRootViewController(self, didSelectURL: url)
     }
 }
 
@@ -283,6 +282,6 @@ extension HomepageRootViewController: PerformanceRecommendationViewControllerDel
 
 extension HomepageRootViewController: HomepageRecommendationURLOpeningDelegate {
     func homepageRecommendationViewController(_ controller: UIViewController, didSelectExternalURL url: URL) {
-        delegate?.homepageRootViewController(self, didSelectRecommendationExternalURL: url)
+        delegate?.homepageRootViewController(self, didSelectURL: url)
     }
 }

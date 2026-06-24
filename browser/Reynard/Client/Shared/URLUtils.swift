@@ -57,6 +57,20 @@ enum URLUtils {
         return URL(string: "https://\(trimmedValue)")
     }
     
+    static func sanitizedURL(for url: URL) -> URL? {
+        guard isWebURL(url),
+              var components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let scheme = components.scheme?.lowercased(),
+              let host = components.host?.lowercased() else {
+            return nil
+        }
+        
+        components.scheme = scheme
+        components.host = host
+        components.fragment = nil
+        return components.url
+    }
+    
     static func isAbsoluteURL(_ url: URL) -> Bool {
         guard let scheme = url.scheme?.trimmingCharacters(in: .whitespacesAndNewlines),
               !scheme.isEmpty else {

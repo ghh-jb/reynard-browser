@@ -8,18 +8,13 @@
 import UIKit
 
 protocol HomepageViewControllerDelegate: AnyObject {
-    func homepageViewControllerDidSelectFavorite(_ favorite: BookmarkSnapshot)
+    func homepageViewController(_ controller: HomepageViewController, didSelectURL url: URL)
     func homepageViewControllerDidSelectPerformanceSettings(_ controller: HomepageViewController)
-    func homepageViewController(_ controller: HomepageViewController, didSelectRecommendationExternalURL url: URL)
     func homepageViewControllerDidStartScrolling()
 }
 
 final class HomepageViewController: UINavigationController {
-    weak var homepageDelegate: HomepageViewControllerDelegate? {
-        didSet {
-            rootViewController.delegate = self
-        }
-    }
+    weak var homepageDelegate: HomepageViewControllerDelegate?
     
     private let rootViewController: HomepageRootViewController
     private let bookmarkStore: BookmarkStore
@@ -50,20 +45,17 @@ final class HomepageViewController: UINavigationController {
     
     override func setViewControllers(_ viewControllers: [UIViewController], animated: Bool) {
         super.setViewControllers(viewControllers, animated: animated)
-        assignRootDelegates(viewControllers)
+        viewControllers.forEach { viewController in
+            (viewController as? HomepageRootViewController)?.delegate = self
+        }
     }
     
     // MARK: - Public API
     
     func setContentMode(_ contentMode: HomepageContentMode) {
         self.contentMode = contentMode
-        rootViewController.setContentMode(contentMode)
         viewControllers.forEach { viewController in
-            guard let viewController = viewController as? HomepageRootViewController else {
-                return
-            }
-            
-            viewController.setContentMode(contentMode)
+            (viewController as? HomepageRootViewController)?.setContentMode(contentMode)
         }
     }
     
@@ -73,13 +65,8 @@ final class HomepageViewController: UINavigationController {
         }
         
         self.isPrivateBrowsing = isPrivateBrowsing
-        rootViewController.setPrivateBrowsing(isPrivateBrowsing)
         viewControllers.forEach { viewController in
-            guard let viewController = viewController as? HomepageRootViewController else {
-                return
-            }
-            
-            viewController.setPrivateBrowsing(isPrivateBrowsing)
+            (viewController as? HomepageRootViewController)?.setPrivateBrowsing(isPrivateBrowsing)
         }
     }
     
@@ -128,28 +115,6 @@ final class HomepageViewController: UINavigationController {
         navigationBar.isTranslucent = false
         setNavigationBarHidden(true, animated: false)
     }
-    
-    private func makeFolderRootViewController(folder: BookmarkFolderSnapshot) -> HomepageRootViewController {
-        let viewController = HomepageRootViewController(
-            bookmarkStore: bookmarkStore,
-            folder: folder,
-            sections: [.favorites],
-            isPrivateBrowsing: isPrivateBrowsing
-        )
-        viewController.delegate = self
-        viewController.setContentMode(contentMode)
-        return viewController
-    }
-    
-    private func assignRootDelegates(_ viewControllers: [UIViewController]) {
-        viewControllers.forEach { viewController in
-            guard let viewController = viewController as? HomepageRootViewController else {
-                return
-            }
-            
-            viewController.delegate = self
-        }
-    }
 }
 
 extension HomepageViewController: UINavigationControllerDelegate {
@@ -159,20 +124,23 @@ extension HomepageViewController: UINavigationControllerDelegate {
 }
 
 extension HomepageViewController: HomepageRootViewControllerDelegate {
-    func homepageRootViewControllerDidSelectFavorite(_ favorite: BookmarkSnapshot) {
-        homepageDelegate?.homepageViewControllerDidSelectFavorite(favorite)
+    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectURL url: URL) {
+        homepageDelegate?.homepageViewController(self, didSelectURL: url)
     }
     
     func homepageRootViewControllerDidSelectPerformanceSettings(_ controller: HomepageRootViewController) {
         homepageDelegate?.homepageViewControllerDidSelectPerformanceSettings(self)
     }
     
-    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecommendationExternalURL url: URL) {
-        homepageDelegate?.homepageViewController(self, didSelectRecommendationExternalURL: url)
-    }
-    
     func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot) {
-        let viewController = makeFolderRootViewController(folder: folder)
+        let viewController = HomepageRootViewController(
+            bookmarkStore: bookmarkStore,
+            folder: folder,
+            sections: [.favorites],
+            isPrivateBrowsing: isPrivateBrowsing
+        )
+        viewController.delegate = self
+        viewController.setContentMode(contentMode)
         setNavigationBarHidden(false, animated: false)
         pushViewController(viewController, animated: true)
     }

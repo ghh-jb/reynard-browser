@@ -1,18 +1,25 @@
 //
-//  FavoriteSiteIconView.swift
+//  FrequentlyVisitedIconView.swift
 //  Reynard
 //
-//  Created by Minh Ton on 22/6/26.
+//  Created by Minh Ton on 24/6/26.
 //
 
 import UIKit
 
-final class FavoriteSiteIconView: UIView {
+final class FrequentlyVisitedIconView: UIView {
+    private enum UX {
+        static let iconCornerRadius: CGFloat = 10
+    }
+    
     private let imageView: UIImageView = {
         let view = UIImageView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.contentMode = .scaleAspectFit
         view.tintColor = .secondaryLabel
+        view.layer.cornerCurve = .continuous
+        view.layer.cornerRadius = UX.iconCornerRadius
+        view.clipsToBounds = true
         return view
     }()
     
@@ -29,12 +36,8 @@ final class FavoriteSiteIconView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(bookmark: BookmarkSnapshot) {
-        faviconLoader.loadIcon(for: bookmark.url)
-    }
-    
-    func reset() {
-        faviconLoader.reset()
+    func configure(url: URL) {
+        faviconLoader.loadIcon(for: url)
     }
     
     private func configureView() {

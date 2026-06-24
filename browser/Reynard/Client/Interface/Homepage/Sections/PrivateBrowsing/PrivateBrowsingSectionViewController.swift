@@ -16,6 +16,15 @@ final class PrivateBrowsingSectionViewController: UIViewController {
         static let messageFontSize: CGFloat = 17
         static let labelSpacing: CGFloat = 10
         static let maximumContentWidth: CGFloat = 580
+        static let narrowContentTopInset: CGFloat = 24
+        static let narrowContentHorizontalInset: CGFloat = 20
+        static let narrowContentBottomInset: CGFloat = 24
+        static let wideContentTopInset: CGFloat = 28
+        static let wideContentHorizontalInset: CGFloat = 24
+        static let wideContentBottomInset: CGFloat = 28
+        static let expandedContentTopInset: CGFloat = 32
+        static let expandedContentHorizontalInset: CGFloat = 28
+        static let expandedContentBottomInset: CGFloat = 32
     }
     
     private var contentMode: HomepageContentMode = .embeddedNarrow
@@ -85,8 +94,6 @@ final class PrivateBrowsingSectionViewController: UIViewController {
         updateContentInsets()
         updateVisibility()
     }
-    
-    // MARK: - Public API
     
     func setContentMode(_ contentMode: HomepageContentMode) {
         guard self.contentMode != contentMode else {
@@ -170,11 +177,26 @@ final class PrivateBrowsingSectionViewController: UIViewController {
     private var contentInsets: NSDirectionalEdgeInsets {
         switch contentMode {
         case .embeddedNarrow, .detachedNarrow:
-            return NSDirectionalEdgeInsets(top: 24, leading: 20, bottom: 24, trailing: 20)
+            return NSDirectionalEdgeInsets(
+                top: UX.narrowContentTopInset,
+                leading: UX.narrowContentHorizontalInset,
+                bottom: UX.narrowContentBottomInset,
+                trailing: UX.narrowContentHorizontalInset
+            )
         case .embeddedWide, .detachedWide:
-            return NSDirectionalEdgeInsets(top: 28, leading: 24, bottom: 28, trailing: 24)
+            return NSDirectionalEdgeInsets(
+                top: UX.wideContentTopInset,
+                leading: UX.wideContentHorizontalInset,
+                bottom: UX.wideContentBottomInset,
+                trailing: UX.wideContentHorizontalInset
+            )
         case .embeddedExpanded:
-            return NSDirectionalEdgeInsets(top: 32, leading: 28, bottom: 32, trailing: 28)
+            return NSDirectionalEdgeInsets(
+                top: UX.expandedContentTopInset,
+                leading: UX.expandedContentHorizontalInset,
+                bottom: UX.expandedContentBottomInset,
+                trailing: UX.expandedContentHorizontalInset
+            )
         }
     }
 }

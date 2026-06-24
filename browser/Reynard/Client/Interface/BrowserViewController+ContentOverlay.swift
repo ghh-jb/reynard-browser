@@ -104,8 +104,8 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
         return contentView
     }
     
-    func browseHomepageFavorite(_ favorite: BookmarkSnapshot) {
-        tabManager.browse(to: favorite.url.absoluteString)
+    func browseHomepageURL(_ url: URL) {
+        tabManager.browse(to: url.absoluteString)
     }
     
     func endHomepageEditing() {
@@ -114,10 +114,6 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
     
     func updateHomepageLayout(animated: Bool, duration: TimeInterval) {
         updateBrowserLayout(animated: animated, duration: duration)
-    }
-    
-    func browseHomepageRecommendationExternalURL(_ url: URL) {
-        tabManager.browse(to: url.absoluteString)
     }
     
     func openHomepagePerformanceSettings() {

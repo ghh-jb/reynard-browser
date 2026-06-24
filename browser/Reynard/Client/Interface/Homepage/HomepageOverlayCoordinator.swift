@@ -16,11 +16,10 @@ protocol HomepageOverlayCoordinatorDelegate: AnyObject {
     var homepageChrome: BrowserChrome { get }
     var homepageContentView: ContentView { get }
     
-    func browseHomepageFavorite(_ favorite: BookmarkSnapshot)
+    func browseHomepageURL(_ url: URL)
     func endHomepageEditing()
     func updateHomepageLayout(animated: Bool, duration: TimeInterval)
     func openHomepagePerformanceSettings()
-    func browseHomepageRecommendationExternalURL(_ url: URL)
 }
 
 final class HomepageOverlayCoordinator {
@@ -33,7 +32,7 @@ final class HomepageOverlayCoordinator {
     private let homepageViewController: HomepageViewController
     private var presentationIntent: HomepagePresentationIntent = .inactive
     private var snapshotCache: HomepageSnapshotCache?
-    private var snapshotWarmupState: SnapshotWarmupState = .idle
+    private var isSnapshotWarmupScheduled = false
     
     private struct HomepagePresentation: Equatable {
         let host: OverlayCoordinator.Host
@@ -46,7 +45,8 @@ final class HomepageOverlayCoordinator {
         self.delegate = delegate
         self.overlayCoordinator = overlayCoordinator
         homepageViewController = HomepageViewController()
-        configureHomepageViewController()
+        homepageViewController.homepageDelegate = self
+        homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
         observeBookmarks()
     }
     
@@ -57,23 +57,23 @@ final class HomepageOverlayCoordinator {
     // MARK: - State
     
     func updatePresentation(animated: Bool) {
-        guard let target = resolvedPresentation else {
+        guard let presentation = homepagePresentation else {
             dismiss(animated: animated)
             return
         }
         
-        presentHomepage(target, animated: animated)
+        presentHomepage(presentation, animated: animated)
     }
     
     func updatePresentedLayout() {
-        guard let target = resolvedPresentation,
-              overlayCoordinator.contains(.homepage, on: target.host) else {
+        guard let presentation = homepagePresentation,
+              overlayCoordinator.contains(.homepage, on: presentation.host) else {
             return
         }
         
         homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
-        homepageViewController.setContentMode(target.contentMode)
-        configureOverlay(for: target)
+        homepageViewController.setContentMode(presentation.contentMode)
+        configureOverlay(for: presentation)
         warmSnapshotCacheIfNeeded()
     }
     
@@ -88,13 +88,6 @@ final class HomepageOverlayCoordinator {
     func resetPresentationSession() {
         presentationIntent = .inactive
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
-    }
-    
-    // MARK: - Configuration
-    
-    private func configureHomepageViewController() {
-        homepageViewController.homepageDelegate = self
-        homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
     }
     
     // MARK: - Snapshot
@@ -136,29 +129,29 @@ final class HomepageOverlayCoordinator {
     }
     
     private func warmSnapshotCacheIfNeeded() {
-        guard snapshotWarmupState == .idle,
-              resolvedSnapshotSize != nil,
+        guard !isSnapshotWarmupScheduled,
+              snapshotSize != nil,
               isSelectedTabBlankPage else {
             return
         }
         
-        snapshotWarmupState = .scheduled
+        isSnapshotWarmupScheduled = true
         DispatchQueue.main.async { [weak self] in
             self?.warmSnapshotCache()
         }
     }
     
     private func warmSnapshotCache() {
-        snapshotWarmupState = .idle
+        isSnapshotWarmupScheduled = false
         guard isSelectedTabBlankPage,
-              let size = resolvedSnapshotSize else {
+              let size = snapshotSize else {
             return
         }
         
         _ = renderSnapshot(size: size, isPrivateBrowsing: isPrivateBrowsing)
     }
     
-    private var resolvedSnapshotSize: CGSize? {
+    private var snapshotSize: CGSize? {
         guard let size = delegate?.homepageContentView.bounds.size,
               size.width > 1,
               size.height > 1 else {
@@ -211,8 +204,8 @@ final class HomepageOverlayCoordinator {
         overlayCoordinator.dismiss(.homepage, on: .detached, animated: animated)
     }
     
-    private func configureOverlay(for target: HomepagePresentation) {
-        guard target.host == .detached,
+    private func configureOverlay(for presentation: HomepagePresentation) {
+        guard presentation.host == .detached,
               let delegate else {
             return
         }
@@ -221,9 +214,9 @@ final class HomepageOverlayCoordinator {
         delegate.homepageChrome.setOverlayAvailableContentHeight(delegate.homepageContentView.bounds.height)
     }
     
-    // MARK: - Target Resolution
+    // MARK: - Presentation Resolution
     
-    private var resolvedPresentation: HomepagePresentation? {
+    private var homepagePresentation: HomepagePresentation? {
         guard let delegate,
               !delegate.isHomepageShowingFullscreenMedia else {
             return nil
@@ -244,7 +237,7 @@ final class HomepageOverlayCoordinator {
             return nil
         }
         
-        return presentationTargetForFocusedAddressBar(
+        return presentationForFocusedAddressBar(
             layout: delegate.homepageLayout,
             gridWidth: delegate.homepageGridWidth
         )
@@ -274,16 +267,16 @@ final class HomepageOverlayCoordinator {
         return isBlankURL(tab.url)
     }
     
-    private func isBlankURL(_ value: String?) -> Bool {
-        guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !value.isEmpty else {
+    private func isBlankURL(_ urlString: String?) -> Bool {
+        guard let urlString = urlString?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !urlString.isEmpty else {
             return true
         }
         
-        return value.lowercased().hasPrefix("about:blank")
+        return urlString.lowercased().hasPrefix("about:blank")
     }
     
-    private func presentationTargetForFocusedAddressBar(
+    private func presentationForFocusedAddressBar(
         layout: BrowserLayout,
         gridWidth: HomepageGridWidth
     ) -> HomepagePresentation? {
@@ -349,13 +342,7 @@ final class HomepageOverlayCoordinator {
 
 private enum HomepagePresentationIntent {
     case inactive
-    case persistentBlankTab
     case addressBarFocus
-}
-
-private enum SnapshotWarmupState {
-    case idle
-    case scheduled
 }
 
 // MARK: - Address Bar Search Delegate
@@ -365,7 +352,7 @@ extension HomepageOverlayCoordinator: AddressBarSearchDelegate {
     
     func addressBarDidTapDismiss(_ addressBar: AddressBar) {
         if overlayCoordinator.endAddressBarScrollDismissal(for: .homepage) {
-            presentationIntent = isSelectedTabBlankPage ? .persistentBlankTab : .inactive
+            presentationIntent = .inactive
             delegate?.updateHomepageLayout(animated: true, duration: UX.layoutAnimationDuration)
             updatePresentation(animated: true)
             return
@@ -378,7 +365,7 @@ extension HomepageOverlayCoordinator: AddressBarSearchDelegate {
     
     func addressBarDidBeginEditing(_ addressBar: AddressBar) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
-        presentationIntent = isSelectedTabBlankPage ? .persistentBlankTab : .addressBarFocus
+        presentationIntent = isSelectedTabBlankPage ? .inactive : .addressBarFocus
         updatePresentation(animated: true)
     }
     
@@ -388,7 +375,7 @@ extension HomepageOverlayCoordinator: AddressBarSearchDelegate {
             return
         }
         
-        presentationIntent = isSelectedTabBlankPage ? .persistentBlankTab : .inactive
+        presentationIntent = .inactive
         updatePresentation(animated: true)
     }
     
@@ -403,9 +390,9 @@ extension HomepageOverlayCoordinator: AddressBarSearchDelegate {
 // MARK: - Homepage View Controller Delegate
 
 extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
-    func homepageViewControllerDidSelectFavorite(_ favorite: BookmarkSnapshot) {
+    func homepageViewController(_ controller: HomepageViewController, didSelectURL url: URL) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
-        delegate?.browseHomepageFavorite(favorite)
+        delegate?.browseHomepageURL(url)
         delegate?.endHomepageEditing()
         presentationIntent = .inactive
         dismiss(animated: true)
@@ -415,14 +402,6 @@ extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
         delegate?.openHomepagePerformanceSettings()
         delegate?.endHomepageEditing()
-    }
-    
-    func homepageViewController(_ controller: HomepageViewController, didSelectRecommendationExternalURL url: URL) {
-        overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
-        delegate?.browseHomepageRecommendationExternalURL(url)
-        delegate?.endHomepageEditing()
-        presentationIntent = .inactive
-        dismiss(animated: true)
     }
     
     func homepageViewControllerDidStartScrolling() {

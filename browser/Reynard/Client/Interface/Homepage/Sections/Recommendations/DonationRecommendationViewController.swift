@@ -1,5 +1,5 @@
 //
-//  PerformanceRecommendationViewController.swift
+//  DonationRecommendationViewController.swift
 //  Reynard
 //
 //  Created by Minh Ton on 24/6/26.
@@ -7,113 +7,32 @@
 
 import UIKit
 
-protocol PerformanceRecommendationViewControllerDelegate: HomepageRecommendationURLOpeningDelegate {
-    func performanceRecommendationViewControllerDidSelectSettings(_ controller: PerformanceRecommendationViewController)
-}
-
-final class PerformanceRecommendationViewController: UIViewController, HomepageRecommendationViewController {
+final class DonationRecommendationViewController: UIViewController, HomepageRecommendationViewController {
     private enum UX {
         static let horizontalInset: CGFloat = 2
         static let sectionBottomSpacing: CGFloat = 24
         static let cornerRadius: CGFloat = 17
+        static let borderWidth: CGFloat = 2
         static let labelSpacing: CGFloat = 8
         static let buttonStackTopSpacing: CGFloat = 14
         static let buttonSpacing: CGFloat = 22
         static let buttonImageSpacing: CGFloat = 6
         static let actionIconSize: CGFloat = 15
         static let titleFontSize: CGFloat = 22
+        static let coffeeImageWidth: CGFloat = 55.9
+        static let coffeeImageHeight: CGFloat = 80.6
+        static let coffeeImageTopOffset: CGFloat = -30
+        static let coffeeImageTrailingOffset: CGFloat = 2
+        static let coffeeImageRotation: CGFloat = .pi / 9
     }
     
-    private enum PerformanceRecommendationLink {
-        static let enableInAppJITGuide = URL(string: "https://github.com/minh-ton/reynard-browser#why-enable-jit")!
-        static let installTrollStoreGuide = URL(string: "https://ios.cfw.guide/installing-trollstore/")!
-        static let downloadTrollStoreBuild = {
-            guard let updateFeedData = BrowserUpdates.shared.sourceData,
-                  let updateFeed = try? JSONSerialization.jsonObject(with: updateFeedData) as? [String: Any],
-                  let appEntries = updateFeed["apps"] as? [[String: Any]],
-                  let appEntry = appEntries.first,
-                  let versions = appEntry["versions"] as? [[String: Any]],
-                  let latestEntry = versions.first,
-                  let packageURLString = latestEntry["downloadURL"] as? String,
-                  let packageURL = URL(string: packageURLString) else {
-                return URL(string: "https://github.com/minh-ton/reynard-browser/releases/latest")!
-            }
-            
-            return URL(string: packageURLString.replacingOccurrences(
-                of: "Reynard.ipa",
-                with: "Reynard-TrollStore.tipa"
-            ))!
-        }
+    private enum DonationRecommendationLink {
+        static let buyMeACoffee = URL(string: "https://buymeacoffee.com/hnimnot")!
     }
     
-    private enum PerformanceRecommendationAction {
-        case settings
-        case openURL(URL)
-    }
-    
-    private enum PerformanceRecommendationContent {
-        case enableInAppJIT
-        case installTrollStore
-        
-        var title: String {
-            switch self {
-            case .enableInAppJIT:
-                return "Performance Recommendation"
-            case .installTrollStore:
-                return "Get Better Performance"
-            }
-        }
-        
-        var message: String {
-            switch self {
-            case .enableInAppJIT:
-                return "Enable JIT to improve website performance and compatibility."
-            case .installTrollStore:
-                return "Your device supports TrollStore. Install the TrollStore version of Reynard to enable JIT automatically for improved website performance and compatibility."
-            }
-        }
-        
-        var primaryButtonTitle: String {
-            switch self {
-            case .enableInAppJIT:
-                return "Learn More"
-            case .installTrollStore:
-                return "Install TrollStore"
-            }
-        }
-        
-        var secondaryButtonTitle: String {
-            switch self {
-            case .enableInAppJIT:
-                return "Open Settings"
-            case .installTrollStore:
-                return "Download Reynard (.tipa)"
-            }
-        }
-        
-        var primaryAction: PerformanceRecommendationAction {
-            switch self {
-            case .enableInAppJIT:
-                return .openURL(PerformanceRecommendationLink.enableInAppJITGuide)
-            case .installTrollStore:
-                return .openURL(PerformanceRecommendationLink.installTrollStoreGuide)
-            }
-        }
-        
-        var secondaryAction: PerformanceRecommendationAction {
-            switch self {
-            case .enableInAppJIT:
-                return .settings
-            case .installTrollStore:
-                return .openURL(PerformanceRecommendationLink.downloadTrollStoreBuild())
-            }
-        }
-    }
-    
-    weak var delegate: PerformanceRecommendationViewControllerDelegate?
+    weak var delegate: HomepageRecommendationURLOpeningDelegate?
     
     private var contentMode: HomepageContentMode = .embeddedNarrow
-    private var displayedContent: PerformanceRecommendationContent?
     private var isPrivateBrowsing = false
     
     private let cardView: UIView = {
@@ -121,8 +40,18 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = UX.cornerRadius
+        view.layer.borderColor = UIColor.systemYellow.cgColor
+        view.layer.borderWidth = UX.borderWidth
         view.clipsToBounds = true
         view.backgroundColor = .systemGray6
+        return view
+    }()
+    
+    private let tintView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = UIColor.systemYellow.withAlphaComponent(0.08)
+        view.isUserInteractionEnabled = false
         return view
     }()
     
@@ -141,7 +70,7 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         label.font = UIFontMetrics(forTextStyle: .title2).scaledFont(
             for: .systemFont(ofSize: UX.titleFontSize, weight: .bold)
         )
-        label.text = "Performance Recommendation"
+        label.text = "Support The Project"
         label.textAlignment = .left
         label.textColor = .label
         label.numberOfLines = 0
@@ -152,12 +81,35 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
     private let messageLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .body)
-        label.text = "Enable JIT to improve website performance and compatibility."
+        label.text = "Hi, I'm Minh, the developer of Reynard. If you find the project useful, sponsoring me helps keep it alive and maintained. Thanks for the support!"
         label.textAlignment = .left
         label.textColor = .secondaryLabel
         label.numberOfLines = 0
         label.adjustsFontForContentSizeCategory = true
         return label
+    }()
+    
+    private lazy var donateButton: UIButton = {
+        return makeActionButton(
+            title: "Buy Me a Coffee",
+            imageName: "reynard.arrow.up.right",
+            action: #selector(openDonationLink)
+        )
+    }()
+    
+    private lazy var notNowButton: UIButton = {
+        return makeActionButton(
+            title: "Not Now",
+            imageName: "reynard.clock",
+            action: #selector(postponeDonationRecommendation)
+        )
+    }()
+    
+    private let buttonTrailingSpacerView: UIView = {
+        let view = UIView()
+        view.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return view
     }()
     
     private let buttonStackView: UIStackView = {
@@ -169,27 +121,13 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         return stackView
     }()
     
-    private let buttonTrailingSpacerView: UIView = {
-        let view = UIView()
-        view.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return view
-    }()
-    
-    private lazy var primaryActionButton: UIButton = {
-        return makeActionButton(
-            title: "Learn More",
-            imageName: "reynard.arrow.up.right",
-            action: #selector(performPrimaryAction)
-        )
-    }()
-    
-    private lazy var secondaryActionButton: UIButton = {
-        return makeActionButton(
-            title: "Open Settings",
-            imageName: "reynard.gearshape",
-            action: #selector(performSecondaryAction)
-        )
+    private let coffeeImageView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: "bmc"))
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFit
+        imageView.isUserInteractionEnabled = false
+        imageView.transform = CGAffineTransform(rotationAngle: UX.coffeeImageRotation)
+        return imageView
     }()
     
     // MARK: - Lifecycle
@@ -237,10 +175,6 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         }
     }
     
-    static func isRecommendationShown(isPrivateBrowsing: Bool, contentMode: HomepageContentMode) -> Bool {
-        return resolvedContent(isPrivateBrowsing: isPrivateBrowsing, contentMode: contentMode) != nil
-    }
-    
     // MARK: - Configuration
     
     private func configureView() {
@@ -251,10 +185,14 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
     
     private func configureAppearance() {
         view.backgroundColor = .clear
+        view.clipsToBounds = false
     }
     
     private func configureHierarchy() {
         view.addSubview(cardView)
+        view.addSubview(coffeeImageView)
+        
+        cardView.addSubview(tintView)
         cardView.addSubview(textStackView)
         
         textStackView.addArrangedSubview(titleLabel)
@@ -262,8 +200,8 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         textStackView.addArrangedSubview(buttonStackView)
         textStackView.setCustomSpacing(UX.buttonStackTopSpacing, after: messageLabel)
         
-        buttonStackView.addArrangedSubview(primaryActionButton)
-        buttonStackView.addArrangedSubview(secondaryActionButton)
+        buttonStackView.addArrangedSubview(donateButton)
+        buttonStackView.addArrangedSubview(notNowButton)
         buttonStackView.addArrangedSubview(buttonTrailingSpacerView)
     }
     
@@ -274,10 +212,20 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
             cardView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -UX.horizontalInset),
             cardView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -UX.sectionBottomSpacing),
             
+            tintView.topAnchor.constraint(equalTo: cardView.topAnchor),
+            tintView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            tintView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            tintView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
+            
             textStackView.topAnchor.constraint(equalTo: cardView.layoutMarginsGuide.topAnchor),
             textStackView.leadingAnchor.constraint(equalTo: cardView.layoutMarginsGuide.leadingAnchor),
             textStackView.trailingAnchor.constraint(equalTo: cardView.layoutMarginsGuide.trailingAnchor),
             textStackView.bottomAnchor.constraint(equalTo: cardView.layoutMarginsGuide.bottomAnchor),
+            
+            coffeeImageView.widthAnchor.constraint(equalToConstant: UX.coffeeImageWidth),
+            coffeeImageView.heightAnchor.constraint(equalToConstant: UX.coffeeImageHeight),
+            coffeeImageView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: UX.coffeeImageTopOffset),
+            coffeeImageView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: UX.coffeeImageTrailingOffset),
         ])
     }
     
@@ -300,25 +248,13 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
     
     // MARK: - Actions
     
-    @objc private func performPrimaryAction() {
-        perform(displayedContent?.primaryAction)
+    @objc private func openDonationLink() {
+        delegate?.homepageRecommendationViewController(self, didSelectExternalURL: DonationRecommendationLink.buyMeACoffee)
     }
     
-    @objc private func performSecondaryAction() {
-        perform(displayedContent?.secondaryAction)
-    }
-    
-    private func perform(_ action: PerformanceRecommendationAction?) {
-        guard let action else {
-            return
-        }
-        
-        switch action {
-        case .settings:
-            delegate?.performanceRecommendationViewControllerDidSelectSettings(self)
-        case let .openURL(url):
-            delegate?.homepageRecommendationViewController(self, didSelectExternalURL: url)
-        }
+    @objc private func postponeDonationRecommendation() {
+        Prefs.HomepageSettings.donationRecommendationShowTime = nextMonth
+        updateRecommendationState()
     }
     
     // MARK: - Layout
@@ -328,23 +264,7 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
     }
     
     private func updateRecommendationState() {
-        guard let content = resolvedContent else {
-            view.isHidden = true
-            displayedContent = nil
-            return
-        }
-        
-        displayedContent = content
-        updateDisplayedContent(content)
-        updateActionButtonLayout()
-        view.isHidden = false
-    }
-    
-    private func updateDisplayedContent(_ content: PerformanceRecommendationContent) {
-        titleLabel.text = content.title
-        messageLabel.text = content.message
-        primaryActionButton.setTitle(content.primaryButtonTitle, for: .normal)
-        secondaryActionButton.setTitle(content.secondaryButtonTitle, for: .normal)
+        view.isHidden = !isRecommendationShown
     }
     
     private func updateActionButtonLayout() {
@@ -353,8 +273,8 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
             return
         }
         
-        let requiredHorizontalButtonWidth = primaryActionButton.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
-        + secondaryActionButton.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
+        let requiredHorizontalButtonWidth = donateButton.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
+        + notNowButton.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
         + UX.buttonSpacing
         
         let usesVerticalButtons = requiredHorizontalButtonWidth > availableButtonWidth
@@ -377,46 +297,18 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
     
     // MARK: - Helpers
     
-    private var resolvedContent: PerformanceRecommendationContent? {
-        return Self.resolvedContent(isPrivateBrowsing: isPrivateBrowsing, contentMode: contentMode)
-    }
-    
-    private static func resolvedContent(isPrivateBrowsing: Bool, contentMode: HomepageContentMode) -> PerformanceRecommendationContent? {
+    private var isRecommendationShown: Bool {
         if isPrivateBrowsing || contentMode.isDetached {
-            return nil
+            return false
         }
         
-        if isiOS174OrNewer && !Prefs.JITSettings.isJITEnabled {
-            return .enableInAppJIT
-        }
-        
-        if shouldUseTrollStore {
-            return .installTrollStore
-        }
-        
-        return nil
+        return !PerformanceRecommendationViewController.isRecommendationShown(
+            isPrivateBrowsing: isPrivateBrowsing,
+            contentMode: contentMode
+        ) && Date() >= Prefs.HomepageSettings.donationRecommendationShowTime
     }
     
-    private static var isiOS174OrNewer: Bool {
-        if #available(iOS 17.4, *) {
-            return true
-        }
-        return false
-    }
-    
-    private static var shouldUseTrollStore: Bool {
-        if #available(iOS 17.0, *) {
-            if #unavailable(iOS 17.0.1) {
-                return !getEntitlementValue("com.apple.private.security.no-sandbox")
-            }
-        }
-        
-        if #available(iOS 14.0, *) {
-            if #unavailable(iOS 16.7) {
-                return !getEntitlementValue("com.apple.private.security.no-sandbox")
-            }
-        }
-        
-        return false
+    private var nextMonth: Date {
+        return Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date().addingTimeInterval(30 * 86_400)
     }
 }

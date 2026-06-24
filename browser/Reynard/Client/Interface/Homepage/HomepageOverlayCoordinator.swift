@@ -20,7 +20,7 @@ protocol HomepageOverlayCoordinatorDelegate: AnyObject {
     func endHomepageEditing()
     func updateHomepageLayout(animated: Bool, duration: TimeInterval)
     func openHomepagePerformanceSettings()
-    func browseHomepagePerformanceExternalURL(_ url: URL)
+    func browseHomepageRecommendationExternalURL(_ url: URL)
 }
 
 final class HomepageOverlayCoordinator {
@@ -417,9 +417,9 @@ extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
         delegate?.endHomepageEditing()
     }
     
-    func homepageViewController(_ controller: HomepageViewController, didSelectPerformanceExternalURL url: URL) {
+    func homepageViewController(_ controller: HomepageViewController, didSelectRecommendationExternalURL url: URL) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
-        delegate?.browseHomepagePerformanceExternalURL(url)
+        delegate?.browseHomepageRecommendationExternalURL(url)
         delegate?.endHomepageEditing()
         presentationIntent = .inactive
         dismiss(animated: true)

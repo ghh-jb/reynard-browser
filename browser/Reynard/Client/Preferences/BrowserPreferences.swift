@@ -30,6 +30,12 @@ final class BrowserPreferences {
     }
     
     func registerDefaults() {
+        let donationRecommendationShowTimeKey = key("HomepageSettings", "donationRecommendationShowTime")
+        if UserDefaults.standard.object(forKey: donationRecommendationShowTimeKey) == nil {
+            let delay = TimeInterval.random(in: (3 * 86_400)...(5 * 86_400))
+            UserDefaults.standard.set(Date().addingTimeInterval(delay).timeIntervalSince1970, forKey: donationRecommendationShowTimeKey)
+        }
+        
         UserDefaults.standard.register(defaults: [
             // Search
             key("SearchSettings", "searchEngine"): SearchEngine.google.rawValue,
@@ -104,6 +110,10 @@ final class BrowserPreferences {
         UserDefaults.standard.data(forKey: key(setting, name))
     }
     
+    func double(forSetting setting: String, key name: String) -> Double {
+        UserDefaults.standard.double(forKey: key(setting, name))
+    }
+    
     func set(_ value: Bool, forSetting setting: String, key name: String) {
         UserDefaults.standard.set(value, forKey: key(setting, name))
     }
@@ -113,6 +123,10 @@ final class BrowserPreferences {
     }
     
     func set(_ value: Data?, forSetting setting: String, key name: String) {
+        UserDefaults.standard.set(value, forKey: key(setting, name))
+    }
+    
+    func set(_ value: Double, forSetting setting: String, key name: String) {
         UserDefaults.standard.set(value, forKey: key(setting, name))
     }
     
@@ -308,6 +322,18 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue.trimmingCharacters(in: .whitespacesAndNewlines), forSetting: "NewTabSettings", key: "customNewTabURL")
+            }
+        }
+    }
+    
+    // MARK: - Homepage
+    struct HomepageSettings {
+        static var donationRecommendationShowTime: Date {
+            get {
+                return Date(timeIntervalSince1970: prefs.double(forSetting: "HomepageSettings", key: "donationRecommendationShowTime"))
+            }
+            set {
+                prefs.set(newValue.timeIntervalSince1970, forSetting: "HomepageSettings", key: "donationRecommendationShowTime")
             }
         }
     }

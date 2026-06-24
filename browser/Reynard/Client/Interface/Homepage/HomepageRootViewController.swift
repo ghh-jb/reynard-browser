@@ -11,13 +11,17 @@ protocol HomepageRootViewControllerDelegate: AnyObject {
     func homepageRootViewControllerDidSelectFavorite(_ favorite: BookmarkSnapshot)
     func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot)
     func homepageRootViewControllerDidSelectPerformanceSettings(_ controller: HomepageRootViewController)
-    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectPerformanceExternalURL url: URL)
+    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecommendationExternalURL url: URL)
     func homepageRootViewControllerDidStartScrolling()
 }
 
 protocol HomepageRecommendationViewController: UIViewController {
     func setContentMode(_ contentMode: HomepageContentMode)
     func setPrivateBrowsing(_ isPrivateBrowsing: Bool)
+}
+
+protocol HomepageRecommendationURLOpeningDelegate: AnyObject {
+    func homepageRecommendationViewController(_ controller: UIViewController, didSelectExternalURL url: URL)
 }
 
 final class HomepageRootViewController: UIViewController {
@@ -186,7 +190,11 @@ final class HomepageRootViewController: UIViewController {
             return viewController
             
         case .recommendation(.donation):
-            return UIViewController()
+            let viewController = DonationRecommendationViewController()
+            viewController.delegate = self
+            viewController.setContentMode(contentMode)
+            viewController.setPrivateBrowsing(isPrivateBrowsing)
+            return viewController
             
         case .privateBrowsing:
             let viewController = PrivateBrowsingSectionViewController()
@@ -271,8 +279,10 @@ extension HomepageRootViewController: PerformanceRecommendationViewControllerDel
     func performanceRecommendationViewControllerDidSelectSettings(_ controller: PerformanceRecommendationViewController) {
         delegate?.homepageRootViewControllerDidSelectPerformanceSettings(self)
     }
-    
-    func performanceRecommendationViewController(_ controller: PerformanceRecommendationViewController, didSelectExternalURL url: URL) {
-        delegate?.homepageRootViewController(self, didSelectPerformanceExternalURL: url)
+}
+
+extension HomepageRootViewController: HomepageRecommendationURLOpeningDelegate {
+    func homepageRecommendationViewController(_ controller: UIViewController, didSelectExternalURL url: URL) {
+        delegate?.homepageRootViewController(self, didSelectRecommendationExternalURL: url)
     }
 }

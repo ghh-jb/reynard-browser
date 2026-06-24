@@ -10,7 +10,7 @@ import UIKit
 protocol HomepageViewControllerDelegate: AnyObject {
     func homepageViewControllerDidSelectFavorite(_ favorite: BookmarkSnapshot)
     func homepageViewControllerDidSelectPerformanceSettings(_ controller: HomepageViewController)
-    func homepageViewController(_ controller: HomepageViewController, didSelectPerformanceExternalURL url: URL)
+    func homepageViewController(_ controller: HomepageViewController, didSelectRecommendationExternalURL url: URL)
     func homepageViewControllerDidStartScrolling()
 }
 
@@ -167,8 +167,8 @@ extension HomepageViewController: HomepageRootViewControllerDelegate {
         homepageDelegate?.homepageViewControllerDidSelectPerformanceSettings(self)
     }
     
-    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectPerformanceExternalURL url: URL) {
-        homepageDelegate?.homepageViewController(self, didSelectPerformanceExternalURL: url)
+    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecommendationExternalURL url: URL) {
+        homepageDelegate?.homepageViewController(self, didSelectRecommendationExternalURL: url)
     }
     
     func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot) {

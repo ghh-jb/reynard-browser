@@ -116,7 +116,7 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
         updateBrowserLayout(animated: animated, duration: duration)
     }
     
-    func browseHomepagePerformanceExternalURL(_ url: URL) {
+    func browseHomepageRecommendationExternalURL(_ url: URL) {
         tabManager.browse(to: url.absoluteString)
     }
     

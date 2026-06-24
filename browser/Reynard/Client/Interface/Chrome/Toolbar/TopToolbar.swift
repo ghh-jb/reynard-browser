@@ -15,6 +15,7 @@ final class TopToolbar: UIView {
         static let topToolbarHorizontalInset: CGFloat = 12
         static let topToolbarButtonSpacing: CGFloat = 10
         static let topToolbarAddressBarSpacing: CGFloat = 12
+        static let topToolbarAddressBarWidthLimit: CGFloat = 650
     }
     
     enum LayoutState {
@@ -105,10 +106,12 @@ final class TopToolbar: UIView {
     private var trailingWidthConstraint: NSLayoutConstraint!
     private var standardAddressBarConstraints: [NSLayoutConstraint] = []
     private var compactAddressBarConstraints: [NSLayoutConstraint] = []
+    private var widthLimitedStandardAddressBarConstraints: [NSLayoutConstraint] = []
     
     private var layoutState: LayoutState = .hidden
     private var layoutInterfaceIdiom: UIUserInterfaceIdiom = .unspecified
     private var layoutSidebarButtonVisible = false
+    private var isUsingStandardAddressBarWidthLimit = false
     
     // MARK: - Lifecycle
     
@@ -121,6 +124,11 @@ final class TopToolbar: UIView {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateStandardAddressBarLayout()
     }
     
     // MARK: - Layout
@@ -136,6 +144,13 @@ final class TopToolbar: UIView {
                 addressBar.trailingAnchor.constraint(equalTo: trailingButtons.leadingAnchor, constant: -UX.topToolbarAddressBarSpacing),
                 addressBar.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             ]
+            widthLimitedStandardAddressBarConstraints = [
+                addressBar.centerXAnchor.constraint(equalTo: safeAreaLayoutGuide.centerXAnchor),
+                addressBar.widthAnchor.constraint(equalToConstant: UX.topToolbarAddressBarWidthLimit),
+                addressBar.leadingAnchor.constraint(greaterThanOrEqualTo: leadingButtons.trailingAnchor, constant: UX.topToolbarAddressBarSpacing),
+                addressBar.trailingAnchor.constraint(lessThanOrEqualTo: trailingButtons.leadingAnchor, constant: -UX.topToolbarAddressBarSpacing),
+                addressBar.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            ]
             compactAddressBarConstraints = [
                 addressBar.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: UX.topToolbarHorizontalInset),
                 addressBar.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -UX.topToolbarHorizontalInset),
@@ -145,7 +160,8 @@ final class TopToolbar: UIView {
     }
     
     func detachAddressBar() {
-        NSLayoutConstraint.deactivate(standardAddressBarConstraints + compactAddressBarConstraints)
+        NSLayoutConstraint.deactivate(standardAddressBarConstraints + widthLimitedStandardAddressBarConstraints + compactAddressBarConstraints)
+        isUsingStandardAddressBarWidthLimit = false
     }
     
     func apply(
@@ -178,8 +194,13 @@ final class TopToolbar: UIView {
             libraryButton.isHidden = interfaceIdiom == .pad
             downloadButton.isHidden = isCompact || !downloadButton.isShowingDownloads
             
-            NSLayoutConstraint.deactivate(standardAddressBarConstraints + compactAddressBarConstraints)
-            NSLayoutConstraint.activate(isCompact ? compactAddressBarConstraints : standardAddressBarConstraints)
+            NSLayoutConstraint.deactivate(standardAddressBarConstraints + widthLimitedStandardAddressBarConstraints + compactAddressBarConstraints)
+            isUsingStandardAddressBarWidthLimit = false
+            if isCompact {
+                NSLayoutConstraint.activate(compactAddressBarConstraints)
+            } else {
+                setStandardAddressBarWidthLimitEnabled(shouldLimitStandardAddressBarWidth)
+            }
             layoutIfNeeded()
         }
     }
@@ -278,6 +299,44 @@ final class TopToolbar: UIView {
         + (CGFloat(max(visibleButtonCount - 1, 0)) * UX.topToolbarButtonSpacing)
     }
     
+    private var shouldLimitStandardAddressBarWidth: Bool {
+        let safeWidth = bounds.width - safeAreaInsets.left - safeAreaInsets.right
+        guard safeWidth > 0 else { return false }
+        
+        let leadingBoundary = UX.topToolbarHorizontalInset
+        + leadingWidthConstraint.constant
+        + UX.topToolbarAddressBarSpacing
+        let trailingBoundary = safeWidth
+        - UX.topToolbarHorizontalInset
+        - trailingWidthConstraint.constant
+        - UX.topToolbarAddressBarSpacing
+        let centeredWidth = min(
+            (safeWidth / 2) - leadingBoundary,
+            trailingBoundary - (safeWidth / 2)
+        ) * 2
+        
+        return centeredWidth > UX.topToolbarAddressBarWidthLimit
+    }
+    
+    private func updateStandardAddressBarLayout() {
+        guard layoutState == .standard else {
+            return
+        }
+        
+        setStandardAddressBarWidthLimitEnabled(shouldLimitStandardAddressBarWidth)
+    }
+    
+    private func setStandardAddressBarWidthLimitEnabled(_ isEnabled: Bool) {
+        let activeConstraints = isEnabled ? widthLimitedStandardAddressBarConstraints : standardAddressBarConstraints
+        guard activeConstraints.contains(where: { !$0.isActive }) || isUsingStandardAddressBarWidthLimit != isEnabled else {
+            return
+        }
+        
+        NSLayoutConstraint.deactivate(standardAddressBarConstraints + widthLimitedStandardAddressBarConstraints)
+        NSLayoutConstraint.activate(activeConstraints)
+        isUsingStandardAddressBarWidthLimit = isEnabled
+    }
+    
     private func updateDownloadButtonVisibility() {
         let isCompact = layoutState == .compact
         downloadButton.isHidden = layoutState != .standard || !downloadButton.isShowingDownloads
@@ -286,6 +345,7 @@ final class TopToolbar: UIView {
             sidebarButtonVisible: layoutSidebarButtonVisible,
             showsDownloads: downloadButton.isShowingDownloads
         )
+        updateStandardAddressBarLayout()
         layoutIfNeeded()
     }
 }

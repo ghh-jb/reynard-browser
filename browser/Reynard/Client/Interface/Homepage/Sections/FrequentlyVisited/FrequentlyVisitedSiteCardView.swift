@@ -19,9 +19,9 @@ final class FrequentlyVisitedSiteCardView: UIControl {
         static let titleBottomSpacing: CGFloat = 3
         static let titleHorizontalInset: CGFloat = 10
         static let shadowOpacity: Float = 0.12
-        static let shadowRadius: CGFloat = 9
+        static let shadowRadius: CGFloat = 5
         static let shadowOffsetWidth: CGFloat = 0
-        static let shadowOffsetHeight: CGFloat = 4
+        static let shadowOffsetHeight: CGFloat = 2
     }
     
     private static let titleFont = UIFontMetrics(forTextStyle: .caption1).scaledFont(

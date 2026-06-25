@@ -14,9 +14,9 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
         static let titleHeight: CGFloat = 34
         static let titleFontSize: CGFloat = 12
         static let shadowOpacity: Float = 0.18
-        static let shadowRadius: CGFloat = 8
+        static let shadowRadius: CGFloat = 5
         static let shadowOffsetWidth: CGFloat = 0
-        static let shadowOffsetHeight: CGFloat = 3
+        static let shadowOffsetHeight: CGFloat = 2
     }
     
     static let reuseIdentifier = "FavoriteSiteCollectionViewCell"

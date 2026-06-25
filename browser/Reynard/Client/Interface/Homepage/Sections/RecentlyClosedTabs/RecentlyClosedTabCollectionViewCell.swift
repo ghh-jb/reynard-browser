@@ -13,15 +13,15 @@ final class RecentlyClosedTabCollectionViewCell: UICollectionViewCell {
         static let titleFontSize: CGFloat = 15
         static let pillCornerRadius: CGFloat = 22
         static let shadowOpacity: Float = 0.12
-        static let shadowRadius: CGFloat = 8
+        static let shadowRadius: CGFloat = 5
         static let shadowOffsetWidth: CGFloat = 0
-        static let shadowOffsetHeight: CGFloat = 3
+        static let shadowOffsetHeight: CGFloat = 2
     }
     
     static let reuseIdentifier = "RecentlyClosedTabCollectionViewCell"
     
     private static let titleFont = UIFontMetrics(forTextStyle: .subheadline).scaledFont(
-        for: .systemFont(ofSize: UX.titleFontSize, weight: .medium)
+        for: .systemFont(ofSize: UX.titleFontSize, weight: .regular)
     )
     
     private let pillView: UIView = {

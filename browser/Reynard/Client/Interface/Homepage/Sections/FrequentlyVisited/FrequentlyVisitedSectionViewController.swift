@@ -16,6 +16,7 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
         static let cardWidth: CGFloat = 150
         static let cardHeight: CGFloat = 120
         static let cardSpacing: CGFloat = 16
+        static let shadowMargin: CGFloat = 20
         static let maximumSiteCount = 8
         static let minimumVisitCount = 3
     }
@@ -59,7 +60,6 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
         let scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.backgroundColor = .clear
-        scrollView.clipsToBounds = false
         scrollView.showsHorizontalScrollIndicator = false
         return scrollView
     }()
@@ -123,17 +123,17 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: UX.horizontalInset),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -UX.horizontalInset),
             
-            scrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: UX.titleBottomSpacing),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: UX.titleBottomSpacing - UX.shadowMargin),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -UX.shadowMargin),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: UX.shadowMargin),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scrollView.heightAnchor.constraint(equalToConstant: UX.cardHeight),
+            scrollView.heightAnchor.constraint(equalToConstant: UX.cardHeight + (UX.shadowMargin * 2)),
             
-            cardStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
-            cardStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
-            cardStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
-            cardStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            cardStackView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
+            cardStackView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: UX.shadowMargin),
+            cardStackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -UX.shadowMargin),
+            cardStackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: UX.shadowMargin),
+            cardStackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -UX.shadowMargin),
+            cardStackView.heightAnchor.constraint(equalToConstant: UX.cardHeight),
         ])
     }
     

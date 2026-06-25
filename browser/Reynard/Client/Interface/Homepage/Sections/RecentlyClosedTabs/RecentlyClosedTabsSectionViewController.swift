@@ -11,12 +11,13 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
     private enum UX {
         static let maximumClosedTabCount = 10
         static let horizontalInset: CGFloat = 2
-        static let titleTopSpacing: CGFloat = 26
+        static let titleTopSpacing: CGFloat = 14
         static let titleBottomSpacing: CGFloat = 16
         static let titleFontSize: CGFloat = 22
         static let pillHeight: CGFloat = 44
         static let columnSpacing: CGFloat = 10
         static let rowSpacing: CGFloat = 10
+        static let shadowMargin: CGFloat = 20
     }
     
     private static let titleFont = UIFontMetrics(forTextStyle: .title2).scaledFont(
@@ -47,6 +48,12 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         layout.scrollDirection = .vertical
         layout.minimumInteritemSpacing = UX.columnSpacing
         layout.minimumLineSpacing = UX.rowSpacing
+        layout.sectionInset = UIEdgeInsets(
+            top: UX.shadowMargin,
+            left: UX.shadowMargin,
+            bottom: UX.shadowMargin,
+            right: UX.shadowMargin
+        )
         return layout
     }()
     
@@ -54,7 +61,6 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionLayout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
-        collectionView.clipsToBounds = false
         collectionView.isScrollEnabled = false
         collectionView.dataSource = self
         collectionView.delegate = self
@@ -132,9 +138,9 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: UX.horizontalInset),
             titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -UX.horizontalInset),
             
-            collectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: UX.titleBottomSpacing),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: UX.titleBottomSpacing - UX.shadowMargin),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -UX.shadowMargin),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: UX.shadowMargin),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             heightConstraint,
         ])
@@ -172,7 +178,8 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         
         let columnCount = max(contentMode.recentlyCloseTabsColumnCount, 1)
         let spacingWidth = CGFloat(columnCount - 1) * UX.columnSpacing
-        let itemWidth = floor((width - spacingWidth) / CGFloat(columnCount))
+        let horizontalInset = collectionLayout.sectionInset.left + collectionLayout.sectionInset.right
+        let itemWidth = max(1, floor((width - horizontalInset - spacingWidth) / CGFloat(columnCount)))
         if abs(lastLaidOutWidth - width) > 0.5
             || collectionLayout.itemSize.width != itemWidth {
             lastLaidOutWidth = width
@@ -186,9 +193,10 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
     private func updateCollectionHeight() {
         let columnCount = max(contentMode.recentlyCloseTabsColumnCount, 1)
         let rowCount = Int(ceil(CGFloat(closedTabs.count) / CGFloat(columnCount)))
+        let verticalInset = collectionLayout.sectionInset.top + collectionLayout.sectionInset.bottom
         let contentHeight = rowCount == 0
-        ? CGFloat(1)
-        : (CGFloat(rowCount) * UX.pillHeight) + (CGFloat(rowCount - 1) * UX.rowSpacing)
+        ? verticalInset
+        : verticalInset + (CGFloat(rowCount) * UX.pillHeight) + (CGFloat(rowCount - 1) * UX.rowSpacing)
         guard abs((collectionHeightConstraint?.constant ?? 0) - contentHeight) > 0.5 else {
             return
         }

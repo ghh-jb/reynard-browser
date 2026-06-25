@@ -63,6 +63,14 @@ final class BrowserPreferences {
             key("NewTabSettings", "newTabDisplayOption"): NewTabDisplayOption.homepage.rawValue,
             key("NewTabSettings", "customNewTabURL"): "",
             
+            // Homepage
+            key("HomepageSettings", "showsFavorites"): true,
+            key("HomepageSettings", "favoriteRowCount"): 2,
+            key("HomepageSettings", "showsFrequentlyVisited"): true,
+            key("HomepageSettings", "frequentlyVisitedSiteCount"): 8,
+            key("HomepageSettings", "showsRecentlyClosedTabs"): true,
+            key("HomepageSettings", "recentlyClosedTabLimit"): 10,
+            
             // Appearance
             key("AppearanceSettings", "appAppearance"): AppAppearance.system.rawValue,
             key("AppearanceSettings", "addressBarPosition"): BrowserChromePosition.bottom.rawValue,
@@ -114,6 +122,10 @@ final class BrowserPreferences {
         UserDefaults.standard.double(forKey: key(setting, name))
     }
     
+    func integer(forSetting setting: String, key name: String) -> Int {
+        UserDefaults.standard.integer(forKey: key(setting, name))
+    }
+    
     func set(_ value: Bool, forSetting setting: String, key name: String) {
         UserDefaults.standard.set(value, forKey: key(setting, name))
     }
@@ -127,6 +139,10 @@ final class BrowserPreferences {
     }
     
     func set(_ value: Double, forSetting setting: String, key name: String) {
+        UserDefaults.standard.set(value, forKey: key(setting, name))
+    }
+    
+    func set(_ value: Int, forSetting setting: String, key name: String) {
         UserDefaults.standard.set(value, forKey: key(setting, name))
     }
     
@@ -328,6 +344,66 @@ final class BrowserPreferences {
     
     // MARK: - Homepage
     struct HomepageSettings {
+        static var showsFavorites: Bool {
+            get {
+                return prefs.bool(forSetting: "HomepageSettings", key: "showsFavorites")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "showsFavorites")
+                NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var favoriteRowCount: Int {
+            get {
+                return prefs.integer(forSetting: "HomepageSettings", key: "favoriteRowCount")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "favoriteRowCount")
+                NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var showsFrequentlyVisited: Bool {
+            get {
+                return prefs.bool(forSetting: "HomepageSettings", key: "showsFrequentlyVisited")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "showsFrequentlyVisited")
+                NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var frequentlyVisitedSiteCount: Int {
+            get {
+                return prefs.integer(forSetting: "HomepageSettings", key: "frequentlyVisitedSiteCount")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "frequentlyVisitedSiteCount")
+                NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var showsRecentlyClosedTabs: Bool {
+            get {
+                return prefs.bool(forSetting: "HomepageSettings", key: "showsRecentlyClosedTabs")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "showsRecentlyClosedTabs")
+                NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var recentlyClosedTabLimit: Int {
+            get {
+                return prefs.integer(forSetting: "HomepageSettings", key: "recentlyClosedTabLimit")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "recentlyClosedTabLimit")
+                NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
+            }
+        }
+        
         static var donationRecommendationShowTime: Date {
             get {
                 return Date(timeIntervalSince1970: prefs.double(forSetting: "HomepageSettings", key: "donationRecommendationShowTime"))

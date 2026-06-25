@@ -78,9 +78,14 @@ final class HomepageRootViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         title = folder?.title
+        observeHomepageSettings()
         configureScrollView()
         configureHierarchy()
         configureConstraints()
@@ -168,7 +173,7 @@ final class HomepageRootViewController: UIViewController {
     }
     
     private func configureSections() {
-        sections.forEach { section in
+        displayedSections.forEach { section in
             let viewController = makeSectionViewController(for: section)
             addChild(viewController)
             viewController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -176,6 +181,17 @@ final class HomepageRootViewController: UIViewController {
             viewController.didMove(toParent: self)
             sectionViewControllers[section] = viewController
         }
+    }
+    
+    private func reloadSections() {
+        sectionViewControllers.values.forEach { viewController in
+            viewController.willMove(toParent: nil)
+            viewController.view.removeFromSuperview()
+            viewController.removeFromParent()
+        }
+        sectionViewControllers.removeAll(keepingCapacity: true)
+        configureSections()
+        updateSectionStackWidth()
     }
     
     private func makeSectionViewController(for section: HomepageSection) -> UIViewController {
@@ -258,6 +274,42 @@ final class HomepageRootViewController: UIViewController {
     
     private var recentlyClosedTabsSectionViewController: RecentlyClosedTabsSectionViewController? {
         return sectionViewControllers[.recentlyClosedTabs] as? RecentlyClosedTabsSectionViewController
+    }
+    
+    private var displayedSections: [HomepageSection] {
+        guard folder == nil else {
+            return sections
+        }
+        
+        return sections.filter { section in
+            switch section {
+            case .favorites:
+                return Prefs.HomepageSettings.showsFavorites
+            case .frequentlyVisited:
+                return Prefs.HomepageSettings.showsFrequentlyVisited
+            case .recentlyClosedTabs:
+                return Prefs.HomepageSettings.showsRecentlyClosedTabs
+            default:
+                return true
+            }
+        }
+    }
+    
+    private func observeHomepageSettings() {
+        guard folder == nil else {
+            return
+        }
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(homepageSettingsDidChange),
+            name: .homepageSettingsDidChange,
+            object: nil
+        )
+    }
+    
+    @objc private func homepageSettingsDidChange() {
+        reloadSections()
     }
     
 }

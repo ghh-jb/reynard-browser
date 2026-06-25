@@ -29,6 +29,7 @@ final class FavoritesSectionViewController: UIViewController {
     private let bookmarkStore: BookmarkStore
     private let folder: BookmarkFolderSnapshot?
     private let showsSectionTitle: Bool
+    private var allFavoriteItems: [BookmarkContentSnapshot] = []
     private var favoriteItems: [BookmarkContentSnapshot] = []
     private var favoritesFolderGUID: String?
     private var contentMode: HomepageContentMode = .embeddedNarrow
@@ -105,7 +106,7 @@ final class FavoritesSectionViewController: UIViewController {
         }
         
         self.contentMode = contentMode
-        invalidateFavoriteLayout()
+        applyFavoriteItemLimit()
     }
     
     // MARK: - Configuration
@@ -165,14 +166,25 @@ final class FavoritesSectionViewController: UIViewController {
         }
         
         favoritesFolderGUID = contents.parent.guid
-        favoriteItems = contents.items
-        collectionView.reloadData()
-        view.isHidden = favoriteItems.isEmpty
-        invalidateFavoriteLayout()
+        allFavoriteItems = contents.items
+        applyFavoriteItemLimit()
     }
     
     @objc private func bookmarksDidChange() {
         reloadFavorites()
+    }
+    
+    private func applyFavoriteItemLimit() {
+        if folder == nil {
+            let itemCount = Prefs.HomepageSettings.favoriteRowCount * contentMode.favoriteColumnCount
+            favoriteItems = Array(allFavoriteItems.prefix(itemCount))
+        } else {
+            favoriteItems = allFavoriteItems
+        }
+        
+        collectionView.reloadData()
+        view.isHidden = favoriteItems.isEmpty
+        invalidateFavoriteLayout()
     }
     
     // MARK: - Layout

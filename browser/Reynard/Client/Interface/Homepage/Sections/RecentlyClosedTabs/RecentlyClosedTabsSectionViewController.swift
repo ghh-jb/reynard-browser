@@ -9,7 +9,6 @@ import UIKit
 
 final class RecentlyClosedTabsSectionViewController: UIViewController {
     private enum UX {
-        static let maximumClosedTabCount = 10
         static let horizontalInset: CGFloat = 2
         static let titleTopSpacing: CGFloat = 14
         static let titleBottomSpacing: CGFloat = 16
@@ -82,11 +81,16 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         configureAppearance()
         configureHierarchy()
         configureConstraints()
+        observeHomepageSettings()
         reloadClosedTabs()
     }
     
@@ -150,12 +154,25 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         if isPrivateBrowsing {
             closedTabs.removeAll(keepingCapacity: true)
         } else {
-            closedTabs = tabStore.recentlyClosedTabs(limit: UX.maximumClosedTabCount)
+            closedTabs = tabStore.recentlyClosedTabs(limit: Prefs.HomepageSettings.recentlyClosedTabLimit)
         }
         
         collectionView.reloadData()
         view.isHidden = isPrivateBrowsing || closedTabs.isEmpty
         invalidateCollectionLayout()
+    }
+    
+    private func observeHomepageSettings() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(homepageSettingsDidChange),
+            name: .homepageSettingsDidChange,
+            object: nil
+        )
+    }
+    
+    @objc private func homepageSettingsDidChange() {
+        reloadClosedTabs()
     }
     
     // MARK: - Layout

@@ -1,0 +1,212 @@
+//
+//  HomepageSectionPreferencesViewController.swift
+//  Reynard
+//
+//  Created by Minh Ton on 25/6/26.
+//
+
+import UIKit
+
+final class HomepageSectionPreferencesViewController: SettingsTableViewController {
+    enum Preference: CaseIterable {
+        case favorites
+        case frequentlyVisited
+        case recentlyClosedTabs
+        
+        var title: String {
+            switch self {
+            case .favorites:
+                return "Favorites"
+            case .frequentlyVisited:
+                return "Frequently Visited"
+            case .recentlyClosedTabs:
+                return "Recently Closed Tabs"
+            }
+        }
+        
+        var switchTitle: String {
+            switch self {
+            case .favorites:
+                return "Show Favorites"
+            case .frequentlyVisited:
+                return "Show Frequently Visited"
+            case .recentlyClosedTabs:
+                return "Show Recently Closed Tabs"
+            }
+        }
+        
+        var countTitle: String {
+            switch self {
+            case .favorites:
+                return "Number of Rows"
+            case .frequentlyVisited:
+                return "Number of Sites"
+            case .recentlyClosedTabs:
+                return "Number of Items"
+            }
+        }
+        
+        var countSectionTitle: String {
+            switch self {
+            case .favorites:
+                return "Set Rows"
+            case .frequentlyVisited, .recentlyClosedTabs:
+                return "Set Items"
+            }
+        }
+        
+        var countValues: [Int] {
+            switch self {
+            case .favorites:
+                return Array(1...5)
+            case .frequentlyVisited:
+                return Array(4...8)
+            case .recentlyClosedTabs:
+                return Array(3...10)
+            }
+        }
+        
+        var isEnabled: Bool {
+            switch self {
+            case .favorites:
+                return Prefs.HomepageSettings.showsFavorites
+            case .frequentlyVisited:
+                return Prefs.HomepageSettings.showsFrequentlyVisited
+            case .recentlyClosedTabs:
+                return Prefs.HomepageSettings.showsRecentlyClosedTabs
+            }
+        }
+        
+        var selectedCount: Int {
+            switch self {
+            case .favorites:
+                return Prefs.HomepageSettings.favoriteRowCount
+            case .frequentlyVisited:
+                return Prefs.HomepageSettings.frequentlyVisitedSiteCount
+            case .recentlyClosedTabs:
+                return Prefs.HomepageSettings.recentlyClosedTabLimit
+            }
+        }
+        
+        func setEnabled(_ isEnabled: Bool) {
+            switch self {
+            case .favorites:
+                Prefs.HomepageSettings.showsFavorites = isEnabled
+            case .frequentlyVisited:
+                Prefs.HomepageSettings.showsFrequentlyVisited = isEnabled
+            case .recentlyClosedTabs:
+                Prefs.HomepageSettings.showsRecentlyClosedTabs = isEnabled
+            }
+        }
+        
+        func setSelectedCount(_ selectedCount: Int) {
+            switch self {
+            case .favorites:
+                Prefs.HomepageSettings.favoriteRowCount = selectedCount
+            case .frequentlyVisited:
+                Prefs.HomepageSettings.frequentlyVisitedSiteCount = selectedCount
+            case .recentlyClosedTabs:
+                Prefs.HomepageSettings.recentlyClosedTabLimit = selectedCount
+            }
+        }
+    }
+    
+    private enum Section: CaseIterable {
+        case main
+    }
+    
+    private enum Row: CaseIterable {
+        case showSection
+        case count
+    }
+    
+    private let preference: Preference
+    private let sectionSwitch = UISwitch()
+    
+    init(preference: Preference) {
+        self.preference = preference
+        super.init(style: .insetGrouped)
+        title = preference.title
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        configureSwitch()
+        refreshDisplayedState()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshDisplayedState()
+        tableView.reloadData()
+    }
+    
+    override func numberOfSections(in tableView: UITableView) -> Int {
+        return Section.allCases.count
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        guard Section.allCases.indices.contains(section) else {
+            return 0
+        }
+        
+        return Row.allCases.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard Section.allCases.indices.contains(indexPath.section),
+              Row.allCases.indices.contains(indexPath.row) else {
+            return UITableViewCell()
+        }
+        
+        switch Row.allCases[indexPath.row] {
+        case .showSection:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = preference.switchTitle
+            cell.selectionStyle = .none
+            cell.accessoryView = sectionSwitch
+            return cell
+        case .count:
+            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            cell.textLabel?.text = preference.countTitle
+            cell.detailTextLabel?.text = "\(preference.selectedCount)"
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        }
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        defer { tableView.deselectRow(at: indexPath, animated: true) }
+        guard Section.allCases.indices.contains(indexPath.section),
+              Row.allCases.indices.contains(indexPath.row),
+              Row.allCases[indexPath.row] == .count else {
+            return
+        }
+        
+        let viewController = HomepageSectionItemCountPreferencesViewController(
+            title: preference.countTitle,
+            sectionTitle: preference.countSectionTitle,
+            values: preference.countValues,
+            selectedValue: preference.selectedCount
+        ) { [preference] value in
+            preference.setSelectedCount(value)
+        }
+        navigationController?.pushViewController(viewController, animated: true)
+    }
+    
+    private func configureSwitch() {
+        sectionSwitch.addTarget(self, action: #selector(sectionSwitchDidChange), for: .valueChanged)
+    }
+    
+    private func refreshDisplayedState() {
+        sectionSwitch.isOn = preference.isEnabled
+    }
+    
+    @objc private func sectionSwitchDidChange() {
+        preference.setEnabled(sectionSwitch.isOn)
+    }
+}

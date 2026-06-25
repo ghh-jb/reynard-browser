@@ -50,7 +50,7 @@ final class HomepageOverlayCoordinator {
         homepageViewController = HomepageViewController()
         homepageViewController.homepageDelegate = self
         homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
-        observeBookmarks()
+        observeHomepageChanges()
     }
     
     deinit {
@@ -329,16 +329,26 @@ final class HomepageOverlayCoordinator {
     
     // MARK: - Bookmarks
     
-    private func observeBookmarks() {
+    private func observeHomepageChanges() {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(bookmarksDidChange),
             name: .bookmarkStoreDidChange,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(homepageSettingsDidChange),
+            name: .homepageSettingsDidChange,
+            object: nil
+        )
     }
     
     @objc private func bookmarksDidChange() {
+        snapshotCache = nil
+    }
+    
+    @objc private func homepageSettingsDidChange() {
         snapshotCache = nil
     }
 }

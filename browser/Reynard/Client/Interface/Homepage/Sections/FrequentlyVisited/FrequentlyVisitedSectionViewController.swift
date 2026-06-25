@@ -17,8 +17,6 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
         static let cardHeight: CGFloat = 120
         static let cardSpacing: CGFloat = 16
         static let shadowMargin: CGFloat = 20
-        static let maximumSiteCount = 8
-        static let minimumVisitCount = 3
     }
     
     private enum MetadataState {
@@ -96,7 +94,7 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
         configureAppearance()
         configureHierarchy()
         configureConstraints()
-        observeHistory()
+        observeChanges()
         reloadSites()
     }
     
@@ -137,11 +135,17 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
         ])
     }
     
-    private func observeHistory() {
+    private func observeChanges() {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(historyDidChange),
             name: .historyStoreDidChange,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(homepageSettingsDidChange),
+            name: .homepageSettingsDidChange,
             object: nil
         )
     }
@@ -150,8 +154,8 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
     
     private func reloadSites() {
         sites = historyStore.frequentSites(
-            limit: UX.maximumSiteCount,
-            minVisitCount: UX.minimumVisitCount
+            limit: Prefs.HomepageSettings.frequentlyVisitedSiteCount,
+            minVisitCount: 3
         ).items
         let retainedURLs = Set(sites.map(\.url))
         metadataStatesByURL = metadataStatesByURL.filter { url, state in
@@ -169,6 +173,10 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
     }
     
     @objc private func historyDidChange() {
+        reloadSites()
+    }
+    
+    @objc private func homepageSettingsDidChange() {
         reloadSites()
     }
     

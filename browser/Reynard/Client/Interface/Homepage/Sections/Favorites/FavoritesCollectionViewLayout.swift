@@ -58,6 +58,8 @@ final class FavoritesCollectionViewLayout: UICollectionViewLayout {
     
     private var cachedAttributes: [IndexPath: UICollectionViewLayoutAttributes] = [:]
     private var contentSize: CGSize = .zero
+    private var appearingIndexPaths = Set<IndexPath>()
+    private var disappearingAttributes: [IndexPath: UICollectionViewLayoutAttributes] = [:]
     
     override var collectionViewContentSize: CGSize {
         return contentSize
@@ -106,6 +108,42 @@ final class FavoritesCollectionViewLayout: UICollectionViewLayout {
         }
         
         return abs(collectionView.bounds.width - newBounds.width) > 0.5
+    }
+    
+    override func prepare(forCollectionViewUpdates updateItems: [UICollectionViewUpdateItem]) {
+        super.prepare(forCollectionViewUpdates: updateItems)
+        appearingIndexPaths = Set(updateItems.compactMap { updateItem in
+            updateItem.updateAction == .insert ? updateItem.indexPathAfterUpdate : nil
+        })
+        disappearingAttributes = updateItems.reduce(into: [:]) { attributes, updateItem in
+            guard updateItem.updateAction == .delete,
+                  let indexPath = updateItem.indexPathBeforeUpdate,
+                  let cachedAttribute = cachedAttributes[indexPath]?.copy() as? UICollectionViewLayoutAttributes else {
+                return
+            }
+            
+            attributes[indexPath] = cachedAttribute
+        }
+    }
+    
+    override func initialLayoutAttributesForAppearingItem(at itemIndexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+        let attributes = layoutAttributesForItem(at: itemIndexPath)?.copy() as? UICollectionViewLayoutAttributes
+        if appearingIndexPaths.contains(itemIndexPath) {
+            attributes?.alpha = 0
+        }
+        return attributes
+    }
+    
+    override func finalLayoutAttributesForDisappearingItem(at itemIndexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+        let attributes = disappearingAttributes[itemIndexPath]?.copy() as? UICollectionViewLayoutAttributes
+        attributes?.alpha = 0
+        return attributes
+    }
+    
+    override func finalizeCollectionViewUpdates() {
+        super.finalizeCollectionViewUpdates()
+        appearingIndexPaths.removeAll()
+        disappearingAttributes.removeAll()
     }
     
     // MARK: - Helpers

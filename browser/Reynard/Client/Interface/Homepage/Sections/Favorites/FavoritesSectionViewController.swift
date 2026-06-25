@@ -30,11 +30,18 @@ final class FavoritesSectionViewController: UIViewController {
     private let folder: BookmarkFolderSnapshot?
     private let showsSectionTitle: Bool
     private var allFavoriteItems: [BookmarkContentSnapshot] = []
-    private var favoriteItems: [BookmarkContentSnapshot] = []
+    private var displayedFavoriteItems: [BookmarkContentSnapshot] = []
     private var favoritesFolderGUID: String?
     private var contentMode: HomepageContentMode = .embeddedNarrow
+    private var showsExpandedFavorites = false
     private var collectionHeightConstraint: NSLayoutConstraint?
     private var lastLaidOutWidth: CGFloat = -1
+    
+    private let headerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
     
     private let titleLabel: UILabel = {
         let label = UILabel()
@@ -44,6 +51,15 @@ final class FavoritesSectionViewController: UIViewController {
         label.text = "Favorites"
         label.adjustsFontForContentSizeCategory = true
         return label
+    }()
+    
+    private lazy var showAllButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = .label
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
+        button.addTarget(self, action: #selector(showAllButtonTapped), for: .touchUpInside)
+        return button
     }()
     
     private let collectionLayout = FavoritesCollectionViewLayout()
@@ -113,24 +129,35 @@ final class FavoritesSectionViewController: UIViewController {
     
     private func configureAppearance() {
         view.backgroundColor = .clear
-        titleLabel.isHidden = !showsSectionTitle
+        headerView.isHidden = !showsSectionTitle
     }
     
     private func configureHierarchy() {
-        view.addSubview(titleLabel)
+        view.addSubview(headerView)
+        headerView.addSubview(titleLabel)
+        headerView.addSubview(showAllButton)
         view.addSubview(collectionView)
     }
     
     private func configureConstraints() {
         let heightConstraint = collectionView.heightAnchor.constraint(equalToConstant: 1)
-        let collectionTopAnchor = showsSectionTitle ? titleLabel.bottomAnchor : view.topAnchor
+        let collectionTopAnchor = showsSectionTitle ? headerView.bottomAnchor : view.topAnchor
         let collectionTopSpacing = showsSectionTitle ? UX.titleBottomSpacing : 0
         collectionHeightConstraint = heightConstraint
         
         NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: view.topAnchor),
-            titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: UX.horizontalInset),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -UX.horizontalInset),
+            headerView.topAnchor.constraint(equalTo: view.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: UX.horizontalInset),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -UX.horizontalInset),
+            
+            titleLabel.topAnchor.constraint(equalTo: headerView.topAnchor),
+            titleLabel.leadingAnchor.constraint(equalTo: headerView.leadingAnchor),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: showAllButton.leadingAnchor, constant: -UX.horizontalInset),
+            titleLabel.bottomAnchor.constraint(equalTo: headerView.bottomAnchor),
+            
+            showAllButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            showAllButton.trailingAnchor.constraint(equalTo: headerView.trailingAnchor),
+            showAllButton.bottomAnchor.constraint(lessThanOrEqualTo: headerView.bottomAnchor),
             
             collectionView.topAnchor.constraint(equalTo: collectionTopAnchor, constant: collectionTopSpacing),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -174,17 +201,103 @@ final class FavoritesSectionViewController: UIViewController {
         reloadFavorites()
     }
     
+    // MARK: - Collection Animation
+    
     private func applyFavoriteItemLimit() {
-        if folder == nil {
-            let itemCount = Prefs.HomepageSettings.favoriteRowCount * contentMode.favoriteColumnCount
-            favoriteItems = Array(allFavoriteItems.prefix(itemCount))
-        } else {
-            favoriteItems = allFavoriteItems
+        if !hasExpandableFavorites {
+            showsExpandedFavorites = false
         }
         
+        displayedFavoriteItems = currentFavoriteItems()
+        updateShowAllButton()
         collectionView.reloadData()
-        view.isHidden = favoriteItems.isEmpty
+        view.isHidden = allFavoriteItems.isEmpty
         invalidateFavoriteLayout()
+    }
+    
+    private func currentFavoriteItems() -> [BookmarkContentSnapshot] {
+        guard folder == nil,
+              !showsExpandedFavorites else {
+            return allFavoriteItems
+        }
+        
+        return Array(allFavoriteItems.prefix(collapsedFavoriteItemLimit))
+    }
+    
+    private var collapsedFavoriteItemLimit: Int {
+        return Prefs.HomepageSettings.favoriteRowCount * contentMode.favoriteColumnCount
+    }
+    
+    private var hasExpandableFavorites: Bool {
+        guard folder == nil else {
+            return false
+        }
+        
+        let columnCount = max(contentMode.favoriteColumnCount, 1)
+        let rowCount = Int(ceil(CGFloat(allFavoriteItems.count) / CGFloat(columnCount)))
+        return rowCount > Prefs.HomepageSettings.favoriteRowCount
+    }
+    
+    private func updateShowAllButton() {
+        let isHidden = !showsSectionTitle || !hasExpandableFavorites
+        UIView.performWithoutAnimation {
+            showAllButton.isHidden = isHidden
+            showAllButton.setTitle(isHidden ? nil : (showsExpandedFavorites ? "Show Less" : "Show All"), for: .normal)
+            showAllButton.layoutIfNeeded()
+        }
+    }
+    
+    @objc private func showAllButtonTapped() {
+        guard hasExpandableFavorites else {
+            return
+        }
+        
+        let previousCount = displayedFavoriteItems.count
+        showsExpandedFavorites.toggle()
+        let updatedItems = currentFavoriteItems()
+        let updatedCount = updatedItems.count
+        updateShowAllButton()
+        
+        let indexPaths = indexPathsForItemCountChange(from: previousCount, to: updatedCount)
+        
+        if updatedCount > previousCount {
+            showAdditionalFavorites(updatedItems, at: indexPaths)
+        } else {
+            hideAdditionalFavorites(updatedItems, at: indexPaths)
+        }
+    }
+    
+    private func showAdditionalFavorites(_ updatedItems: [BookmarkContentSnapshot], at indexPaths: [IndexPath]) {
+        view.superview?.layoutIfNeeded()
+        collectionView.performBatchUpdates {
+            self.displayedFavoriteItems = updatedItems
+            self.collectionLayout.invalidateLayout()
+            self.updateFavoriteGridLayout()
+            self.collectionView.insertItems(at: indexPaths)
+            self.view.superview?.layoutIfNeeded()
+        }
+    }
+    
+    private func hideAdditionalFavorites(_ updatedItems: [BookmarkContentSnapshot], at indexPaths: [IndexPath]) {
+        view.superview?.layoutIfNeeded()
+        let clipsToBounds = collectionView.clipsToBounds
+        collectionView.clipsToBounds = true
+        collectionView.performBatchUpdates {
+            self.displayedFavoriteItems = updatedItems
+            self.collectionLayout.invalidateLayout()
+            self.updateFavoriteGridLayout(itemCount: updatedItems.count)
+            self.collectionView.deleteItems(at: indexPaths)
+            self.view.superview?.layoutIfNeeded()
+        } completion: { [weak self] _ in
+            self?.collectionView.clipsToBounds = clipsToBounds
+        }
+    }
+    
+    private func indexPathsForItemCountChange(from previousCount: Int, to updatedCount: Int) -> [IndexPath] {
+        let range = updatedCount > previousCount ? previousCount..<updatedCount : updatedCount..<previousCount
+        return range.map { item in
+            return IndexPath(item: item, section: 0)
+        }
     }
     
     // MARK: - Layout
@@ -197,7 +310,7 @@ final class FavoritesSectionViewController: UIViewController {
         }
     }
     
-    private func updateFavoriteGridLayout() {
+    private func updateFavoriteGridLayout(itemCount: Int? = nil) {
         let width = collectionView.bounds.width
         guard width > 0 else {
             return
@@ -215,7 +328,8 @@ final class FavoritesSectionViewController: UIViewController {
             collectionLayout.metrics = metrics
         }
         
-        let rowCount = Int(ceil(CGFloat(favoriteItems.count) / CGFloat(metrics.columnCount)))
+        let displayedItemCount = itemCount ?? displayedFavoriteItems.count
+        let rowCount = Int(ceil(CGFloat(displayedItemCount) / CGFloat(metrics.columnCount)))
         let contentHeight = metrics.contentHeight(rowCount: rowCount)
         guard abs((collectionHeightConstraint?.constant ?? 0) - contentHeight) > 0.5 else {
             return
@@ -253,11 +367,11 @@ final class FavoritesSectionViewController: UIViewController {
 
 extension FavoritesSectionViewController: UICollectionViewDataSource, UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return favoriteItems.count
+        return displayedFavoriteItems.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        switch favoriteItems[indexPath.item] {
+        switch displayedFavoriteItems[indexPath.item] {
         case let .bookmark(bookmark):
             let cell = collectionView.dequeueReusableCell(
                 withReuseIdentifier: FavoriteSiteCollectionViewCell.reuseIdentifier,
@@ -277,11 +391,11 @@ extension FavoritesSectionViewController: UICollectionViewDataSource, UICollecti
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard favoriteItems.indices.contains(indexPath.item) else {
+        guard displayedFavoriteItems.indices.contains(indexPath.item) else {
             return
         }
         
-        switch favoriteItems[indexPath.item] {
+        switch displayedFavoriteItems[indexPath.item] {
         case let .bookmark(bookmark):
             delegate?.homepageSection(self, didSelectURL: bookmark.url)
         case let .folder(folder):
@@ -290,18 +404,18 @@ extension FavoritesSectionViewController: UICollectionViewDataSource, UICollecti
     }
     
     func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
-        return favoriteItems.indices.contains(indexPath.item)
+        return displayedFavoriteItems.indices.contains(indexPath.item)
     }
     
     func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        guard favoriteItems.indices.contains(sourceIndexPath.item) else {
+        guard displayedFavoriteItems.indices.contains(sourceIndexPath.item) else {
             reloadFavorites()
             return
         }
         
-        let destinationIndex = min(max(destinationIndexPath.item, 0), favoriteItems.count - 1)
-        let favoriteItem = favoriteItems.remove(at: sourceIndexPath.item)
-        favoriteItems.insert(favoriteItem, at: destinationIndex)
+        let destinationIndex = min(max(destinationIndexPath.item, 0), displayedFavoriteItems.count - 1)
+        let favoriteItem = displayedFavoriteItems.remove(at: sourceIndexPath.item)
+        displayedFavoriteItems.insert(favoriteItem, at: destinationIndex)
         
         guard let favoritesFolderGUID,
               bookmarkStore.moveBookmarkItem(guid: favoriteItem.guid, to: destinationIndex, in: favoritesFolderGUID) else {

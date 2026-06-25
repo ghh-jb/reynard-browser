@@ -36,6 +36,7 @@ final class FavoritesSectionViewController: UIViewController {
     private var showsExpandedFavorites = false
     private var collectionHeightConstraint: NSLayoutConstraint?
     private var lastLaidOutWidth: CGFloat = -1
+    private var collectionMaskLayer: CALayer?
     
     private let headerView: UIView = {
         let view = UIView()
@@ -280,16 +281,16 @@ final class FavoritesSectionViewController: UIViewController {
     
     private func hideAdditionalFavorites(_ updatedItems: [BookmarkContentSnapshot], at indexPaths: [IndexPath]) {
         view.superview?.layoutIfNeeded()
-        let clipsToBounds = collectionView.clipsToBounds
-        collectionView.clipsToBounds = true
+        applyCollectionVerticalMask()
         collectionView.performBatchUpdates {
             self.displayedFavoriteItems = updatedItems
             self.collectionLayout.invalidateLayout()
             self.updateFavoriteGridLayout(itemCount: updatedItems.count)
             self.collectionView.deleteItems(at: indexPaths)
             self.view.superview?.layoutIfNeeded()
+            self.updateCollectionVerticalMask()
         } completion: { [weak self] _ in
-            self?.collectionView.clipsToBounds = clipsToBounds
+            self?.removeCollectionVerticalMask()
         }
     }
     
@@ -336,6 +337,29 @@ final class FavoritesSectionViewController: UIViewController {
         }
         
         collectionHeightConstraint?.constant = contentHeight
+        updateCollectionVerticalMask()
+    }
+    
+    private func applyCollectionVerticalMask() {
+        let maskLayer = CALayer()
+        maskLayer.backgroundColor = UIColor.black.cgColor
+        collectionMaskLayer = maskLayer
+        collectionView.layer.mask = maskLayer
+        updateCollectionVerticalMask()
+    }
+    
+    private func updateCollectionVerticalMask() {
+        guard let collectionMaskLayer else {
+            return
+        }
+        
+        let horizontalOutset = FavoritesLayoutMetrics.shadowPadding
+        collectionMaskLayer.frame = collectionView.bounds.insetBy(dx: -horizontalOutset, dy: 0)
+    }
+    
+    private func removeCollectionVerticalMask() {
+        collectionView.layer.mask = nil
+        collectionMaskLayer = nil
     }
     
     // MARK: - Reorder

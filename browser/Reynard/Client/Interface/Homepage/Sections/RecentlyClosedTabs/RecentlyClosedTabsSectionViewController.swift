@@ -41,6 +41,16 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         return label
     }()
     
+    private lazy var closeAllButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = .label
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
+        button.setTitle("Close All", for: .normal)
+        button.addTarget(self, action: #selector(closeAllButtonTapped), for: .touchUpInside)
+        return button
+    }()
+    
     private let collectionLayout: UICollectionViewFlowLayout = {
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .vertical
@@ -120,6 +130,7 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
     
     private func configureHierarchy() {
         view.addSubview(titleLabel)
+        view.addSubview(closeAllButton)
         view.addSubview(collectionView)
     }
     
@@ -130,7 +141,10 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         NSLayoutConstraint.activate([
             titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: UX.titleTopSpacing),
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: UX.horizontalInset),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -UX.horizontalInset),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: closeAllButton.leadingAnchor, constant: -UX.horizontalInset),
+            
+            closeAllButton.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
+            closeAllButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -UX.horizontalInset),
             
             collectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: UX.titleBottomSpacing - UX.shadowMargin),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -UX.shadowMargin),
@@ -145,6 +159,7 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         
         collectionView.reloadData()
         view.isHidden = closedTabs.isEmpty
+        closeAllButton.isHidden = closedTabs.isEmpty
         invalidateCollectionLayout()
     }
     
@@ -159,6 +174,19 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
     
     @objc private func homepageSettingsDidChange() {
         reloadClosedTabs()
+    }
+    
+    @objc private func closeAllButtonTapped() {
+        guard !closedTabs.isEmpty,
+              tabStore.clearRecentlyClosedTabs() else {
+            return
+        }
+        
+        closedTabs = []
+        collectionView.reloadData()
+        view.isHidden = true
+        closeAllButton.isHidden = true
+        invalidateCollectionLayout()
     }
     
     // MARK: - Layout

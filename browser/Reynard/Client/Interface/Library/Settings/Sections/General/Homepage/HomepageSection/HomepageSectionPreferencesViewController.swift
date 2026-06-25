@@ -77,6 +77,17 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
             }
         }
         
+        var isEnabledInPrivateBrowsing: Bool {
+            switch self {
+            case .favorites:
+                return Prefs.HomepageSettings.showsFavoritesInPrivateBrowsing
+            case .frequentlyVisited:
+                return Prefs.HomepageSettings.showsFrequentlyVisitedInPrivateBrowsing
+            case .recentlyClosedTabs:
+                return false
+            }
+        }
+        
         var selectedCount: Int {
             switch self {
             case .favorites:
@@ -99,6 +110,17 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
             }
         }
         
+        func setEnabledInPrivateBrowsing(_ isEnabled: Bool) {
+            switch self {
+            case .favorites:
+                Prefs.HomepageSettings.showsFavoritesInPrivateBrowsing = isEnabled
+            case .frequentlyVisited:
+                Prefs.HomepageSettings.showsFrequentlyVisitedInPrivateBrowsing = isEnabled
+            case .recentlyClosedTabs:
+                return
+            }
+        }
+        
         func setSelectedCount(_ selectedCount: Int) {
             switch self {
             case .favorites:
@@ -117,11 +139,22 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
     
     private enum Row: CaseIterable {
         case showSection
+        case showInPrivateBrowsing
         case count
     }
     
     private let preference: Preference
     private let sectionSwitch = UISwitch()
+    private let privateBrowsingSwitch = UISwitch()
+    
+    private var displayedRows: [Row] {
+        switch preference {
+        case .recentlyClosedTabs:
+            return [.showSection, .count]
+        default:
+            return Row.allCases
+        }
+    }
     
     init(preference: Preference) {
         self.preference = preference
@@ -154,21 +187,27 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
             return 0
         }
         
-        return Row.allCases.count
+        return displayedRows.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard Section.allCases.indices.contains(indexPath.section),
-              Row.allCases.indices.contains(indexPath.row) else {
+              displayedRows.indices.contains(indexPath.row) else {
             return UITableViewCell()
         }
         
-        switch Row.allCases[indexPath.row] {
+        switch displayedRows[indexPath.row] {
         case .showSection:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = preference.switchTitle
             cell.selectionStyle = .none
             cell.accessoryView = sectionSwitch
+            return cell
+        case .showInPrivateBrowsing:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = "Show in Private Browsing"
+            cell.selectionStyle = .none
+            cell.accessoryView = privateBrowsingSwitch
             return cell
         case .count:
             let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
@@ -182,8 +221,8 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         defer { tableView.deselectRow(at: indexPath, animated: true) }
         guard Section.allCases.indices.contains(indexPath.section),
-              Row.allCases.indices.contains(indexPath.row),
-              Row.allCases[indexPath.row] == .count else {
+              displayedRows.indices.contains(indexPath.row),
+              displayedRows[indexPath.row] == .count else {
             return
         }
         
@@ -200,13 +239,19 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
     
     private func configureSwitch() {
         sectionSwitch.addTarget(self, action: #selector(sectionSwitchDidChange), for: .valueChanged)
+        privateBrowsingSwitch.addTarget(self, action: #selector(privateBrowsingSwitchDidChange), for: .valueChanged)
     }
     
     private func refreshDisplayedState() {
         sectionSwitch.isOn = preference.isEnabled
+        privateBrowsingSwitch.isOn = preference.isEnabledInPrivateBrowsing
     }
     
     @objc private func sectionSwitchDidChange() {
         preference.setEnabled(sectionSwitch.isOn)
+    }
+    
+    @objc private func privateBrowsingSwitchDidChange() {
+        preference.setEnabledInPrivateBrowsing(privateBrowsingSwitch.isOn)
     }
 }

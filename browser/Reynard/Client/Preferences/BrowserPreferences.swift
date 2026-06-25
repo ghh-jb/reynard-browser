@@ -65,8 +65,10 @@ final class BrowserPreferences {
             
             // Homepage
             key("HomepageSettings", "showsFavorites"): true,
+            key("HomepageSettings", "showsFavoritesInPrivateBrowsing"): false,
             key("HomepageSettings", "favoriteRowCount"): 2,
             key("HomepageSettings", "showsFrequentlyVisited"): true,
+            key("HomepageSettings", "showsFrequentlyVisitedInPrivateBrowsing"): false,
             key("HomepageSettings", "frequentlyVisitedSiteCount"): 8,
             key("HomepageSettings", "showsRecentlyClosedTabs"): true,
             key("HomepageSettings", "recentlyClosedTabLimit"): 10,
@@ -364,12 +366,32 @@ final class BrowserPreferences {
             }
         }
         
+        static var showsFavoritesInPrivateBrowsing: Bool {
+            get {
+                return prefs.bool(forSetting: "HomepageSettings", key: "showsFavoritesInPrivateBrowsing")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "showsFavoritesInPrivateBrowsing")
+                NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
+            }
+        }
+        
         static var showsFrequentlyVisited: Bool {
             get {
                 return prefs.bool(forSetting: "HomepageSettings", key: "showsFrequentlyVisited")
             }
             set {
                 prefs.set(newValue, forSetting: "HomepageSettings", key: "showsFrequentlyVisited")
+                NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
+            }
+        }
+        
+        static var showsFrequentlyVisitedInPrivateBrowsing: Bool {
+            get {
+                return prefs.bool(forSetting: "HomepageSettings", key: "showsFrequentlyVisitedInPrivateBrowsing")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "showsFrequentlyVisitedInPrivateBrowsing")
                 NotificationCenter.default.post(name: .homepageSettingsDidChange, object: nil)
             }
         }

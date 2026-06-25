@@ -120,11 +120,16 @@ final class HomepageRootViewController: UIViewController {
         }
         
         self.isPrivateBrowsing = isPrivateBrowsing
+        
+        if folder == nil {
+            reloadSections()
+            return
+        }
+        
         recommendationViewControllers.forEach { viewController in
             viewController.setPrivateBrowsing(isPrivateBrowsing)
         }
         privateBrowsingSectionViewController?.setPrivateBrowsing(isPrivateBrowsing)
-        recentlyClosedTabsSectionViewController?.setPrivateBrowsing(isPrivateBrowsing)
     }
     
     func resetScrollPosition() {
@@ -235,7 +240,6 @@ final class HomepageRootViewController: UIViewController {
             let viewController = RecentlyClosedTabsSectionViewController()
             viewController.delegate = self
             viewController.setContentMode(contentMode)
-            viewController.setPrivateBrowsing(isPrivateBrowsing)
             return viewController
         }
     }
@@ -284,11 +288,13 @@ final class HomepageRootViewController: UIViewController {
         return sections.filter { section in
             switch section {
             case .favorites:
-                return Prefs.HomepageSettings.showsFavorites
+                return Prefs.HomepageSettings.showsFavorites &&
+                (!isPrivateBrowsing || Prefs.HomepageSettings.showsFavoritesInPrivateBrowsing)
             case .frequentlyVisited:
-                return Prefs.HomepageSettings.showsFrequentlyVisited
+                return Prefs.HomepageSettings.showsFrequentlyVisited &&
+                (!isPrivateBrowsing || Prefs.HomepageSettings.showsFrequentlyVisitedInPrivateBrowsing)
             case .recentlyClosedTabs:
-                return Prefs.HomepageSettings.showsRecentlyClosedTabs
+                return Prefs.HomepageSettings.showsRecentlyClosedTabs && !isPrivateBrowsing
             default:
                 return true
             }

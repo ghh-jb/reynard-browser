@@ -28,7 +28,6 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
     private let tabStore: TabManagementStore
     private var closedTabs: [TabManagementStore.RecentlyClosedTabSnapshot] = []
     private var contentMode: HomepageContentMode = .embeddedNarrow
-    private var isPrivateBrowsing = false
     private var collectionHeightConstraint: NSLayoutConstraint?
     private var lastLaidOutWidth: CGFloat = -1
     
@@ -113,15 +112,6 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         invalidateCollectionLayout()
     }
     
-    func setPrivateBrowsing(_ isPrivateBrowsing: Bool) {
-        guard self.isPrivateBrowsing != isPrivateBrowsing else {
-            return
-        }
-        
-        self.isPrivateBrowsing = isPrivateBrowsing
-        reloadClosedTabs()
-    }
-    
     // MARK: - Configuration
     
     private func configureAppearance() {
@@ -151,14 +141,10 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
     }
     
     private func reloadClosedTabs() {
-        if isPrivateBrowsing {
-            closedTabs.removeAll(keepingCapacity: true)
-        } else {
-            closedTabs = tabStore.recentlyClosedTabs(limit: Prefs.HomepageSettings.recentlyClosedTabLimit)
-        }
+        closedTabs = tabStore.recentlyClosedTabs(limit: Prefs.HomepageSettings.recentlyClosedTabLimit)
         
         collectionView.reloadData()
-        view.isHidden = isPrivateBrowsing || closedTabs.isEmpty
+        view.isHidden = closedTabs.isEmpty
         invalidateCollectionLayout()
     }
     

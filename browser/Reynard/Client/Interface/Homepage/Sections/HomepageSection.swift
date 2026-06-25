@@ -5,6 +5,8 @@
 //  Created by Minh Ton on 21/6/26.
 //
 
+import UIKit
+
 enum HomepageRecommendation: CaseIterable, Hashable {
     case performance
     case donation
@@ -15,17 +17,20 @@ enum HomepageSection: CaseIterable, Hashable {
     case privateBrowsing
     case favorites
     case frequentlyVisited
+    case recentlyClosedTabs
     
     static var allCases: [HomepageSection] {
         return HomepageRecommendation.allCases.map { .recommendation($0) } + [
             .privateBrowsing,
             .favorites,
             .frequentlyVisited,
+            .recentlyClosedTabs,
         ]
     }
 }
 
 protocol HomepageSectionDelegate: AnyObject {
     func homepageSection(_ viewController: UIViewController, didSelectURL url: URL)
+    func homepageSection(_ viewController: UIViewController, didSelectRecentlyClosedTab id: UUID)
     func homepageSectionDidSelectSettings(_ viewController: UIViewController)
 }

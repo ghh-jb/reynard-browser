@@ -34,6 +34,12 @@ final class TabManagementStore {
         let isPrivate: Bool
     }
     
+    struct RecentlyClosedTabSnapshot {
+        let id: UUID
+        let title: String
+        let url: String?
+    }
+    
     private struct StorageURLs {
         let directoryURL: URL
         let databaseURL: URL
@@ -58,6 +64,8 @@ final class TabManagementStore {
     private let stateQueue = DispatchQueue(label: "com.minh-ton.Reynard.TabManagementStore.Queue", qos: .userInitiated)
     private var database: OpaquePointer?
     private let sqliteTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+
+    private let recentlyClosedTabLimit = 10
     
     // MARK: - Lifecycle
     
@@ -210,6 +218,60 @@ final class TabManagementStore {
         }
     }
     
+    func recentlyClosedTabs(limit: Int) -> [RecentlyClosedTabSnapshot] {
+        stateQueue.sync {
+            fetchRecentlyClosedTabsLocked(limit: limit)
+        }
+    }
+    
+    func saveRecentlyClosedTab(id: UUID, title: String, url: String?) {
+        stateQueue.async {
+            guard self.executeLocked("BEGIN IMMEDIATE TRANSACTION;") else {
+                return
+            }
+            
+            guard self.insertRecentlyClosedTabLocked(id: id, title: title, url: url) else {
+                _ = self.executeLocked("ROLLBACK TRANSACTION;")
+                return
+            }
+            
+            guard let expiredTabIDs = self.pruneRecentlyClosedTabsLocked() else {
+                _ = self.executeLocked("ROLLBACK TRANSACTION;")
+                return
+            }
+            
+            guard self.executeLocked("COMMIT TRANSACTION;") else {
+                _ = self.executeLocked("ROLLBACK TRANSACTION;")
+                return
+            }
+            
+            expiredTabIDs.forEach { tabID in
+                NavigationHistoryStore.shared.removeNavigationHistory(for: tabID)
+            }
+        }
+    }
+    
+    func takeRecentlyClosedTab(id: UUID) -> RecentlyClosedTabSnapshot? {
+        stateQueue.sync {
+            guard self.executeLocked("BEGIN IMMEDIATE TRANSACTION;") else {
+                return nil
+            }
+            
+            guard let snapshot = self.fetchRecentlyClosedTabLocked(id: id),
+                  self.deleteRecentlyClosedTabLocked(id: id) else {
+                _ = self.executeLocked("ROLLBACK TRANSACTION;")
+                return nil
+            }
+            
+            guard self.executeLocked("COMMIT TRANSACTION;") else {
+                _ = self.executeLocked("ROLLBACK TRANSACTION;")
+                return nil
+            }
+            
+            return snapshot
+        }
+    }
+    
     // MARK: - Storage
     
     private func prepareStorageLocked() {
@@ -266,6 +328,12 @@ final class TabManagementStore {
         );
         
         CREATE INDEX IF NOT EXISTS idx_tabs_private_position ON tabs(is_private, position ASC);
+        
+        CREATE TABLE IF NOT EXISTS recently_closed_tabs (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            url TEXT
+        );
         """
         
         _ = executeLocked(sql)
@@ -419,6 +487,73 @@ final class TabManagementStore {
         return matches
     }
     
+    private func fetchRecentlyClosedTabsLocked(limit: Int) -> [RecentlyClosedTabSnapshot] {
+        guard limit > 0,
+              let statement = prepareStatementLocked(
+                """
+                SELECT id, title, url
+                FROM recently_closed_tabs
+                ORDER BY rowid DESC
+                LIMIT ?;
+                """
+              ) else {
+            return []
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_int64(statement, 1, Int64(limit))
+        
+        var tabs: [RecentlyClosedTabSnapshot] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            guard let id = UUID(uuidString: string(from: statement, at: 0)) else {
+                continue
+            }
+            
+            tabs.append(
+                RecentlyClosedTabSnapshot(
+                    id: id,
+                    title: string(from: statement, at: 1),
+                    url: optionalString(from: statement, at: 2)
+                )
+            )
+        }
+        
+        return tabs
+    }
+    
+    private func fetchRecentlyClosedTabLocked(id: UUID) -> RecentlyClosedTabSnapshot? {
+        guard let statement = prepareStatementLocked(
+            """
+            SELECT id, title, url
+            FROM recently_closed_tabs
+            WHERE id = ?
+            LIMIT 1;
+            """
+        ) else {
+            return nil
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(id.uuidString, to: statement, at: 1)
+        
+        guard sqlite3_step(statement) == SQLITE_ROW,
+              let id = UUID(uuidString: string(from: statement, at: 0)) else {
+            return nil
+        }
+        
+        return RecentlyClosedTabSnapshot(
+            id: id,
+            title: string(from: statement, at: 1),
+            url: optionalString(from: statement, at: 2)
+        )
+    }
+    
     // MARK: - Tab Persistence
     
     private func insertTabsLocked(_ tabs: [PersistedTab], isPrivate: Bool) -> Bool {
@@ -450,6 +585,83 @@ final class TabManagementStore {
         }
         
         return true
+    }
+    
+    private func insertRecentlyClosedTabLocked(id: UUID, title: String, url: String?) -> Bool {
+        guard let statement = prepareStatementLocked(
+            """
+            INSERT INTO recently_closed_tabs (id, title, url)
+            VALUES (?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                title = excluded.title,
+                url = excluded.url;
+            """
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(id.uuidString, to: statement, at: 1)
+        bind(title, to: statement, at: 2)
+        bindOptional(url, to: statement, at: 3)
+        return sqlite3_step(statement) == SQLITE_DONE
+    }
+    
+    private func pruneRecentlyClosedTabsLocked() -> [UUID]? {
+        guard let statement = prepareStatementLocked(
+            """
+            SELECT id
+            FROM recently_closed_tabs
+            ORDER BY rowid DESC
+            LIMIT -1 OFFSET ?;
+            """
+        ) else {
+            return nil
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_int64(statement, 1, Int64(recentlyClosedTabLimit))
+        
+        var expiredTabIDs: [UUID] = []
+        while sqlite3_step(statement) == SQLITE_ROW {
+            guard let id = UUID(uuidString: string(from: statement, at: 0)) else {
+                continue
+            }
+            
+            expiredTabIDs.append(id)
+        }
+        
+        for tabID in expiredTabIDs {
+            guard deleteRecentlyClosedTabLocked(id: tabID) else {
+                return nil
+            }
+        }
+        
+        return expiredTabIDs
+    }
+    
+    private func deleteRecentlyClosedTabLocked(id: UUID) -> Bool {
+        guard let statement = prepareStatementLocked(
+            """
+            DELETE FROM recently_closed_tabs
+            WHERE id = ?;
+            """
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        bind(id.uuidString, to: statement, at: 1)
+        return sqlite3_step(statement) == SQLITE_DONE
     }
     
     // MARK: - Thumbnails

@@ -23,6 +23,17 @@ enum HomepageContentMode: Equatable {
         }
     }
     
+    var recentlyCloseTabsColumnCount: Int {
+        switch self {
+        case .embeddedNarrow, .detachedNarrow:
+            return 1
+        case .embeddedWide, .detachedWide:
+            return 2
+        case .embeddedExpanded:
+            return 3
+        }
+    }
+    
     var isDetached: Bool {
         switch self {
         case .detachedNarrow, .detachedWide:

@@ -16,10 +16,13 @@ protocol HomepageOverlayCoordinatorDelegate: AnyObject {
     var homepageChrome: BrowserChrome { get }
     var homepageContentView: ContentView { get }
     
-    func browseHomepageURL(_ url: URL)
+    // Homepage section actions
+    func browseURLFromHomepage(_ url: URL)
+    func openSettingsFromHomepage()
+    func restoreClosedTabFromHomepage(id: UUID) -> Bool
+    
     func endHomepageEditing()
     func updateHomepageLayout(animated: Bool, duration: TimeInterval)
-    func openHomepagePerformanceSettings()
 }
 
 final class HomepageOverlayCoordinator {
@@ -392,7 +395,18 @@ extension HomepageOverlayCoordinator: AddressBarSearchDelegate {
 extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
     func homepageViewController(_ controller: HomepageViewController, didSelectURL url: URL) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
-        delegate?.browseHomepageURL(url)
+        delegate?.browseURLFromHomepage(url)
+        delegate?.endHomepageEditing()
+        presentationIntent = .inactive
+        dismiss(animated: true)
+    }
+    
+    func homepageViewController(_ controller: HomepageViewController, didSelectRecentlyClosedTab id: UUID) {
+        overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
+        guard delegate?.restoreClosedTabFromHomepage(id: id) == true else {
+            return
+        }
+        
         delegate?.endHomepageEditing()
         presentationIntent = .inactive
         dismiss(animated: true)
@@ -400,7 +414,7 @@ extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
     
     func homepageViewControllerDidSelectSettings(_ controller: HomepageViewController) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
-        delegate?.openHomepagePerformanceSettings()
+        delegate?.openSettingsFromHomepage()
         delegate?.endHomepageEditing()
     }
     

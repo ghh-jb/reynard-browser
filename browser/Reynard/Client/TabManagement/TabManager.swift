@@ -30,6 +30,8 @@ protocol TabManager: AnyObject {
     func moveTab(from sourceIndex: Int, to destinationIndex: Int, mode: TabMode?)
     func removeTab(at index: Int, mode: TabMode?)
     func removeAllTabs(mode: TabMode?)
+    @discardableResult
+    func restoreRecentlyClosedTab(id: UUID) -> Bool
     func browse(to term: String)
     func browse(to term: String, in tab: Tab)
     func goBack()

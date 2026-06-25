@@ -9,6 +9,7 @@ import UIKit
 
 protocol HomepageRootViewControllerDelegate: AnyObject {
     func homepageRootViewController(_ controller: HomepageRootViewController, didSelectURL url: URL)
+    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecentlyClosedTab id: UUID)
     func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot)
     func homepageRootViewControllerDidSelectSettings(_ controller: HomepageRootViewController)
     func homepageRootViewControllerDidStartScrolling()
@@ -104,6 +105,7 @@ final class HomepageRootViewController: UIViewController {
         }
         privateBrowsingSectionViewController?.setContentMode(contentMode)
         favoritesSectionViewController?.setContentMode(contentMode)
+        recentlyClosedTabsSectionViewController?.setContentMode(contentMode)
         updateSectionStackWidth()
     }
     
@@ -117,6 +119,7 @@ final class HomepageRootViewController: UIViewController {
             viewController.setPrivateBrowsing(isPrivateBrowsing)
         }
         privateBrowsingSectionViewController?.setPrivateBrowsing(isPrivateBrowsing)
+        recentlyClosedTabsSectionViewController?.setPrivateBrowsing(isPrivateBrowsing)
     }
     
     func resetScrollPosition() {
@@ -211,6 +214,13 @@ final class HomepageRootViewController: UIViewController {
             let viewController = FrequentlyVisitedSectionViewController()
             viewController.delegate = self
             return viewController
+            
+        case .recentlyClosedTabs:
+            let viewController = RecentlyClosedTabsSectionViewController()
+            viewController.delegate = self
+            viewController.setContentMode(contentMode)
+            viewController.setPrivateBrowsing(isPrivateBrowsing)
+            return viewController
         }
     }
     
@@ -246,6 +256,10 @@ final class HomepageRootViewController: UIViewController {
         return sectionViewControllers[.favorites] as? FavoritesSectionViewController
     }
     
+    private var recentlyClosedTabsSectionViewController: RecentlyClosedTabsSectionViewController? {
+        return sectionViewControllers[.recentlyClosedTabs] as? RecentlyClosedTabsSectionViewController
+    }
+    
 }
 
 extension HomepageRootViewController: UIScrollViewDelegate {
@@ -257,6 +271,10 @@ extension HomepageRootViewController: UIScrollViewDelegate {
 extension HomepageRootViewController: HomepageSectionDelegate {
     func homepageSection(_ viewController: UIViewController, didSelectURL url: URL) {
         delegate?.homepageRootViewController(self, didSelectURL: url)
+    }
+    
+    func homepageSection(_ viewController: UIViewController, didSelectRecentlyClosedTab id: UUID) {
+        delegate?.homepageRootViewController(self, didSelectRecentlyClosedTab: id)
     }
     
     func homepageSectionDidSelectSettings(_ viewController: UIViewController) {

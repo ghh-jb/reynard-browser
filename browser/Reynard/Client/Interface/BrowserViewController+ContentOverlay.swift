@@ -104,8 +104,21 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
         return contentView
     }
     
-    func browseHomepageURL(_ url: URL) {
+    func browseURLFromHomepage(_ url: URL) {
         tabManager.browse(to: url.absoluteString)
+    }
+    
+    func openSettingsFromHomepage() {
+        if browserLayout.interfaceIdiom == .pad,
+           browserLayout.chromeMode == .pad {
+            sidebarCoordinator.showSection(.settings)
+            return
+        }
+        presentLibrary(initialSection: .settings)
+    }
+    
+    func restoreClosedTabFromHomepage(id: UUID) -> Bool {
+        return tabManager.restoreRecentlyClosedTab(id: id)
     }
     
     func endHomepageEditing() {
@@ -114,15 +127,6 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
     
     func updateHomepageLayout(animated: Bool, duration: TimeInterval) {
         updateBrowserLayout(animated: animated, duration: duration)
-    }
-    
-    func openHomepagePerformanceSettings() {
-        if browserLayout.interfaceIdiom == .pad,
-           browserLayout.chromeMode == .pad {
-            sidebarCoordinator.showSection(.settings)
-            return
-        }
-        presentLibrary(initialSection: .settings)
     }
     
     // MARK: - Address Bar Search Delegate

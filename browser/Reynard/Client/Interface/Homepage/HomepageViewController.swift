@@ -9,6 +9,7 @@ import UIKit
 
 protocol HomepageViewControllerDelegate: AnyObject {
     func homepageViewController(_ controller: HomepageViewController, didSelectURL url: URL)
+    func homepageViewController(_ controller: HomepageViewController, didSelectRecentlyClosedTab id: UUID)
     func homepageViewControllerDidSelectSettings(_ controller: HomepageViewController)
     func homepageViewControllerDidStartScrolling()
 }
@@ -126,6 +127,10 @@ extension HomepageViewController: UINavigationControllerDelegate {
 extension HomepageViewController: HomepageRootViewControllerDelegate {
     func homepageRootViewController(_ controller: HomepageRootViewController, didSelectURL url: URL) {
         homepageDelegate?.homepageViewController(self, didSelectURL: url)
+    }
+    
+    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecentlyClosedTab id: UUID) {
+        homepageDelegate?.homepageViewController(self, didSelectRecentlyClosedTab: id)
     }
     
     func homepageRootViewControllerDidSelectSettings(_ controller: HomepageRootViewController) {

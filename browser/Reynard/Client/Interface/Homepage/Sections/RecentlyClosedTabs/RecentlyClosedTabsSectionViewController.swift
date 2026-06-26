@@ -187,7 +187,6 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         view.isHidden = true
         clearAllButton.isHidden = true
         invalidateCollectionLayout()
-        delegate?.homepageSectionDidChangeLayout(self)
     }
     
     // MARK: - Layout

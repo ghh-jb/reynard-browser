@@ -373,12 +373,20 @@ final class BrowserChrome: UIView {
     
     // MARK: - Transitions
     
-    func bottomToolbarSnapshot() -> UIView? {
+    func bottomToolbarTransitionView() -> UIView? {
         return bottomToolbar.snapshotView(afterScreenUpdates: false)
     }
     
-    func bottomToolbarFrame(in view: UIView) -> CGRect {
+    func bottomToolbarTransitionFrame(in view: UIView) -> CGRect {
         return bottomToolbar.convert(bottomToolbar.bounds, to: view)
+    }
+    
+    func topToolbarTransitionView() -> UIView? {
+        return topToolbar.snapshotView(afterScreenUpdates: false)
+    }
+    
+    func topToolbarTransitionFrame(in view: UIView) -> CGRect {
+        return topToolbar.convert(topToolbar.bounds, to: view)
     }
     
     func setChromeTransition(topAlpha: CGFloat, bottomAlpha: CGFloat, bottomTranslationY: CGFloat = 0) {

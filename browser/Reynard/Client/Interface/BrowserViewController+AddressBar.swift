@@ -116,12 +116,20 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     }
     
     func selectTabFromGesture(at index: Int, mode: TabMode) {
-        captureSelectedTabThumbnailIfNeeded(targetIndex: index, targetMode: mode)
+        if mode == tabManager.selectedTabMode,
+           index != tabManager.selectedTabIndex {
+            captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode) { [weak self] _ in
+                self?.tabManager.selectTab(at: index, mode: mode)
+            }
+            return
+        }
+        
         tabManager.selectTab(at: index, mode: mode)
     }
     
     func createTabForSwipe() -> Int {
-        captureThumbnailForVisibleTab(at: tabManager.selectedTabIndex)
+        captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode)
+        homepageOverlayCoordinator.prepareHomepageForNewTab(mode: tabManager.selectedTabMode)
         let index = tabManager.createTab(selecting: true)
         applyNewTabDisplayOption(toTabAt: index)
         return index
@@ -133,10 +141,6 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     
     func presentTabOverviewFromGesture(animated: Bool) {
         setTabOverviewVisible(true, animated: animated)
-    }
-    
-    func setHomepageSnapshotRefreshPaused(_ paused: Bool) {
-        homepageOverlayCoordinator.setSnapshotRefreshPaused(paused)
     }
     
     // MARK: - Website Actions

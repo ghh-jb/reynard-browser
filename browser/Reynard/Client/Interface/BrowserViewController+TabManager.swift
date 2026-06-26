@@ -31,9 +31,6 @@ extension BrowserViewController: TabManagerDelegate {
     
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?) {
         tabBar.setPendingExpansion(at: nil)
-        if previousIndex == nil {
-            homepageOverlayCoordinator.invalidateSnapshot()
-        }
         
         guard let selectedTab = tabManager.activeTabs[safe: index] else {
             return
@@ -136,9 +133,6 @@ extension BrowserViewController: TabManagerDelegate {
             }
             
         case .thumbnail:
-            if index == tabManager.selectedTabIndex {
-                captureThumbnailForVisibleTab(at: index)
-            }
             tabOverview.isPresented
             ? tabOverview.refreshTab(at: index, mode: tabManager.selectedTabMode)
             : tabOverview.reloadTabs()
@@ -170,7 +164,7 @@ extension BrowserViewController {
     func applyNewTabDisplayOption(toTabAt index: Int) {
         switch Prefs.NewTabSettings.newTabDisplayOption {
         case .homepage, .blankPage:
-            updateHomepageThumbnailForNewTab(at: index)
+            captureThumbnail(forTabAt: index, mode: tabManager.selectedTabMode)
         case .customURL:
             guard let tab = tabManager.activeTabs[safe: index],
                   URLUtils.isWebURL(Prefs.NewTabSettings.customNewTabURL) else {
@@ -181,40 +175,45 @@ extension BrowserViewController {
         }
     }
     
-    func captureSelectedTabThumbnailIfNeeded(targetIndex: Int, targetMode: TabMode) {
-        guard targetMode == tabManager.selectedTabMode,
-              targetIndex != tabManager.selectedTabIndex else {
+    func captureThumbnail(forTabAt index: Int, mode: TabMode, completion: ((UIImage?) -> Void)? = nil) {
+        let targetTabs = mode == .private ? tabManager.privateTabs : tabManager.regularTabs
+        guard let targetTab = targetTabs[safe: index] else {
+            completion?(nil)
             return
         }
         
-        captureThumbnailForVisibleTab(at: tabManager.selectedTabIndex)
-    }
-    
-    func updateHomepageThumbnailForNewTab(at index: Int) {
-        guard let tab = tabManager.activeTabs[safe: index],
-              let image = homepageOverlayCoordinator.snapshotForBlankTab(tab, size: contentView.bounds.size) else {
+        let targetTabID = targetTab.id
+        if homepageOverlayCoordinator.needsHomepageThumbnail(for: targetTab) {
+            homepageOverlayCoordinator.captureHomepageThumbnail(targetTab, size: contentView.bounds.size) { [weak self] thumbnail in
+                guard let self,
+                      let thumbnail,
+                      (mode == .private ? self.tabManager.privateTabs : self.tabManager.regularTabs)[safe: index]?.id == targetTabID else {
+                    completion?(nil)
+                    return
+                }
+                
+                self.tabManager.updateThumbnail(thumbnail, forTabAt: index, mode: mode)
+                completion?(thumbnail)
+            }
             return
         }
         
-        tabManager.updateThumbnail(image, forTabAt: index)
-    }
-    
-    func captureThumbnailForVisibleTab(at index: Int) {
-        guard let tab = tabManager.activeTabs[safe: index] else {
+        guard mode == tabManager.selectedTabMode,
+              index == tabManager.selectedTabIndex,
+              let tab = tabManager.activeTabs[safe: index],
+              tab.id == targetTabID,
+              !contentView.isHidden,
+              contentView.isDisplaying(session: tab.session) else {
+            completion?(nil)
             return
         }
         
-        if let image = homepageOverlayCoordinator.snapshotForBlankTab(tab, size: contentView.bounds.size) {
-            tabManager.updateThumbnail(image, forTabAt: index)
+        guard let thumbnail = contentView.makeThumbnail() else {
+            completion?(nil)
             return
         }
         
-        guard !contentView.isHidden,
-              contentView.isDisplaying(session: tab.session),
-              let image = contentView.makeThumbnail() else {
-            return
-        }
-        
-        tabManager.updateThumbnail(image, forTabAt: index)
+        tabManager.updateThumbnail(thumbnail, forTabAt: index, mode: mode)
+        completion?(thumbnail)
     }
 }

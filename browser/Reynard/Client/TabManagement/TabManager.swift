@@ -39,7 +39,7 @@ protocol TabManager: AnyObject {
     func replaceSelectedSession(with session: GeckoSession, url: String, title: String?)
     func tabIndex(for session: GeckoSession) -> Int?
     func shareableURL(for tab: Tab) -> URL?
-    func updateThumbnail(_ image: UIImage?, forTabAt index: Int)
+    func updateThumbnail(_ image: UIImage?, forTabAt index: Int, mode: TabMode)
     @discardableResult
     func changeWebsiteModeForSelectedTab() -> Bool
 }

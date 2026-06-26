@@ -23,7 +23,12 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
     }
     
     func selectTab(at index: Int, mode: TabMode) {
-        captureSelectedTabThumbnailIfNeeded(targetIndex: index, targetMode: mode)
+        if !tabOverview.isPresented,
+           !tabOverview.isTransitionRunning,
+           mode == tabManager.selectedTabMode,
+           index != tabManager.selectedTabIndex {
+            captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode)
+        }
         tabManager.selectTab(at: index, mode: mode)
     }
     
@@ -35,16 +40,7 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
             tabOverview.prepareNextTabChangesWithoutAnimation()
             tabManager.removeTab(at: index, mode: mode)
             tabOverview.prepareNextTabChangesWithoutAnimation()
-            let newTabIndex = tabManager.createTab(
-                selecting: true,
-                target: .end,
-                mode: .regular
-            )
-            applyNewTabDisplayOption(toTabAt: newTabIndex)
-            tabOverview.prepareDismissSelection(to: newTabIndex, mode: .regular, previewImage: nil)
-            scrollTabOverviewToTab(at: newTabIndex)
-            tabBar.setPendingExpansion(at: newTabIndex)
-            setTabOverviewVisible(false, animated: true)
+            createTabFromOverview(mode: .regular)
             return
         }
         
@@ -175,15 +171,39 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
         }
         tabManager.removeAllTabs(mode: .regular)
         tabOverview.prepareNextTabChangesWithoutAnimation()
-        let newTabIndex = tabManager.createTab(
+        createTabFromOverview(mode: .regular)
+    }
+    
+    func createTabFromOverview(mode: TabMode) {
+        homepageOverlayCoordinator.prepareHomepageForNewTab(mode: mode)
+        let createdIndex = tabManager.createTab(
             selecting: true,
             target: .end,
-            mode: .regular
+            mode: mode
         )
-        applyNewTabDisplayOption(toTabAt: newTabIndex)
-        tabOverview.prepareDismissSelection(to: newTabIndex, mode: .regular, previewImage: nil)
-        scrollTabOverviewToTab(at: newTabIndex)
-        tabBar.setPendingExpansion(at: newTabIndex)
-        setTabOverviewVisible(false, animated: true)
+        
+        switch Prefs.NewTabSettings.newTabDisplayOption {
+        case .homepage, .blankPage:
+            let createdTabs = mode == .private ? tabManager.privateTabs : tabManager.regularTabs
+            let createdTabID = createdTabs[createdIndex].id
+            
+            captureThumbnail(forTabAt: createdIndex, mode: mode) { [weak self] previewImage in
+                guard let self,
+                      (mode == .private ? self.tabManager.privateTabs : self.tabManager.regularTabs)[safe: createdIndex]?.id == createdTabID else {
+                    return
+                }
+                
+                self.tabOverview.prepareDismissSelection(to: createdIndex, mode: mode, previewImage: previewImage)
+                self.scrollTabOverviewToTab(at: createdIndex)
+                self.tabBar.setPendingExpansion(at: createdIndex)
+                self.setTabOverviewVisible(false, animated: true)
+            }
+        case .customURL:
+            applyNewTabDisplayOption(toTabAt: createdIndex)
+            tabOverview.prepareDismissSelection(to: createdIndex, mode: mode, previewImage: nil)
+            scrollTabOverviewToTab(at: createdIndex)
+            tabBar.setPendingExpansion(at: createdIndex)
+            setTabOverviewVisible(false, animated: true)
+        }
     }
 }

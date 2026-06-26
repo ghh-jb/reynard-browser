@@ -56,22 +56,13 @@ extension BrowserViewController {
         dismissAddressBarEditingAndOverlays()
         
         if tabOverview.isPresented {
-            let mode = tabOverview.mode
             tabOverview.prepareNextTabChangesWithoutAnimation()
-            let newTabIndex = tabManager.createTab(
-                selecting: true,
-                target: .end,
-                mode: mode.tabMode
-            )
-            applyNewTabDisplayOption(toTabAt: newTabIndex)
-            tabOverview.prepareDismissSelection(to: newTabIndex, mode: mode.tabMode, previewImage: nil)
-            scrollTabOverviewToTab(at: newTabIndex)
-            tabBar.setPendingExpansion(at: newTabIndex)
-            setTabOverviewVisible(false, animated: true)
+            createTabFromOverview(mode: tabOverview.mode.tabMode)
         } else {
-            let newTabIndex = tabManager.createTab(selecting: true)
-            applyNewTabDisplayOption(toTabAt: newTabIndex)
-            tabBar.setPendingExpansion(at: newTabIndex)
+            homepageOverlayCoordinator.prepareHomepageForNewTab(mode: tabManager.selectedTabMode)
+            let createdIndex = tabManager.createTab(selecting: true)
+            applyNewTabDisplayOption(toTabAt: createdIndex)
+            tabBar.setPendingExpansion(at: createdIndex)
             setTabOverviewVisible(false, animated: true)
         }
     }

@@ -22,25 +22,19 @@ protocol HomepageOverlayCoordinatorDelegate: AnyObject {
     func restoreClosedTabFromHomepage(id: UUID) -> Bool
     
     func endHomepageEditing()
-    func updateHomepageThumbnail()
     func updateHomepageLayout(animated: Bool, duration: TimeInterval)
 }
 
 final class HomepageOverlayCoordinator {
     private enum UX {
         static let layoutAnimationDuration: TimeInterval = 0.2
-        static let snapshotRefreshDelay: TimeInterval = 0.45
-        static let snapshotMaximumWidth: CGFloat = 360 // TODO: Improve for multiple device size
     }
     
     private weak var delegate: HomepageOverlayCoordinatorDelegate?
     private let overlayCoordinator: OverlayCoordinator
     private let homepageViewController: HomepageViewController
+    private let homepageThumbnailRenderer: HomepageThumbnailRenderer
     private var presentationIntent: HomepagePresentationIntent = .inactive
-    private var snapshotCache: HomepageSnapshotCache?
-    private var isSnapshotDirty = true
-    private var isSnapshotRefreshPaused = false
-    private var snapshotRefreshWorkItem: DispatchWorkItem?
     
     private struct HomepagePresentation: Equatable {
         let host: OverlayCoordinator.Host
@@ -53,14 +47,9 @@ final class HomepageOverlayCoordinator {
         self.delegate = delegate
         self.overlayCoordinator = overlayCoordinator
         homepageViewController = HomepageViewController()
+        homepageThumbnailRenderer = HomepageThumbnailRenderer(homepageViewController: homepageViewController)
         homepageViewController.homepageDelegate = self
         homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
-        observeHomepageChanges()
-    }
-    
-    deinit {
-        snapshotRefreshWorkItem?.cancel()
-        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - State
@@ -83,11 +72,10 @@ final class HomepageOverlayCoordinator {
         homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
         homepageViewController.setContentMode(presentation.contentMode)
         configureOverlay(for: presentation)
-        markSnapshotDirty()
     }
     
     func tabOverviewWillPresent() {
-        guard !showsHomepageForBlankTabs || !isSelectedTabBlankPage else {
+        if showsHomepageForBlankTabs && isSelectedTabBlankPage {
             return
         }
         
@@ -99,117 +87,36 @@ final class HomepageOverlayCoordinator {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
     }
     
-    // MARK: - Snapshot
+    // MARK: - Thumbnails
     
-    private func renderSnapshot(size: CGSize, isPrivateBrowsing: Bool) -> UIImage? {
+    func needsHomepageThumbnail(for tab: Tab) -> Bool {
+        return showsHomepageForBlankTabs && isBlankTab(tab)
+    }
+    
+    func prepareHomepageForNewTab(mode: TabMode) {
         guard let delegate,
-              size.width > 1,
-              size.height > 1 else {
-            return nil
+              showsHomepageForBlankTabs else {
+            return
         }
         
-        let scale = UIScreen.main.scale
-        let outputSize = snapshotOutputSize(for: size)
-        let pixelSize = CGSize(width: outputSize.width * scale, height: outputSize.height * scale)
-        let contentMode = embeddedContentMode(layout: delegate.homepageLayout)
-        let userInterfaceStyle = homepageViewController.traitCollection.userInterfaceStyle
-        if let snapshotCache,
-           snapshotCache.matches(
-            pixelSize: pixelSize,
-            contentMode: contentMode,
-            isPrivateBrowsing: isPrivateBrowsing,
-            userInterfaceStyle: userInterfaceStyle
-           ) {
-            return snapshotCache.image
+        homepageThumbnailRenderer.prepareForCapture(
+            contentMode: embeddedContentMode(layout: delegate.homepageLayout),
+            isPrivateBrowsing: mode == .private
+        )
+    }
+    
+    func captureHomepageThumbnail(_ tab: Tab, size: CGSize, completion: @escaping (UIImage?) -> Void) {
+        guard let delegate else {
+            completion(nil)
+            return
         }
         
-        homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
-        guard let image = homepageViewController.renderSnapshot(
+        homepageThumbnailRenderer.capture(
             size: size,
-            outputSize: outputSize,
-            contentMode: contentMode
-        ) else {
-            return nil
-        }
-        
-        snapshotCache = HomepageSnapshotCache(
-            pixelSize: pixelSize,
-            contentMode: contentMode,
-            isPrivateBrowsing: isPrivateBrowsing,
-            userInterfaceStyle: userInterfaceStyle,
-            image: image
+            contentMode: embeddedContentMode(layout: delegate.homepageLayout),
+            isPrivateBrowsing: tab.isPrivate,
+            completion: completion
         )
-        isSnapshotDirty = false
-        return image
-    }
-    
-    private func scheduleSnapshotRefreshIfNeeded() {
-        guard isSnapshotDirty,
-              !isSnapshotRefreshPaused,
-              snapshotSize != nil,
-              isSelectedTabBlankPage else {
-            return
-        }
-        
-        snapshotRefreshWorkItem?.cancel()
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.refreshSnapshotCache()
-        }
-        snapshotRefreshWorkItem = workItem
-        DispatchQueue.main.asyncAfter(
-            deadline: .now() + UX.snapshotRefreshDelay,
-            execute: workItem
-        )
-    }
-    
-    private func refreshSnapshotCache() {
-        snapshotRefreshWorkItem = nil
-        guard isSelectedTabBlankPage,
-              let size = snapshotSize else {
-            return
-        }
-        
-        snapshotCache = nil
-        guard renderSnapshot(size: size, isPrivateBrowsing: isPrivateBrowsing) != nil else {
-            return
-        }
-        
-        delegate?.updateHomepageThumbnail()
-    }
-    
-    private var snapshotSize: CGSize? {
-        guard let size = delegate?.homepageContentView.bounds.size,
-              size.width > 1,
-              size.height > 1 else {
-            return nil
-        }
-        
-        return size
-    }
-    
-    private func snapshotOutputSize(for size: CGSize) -> CGSize {
-        let scale = min(1, UX.snapshotMaximumWidth / size.width)
-        return CGSize(
-            width: floor(size.width * scale),
-            height: floor(size.height * scale)
-        )
-    }
-    
-    func snapshotForBlankTab(_ tab: Tab, size: CGSize) -> UIImage? {
-        guard showsHomepageForBlankTabs,
-              isBlankTab(tab) else {
-            return nil
-        }
-        
-        if isSnapshotDirty {
-            scheduleSnapshotRefreshIfNeeded()
-        }
-        
-        if let snapshotCache {
-            return snapshotCache.image
-        }
-        
-        return renderSnapshot(size: size, isPrivateBrowsing: tab.isPrivate)
     }
     
     // MARK: - Presentation
@@ -223,7 +130,6 @@ final class HomepageOverlayCoordinator {
             homepageViewController.setContentMode(presentation.contentMode)
             homepageViewController.prepareForPresentation(resetNavigation: false)
             configureOverlay(for: presentation)
-            markSnapshotDirty()
             return
         }
         
@@ -237,7 +143,6 @@ final class HomepageOverlayCoordinator {
             self?.homepageViewController.setContentMode(presentation.contentMode)
             self?.homepageViewController.prepareForPresentation(resetNavigation: true)
             self?.configureOverlay(for: presentation)
-            self?.markSnapshotDirty()
         }
     }
     
@@ -254,31 +159,6 @@ final class HomepageOverlayCoordinator {
         
         delegate.homepageChrome.setOverlayHeightMode(.default)
         delegate.homepageChrome.setOverlayAvailableContentHeight(delegate.homepageContentView.bounds.height)
-    }
-    
-    private func markSnapshotDirty() {
-        isSnapshotDirty = true
-        scheduleSnapshotRefreshIfNeeded()
-    }
-    
-    func setSnapshotRefreshPaused(_ paused: Bool) {
-        guard isSnapshotRefreshPaused != paused else {
-            return
-        }
-        
-        isSnapshotRefreshPaused = paused
-        if paused {
-            snapshotRefreshWorkItem?.cancel()
-            snapshotRefreshWorkItem = nil
-            return
-        }
-        
-        scheduleSnapshotRefreshIfNeeded()
-    }
-    
-    func invalidateSnapshot() {
-        snapshotCache = nil
-        markSnapshotDirty()
     }
     
     // MARK: - Presentation Resolution
@@ -391,40 +271,6 @@ final class HomepageOverlayCoordinator {
         }
     }
     
-    // MARK: - Bookmarks
-    
-    private func observeHomepageChanges() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(bookmarksDidChange),
-            name: .bookmarkStoreDidChange,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(homepageSettingsDidChange),
-            name: .homepageSettingsDidChange,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(historyDidChange),
-            name: .historyStoreDidChange,
-            object: nil
-        )
-    }
-    
-    @objc private func bookmarksDidChange() {
-        markSnapshotDirty()
-    }
-    
-    @objc private func homepageSettingsDidChange() {
-        markSnapshotDirty()
-    }
-    
-    @objc private func historyDidChange() {
-        markSnapshotDirty()
-    }
 }
 
 private enum HomepagePresentationIntent {
@@ -500,10 +346,6 @@ extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
         delegate?.openSettingsFromHomepage()
         delegate?.endHomepageEditing()
-    }
-    
-    func homepageViewControllerDidChangeLayout(_ controller: HomepageViewController) {
-        markSnapshotDirty()
     }
     
     func homepageViewControllerDidStartScrolling() {

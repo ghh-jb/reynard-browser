@@ -197,10 +197,6 @@ final class TabOverviewCard: UICollectionViewCell {
         webpagePreviewRegionView.convert(webpagePreviewRegionView.bounds, to: targetView)
     }
     
-    func makeWebpagePreviewRegionSnapshot() -> UIView? {
-        webpagePreviewRegionView.snapshotView(afterScreenUpdates: false)
-    }
-    
     func transitionSnapshotFrame(in targetView: UIView) -> CGRect {
         layoutIfNeeded()
         contentView.layoutIfNeeded()

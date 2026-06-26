@@ -276,10 +276,6 @@ final class FavoritesSectionViewController: UIViewController {
             self.updateFavoriteGridLayout()
             self.collectionView.insertItems(at: indexPaths)
             self.view.superview?.layoutIfNeeded()
-        } completion: { [weak self] _ in
-            if let self {
-                self.delegate?.homepageSectionDidChangeLayout(self)
-            }
         }
     }
     
@@ -295,9 +291,6 @@ final class FavoritesSectionViewController: UIViewController {
             self.updateCollectionVerticalMask()
         } completion: { [weak self] _ in
             self?.removeCollectionVerticalMask()
-            if let self {
-                self.delegate?.homepageSectionDidChangeLayout(self)
-            }
         }
     }
     

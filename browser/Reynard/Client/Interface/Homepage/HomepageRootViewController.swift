@@ -11,7 +11,6 @@ protocol HomepageRootViewControllerDelegate: AnyObject {
     func homepageRootViewController(_ controller: HomepageRootViewController, didSelectURL url: URL)
     func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecentlyClosedTab id: UUID)
     func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot)
-    func homepageRootViewControllerDidChangeLayout(_ controller: HomepageRootViewController)
     func homepageRootViewControllerDidSelectSettings(_ controller: HomepageRootViewController)
     func homepageRootViewControllerDidStartScrolling()
 }
@@ -326,10 +325,6 @@ extension HomepageRootViewController: HomepageSectionDelegate {
     
     func homepageSection(_ viewController: UIViewController, didSelectRecentlyClosedTab id: UUID) {
         delegate?.homepageRootViewController(self, didSelectRecentlyClosedTab: id)
-    }
-    
-    func homepageSectionDidChangeLayout(_ viewController: UIViewController) {
-        delegate?.homepageRootViewControllerDidChangeLayout(self)
     }
     
     func homepageSectionDidSelectSettings(_ viewController: UIViewController) {

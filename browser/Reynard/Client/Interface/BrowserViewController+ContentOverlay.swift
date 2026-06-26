@@ -125,7 +125,7 @@ extension BrowserViewController: ContentOverlayCoordinatorHost, SearchOverlayCoo
         view.endEditing(true)
     }
     
-    func updateHomepageThumbnailFromCachedSnapshot() {
+    func updateHomepageThumbnail() {
         updateHomepageThumbnailForNewTab(at: tabManager.selectedTabIndex)
     }
     

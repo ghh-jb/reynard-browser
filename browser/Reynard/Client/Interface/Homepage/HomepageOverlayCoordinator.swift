@@ -22,7 +22,7 @@ protocol HomepageOverlayCoordinatorDelegate: AnyObject {
     func restoreClosedTabFromHomepage(id: UUID) -> Bool
     
     func endHomepageEditing()
-    func updateHomepageThumbnailFromCachedSnapshot()
+    func updateHomepageThumbnail()
     func updateHomepageLayout(animated: Bool, duration: TimeInterval)
 }
 
@@ -174,7 +174,7 @@ final class HomepageOverlayCoordinator {
             return
         }
         
-        delegate?.updateHomepageThumbnailFromCachedSnapshot()
+        delegate?.updateHomepageThumbnail()
     }
     
     private var snapshotSize: CGSize? {

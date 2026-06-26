@@ -22,6 +22,7 @@ protocol AddressBarGestureDelegate: AnyObject {
     func createTabForSwipe() -> Int
     func setPendingTabExpansion(at index: Int?)
     func presentTabOverviewFromGesture(animated: Bool)
+    func setHomepageSnapshotRefreshPaused(_ paused: Bool)
 }
 
 final class AddressBarGestures: NSObject {
@@ -88,6 +89,7 @@ final class AddressBarGestures: NSObject {
     // MARK: - Transition Lifecycle
     
     func resetHorizontalTransition() {
+        delegate?.setHomepageSnapshotRefreshPaused(false)
         delegate?.transitionContentView.setTransitionTransform(.identity)
         addressBar.transform = .identity
         
@@ -431,6 +433,7 @@ final class AddressBarGestures: NSObject {
                     let newMode: SearchPanMode = (!delegate.isTabOverviewPresented && !delegate.isSearchFocused) ? .horizontalTabs : .blocked
                     searchPanMode = newMode
                     if newMode == .horizontalTabs {
+                        delegate.setHomepageSnapshotRefreshPaused(true)
                         Haptics.rigid()
                     }
                 } else {

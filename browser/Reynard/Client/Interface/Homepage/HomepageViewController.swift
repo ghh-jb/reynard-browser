@@ -10,6 +10,7 @@ import UIKit
 protocol HomepageViewControllerDelegate: AnyObject {
     func homepageViewController(_ controller: HomepageViewController, didSelectURL url: URL)
     func homepageViewController(_ controller: HomepageViewController, didSelectRecentlyClosedTab id: UUID)
+    func homepageViewControllerDidChangeLayout(_ controller: HomepageViewController)
     func homepageViewControllerDidSelectSettings(_ controller: HomepageViewController)
     func homepageViewControllerDidStartScrolling()
 }
@@ -81,9 +82,13 @@ final class HomepageViewController: UINavigationController {
         view.layoutIfNeeded()
     }
     
-    func renderSnapshot(size: CGSize, contentMode: HomepageContentMode) -> UIImage? {
+    func renderSnapshot(size: CGSize, outputSize: CGSize, contentMode: HomepageContentMode) -> UIImage? {
         loadViewIfNeeded()
         setContentMode(contentMode)
+        guard outputSize.width > 1,
+              outputSize.height > 1 else {
+            return nil
+        }
         
         let wasAttached = view.superview != nil
         let originalFrame = view.frame
@@ -96,8 +101,12 @@ final class HomepageViewController: UINavigationController {
         
         view.layoutIfNeeded()
         
-        let renderer = UIGraphicsImageRenderer(size: size)
+        let renderer = UIGraphicsImageRenderer(size: outputSize)
         let image = renderer.image { context in
+            context.cgContext.scaleBy(
+                x: outputSize.width / size.width,
+                y: outputSize.height / size.height
+            )
             view.layer.render(in: context.cgContext)
         }
         
@@ -131,6 +140,10 @@ extension HomepageViewController: HomepageRootViewControllerDelegate {
     
     func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecentlyClosedTab id: UUID) {
         homepageDelegate?.homepageViewController(self, didSelectRecentlyClosedTab: id)
+    }
+    
+    func homepageRootViewControllerDidChangeLayout(_ controller: HomepageRootViewController) {
+        homepageDelegate?.homepageViewControllerDidChangeLayout(self)
     }
     
     func homepageRootViewControllerDidSelectSettings(_ controller: HomepageRootViewController) {

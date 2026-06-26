@@ -135,6 +135,10 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         setTabOverviewVisible(true, animated: animated)
     }
     
+    func setHomepageSnapshotRefreshPaused(_ paused: Bool) {
+        homepageOverlayCoordinator.setSnapshotRefreshPaused(paused)
+    }
+    
     // MARK: - Website Actions
     
     private func presentWebsiteSettings() {

@@ -32,5 +32,6 @@ enum HomepageSection: CaseIterable, Hashable {
 protocol HomepageSectionDelegate: AnyObject {
     func homepageSection(_ viewController: UIViewController, didSelectURL url: URL)
     func homepageSection(_ viewController: UIViewController, didSelectRecentlyClosedTab id: UUID)
+    func homepageSectionDidChangeLayout(_ viewController: UIViewController)
     func homepageSectionDidSelectSettings(_ viewController: UIViewController)
 }

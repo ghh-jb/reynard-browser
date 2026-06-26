@@ -133,14 +133,6 @@ final class HomepageRootViewController: UIViewController {
         privateBrowsingSectionViewController?.setPrivateBrowsing(isPrivateBrowsing)
     }
     
-    func resetScrollPosition() {
-        loadViewIfNeeded()
-        scrollView.setContentOffset(
-            CGPoint(x: 0, y: -scrollView.adjustedContentInset.top),
-            animated: false
-        )
-    }
-    
     // MARK: - Configuration
     
     private func configureScrollView() {

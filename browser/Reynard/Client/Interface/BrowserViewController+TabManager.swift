@@ -31,6 +31,9 @@ extension BrowserViewController: TabManagerDelegate {
     
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?) {
         tabBar.setPendingExpansion(at: nil)
+        if previousIndex == nil {
+            homepageOverlayCoordinator.invalidateSnapshot()
+        }
         
         guard let selectedTab = tabManager.activeTabs[safe: index] else {
             return

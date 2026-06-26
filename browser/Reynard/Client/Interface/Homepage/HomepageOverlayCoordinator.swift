@@ -276,6 +276,11 @@ final class HomepageOverlayCoordinator {
         scheduleSnapshotRefreshIfNeeded()
     }
     
+    func invalidateSnapshot() {
+        snapshotCache = nil
+        markSnapshotDirty()
+    }
+    
     // MARK: - Presentation Resolution
     
     private var homepagePresentation: HomepagePresentation? {

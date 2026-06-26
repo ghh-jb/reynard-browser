@@ -100,7 +100,6 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        resetScrollPosition()
     }
     
     // MARK: - Configuration
@@ -178,12 +177,6 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
     
     @objc private func homepageSettingsDidChange() {
         reloadSites()
-    }
-    
-    // MARK: - Misc
-    
-    private func resetScrollPosition() {
-        scrollView.setContentOffset(.zero, animated: false)
     }
     
     // MARK: - Metadata

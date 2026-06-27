@@ -41,6 +41,7 @@ final class HomepageOverlayCoordinator {
     private struct HomepagePresentation: Equatable {
         let host: OverlayCoordinator.Host
         let contentMode: HomepageContentMode
+        let showsBackground: Bool
     }
     
     // MARK: - Lifecycle
@@ -73,6 +74,7 @@ final class HomepageOverlayCoordinator {
         
         homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
         homepageViewController.setContentMode(presentation.contentMode)
+        homepageViewController.setShowsBackground(presentation.showsBackground)
         configureOverlay(for: presentation)
     }
     
@@ -132,6 +134,7 @@ final class HomepageOverlayCoordinator {
               !overlayCoordinator.isPresented(.search, on: presentation.host) else {
             homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
             homepageViewController.setContentMode(presentation.contentMode)
+            homepageViewController.setShowsBackground(presentation.showsBackground)
             homepageViewController.prepareForPresentation(resetNavigation: false)
             configureOverlay(for: presentation)
             return
@@ -145,6 +148,7 @@ final class HomepageOverlayCoordinator {
         ) { [weak self] in
             self?.homepageViewController.setPrivateBrowsing(self?.isPrivateBrowsing == true)
             self?.homepageViewController.setContentMode(presentation.contentMode)
+            self?.homepageViewController.setShowsBackground(presentation.showsBackground)
             self?.homepageViewController.prepareForPresentation(resetNavigation: true)
             self?.configureOverlay(for: presentation)
         }
@@ -178,7 +182,8 @@ final class HomepageOverlayCoordinator {
            isBlankTab(tab) {
             return HomepagePresentation(
                 host: .embedded,
-                contentMode: embeddedContentMode(layout: delegate.homepageLayout)
+                contentMode: embeddedContentMode(layout: delegate.homepageLayout),
+                showsBackground: true
             )
         }
         
@@ -237,7 +242,8 @@ final class HomepageOverlayCoordinator {
            gridWidth == .fourColumn {
             return HomepagePresentation(
                 host: .embedded,
-                contentMode: embeddedContentMode(layout: layout)
+                contentMode: embeddedContentMode(layout: layout),
+                showsBackground: false
             )
         }
         
@@ -245,12 +251,14 @@ final class HomepageOverlayCoordinator {
         case (.phone, _, .portrait), (.pad, .compact, _):
             return HomepagePresentation(
                 host: .embedded,
-                contentMode: embeddedContentMode(layout: layout)
+                contentMode: embeddedContentMode(layout: layout),
+                showsBackground: false
             )
         case (.phone, _, .landscape), (.pad, .pad, _):
             return HomepagePresentation(
                 host: .detached,
-                contentMode: HomepageContentMode.detached(layout: layout)
+                contentMode: HomepageContentMode.detached(layout: layout),
+                showsBackground: false
             )
         default:
             return nil

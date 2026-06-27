@@ -22,6 +22,7 @@ final class HomepageThumbnailRenderer {
         homepageViewController.loadViewIfNeeded()
         homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
         homepageViewController.setContentMode(contentMode)
+        homepageViewController.setShowsBackground(true)
         homepageViewController.view.setNeedsLayout()
         homepageViewController.view.layoutIfNeeded()
     }
@@ -47,6 +48,7 @@ final class HomepageThumbnailRenderer {
             homepageViewController.loadViewIfNeeded()
             homepageViewController.setPrivateBrowsing(isPrivateBrowsing)
             homepageViewController.setContentMode(contentMode)
+            homepageViewController.setShowsBackground(true)
             
             let view = homepageViewController.view!
             let originalFrame = view.frame

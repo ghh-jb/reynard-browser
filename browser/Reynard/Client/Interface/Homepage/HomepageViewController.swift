@@ -23,6 +23,7 @@ final class HomepageViewController: UINavigationController {
     private let bookmarkStore: BookmarkStore
     private var isPrivateBrowsing: Bool
     private var contentMode: HomepageContentMode = .embeddedNarrow
+    private var showsBackground = false
     
     // MARK: - Lifecycle
     
@@ -62,6 +63,11 @@ final class HomepageViewController: UINavigationController {
         }
     }
     
+    func setShowsBackground(_ showsBackground: Bool) {
+        self.showsBackground = showsBackground
+        updateBackgroundColor()
+    }
+    
     func setPrivateBrowsing(_ isPrivateBrowsing: Bool) {
         guard self.isPrivateBrowsing != isPrivateBrowsing else {
             return
@@ -85,10 +91,14 @@ final class HomepageViewController: UINavigationController {
     // MARK: - Configuration
     
     private func configureAppearance() {
-        view.backgroundColor = .clear
+        updateBackgroundColor()
         delegate = self
         navigationBar.isTranslucent = false
         setNavigationBarHidden(true, animated: false)
+    }
+    
+    private func updateBackgroundColor() {
+        view.backgroundColor = showsBackground ? .systemBackground : .clear
     }
 }
 

@@ -145,8 +145,18 @@ extension BrowserViewController: TabManagerDelegate {
             return
         }
         
-        tabBar.setPendingExpansion(at: index)
-        browserChrome.animateAutomaticNewTabTransition(to: tabManager.activeTabs[index], completion: completion)
+        let selectedIndex = tabManager.selectedTabIndex
+        let selectedMode = tabManager.selectedTabMode
+        captureThumbnail(forTabAt: selectedIndex, mode: selectedMode) { [weak self] _ in
+            guard let self,
+                  tabManager.activeTabs.indices.contains(index) else {
+                completion()
+                return
+            }
+            
+            self.tabBar.setPendingExpansion(at: index)
+            self.browserChrome.animateAutomaticNewTabTransition(to: tabManager.activeTabs[index], completion: completion)
+        }
     }
     
     func tabManager(_ tabManager: TabManager, didRequestDownload download: DownloadStore.PendingDownload) {

@@ -9,10 +9,6 @@ import GeckoView
 import UIKit
 
 final class ClearBrowsingDataViewController: SettingsTableViewController {
-    private enum UX {
-        static let actionRowHeight: CGFloat = 88
-    }
-    
     private enum Section: CaseIterable {
         case data
         case action
@@ -111,12 +107,6 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
         result[category] = toggle
     }
     
-    private lazy var clearBrowsingDataFooterView = ClearDataFooterView(
-        title: "Clear Browsing Data",
-        target: self,
-        action: #selector(confirmClearBrowsingData)
-    )
-    
     init() {
         super.init(style: .insetGrouped)
         title = "Clear Browsing Data"
@@ -135,11 +125,6 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
         for category in BrowsingDataCategory.allCases {
             browsingDataCategorySwitches[category]?.addTarget(self, action: #selector(categorySwitchChanged), for: .valueChanged)
         }
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        tableView.reloadSections(IndexSet(integer: 0), with: .none)
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -175,26 +160,26 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
         }
     }
     
-    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        if indexPath.section == 1 {
-            return UX.actionRowHeight
-        }
-        
-        return UITableView.automaticDimension
-    }
-    
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         defer {
             tableView.deselectRow(at: indexPath, animated: true)
         }
         
-        guard indexPath.section == 0,
-              BrowsingDataCategory.allCases.indices.contains(indexPath.row) else {
+        guard Section.allCases.indices.contains(indexPath.section) else {
             return
         }
         
-        let category = BrowsingDataCategory.allCases[indexPath.row]
-        setSelected(!category.isSelected, for: category)
+        switch Section.allCases[indexPath.section] {
+        case .data:
+            guard BrowsingDataCategory.allCases.indices.contains(indexPath.row) else {
+                return
+            }
+            
+            let category = BrowsingDataCategory.allCases[indexPath.row]
+            setSelected(!category.isSelected, for: category)
+        case .action:
+            confirmClearBrowsingData()
+        }
     }
     
     private func categoryCell(for category: BrowsingDataCategory) -> UITableViewCell {
@@ -211,18 +196,9 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
     
     private func clearActionCell() -> UITableViewCell {
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-        cell.backgroundColor = .clear
-        cell.contentView.backgroundColor = .clear
-        cell.selectionStyle = .none
-        cell.contentView.addSubview(clearBrowsingDataFooterView)
-        clearBrowsingDataFooterView.translatesAutoresizingMaskIntoConstraints = false
-        
-        NSLayoutConstraint.activate([
-            clearBrowsingDataFooterView.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor),
-            clearBrowsingDataFooterView.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor),
-            clearBrowsingDataFooterView.topAnchor.constraint(equalTo: cell.contentView.topAnchor),
-            clearBrowsingDataFooterView.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor),
-        ])
+        cell.textLabel?.text = "Clear Browsing Data"
+        cell.textLabel?.textColor = .systemRed
+        cell.accessoryType = .none
         return cell
     }
     

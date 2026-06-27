@@ -8,7 +8,9 @@
 import UIKit
 
 protocol HomepageRootViewControllerDelegate: AnyObject {
-    func homepageRootViewController(_ controller: HomepageRootViewController, didSelectURL url: URL)
+    func homepageRootViewController(_ controller: HomepageRootViewController, didRequestOpenURL url: URL, disposition: TabOpenDisposition)
+    func homepageRootViewController(_ controller: HomepageRootViewController, didRequestShareURL url: URL)
+    func homepageRootViewController(_ controller: HomepageRootViewController, didRequestHideFromSuggestions siteID: Int64)
     func homepageRootViewController(_ controller: HomepageRootViewController, didSelectRecentlyClosedTab id: UUID)
     func homepageRootViewControllerDidSelectFolder(_ folder: BookmarkFolderSnapshot)
     func homepageRootViewControllerDidSelectSettings(_ controller: HomepageRootViewController)
@@ -319,8 +321,16 @@ extension HomepageRootViewController: UIScrollViewDelegate {
 }
 
 extension HomepageRootViewController: HomepageSectionDelegate {
-    func homepageSection(_ viewController: UIViewController, didSelectURL url: URL) {
-        delegate?.homepageRootViewController(self, didSelectURL: url)
+    func homepageSection(_ viewController: UIViewController, didRequestOpenURL url: URL, disposition: TabOpenDisposition) {
+        delegate?.homepageRootViewController(self, didRequestOpenURL: url, disposition: disposition)
+    }
+    
+    func homepageSection(_ viewController: UIViewController, didRequestShareURL url: URL) {
+        delegate?.homepageRootViewController(self, didRequestShareURL: url)
+    }
+    
+    func homepageSection(_ viewController: UIViewController, didRequestHideFromSuggestions siteID: Int64) {
+        delegate?.homepageRootViewController(self, didRequestHideFromSuggestions: siteID)
     }
     
     func homepageSection(_ viewController: UIViewController, didSelectRecentlyClosedTab id: UUID) {

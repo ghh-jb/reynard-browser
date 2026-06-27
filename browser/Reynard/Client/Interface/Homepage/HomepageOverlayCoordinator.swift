@@ -15,9 +15,11 @@ protocol HomepageOverlayCoordinatorDelegate: AnyObject {
     var isHomepageShowingFullscreenMedia: Bool { get }
     var homepageChrome: BrowserChrome { get }
     var homepageContentView: ContentView { get }
+    var homepageTabActions: ContextMenuTabActions { get }
     
     // Homepage section actions
-    func browseURLFromHomepage(_ url: URL)
+    func openURLFromHomepage(_ url: URL, disposition: TabOpenDisposition)
+    func shareURLFromHomepage(_ url: URL)
     func openSettingsFromHomepage()
     func restoreClosedTabFromHomepage(id: UUID) -> Bool
     
@@ -323,14 +325,22 @@ extension HomepageOverlayCoordinator: AddressBarSearchDelegate {
 // MARK: - Homepage View Controller Delegate
 
 extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
-    func homepageViewController(_ controller: HomepageViewController, didSelectURL url: URL) {
+    func homepageViewController(_ controller: HomepageViewController, didRequestOpenURL url: URL, disposition: TabOpenDisposition) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
         delegate?.homepageChrome.setAddressBarEditingState(.inactive)
         delegate?.updateHomepageLayout(animated: true, duration: UX.layoutAnimationDuration)
-        delegate?.browseURLFromHomepage(url)
+        delegate?.openURLFromHomepage(url, disposition: disposition)
         delegate?.endHomepageEditing()
         presentationIntent = .inactive
         dismiss(animated: true)
+    }
+    
+    func homepageViewController(_ controller: HomepageViewController, didRequestShareURL url: URL) {
+        delegate?.shareURLFromHomepage(url)
+    }
+    
+    func homepageViewController(_ controller: HomepageViewController, didRequestHideFromSuggestions siteID: Int64) {
+        HistoryStore.shared.hideFromSuggestions(siteID: siteID)
     }
     
     func homepageViewController(_ controller: HomepageViewController, didSelectRecentlyClosedTab id: UUID) {

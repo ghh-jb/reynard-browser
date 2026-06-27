@@ -151,6 +151,14 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
     
     // MARK: - History
     
+    func site(for cardView: FrequentlyVisitedSiteCardView) -> HistorySiteSnapshot? {
+        guard sites.indices.contains(cardView.tag) else {
+            return nil
+        }
+        
+        return sites[cardView.tag]
+    }
+    
     private func reloadSites() {
         sites = historyStore.frequentSites(
             limit: Prefs.HomepageSettings.frequentlyVisitedSiteCount,
@@ -244,6 +252,7 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
             cardView.tag = index
             cardView.configure(site: site, metadata: metadata(for: site))
             cardView.addTarget(self, action: #selector(handleCardTap(_:)), for: .touchUpInside)
+            cardView.addInteraction(UIContextMenuInteraction(delegate: self))
             cardStackView.addArrangedSubview(cardView)
             
             NSLayoutConstraint.activate([
@@ -262,6 +271,6 @@ final class FrequentlyVisitedSectionViewController: UIViewController {
             return
         }
         
-        delegate?.homepageSection(self, didSelectURL: sites[sender.tag].url)
+        delegate?.homepageSection(self, didRequestOpenURL: sites[sender.tag].url, disposition: .currentTab)
     }
 }

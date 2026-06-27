@@ -421,7 +421,7 @@ extension FavoritesSectionViewController: UICollectionViewDataSource, UICollecti
         
         switch displayedFavoriteItems[indexPath.item] {
         case let .bookmark(bookmark):
-            delegate?.homepageSection(self, didSelectURL: bookmark.url)
+            delegate?.homepageSection(self, didRequestOpenURL: bookmark.url, disposition: .currentTab)
         case let .folder(folder):
             delegate?.favoritesSectionViewController(self, didSelectFolder: folder)
         }

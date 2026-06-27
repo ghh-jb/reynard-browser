@@ -320,7 +320,7 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         case .settings:
             delegate?.homepageSectionDidSelectSettings(self)
         case let .openURL(url):
-            delegate?.homepageSection(self, didSelectURL: url)
+            delegate?.homepageSection(self, didRequestOpenURL: url, disposition: .currentTab)
         }
     }
     

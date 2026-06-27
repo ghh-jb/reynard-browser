@@ -256,7 +256,7 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
     // MARK: - Actions
     
     @objc private func openDonationLink() {
-        delegate?.homepageSection(self, didSelectURL: DonationRecommendationLink.buyMeACoffee)
+        delegate?.homepageSection(self, didRequestOpenURL: DonationRecommendationLink.buyMeACoffee, disposition: .currentTab)
     }
     
     @objc private func postponeDonationRecommendation() {

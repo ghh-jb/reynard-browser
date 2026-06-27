@@ -144,6 +144,14 @@ final class HistoryStore {
         }
     }
     
+    func hideFromSuggestions(siteID: Int64) {
+        stateQueue.async {
+            if self.hideFromSuggestionsLocked(siteID: siteID) {
+                self.postDidChange()
+            }
+        }
+    }
+    
     func clearVisits(since startDate: Date?) {
         stateQueue.async {
             if self.clearHistoryLocked(since: startDate) {
@@ -207,6 +215,10 @@ final class HistoryStore {
             siteID INTEGER NOT NULL REFERENCES history(id) ON DELETE CASCADE,
             date REAL NOT NULL,
             UNIQUE(siteID, date)
+        );
+        
+        CREATE TABLE IF NOT EXISTS hide_from_suggestions (
+            siteID INTEGER PRIMARY KEY REFERENCES history(id) ON DELETE CASCADE
         );
         
         CREATE INDEX IF NOT EXISTS idx_history_updated_at ON history(updated_at DESC);
@@ -284,6 +296,26 @@ final class HistoryStore {
         }
         
         sqlite3_bind_int64(statement, 1, id)
+        
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            return false
+        }
+        
+        return sqlite3_changes(database) > 0
+    }
+    
+    private func hideFromSuggestionsLocked(siteID: Int64) -> Bool {
+        guard let statement = prepareStatementLocked(
+            "INSERT OR IGNORE INTO hide_from_suggestions (siteID) VALUES (?);"
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_int64(statement, 1, siteID)
         
         guard sqlite3_step(statement) == SQLITE_DONE else {
             return false
@@ -428,6 +460,11 @@ final class HistoryStore {
             SELECT id, title, url, updated_at
             FROM history
             WHERE visit_count >= ?
+            AND NOT EXISTS (
+                SELECT 1
+                FROM hide_from_suggestions
+                WHERE hide_from_suggestions.siteID = history.id
+            )
             ORDER BY frecency DESC, id DESC
             LIMIT ?;
             """

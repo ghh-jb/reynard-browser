@@ -16,8 +16,16 @@ final class FavoritesSectionViewController: UIViewController {
         static let horizontalInset: CGFloat = 2
         static let titleBottomSpacing: CGFloat = 3
         static let titleFontSize: CGFloat = 22
-        static let reorderMinimumPressDuration: TimeInterval = 0.35
+        static let reorderMinimumPressDuration: TimeInterval = 0.25
+        static let contextMenuPresentationDelay: TimeInterval = 0.55
+        static let reorderMovementThreshold: CGFloat = 8
         static let rowSpacing: CGFloat = 16
+    }
+    
+    private enum ReorderState {
+        case idle
+        case pending(cell: UICollectionViewCell, indexPath: IndexPath, startLocation: CGPoint, workItem: DispatchWorkItem)
+        case active(cell: UICollectionViewCell)
     }
     
     weak var delegate: FavoritesSectionViewControllerDelegate?
@@ -37,6 +45,8 @@ final class FavoritesSectionViewController: UIViewController {
     private var collectionHeightConstraint: NSLayoutConstraint?
     private var lastLaidOutWidth: CGFloat = -1
     private var collectionMaskLayer: CALayer?
+    private var reorderState: ReorderState = .idle
+    private var contextMenuInteraction: UIContextMenuInteraction?
     
     private let headerView: UIView = {
         let view = UIView()
@@ -171,6 +181,7 @@ final class FavoritesSectionViewController: UIViewController {
     private func configureGestures() {
         let reorderGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleReorderLongPress(_:)))
         reorderGesture.minimumPressDuration = UX.reorderMinimumPressDuration
+        reorderGesture.delegate = self
         collectionView.addGestureRecognizer(reorderGesture)
     }
     
@@ -362,6 +373,56 @@ final class FavoritesSectionViewController: UIViewController {
         collectionMaskLayer = nil
     }
     
+    // MARK: - Favorite Actions
+    
+    func favoriteItem(at indexPath: IndexPath) -> BookmarkContentSnapshot? {
+        guard displayedFavoriteItems.indices.contains(indexPath.item) else {
+            return nil
+        }
+        
+        return displayedFavoriteItems[indexPath.item]
+    }
+    
+    func favoriteItem(for cell: UICollectionViewCell) -> BookmarkContentSnapshot? {
+        guard let indexPath = collectionView.indexPath(for: cell) else {
+            return nil
+        }
+        
+        return favoriteItem(at: indexPath)
+    }
+    
+    func favoriteItem(forContextMenuAnchor anchorView: UIView) -> BookmarkContentSnapshot? {
+        guard let cell = favoriteItemCell(containing: anchorView) else {
+            return nil
+        }
+        
+        return favoriteItem(for: cell)
+    }
+    
+    func presentBookmarkEditor(for bookmark: BookmarkSnapshot) {
+        let viewController = EditBookmarkViewController(bookmark: bookmark, store: bookmarkStore)
+        let navigationController = UINavigationController(rootViewController: viewController)
+        navigationController.modalPresentationStyle = .pageSheet
+        UIApplication.shared.topViewController()?.present(navigationController, animated: true)
+    }
+    
+    func deleteFavoriteBookmark(_ bookmark: BookmarkSnapshot) {
+        _ = bookmarkStore.removeBookmark(guid: bookmark.guid)
+    }
+    
+    func deleteFavoriteFolder(_ folder: BookmarkFolderSnapshot) {
+        _ = bookmarkStore.removeFolder(guid: folder.guid)
+    }
+    
+    func removeFavoriteContextMenuInteraction(_ interaction: UIContextMenuInteraction) {
+        guard contextMenuInteraction === interaction else {
+            return
+        }
+        
+        interaction.view?.removeInteraction(interaction)
+        contextMenuInteraction = nil
+    }
+    
     // MARK: - Reorder
     
     @objc private func handleReorderLongPress(_ gestureRecognizer: UILongPressGestureRecognizer) {
@@ -369,19 +430,126 @@ final class FavoritesSectionViewController: UIViewController {
         
         switch gestureRecognizer.state {
         case .began:
-            guard let indexPath = collectionView.indexPathForItem(at: pressLocation) else {
+            guard let indexPath = collectionView.indexPathForItem(at: pressLocation),
+                  let cell = collectionView.cellForItem(at: indexPath) else {
                 return
             }
-            collectionView.beginInteractiveMovementForItem(at: indexPath)
+            setFavoriteCell(cell, lifted: true, animated: true)
+            let workItem = DispatchWorkItem { [weak self, weak cell] in
+                guard let self,
+                      let cell,
+                      case .pending(let pendingCell, _, _, _) = self.reorderState,
+                      pendingCell === cell else {
+                    return
+                }
+                
+                self.presentFavoriteContextMenu(for: cell)
+            }
+            reorderState = .pending(cell: cell, indexPath: indexPath, startLocation: pressLocation, workItem: workItem)
+            DispatchQueue.main.asyncAfter(deadline: .now() + UX.contextMenuPresentationDelay, execute: workItem)
             
         case .changed:
-            collectionView.updateInteractiveMovementTargetPosition(pressLocation)
+            if case .pending(let cell, let indexPath, let startLocation, let workItem) = reorderState {
+                let movement = hypot(pressLocation.x - startLocation.x, pressLocation.y - startLocation.y)
+                guard movement >= UX.reorderMovementThreshold else {
+                    return
+                }
+                
+                workItem.cancel()
+                if collectionView.beginInteractiveMovementForItem(at: indexPath) {
+                    reorderState = .active(cell: cell)
+                    collectionView.updateInteractiveMovementTargetPosition(pressLocation)
+                } else {
+                    setFavoriteCell(cell, lifted: false, animated: true)
+                    reorderState = .idle
+                }
+            } else if case .active = reorderState {
+                collectionView.updateInteractiveMovementTargetPosition(pressLocation)
+            }
             
         case .ended:
-            collectionView.endInteractiveMovement()
+            finishFavoriteReordering(cancelled: false)
             
         default:
-            collectionView.cancelInteractiveMovement()
+            finishFavoriteReordering(cancelled: true)
+        }
+    }
+    
+    private func finishFavoriteReordering(cancelled: Bool) {
+        switch reorderState {
+        case .pending(let cell, _, _, let workItem):
+            workItem.cancel()
+            setFavoriteCell(cell, lifted: false, animated: true)
+        case .active(let cell):
+            cancelled ? collectionView.cancelInteractiveMovement() : collectionView.endInteractiveMovement()
+            setFavoriteCell(cell, lifted: false, animated: true)
+        case .idle:
+            break
+        }
+        reorderState = .idle
+    }
+    
+    func cancelFavoriteReordering() {
+        finishFavoriteReordering(cancelled: true)
+    }
+    
+    private func presentFavoriteContextMenu(for cell: UICollectionViewCell) {
+        if let contextMenuInteraction {
+            contextMenuInteraction.view?.removeInteraction(contextMenuInteraction)
+            self.contextMenuInteraction = nil
+        }
+        
+        let interaction = UIContextMenuInteraction(delegate: self)
+        let anchorView = contextMenuAnchorView(for: cell)
+        anchorView.addInteraction(interaction)
+        contextMenuInteraction = interaction
+        
+        let selector = NSSelectorFromString("_presentMenuAtLocation:")
+        guard interaction.responds(to: selector) else {
+            removeFavoriteContextMenuInteraction(interaction)
+            cancelFavoriteReordering()
+            return
+        }
+        
+        let location = CGPoint(x: anchorView.bounds.midX, y: anchorView.bounds.midY)
+        DispatchQueue.main.async { [weak self, weak interaction] in
+            guard let self,
+                  let interaction,
+                  self.contextMenuInteraction === interaction else {
+                return
+            }
+            
+            _ = interaction.perform(selector, with: NSValue(cgPoint: location))
+        }
+    }
+    
+    private func contextMenuAnchorView(for cell: UICollectionViewCell) -> UIView {
+        if let siteCell = cell as? FavoriteSiteCollectionViewCell {
+            return siteCell.contextMenuAnchorView
+        } else if let folderCell = cell as? FavoriteFolderCollectionViewCell {
+            return folderCell.contextMenuAnchorView
+        }
+        
+        return cell
+    }
+    
+    private func favoriteItemCell(containing view: UIView) -> UICollectionViewCell? {
+        var currentView: UIView? = view
+        while let view = currentView {
+            if let cell = view as? UICollectionViewCell {
+                return cell
+            }
+            currentView = view.superview
+        }
+        
+        return nil
+    }
+    
+    private func setFavoriteCell(_ cell: UICollectionViewCell, lifted: Bool, animated: Bool) {
+        if let siteCell = cell as? FavoriteSiteCollectionViewCell {
+            siteCell.setReorderState(lifted ? .lifted : .resting, animated: animated)
+        } else if let folderCell = cell as? FavoriteFolderCollectionViewCell {
+            folderCell.setReorderState(lifted ? .lifted : .resting, animated: animated)
         }
     }
     
@@ -456,6 +624,15 @@ extension FavoritesSectionViewController: UICollectionViewDataSource, UICollecti
             }
             return bookmark
         }
+    }
+}
+
+extension FavoritesSectionViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        return false
     }
 }
 

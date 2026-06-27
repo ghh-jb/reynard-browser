@@ -17,9 +17,20 @@ final class FavoriteFolderCollectionViewCell: UICollectionViewCell {
         static let previewSpacing: CGFloat = 5
         static let previewIconCornerRadius: CGFloat = 6
         static let emptyIconSize: CGFloat = 64
+        static let reorderLiftedOutset: CGFloat = 4
+        static let reorderLiftAnimationDuration: TimeInterval = 0.18
+    }
+    
+    enum ReorderState {
+        case resting
+        case lifted
     }
     
     static let reuseIdentifier = "FavoriteFolderCollectionViewCell"
+    
+    var contextMenuAnchorView: UIView {
+        return folderBackgroundView
+    }
     
     private static let titleFont = UIFontMetrics(forTextStyle: .caption1).scaledFont(
         for: .systemFont(ofSize: UX.titleFontSize, weight: .semibold)
@@ -65,6 +76,8 @@ final class FavoriteFolderCollectionViewCell: UICollectionViewCell {
     private var previewIconViews: [FavoriteSiteIconView] = []
     private var folderWidthConstraint: NSLayoutConstraint?
     private var folderHeightConstraint: NSLayoutConstraint?
+    private var folderTopConstraint: NSLayoutConstraint?
+    private(set) var reorderState: ReorderState = .resting
     
     // MARK: - Lifecycle
     
@@ -82,6 +95,7 @@ final class FavoriteFolderCollectionViewCell: UICollectionViewCell {
         titleLabel.text = nil
         previewIconViews.forEach { $0.reset() }
         configurePreview(bookmarks: [])
+        setReorderState(.resting, animated: false)
     }
     
     override func layoutSubviews() {
@@ -92,6 +106,11 @@ final class FavoriteFolderCollectionViewCell: UICollectionViewCell {
     func configure(folder: BookmarkFolderSnapshot, previewBookmarks: [BookmarkSnapshot]) {
         titleLabel.text = folder.title
         configurePreview(bookmarks: Array(previewBookmarks.prefix(4)))
+    }
+    
+    func setReorderState(_ state: ReorderState, animated: Bool) {
+        reorderState = state
+        applyReorderState(animated: animated)
     }
     
     // MARK: - Configuration
@@ -120,11 +139,13 @@ final class FavoriteFolderCollectionViewCell: UICollectionViewCell {
     private func configureConstraints() {
         let folderWidthConstraint = folderBackgroundView.widthAnchor.constraint(equalToConstant: UX.maximumIconSize)
         let folderHeightConstraint = folderBackgroundView.heightAnchor.constraint(equalToConstant: UX.maximumIconSize)
+        let folderTopConstraint = folderBackgroundView.topAnchor.constraint(equalTo: contentView.topAnchor)
         self.folderWidthConstraint = folderWidthConstraint
         self.folderHeightConstraint = folderHeightConstraint
+        self.folderTopConstraint = folderTopConstraint
         
         NSLayoutConstraint.activate([
-            folderBackgroundView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            folderTopConstraint,
             folderBackgroundView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             folderWidthConstraint,
             folderHeightConstraint,
@@ -201,7 +222,7 @@ final class FavoriteFolderCollectionViewCell: UICollectionViewCell {
     // MARK: - Layout
     
     private func updateFolderSize() {
-        let iconSize = min(bounds.width, UX.maximumIconSize)
+        let iconSize = currentIconSize()
         if abs((folderWidthConstraint?.constant ?? 0) - iconSize) > 0.5 {
             folderWidthConstraint?.constant = iconSize
         }
@@ -209,5 +230,31 @@ final class FavoriteFolderCollectionViewCell: UICollectionViewCell {
             folderHeightConstraint?.constant = iconSize
         }
         folderBackgroundView.layer.cornerRadius = iconSize / UX.maximumIconSize * UX.iconCornerRadius
+    }
+    
+    private func applyReorderState(animated: Bool) {
+        let outset = reorderState == .lifted ? UX.reorderLiftedOutset : 0
+        folderTopConstraint?.constant = -outset
+        updateFolderSize()
+        
+        let animations = {
+            self.contentView.layoutIfNeeded()
+        }
+        
+        if animated {
+            UIView.animate(
+                withDuration: UX.reorderLiftAnimationDuration,
+                delay: 0,
+                options: [.curveEaseOut, .beginFromCurrentState],
+                animations: animations
+            )
+        } else {
+            animations()
+        }
+    }
+    
+    private func currentIconSize() -> CGFloat {
+        let iconSize = min(bounds.width, UX.maximumIconSize)
+        return reorderState == .lifted ? iconSize + (UX.reorderLiftedOutset * 2) : iconSize
     }
 }

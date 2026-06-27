@@ -17,9 +17,20 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
         static let shadowRadius: CGFloat = 5
         static let shadowOffsetWidth: CGFloat = 0
         static let shadowOffsetHeight: CGFloat = 2
+        static let reorderLiftedOutset: CGFloat = 4
+        static let reorderLiftAnimationDuration: TimeInterval = 0.18
+    }
+    
+    enum ReorderState {
+        case resting
+        case lifted
     }
     
     static let reuseIdentifier = "FavoriteSiteCollectionViewCell"
+    
+    var contextMenuAnchorView: UIView {
+        return iconBackgroundView
+    }
     
     private static let titleFont = UIFontMetrics(forTextStyle: .caption1).scaledFont(
         for: .systemFont(ofSize: UX.titleFontSize, weight: .semibold)
@@ -65,6 +76,8 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
     
     private var shadowWidthConstraint: NSLayoutConstraint?
     private var shadowHeightConstraint: NSLayoutConstraint?
+    private var shadowTopConstraint: NSLayoutConstraint?
+    private(set) var reorderState: ReorderState = .resting
     
     // MARK: - Lifecycle
     
@@ -81,6 +94,7 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
         super.prepareForReuse()
         titleLabel.text = nil
         iconView.reset()
+        setReorderState(.resting, animated: false)
     }
     
     override func layoutSubviews() {
@@ -92,6 +106,11 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
     func configure(favorite: BookmarkSnapshot) {
         titleLabel.text = favorite.title
         iconView.configure(bookmark: favorite)
+    }
+    
+    func setReorderState(_ state: ReorderState, animated: Bool) {
+        reorderState = state
+        applyReorderState(animated: animated)
     }
     
     // MARK: - Configuration
@@ -118,11 +137,13 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
     private func configureConstraints() {
         let shadowWidthConstraint = shadowView.widthAnchor.constraint(equalToConstant: UX.maximumIconSize)
         let shadowHeightConstraint = shadowView.heightAnchor.constraint(equalToConstant: UX.maximumIconSize)
+        let shadowTopConstraint = shadowView.topAnchor.constraint(equalTo: contentView.topAnchor)
         self.shadowWidthConstraint = shadowWidthConstraint
         self.shadowHeightConstraint = shadowHeightConstraint
+        self.shadowTopConstraint = shadowTopConstraint
         
         NSLayoutConstraint.activate([
-            shadowView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            shadowTopConstraint,
             shadowView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             shadowWidthConstraint,
             shadowHeightConstraint,
@@ -147,7 +168,7 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
     // MARK: - Layout
     
     private func updateIconSize() {
-        let iconSize = min(bounds.width, UX.maximumIconSize)
+        let iconSize = currentIconSize()
         if abs((shadowWidthConstraint?.constant ?? 0) - iconSize) > 0.5 {
             shadowWidthConstraint?.constant = iconSize
         }
@@ -158,7 +179,7 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
     }
     
     private func updateShadowColor() {
-        let iconSize = min(bounds.width, UX.maximumIconSize)
+        let iconSize = currentIconSize()
         shadowView.layer.shadowColor = traitCollection.userInterfaceStyle == .dark
         ? UIColor.white.cgColor
         : UIColor.black.cgColor
@@ -166,6 +187,33 @@ final class FavoriteSiteCollectionViewCell: UICollectionViewCell {
             roundedRect: CGRect(origin: .zero, size: CGSize(width: iconSize, height: iconSize)),
             cornerRadius: cornerRadius(for: iconSize)
         ).cgPath
+    }
+    
+    private func applyReorderState(animated: Bool) {
+        let outset = reorderState == .lifted ? UX.reorderLiftedOutset : 0
+        shadowTopConstraint?.constant = -outset
+        updateIconSize()
+        updateShadowColor()
+        
+        let animations = {
+            self.contentView.layoutIfNeeded()
+        }
+        
+        if animated {
+            UIView.animate(
+                withDuration: UX.reorderLiftAnimationDuration,
+                delay: 0,
+                options: [.curveEaseOut, .beginFromCurrentState],
+                animations: animations
+            )
+        } else {
+            animations()
+        }
+    }
+    
+    private func currentIconSize() -> CGFloat {
+        let iconSize = min(bounds.width, UX.maximumIconSize)
+        return reorderState == .lifted ? iconSize + (UX.reorderLiftedOutset * 2) : iconSize
     }
     
     private func cornerRadius(for iconSize: CGFloat) -> CGFloat {

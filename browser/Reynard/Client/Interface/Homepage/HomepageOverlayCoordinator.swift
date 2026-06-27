@@ -325,6 +325,8 @@ extension HomepageOverlayCoordinator: AddressBarSearchDelegate {
 extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
     func homepageViewController(_ controller: HomepageViewController, didSelectURL url: URL) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
+        delegate?.homepageChrome.setAddressBarEditingState(.inactive)
+        delegate?.updateHomepageLayout(animated: true, duration: UX.layoutAnimationDuration)
         delegate?.browseURLFromHomepage(url)
         delegate?.endHomepageEditing()
         presentationIntent = .inactive
@@ -333,6 +335,8 @@ extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
     
     func homepageViewController(_ controller: HomepageViewController, didSelectRecentlyClosedTab id: UUID) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
+        delegate?.homepageChrome.setAddressBarEditingState(.inactive)
+        delegate?.updateHomepageLayout(animated: true, duration: UX.layoutAnimationDuration)
         guard delegate?.restoreClosedTabFromHomepage(id: id) == true else {
             return
         }
@@ -344,6 +348,8 @@ extension HomepageOverlayCoordinator: HomepageViewControllerDelegate {
     
     func homepageViewControllerDidSelectSettings(_ controller: HomepageViewController) {
         overlayCoordinator.clearAddressBarScrollDismissal(for: .homepage)
+        delegate?.homepageChrome.setAddressBarEditingState(.inactive)
+        delegate?.updateHomepageLayout(animated: true, duration: UX.layoutAnimationDuration)
         delegate?.openSettingsFromHomepage()
         delegate?.endHomepageEditing()
     }

@@ -311,18 +311,20 @@ final class BrowserViewController: UIViewController {
     }
     
     func dismissAddressBarEditingAndOverlays() {
-        browserChrome.resetAddressBarEditing()
         homepageOverlayCoordinator.resetPresentationSession()
         searchOverlayCoordinator.resetPresentationSession()
+        browserChrome.resetAddressBarEditing()
         overlayCoordinator.discardAll(animated: false)
+        applyBrowserLayout(animated: false)
     }
     
     func dismissAddressBarEditingAndChromeOverlay() {
-        browserChrome.resetAddressBarEditing()
         homepageOverlayCoordinator.resetPresentationSession()
         searchOverlayCoordinator.resetPresentationSession()
+        browserChrome.resetAddressBarEditing()
         overlayCoordinator.dismiss(.homepage, on: .detached, animated: false)
         overlayCoordinator.dismiss(.search, on: .detached, animated: false)
+        applyBrowserLayout(animated: false)
     }
     
     func updateBrowserLayoutIfNeeded(

@@ -422,7 +422,10 @@ final class TabManagerImplementation: NSObject, TabManager {
         let index = regularTabs.count
         regularTabs.append(tab)
         delegate?.tabManagerDidChangeTabs(self)
-        selectTab(at: index, mode: .regular)
+        selectedTabMode = .regular
+        delegate?.tabManager(self, animateNewTabSelectionAt: index) { [weak self] in
+            self?.selectTab(at: index, mode: .regular)
+        }
         return true
     }
     

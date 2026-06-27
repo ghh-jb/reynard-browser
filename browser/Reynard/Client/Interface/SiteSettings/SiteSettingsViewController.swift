@@ -197,7 +197,7 @@ final class SiteSettingsViewController: UITableViewController {
             handlePermissionSelection(at: indexPath)
         case .permissions:
             if indexPath.row == permissionRows.count {
-                resetSitePermissions()
+                confirmResetSitePermissions()
             } else {
                 handlePermissionSelection(at: indexPath)
             }
@@ -388,6 +388,15 @@ final class SiteSettingsViewController: UITableViewController {
     private func setAction(_ action: SitePermissionAction, for permission: SitePermission) {
         SitePermissionStore.shared.updateAction(action, for: permission, host: host, session: session)
         let key = SiteSettingsUtils.geckoKey(for: permission)
+        if action == .askToAllow, permission != .autoplay {
+            PermissionDelegate.removePermission(
+                uri: origin,
+                permissionKey: key,
+                privateMode: session.isPrivateMode
+            )
+            return
+        }
+        
         if permission == .autoplay {
             PermissionDelegate.setPermission(
                 uri: origin,

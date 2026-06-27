@@ -84,7 +84,6 @@ final class SitePermissionsViewController: SettingsTableViewController {
         .localDeviceAccess,
         .localNetworkAccess,
     ]
-    private var hasResetAllSitePermissions = false
     
     private var displayedSections: [Section] {
         var sections: [Section] = []
@@ -187,11 +186,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
             case .resetPermissions:
                 cell.textLabel?.text = "Reset Permissions for all Sites"
                 cell.textLabel?.textColor = .systemRed
-                if hasResetAllSitePermissions {
-                    cell.detailTextLabel?.text = "Successfully reset permissions for all sites."
-                } else {
-                    cell.detailTextLabel?.text = nil
-                }
+                cell.detailTextLabel?.text = nil
                 cell.detailTextLabel?.textColor = .secondaryLabel
                 cell.accessoryType = .none
                 return cell
@@ -233,7 +228,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
             }
             switch WebsiteActionRow.allCases[indexPath.row] {
             case .resetPermissions:
-                resetSitePermissions()
+                confirmResetSitePermissions()
             }
         }
     }
@@ -263,9 +258,16 @@ final class SitePermissionsViewController: SettingsTableViewController {
         return permissionOptions[safe: indexPath.row]
     }
     
-    private func resetSitePermissions() {
-        SiteSettingsUtils.resetStoredSitePermissions()
-        hasResetAllSitePermissions = true
-        tableView.reloadData()
+    private func confirmResetSitePermissions() {
+        AlertPresenter.show(
+            title: nil,
+            message: "This action will reset permissions for all sites. It cannot be undone.",
+            buttons: [
+                AlertPresenter.Button(title: "OK", style: .destructive) {
+                    SiteSettingsUtils.resetStoredSitePermissions()
+                },
+                AlertPresenter.Button(title: "Cancel"),
+            ]
+        )
     }
 }

@@ -92,7 +92,6 @@ final class SiteSettingsViewController: UITableViewController {
     private let session: GeckoSession
     private var loadState: LoadingState = .loading
     private var loadedGeckoPermissions: [ContentPermission] = []
-    private var didResetSitePermissions = false
     
     private var visibleSections: [Section] {
         var sections: [Section] = []
@@ -268,7 +267,7 @@ final class SiteSettingsViewController: UITableViewController {
         let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
         cell.textLabel?.text = "Reset Permissions for this Site"
         cell.textLabel?.textColor = .systemRed
-        cell.detailTextLabel?.text = didResetSitePermissions ? "Successfully reset permissions for this site." : nil
+        cell.detailTextLabel?.text = nil
         cell.detailTextLabel?.textColor = .secondaryLabel
         cell.accessoryView = nil
         cell.accessoryType = .none
@@ -408,7 +407,20 @@ final class SiteSettingsViewController: UITableViewController {
         )
     }
     
-    private func resetSitePermissions() {
+    private func confirmResetSitePermissions() {
+        AlertPresenter.show(
+            title: nil,
+            message: "This action will reset permissions for this site. It cannot be undone.",
+            buttons: [
+                AlertPresenter.Button(title: "OK", style: .destructive) { [weak self] in
+                    self?.performResetSitePermissions()
+                },
+                AlertPresenter.Button(title: "Cancel"),
+            ]
+        )
+    }
+    
+    private func performResetSitePermissions() {
         for permission in loadedGeckoPermissions {
             PermissionDelegate.removePermission(permission)
         }
@@ -424,7 +436,6 @@ final class SiteSettingsViewController: UITableViewController {
             SitePermissionStore.shared.removeAction(for: permission, host: host, session: session)
         }
         loadedGeckoPermissions = []
-        didResetSitePermissions = true
         tableView.reloadData()
     }
     

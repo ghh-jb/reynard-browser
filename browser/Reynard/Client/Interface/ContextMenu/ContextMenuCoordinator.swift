@@ -15,6 +15,7 @@ protocol ContextMenuCoordinatorHost: AnyObject {
     var contextMenuSelectedTabIsPrivate: Bool { get }
     var contextMenuSelectedSession: GeckoSession? { get }
     
+    func captureSourceTabThumbnail(completion: @escaping () -> Void)
     func contextMenuShareLink(_ url: URL)
     func contextMenuRestoreInteraction(for session: GeckoSession)
 }
@@ -71,33 +72,30 @@ final class ContextMenuCoordinator: NSObject {
         _ = interaction.perform(selector, with: NSValue(cgPoint: context.point))
     }
     
-    private func openLinkPreviewInNewTab() {
+    private func openLinkPreview(disposition: TabOpenDisposition) {
         guard let host,
-              let preview = linkPreview,
-              let session = preview.releaseSession() else {
+              linkPreview != nil else {
             return
         }
         
         isCommitting = true
-        host.contextMenuTabActions.openPreviewSession(
-            session,
-            url: preview.pageURL,
-            title: preview.pageTitle,
-            disposition: .newTab
-        )
-        linkPreview = nil
-    }
-    
-    private func openLinkPreviewInNewPrivateTab() {
-        guard let host,
-              let preview = linkPreview else {
-            return
+        host.captureSourceTabThumbnail { [weak self] in
+            guard let self,
+                  let host = self.host,
+                  let preview = self.linkPreview,
+                  let session = preview.releaseSession() else {
+                self?.isCommitting = false
+                return
+            }
+            
+            host.contextMenuTabActions.openPreviewSession(
+                session,
+                url: preview.pageURL,
+                title: preview.pageTitle,
+                disposition: disposition
+            )
+            self.linkPreview = nil
         }
-        
-        isCommitting = true
-        let previewURL = preview.pageURL
-        closePreview()
-        host.contextMenuTabActions.openURL(previewURL, disposition: .newPrivateTab)
     }
     
     private func makeTargetedPreview() -> UITargetedPreview? {
@@ -183,10 +181,10 @@ extension ContextMenuCoordinator: UIContextMenuInteractionDelegate {
                 self?.linkPreview = preview
             },
             openInNewTab: { [weak self] in
-                self?.openLinkPreviewInNewTab()
+                self?.openLinkPreview(disposition: .newTab)
             },
             openInNewPrivateTab: { [weak self] in
-                self?.openLinkPreviewInNewPrivateTab()
+                self?.openLinkPreview(disposition: .newPrivateTab)
             },
             shareLink: { [weak host] url in
                 host?.contextMenuShareLink(url)

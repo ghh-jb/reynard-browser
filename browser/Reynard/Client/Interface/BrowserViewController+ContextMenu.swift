@@ -29,6 +29,14 @@ extension BrowserViewController: ContextMenuCoordinatorHost {
         return tabManager.selectedTab?.session
     }
     
+    func captureSourceTabThumbnail(completion: @escaping () -> Void) {
+        let selectedIndex = tabManager.selectedTabIndex
+        let selectedMode = tabManager.selectedTabMode
+        captureThumbnail(forTabAt: selectedIndex, mode: selectedMode) { _ in
+            completion()
+        }
+    }
+    
     func contextMenuShareLink(_ url: URL) {
         presentShareSheet(url: url.absoluteString)
     }

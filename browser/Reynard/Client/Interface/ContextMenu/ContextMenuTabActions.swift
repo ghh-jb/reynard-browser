@@ -51,25 +51,4 @@ struct ContextMenuTabActions {
             )
         }
     }
-    
-    func openURL(_ url: String, disposition: TabOpenDisposition) {
-        switch disposition {
-        case .currentTab:
-            tabManager.browse(to: url)
-            
-        case .newTab:
-            openURL(url, inNewTabFor: tabManager.selectedTabMode, target: .afterSelected)
-            
-        case .newPrivateTab:
-            openURL(url, inNewTabFor: .private, target: tabManager.selectedTabMode == .private ? .afterSelected : .end)
-        }
-    }
-    
-    private func openURL(_ url: String, inNewTabFor mode: TabMode, target: TabInsertionTarget) {
-        let tabIndex = tabManager.createTab(selecting: true, target: target, mode: mode)
-        guard let tab = tabManager.activeTabs[safe: tabIndex] else {
-            return
-        }
-        tabManager.browse(to: url, in: tab)
-    }
 }

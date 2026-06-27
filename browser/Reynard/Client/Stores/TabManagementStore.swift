@@ -273,6 +273,35 @@ final class TabManagementStore {
     }
     
     @discardableResult
+    func removeRecentlyClosedTab(id: UUID) -> Bool {
+        let didRemove = stateQueue.sync {
+            guard self.executeLocked("BEGIN IMMEDIATE TRANSACTION;") else {
+                return false
+            }
+            
+            guard self.fetchRecentlyClosedTabLocked(id: id) != nil,
+                  self.deleteRecentlyClosedTabLocked(id: id) else {
+                _ = self.executeLocked("ROLLBACK TRANSACTION;")
+                return false
+            }
+            
+            guard self.executeLocked("COMMIT TRANSACTION;") else {
+                _ = self.executeLocked("ROLLBACK TRANSACTION;")
+                return false
+            }
+            
+            return true
+        }
+        
+        guard didRemove else {
+            return false
+        }
+        
+        NavigationHistoryStore.shared.removeNavigationHistory(for: id)
+        return true
+    }
+    
+    @discardableResult
     func clearRecentlyClosedTabs() -> Bool {
         let tabIDs = stateQueue.sync {
             guard self.executeLocked("BEGIN IMMEDIATE TRANSACTION;") else {

@@ -189,6 +189,37 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
         invalidateCollectionLayout()
     }
     
+    func tab(for cell: RecentlyClosedTabCollectionViewCell) -> TabManagementStore.RecentlyClosedTabSnapshot? {
+        guard let indexPath = collectionView.indexPath(for: cell),
+              closedTabs.indices.contains(indexPath.item) else {
+            return nil
+        }
+        
+        return closedTabs[indexPath.item]
+    }
+    
+    func removeRecentlyClosedTab(id: UUID) {
+        guard let index = closedTabs.firstIndex(where: { $0.id == id }),
+              tabStore.removeRecentlyClosedTab(id: id) else {
+            return
+        }
+        
+        closedTabs.remove(at: index)
+        collectionView.performBatchUpdates {
+            collectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
+            updateCollectionHeight()
+            view.layoutIfNeeded()
+        } completion: { [weak self] _ in
+            guard let self else {
+                return
+            }
+            
+            self.view.isHidden = self.closedTabs.isEmpty
+            self.clearAllButton.isHidden = self.closedTabs.isEmpty
+            self.invalidateCollectionLayout()
+        }
+    }
+    
     // MARK: - Layout
     
     private func invalidateCollectionLayout() {
@@ -249,6 +280,9 @@ extension RecentlyClosedTabsSectionViewController: UICollectionViewDataSource, U
             for: indexPath
         ) as! RecentlyClosedTabCollectionViewCell
         cell.configure(tab: closedTabs[indexPath.item])
+        if !cell.interactions.contains(where: { $0 is UIContextMenuInteraction }) {
+            cell.addInteraction(UIContextMenuInteraction(delegate: self))
+        }
         return cell
     }
     

@@ -46,7 +46,7 @@ extension BrowserViewController: TabManagerDelegate {
         contentView.setSession(selectedTab.session)
         addonCoordinator.handleTabSelectionChange(selectedIndex: index, previousIndex: previousIndex)
         
-        if !tabOverview.isPresented {
+        if !tabOverview.isPresented && !tabOverview.isTransitionRunning {
             tabOverview.setMode(TabOverview.Mode(tabMode: tabManager.selectedTabMode), animated: false)
             tabOverview.reloadTabs()
         }

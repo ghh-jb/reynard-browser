@@ -50,6 +50,7 @@ final class TabSessionState {
     var selectionOrder = 0
     var suppressInitialNavigation = true
     var isSuppressingInitialBlankPageLoad = false
+    var showsStartupHomepage = false
     var sessionNavigationAvailability = SessionNavigationAvailability.unavailable
     var navigationState = NavigationAvailability(canGoBack: false, canGoForward: false)
     var loadingState = TabLoadingState.idle

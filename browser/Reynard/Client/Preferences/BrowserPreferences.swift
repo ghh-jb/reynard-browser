@@ -64,6 +64,7 @@ final class BrowserPreferences {
             key("NewTabSettings", "customNewTabURL"): "",
             
             // Homepage
+            key("HomepageSettings", "openingScreen"): HomepageOpeningScreen.homepage.rawValue,
             key("HomepageSettings", "showsFavorites"): true,
             key("HomepageSettings", "showsFavoritesInPrivateBrowsing"): false,
             key("HomepageSettings", "favoriteRowCount"): 2,
@@ -346,6 +347,16 @@ final class BrowserPreferences {
     
     // MARK: - Homepage
     struct HomepageSettings {
+        static var openingScreen: HomepageOpeningScreen {
+            get {
+                let rawValue = prefs.string(forSetting: "HomepageSettings", key: "openingScreen") ?? HomepageOpeningScreen.homepage.rawValue
+                return HomepageOpeningScreen(rawValue: rawValue) ?? .homepage
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "HomepageSettings", key: "openingScreen")
+            }
+        }
+        
         static var showsFavorites: Bool {
             get {
                 return prefs.bool(forSetting: "HomepageSettings", key: "showsFavorites")

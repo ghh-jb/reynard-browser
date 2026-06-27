@@ -139,6 +139,7 @@ final class TabManagerImplementation: NSObject, TabManager {
     // MARK: - Navigation State
     
     private func loadURL(_ url: String, in tab: Tab) {
+        tab.state.showsStartupHomepage = false
         tab.state.loadingState = .loading(progress: 0)
         if let location = tabLocation(for: tab.id) {
             notifyUpdate(at: location.index, mode: location.mode, reason: .loading)
@@ -440,12 +441,29 @@ final class TabManagerImplementation: NSObject, TabManager {
         store.saveRecentlyClosedTab(id: tab.id, title: tab.title, url: url)
     }
     
-    func createInitialTab() {
-        if restoreTabsIfNeeded() {
+    func createInitialTab(openingScreen: HomepageOpeningScreen) {
+        switch openingScreen {
+        case .lastTab:
+            if !restoreTabsIfNeeded() {
+                addTab(selecting: true, windowId: nil, at: nil, isPrivate: false)
+            }
+        case .homepage:
+            createHomepageInitialTab()
+        }
+    }
+    
+    private func createHomepageInitialTab() {
+        let didRestoreTabs = restoreTabsIfNeeded()
+        
+        if didRestoreTabs,
+           let selectedTab,
+           displayedURL(for: selectedTab) == nil {
+            selectedTab.state.showsStartupHomepage = true
             return
         }
         
-        addTab(selecting: true, windowId: nil, at: nil, isPrivate: false)
+        let index = addTab(selecting: true, windowId: nil, at: nil, isPrivate: false)
+        regularTabs[index].state.showsStartupHomepage = true
     }
     
     @discardableResult

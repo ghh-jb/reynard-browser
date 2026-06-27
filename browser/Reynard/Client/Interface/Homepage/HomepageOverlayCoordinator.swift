@@ -77,7 +77,9 @@ final class HomepageOverlayCoordinator {
     }
     
     func tabOverviewWillPresent() {
-        if showsHomepageForBlankTabs && isSelectedTabBlankPage {
+        if let tab = delegate?.homepageSelectedTab,
+           (showsHomepageForBlankTabs || tab.state.showsStartupHomepage),
+           isBlankTab(tab) {
             return
         }
         
@@ -92,7 +94,7 @@ final class HomepageOverlayCoordinator {
     // MARK: - Thumbnails
     
     func needsHomepageThumbnail(for tab: Tab) -> Bool {
-        return showsHomepageForBlankTabs && isBlankTab(tab)
+        return (showsHomepageForBlankTabs || tab.state.showsStartupHomepage) && isBlankTab(tab)
     }
     
     func prepareHomepageForNewTab(mode: TabMode) {
@@ -171,7 +173,9 @@ final class HomepageOverlayCoordinator {
             return nil
         }
         
-        if showsHomepageForBlankTabs && isSelectedTabBlankPage {
+        if let tab = delegate.homepageSelectedTab,
+           (showsHomepageForBlankTabs || tab.state.showsStartupHomepage),
+           isBlankTab(tab) {
             return HomepagePresentation(
                 host: .embedded,
                 contentMode: embeddedContentMode(layout: delegate.homepageLayout)

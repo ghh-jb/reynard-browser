@@ -8,6 +8,31 @@
 import UIKit
 
 final class HomepageSectionPreferencesViewController: SettingsTableViewController {
+    enum OverviewRow: CaseIterable {
+        case favorites
+        case frequentlyVisited
+        case recentlyClosedTabs
+        
+        var title: String {
+            return preference.title
+        }
+        
+        var isEnabled: Bool {
+            return preference.isEnabled
+        }
+        
+        var preference: Preference {
+            switch self {
+            case .favorites:
+                return .favorites
+            case .frequentlyVisited:
+                return .frequentlyVisited
+            case .recentlyClosedTabs:
+                return .recentlyClosedTabs
+            }
+        }
+    }
+    
     enum Preference: CaseIterable {
         case favorites
         case frequentlyVisited

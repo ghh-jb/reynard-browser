@@ -21,7 +21,7 @@ protocol TabManager: AnyObject {
     var selectedTabIndex: Int { get }
     var selectedTab: Tab? { get }
     
-    func createInitialTab()
+    func createInitialTab(openingScreen: HomepageOpeningScreen)
     @discardableResult
     func addTab(selecting: Bool, windowId: String?, at index: Int?, isPrivate: Bool) -> Int
     @discardableResult

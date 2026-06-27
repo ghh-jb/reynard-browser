@@ -129,7 +129,7 @@ final class BrowserViewController: UIViewController {
         browserChrome.syncSidebarButton(splitViewController: splitViewController)
         applyUpdateMenuButtonBadge()
         
-        tabManager.createInitialTab()
+        tabManager.createInitialTab(openingScreen: Prefs.HomepageSettings.openingScreen)
         refreshAddressBar()
         homepageOverlayCoordinator.updatePresentation(animated: false)
         

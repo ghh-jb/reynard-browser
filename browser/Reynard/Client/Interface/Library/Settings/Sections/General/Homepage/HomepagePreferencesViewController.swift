@@ -9,40 +9,21 @@ import UIKit
 
 final class HomepagePreferencesViewController: SettingsTableViewController {
     private enum Section: CaseIterable {
+        case openingScreen
         case includeOnHomepage
         
         var text: SettingsSectionText {
             switch self {
+            case .openingScreen:
+                return SettingsSectionText(
+                    headerTitle: "Opening Screen",
+                    footerTitle: "Choose what to see when you open Reynard."
+                )
             case .includeOnHomepage:
                 return SettingsSectionText(
                     headerTitle: "Show on Homepage",
                     footerTitle: "Choose what to show on the homepage."
                 )
-            }
-        }
-    }
-    
-    private enum Row: CaseIterable {
-        case favorites
-        case frequentlyVisited
-        case recentlyClosedTabs
-        
-        var title: String {
-            return preference.title
-        }
-        
-        var isEnabled: Bool {
-            return preference.isEnabled
-        }
-        
-        var preference: HomepageSectionPreferencesViewController.Preference {
-            switch self {
-            case .favorites:
-                return .favorites
-            case .frequentlyVisited:
-                return .frequentlyVisited
-            case .recentlyClosedTabs:
-                return .recentlyClosedTabs
             }
         }
     }
@@ -70,7 +51,12 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
             return 0
         }
         
-        return Row.allCases.count
+        switch Section.allCases[section] {
+        case .openingScreen:
+            return HomepageOpeningScreen.allCases.count
+        case .includeOnHomepage:
+            return HomepageSectionPreferencesViewController.OverviewRow.allCases.count
+        }
     }
     
     override func sectionText(for section: Int) -> SettingsSectionText {
@@ -82,29 +68,58 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard Section.allCases.indices.contains(indexPath.section),
-              Row.allCases.indices.contains(indexPath.row) else {
+        guard Section.allCases.indices.contains(indexPath.section) else {
             return UITableViewCell()
         }
         
-        let row = Row.allCases[indexPath.row]
-        let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
-        cell.textLabel?.text = row.title
-        cell.detailTextLabel?.text = row.isEnabled ? "On" : "Off"
-        cell.accessoryType = .disclosureIndicator
-        return cell
+        switch Section.allCases[indexPath.section] {
+        case .openingScreen:
+            guard HomepageOpeningScreen.allCases.indices.contains(indexPath.row) else {
+                return UITableViewCell()
+            }
+            
+            let openingScreen = HomepageOpeningScreen.allCases[indexPath.row]
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = openingScreen.title
+            cell.accessoryType = Prefs.HomepageSettings.openingScreen == openingScreen ? .checkmark : .none
+            return cell
+        case .includeOnHomepage:
+            guard HomepageSectionPreferencesViewController.OverviewRow.allCases.indices.contains(indexPath.row) else {
+                return UITableViewCell()
+            }
+            
+            let row = HomepageSectionPreferencesViewController.OverviewRow.allCases[indexPath.row]
+            let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
+            cell.textLabel?.text = row.title
+            cell.detailTextLabel?.text = row.isEnabled ? "On" : "Off"
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        }
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         defer { tableView.deselectRow(at: indexPath, animated: true) }
-        guard Section.allCases.indices.contains(indexPath.section),
-              Row.allCases.indices.contains(indexPath.row) else {
+        guard Section.allCases.indices.contains(indexPath.section) else {
             return
         }
         
-        let viewController = HomepageSectionPreferencesViewController(
-            preference: Row.allCases[indexPath.row].preference
-        )
-        navigationController?.pushViewController(viewController, animated: true)
+        switch Section.allCases[indexPath.section] {
+        case .openingScreen:
+            guard HomepageOpeningScreen.allCases.indices.contains(indexPath.row) else {
+                return
+            }
+            
+            Prefs.HomepageSettings.openingScreen = HomepageOpeningScreen.allCases[indexPath.row]
+            tableView.reloadSections(IndexSet(integer: indexPath.section), with: .none)
+        case .includeOnHomepage:
+            guard HomepageSectionPreferencesViewController.OverviewRow.allCases.indices.contains(indexPath.row) else {
+                return
+            }
+            
+            let viewController = HomepageSectionPreferencesViewController(
+                preference: HomepageSectionPreferencesViewController.OverviewRow.allCases[indexPath.row].preference
+            )
+            navigationController?.pushViewController(viewController, animated: true)
+        }
     }
 }

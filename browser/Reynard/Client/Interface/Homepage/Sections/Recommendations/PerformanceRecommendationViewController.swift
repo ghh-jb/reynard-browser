@@ -61,20 +61,15 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
         case installTrollStore
         
         var title: String {
-            switch self {
-            case .enableInAppJIT:
-                return "Performance Recommendation"
-            case .installTrollStore:
-                return "Get Better Performance"
-            }
+            return "Performance Recommendation"
         }
         
         var message: String {
             switch self {
             case .enableInAppJIT:
-                return "Enable JIT to improve website performance and compatibility."
+                return "Enable JIT to improve performance and ensure websites work properly."
             case .installTrollStore:
-                return "Your device supports TrollStore. Install the TrollStore version of Reynard to enable JIT automatically for improved website performance and compatibility."
+                return "Install the TrollStore version of Reynard to enable JIT automatically for improved performance and to ensure websites work properly."
             }
         }
         
@@ -157,7 +152,7 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
     private let messageLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .body)
-        label.text = "Enable JIT to improve website performance and compatibility."
+        label.text = "Enable JIT to improve performance and ensure websites work properly."
         label.textAlignment = .left
         label.textColor = .secondaryLabel
         label.numberOfLines = 0

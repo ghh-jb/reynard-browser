@@ -276,7 +276,7 @@ final class JITSettingsSection: NSObject {
         detailLabel.font = UIFont.preferredFont(forTextStyle: .footnote)
         detailLabel.adjustsFontForContentSizeCategory = true
         detailLabel.textColor = .secondaryLabel
-        detailLabel.text = "Enabling JIT improves performance significantly and is required for many websites to work properly."
+        detailLabel.text = "Enable JIT to improve performance and ensure websites work properly."
         return detailLabel
     }
     
@@ -289,7 +289,7 @@ final class JITSettingsSection: NSObject {
         warningLabel.text = "JIT is not supported on the OS version you are using."
         if #available(iOS 17.0, *) {
             if #unavailable(iOS 17.0.1) {
-                warningLabel.text = "JIT is not supported on this build. Please sideload the latest TrollStore build (.tipa) for JIT support."
+                warningLabel.text = "Install the TrollStore version of Reynard to enable JIT automatically for improved performance and to ensure websites work properly."
             }
         }
         return warningLabel

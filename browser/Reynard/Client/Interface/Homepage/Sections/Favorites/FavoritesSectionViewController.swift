@@ -443,6 +443,8 @@ final class FavoritesSectionViewController: UIViewController {
                     return
                 }
                 
+                Haptics.prepareRigid()
+                Haptics.rigid()
                 self.presentFavoriteContextMenu(for: cell)
             }
             reorderState = .pending(cell: cell, indexPath: indexPath, startLocation: pressLocation, workItem: workItem)

@@ -46,15 +46,6 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
             }
         }
         
-        var countSectionTitle: String {
-            switch self {
-            case .favorites:
-                return "Set Rows"
-            case .frequentlyVisited, .recentlyClosedTabs:
-                return "Set Items"
-            }
-        }
-        
         var countValues: [Int] {
             switch self {
             case .favorites:
@@ -135,6 +126,7 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
     
     private enum Section: CaseIterable {
         case main
+        case count
     }
     
     private enum Row: CaseIterable {
@@ -147,12 +139,17 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
     private let sectionSwitch = UISwitch()
     private let privateBrowsingSwitch = UISwitch()
     
-    private var displayedRows: [Row] {
-        switch preference {
-        case .recentlyClosedTabs:
-            return [.showSection, .count]
-        default:
-            return Row.allCases
+    private func displayedRows(in section: Section) -> [Row] {
+        switch section {
+        case .main:
+            switch preference {
+            case .recentlyClosedTabs:
+                return [.showSection]
+            default:
+                return [.showSection, .showInPrivateBrowsing]
+            }
+        case .count:
+            return [.count]
         }
     }
     
@@ -187,16 +184,20 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
             return 0
         }
         
-        return displayedRows.count
+        return displayedRows(in: Section.allCases[section]).count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard Section.allCases.indices.contains(indexPath.section),
-              displayedRows.indices.contains(indexPath.row) else {
+        guard Section.allCases.indices.contains(indexPath.section) else {
             return UITableViewCell()
         }
         
-        switch displayedRows[indexPath.row] {
+        let rows = displayedRows(in: Section.allCases[indexPath.section])
+        guard rows.indices.contains(indexPath.row) else {
+            return UITableViewCell()
+        }
+        
+        switch rows[indexPath.row] {
         case .showSection:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
             cell.textLabel?.text = preference.switchTitle
@@ -220,15 +221,18 @@ final class HomepageSectionPreferencesViewController: SettingsTableViewControlle
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         defer { tableView.deselectRow(at: indexPath, animated: true) }
-        guard Section.allCases.indices.contains(indexPath.section),
-              displayedRows.indices.contains(indexPath.row),
-              displayedRows[indexPath.row] == .count else {
+        guard Section.allCases.indices.contains(indexPath.section) else {
+            return
+        }
+        
+        let rows = displayedRows(in: Section.allCases[indexPath.section])
+        guard rows.indices.contains(indexPath.row),
+              rows[indexPath.row] == .count else {
             return
         }
         
         let viewController = HomepageSectionItemCountPreferencesViewController(
             title: preference.countTitle,
-            sectionTitle: preference.countSectionTitle,
             values: preference.countValues,
             selectedValue: preference.selectedCount
         ) { [preference] value in

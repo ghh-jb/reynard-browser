@@ -12,19 +12,16 @@ final class HomepageSectionItemCountPreferencesViewController: SettingsTableView
         case values
     }
     
-    private let sectionTitle: String
     private let values: [Int]
     private let selectValue: (Int) -> Void
     private var selectedValue: Int
     
     init(
         title: String,
-        sectionTitle: String,
         values: [Int],
         selectedValue: Int,
         selectValue: @escaping (Int) -> Void
     ) {
-        self.sectionTitle = sectionTitle
         self.values = values
         self.selectedValue = selectedValue
         self.selectValue = selectValue
@@ -46,14 +43,6 @@ final class HomepageSectionItemCountPreferencesViewController: SettingsTableView
         }
         
         return values.count
-    }
-    
-    override func sectionText(for section: Int) -> SettingsSectionText {
-        guard Section.allCases.indices.contains(section) else {
-            return SettingsSectionText()
-        }
-        
-        return SettingsSectionText(headerTitle: sectionTitle)
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {

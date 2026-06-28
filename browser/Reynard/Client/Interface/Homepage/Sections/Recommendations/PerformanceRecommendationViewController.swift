@@ -30,25 +30,9 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
     }
     
     private enum PerformanceRecommendationLink {
-        static let enableInAppJITGuide = URL(string: "https://github.com/minh-ton/reynard-browser#why-enable-jit")!
+        static let enableInAppJITGuide = URL(string: "https://github.com/minh-ton/reynard-browser/wiki/Manually-Enabling-JIT")!
         static let installTrollStoreGuide = URL(string: "https://ios.cfw.guide/installing-trollstore/")!
-        static let downloadTrollStoreBuild = {
-            guard let updateFeedData = BrowserUpdates.shared.sourceData,
-                  let updateFeed = try? JSONSerialization.jsonObject(with: updateFeedData) as? [String: Any],
-                  let appEntries = updateFeed["apps"] as? [[String: Any]],
-                  let appEntry = appEntries.first,
-                  let versions = appEntry["versions"] as? [[String: Any]],
-                  let latestEntry = versions.first,
-                  let packageURLString = latestEntry["downloadURL"] as? String,
-                  let packageURL = URL(string: packageURLString) else {
-                return URL(string: "https://github.com/minh-ton/reynard-browser/releases/latest")!
-            }
-            
-            return URL(string: packageURLString.replacingOccurrences(
-                of: "Reynard.ipa",
-                with: "Reynard-TrollStore.tipa"
-            ))!
-        }
+        static let downloadTrollStoreBuild = URL(string: "https://github.com/minh-ton/reynard-browser/releases/latest")!
     }
     
     private enum PerformanceRecommendationAction {
@@ -105,7 +89,7 @@ final class PerformanceRecommendationViewController: UIViewController, HomepageR
             case .enableInAppJIT:
                 return .settings
             case .installTrollStore:
-                return .openURL(PerformanceRecommendationLink.downloadTrollStoreBuild())
+                return .openURL(PerformanceRecommendationLink.downloadTrollStoreBuild)
             }
         }
     }

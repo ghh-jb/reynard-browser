@@ -22,6 +22,7 @@ protocol AddressBarGestureDelegate: AnyObject {
     func createTabForSwipe() -> Int
     func setPendingTabExpansion(at index: Int?)
     func presentTabOverviewFromGesture(animated: Bool)
+    func addressBarGestureWillBegin()
 }
 
 final class AddressBarGestures: NSObject {
@@ -418,6 +419,7 @@ final class AddressBarGestures: NSObject {
         case .began:
             searchPanMode = .undecided
             resetHorizontalTransition()
+            delegate.addressBarGestureWillBegin()
             Haptics.prepareRigid()
             
         case .changed:
@@ -465,6 +467,7 @@ final class AddressBarGestures: NSObject {
             return
         }
         
+        delegate.addressBarGestureWillBegin()
         delegate.presentTabOverviewFromGesture(animated: true)
     }
 }

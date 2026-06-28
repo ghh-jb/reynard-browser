@@ -14,7 +14,7 @@ enum SiteWebsiteMode: String {
 }
 
 struct SiteSettingsRecord {
-    let url: URL
+    let host: String
     let pageZoom: Int?
     let websiteMode: SiteWebsiteMode?
     let readerMode: Bool?
@@ -88,12 +88,12 @@ final class SiteSettingsStore {
     // MARK: - Settings
     
     func settings(for url: URL) -> SiteSettingsRecord? {
-        guard let normalizedURL = normalizedURLString(for: url) else {
+        guard let host = URLUtils.normalizedHost(url.host) else {
             return nil
         }
         
         return stateQueue.sync {
-            settingsLocked(for: normalizedURL)
+            settingsLocked(for: host)
         }
     }
     
@@ -123,80 +123,80 @@ final class SiteSettingsStore {
     
     func setPageZoom(_ value: Int, for url: URL) -> Bool {
         guard Constants.pageZoomRange.contains(value),
-              let normalizedURL = normalizedURLString(for: url) else {
+              let host = URLUtils.normalizedHost(url.host) else {
             return false
         }
         
         return stateQueue.sync {
             if value == Constants.defaultPageZoom {
-                return clearSettingLocked(.pageZoom, for: normalizedURL)
+                return clearSettingLocked(.pageZoom, for: host)
             }
             
-            return setIntSettingLocked(value, column: .pageZoom, for: normalizedURL)
+            return setIntSettingLocked(value, column: .pageZoom, for: host)
         }
     }
     
     func setWebsiteMode(_ mode: SiteWebsiteMode, for url: URL) -> Bool {
-        guard let normalizedURL = normalizedURLString(for: url) else {
+        guard let host = URLUtils.normalizedHost(url.host) else {
             return false
         }
         
         return stateQueue.sync {
-            setTextSettingLocked(mode.rawValue, column: .websiteMode, for: normalizedURL)
+            setTextSettingLocked(mode.rawValue, column: .websiteMode, for: host)
         }
     }
     
     func setReaderMode(_ enabled: Bool, for url: URL) -> Bool {
-        guard let normalizedURL = normalizedURLString(for: url) else {
+        guard let host = URLUtils.normalizedHost(url.host) else {
             return false
         }
         
         return stateQueue.sync {
             if !enabled {
-                return clearSettingLocked(.readerMode, for: normalizedURL)
+                return clearSettingLocked(.readerMode, for: host)
             }
             
-            return setIntSettingLocked(1, column: .readerMode, for: normalizedURL)
+            return setIntSettingLocked(1, column: .readerMode, for: host)
         }
     }
     
     func clearPageZoom(for url: URL) -> Bool {
-        guard let normalizedURL = normalizedURLString(for: url) else {
+        guard let host = URLUtils.normalizedHost(url.host) else {
             return false
         }
         
         return stateQueue.sync {
-            clearSettingLocked(.pageZoom, for: normalizedURL)
+            clearSettingLocked(.pageZoom, for: host)
         }
     }
     
     func clearWebsiteMode(for url: URL) -> Bool {
-        guard let normalizedURL = normalizedURLString(for: url) else {
+        guard let host = URLUtils.normalizedHost(url.host) else {
             return false
         }
         
         return stateQueue.sync {
-            clearSettingLocked(.websiteMode, for: normalizedURL)
+            clearSettingLocked(.websiteMode, for: host)
         }
     }
     
     func clearReaderMode(for url: URL) -> Bool {
-        guard let normalizedURL = normalizedURLString(for: url) else {
+        guard let host = URLUtils.normalizedHost(url.host) else {
             return false
         }
         
         return stateQueue.sync {
-            clearSettingLocked(.readerMode, for: normalizedURL)
+            clearSettingLocked(.readerMode, for: host)
         }
     }
     
     func clearSettings(for url: URL) -> Bool {
-        guard let normalizedURL = normalizedURLString(for: url) else {
+        guard let host = URLUtils.normalizedHost(url.host) else {
             return false
         }
         
         return stateQueue.sync {
-            deleteSettingsLocked(for: normalizedURL)
+            deleteSettingsLocked(for: host)
         }
     }
     
@@ -245,7 +245,7 @@ final class SiteSettingsStore {
     private func createSchemaLocked() {
         let sql = """
         CREATE TABLE IF NOT EXISTS site_settings (
-            url TEXT PRIMARY KEY,
+            host TEXT PRIMARY KEY,
             page_zoom INTEGER NULL CHECK(page_zoom IS NULL OR page_zoom BETWEEN 50 AND 300),
             website_mode TEXT NULL CHECK(website_mode IS NULL OR website_mode IN ('desktop', 'mobile')),
             reader_mode INTEGER NULL CHECK(reader_mode IS NULL OR reader_mode IN (0, 1)),
@@ -264,12 +264,12 @@ final class SiteSettingsStore {
     
     // MARK: - Records
     
-    private func settingsLocked(for url: String) -> SiteSettingsRecord? {
+    private func settingsLocked(for host: String) -> SiteSettingsRecord? {
         guard let statement = prepareStatementLocked(
             """
-            SELECT url, page_zoom, website_mode, reader_mode, created_at, updated_at
+            SELECT host, page_zoom, website_mode, reader_mode, created_at, updated_at
             FROM site_settings
-            WHERE url = ?
+            WHERE host = ?
             LIMIT 1;
             """
         ) else {
@@ -280,7 +280,7 @@ final class SiteSettingsStore {
             sqlite3_finalize(statement)
         }
         
-        bind(url, to: statement, at: 1)
+        bind(host, to: statement, at: 1)
         
         guard sqlite3_step(statement) == SQLITE_ROW else {
             return nil
@@ -293,14 +293,14 @@ final class SiteSettingsStore {
         let sql: String
         if let condition {
             sql = """
-            SELECT url, page_zoom, website_mode, reader_mode, created_at, updated_at
+            SELECT host, page_zoom, website_mode, reader_mode, created_at, updated_at
             FROM site_settings
             WHERE \(condition)
             ORDER BY updated_at DESC;
             """
         } else {
             sql = """
-            SELECT url, page_zoom, website_mode, reader_mode, created_at, updated_at
+            SELECT host, page_zoom, website_mode, reader_mode, created_at, updated_at
             FROM site_settings
             ORDER BY updated_at DESC;
             """
@@ -325,13 +325,13 @@ final class SiteSettingsStore {
         return records
     }
     
-    private func setIntSettingLocked(_ value: Int, column: SettingColumn, for url: String) -> Bool {
+    private func setIntSettingLocked(_ value: Int, column: SettingColumn, for host: String) -> Bool {
         let timestamp = Date().timeIntervalSince1970
         guard let statement = prepareStatementLocked(
             """
-            INSERT INTO site_settings (url, \(column.rawValue), created_at, updated_at)
+            INSERT INTO site_settings (host, \(column.rawValue), created_at, updated_at)
             VALUES (?, ?, ?, ?)
-            ON CONFLICT(url) DO UPDATE SET
+            ON CONFLICT(host) DO UPDATE SET
                 \(column.rawValue) = excluded.\(column.rawValue),
                 updated_at = excluded.updated_at;
             """
@@ -343,20 +343,20 @@ final class SiteSettingsStore {
             sqlite3_finalize(statement)
         }
         
-        bind(url, to: statement, at: 1)
+        bind(host, to: statement, at: 1)
         sqlite3_bind_int(statement, 2, Int32(value))
         sqlite3_bind_double(statement, 3, timestamp)
         sqlite3_bind_double(statement, 4, timestamp)
         return sqlite3_step(statement) == SQLITE_DONE
     }
     
-    private func setTextSettingLocked(_ value: String, column: SettingColumn, for url: String) -> Bool {
+    private func setTextSettingLocked(_ value: String, column: SettingColumn, for host: String) -> Bool {
         let timestamp = Date().timeIntervalSince1970
         guard let statement = prepareStatementLocked(
             """
-            INSERT INTO site_settings (url, \(column.rawValue), created_at, updated_at)
+            INSERT INTO site_settings (host, \(column.rawValue), created_at, updated_at)
             VALUES (?, ?, ?, ?)
-            ON CONFLICT(url) DO UPDATE SET
+            ON CONFLICT(host) DO UPDATE SET
                 \(column.rawValue) = excluded.\(column.rawValue),
                 updated_at = excluded.updated_at;
             """
@@ -368,20 +368,20 @@ final class SiteSettingsStore {
             sqlite3_finalize(statement)
         }
         
-        bind(url, to: statement, at: 1)
+        bind(host, to: statement, at: 1)
         bind(value, to: statement, at: 2)
         sqlite3_bind_double(statement, 3, timestamp)
         sqlite3_bind_double(statement, 4, timestamp)
         return sqlite3_step(statement) == SQLITE_DONE
     }
     
-    private func clearSettingLocked(_ column: SettingColumn, for url: String) -> Bool {
+    private func clearSettingLocked(_ column: SettingColumn, for host: String) -> Bool {
         let timestamp = Date().timeIntervalSince1970
         guard let statement = prepareStatementLocked(
             """
             UPDATE site_settings
             SET \(column.rawValue) = NULL, updated_at = ?
-            WHERE url = ?;
+            WHERE host = ?;
             """
         ) else {
             return false
@@ -392,20 +392,20 @@ final class SiteSettingsStore {
         }
         
         sqlite3_bind_double(statement, 1, timestamp)
-        bind(url, to: statement, at: 2)
+        bind(host, to: statement, at: 2)
         
         guard sqlite3_step(statement) == SQLITE_DONE else {
             return false
         }
         
-        return deleteEmptySettingsLocked(for: url)
+        return deleteEmptySettingsLocked(for: host)
     }
     
-    private func deleteEmptySettingsLocked(for url: String) -> Bool {
+    private func deleteEmptySettingsLocked(for host: String) -> Bool {
         guard let statement = prepareStatementLocked(
             """
             DELETE FROM site_settings
-            WHERE url = ?
+            WHERE host = ?
                 AND page_zoom IS NULL
                 AND website_mode IS NULL
                 AND reader_mode IS NULL;
@@ -418,15 +418,15 @@ final class SiteSettingsStore {
             sqlite3_finalize(statement)
         }
         
-        bind(url, to: statement, at: 1)
+        bind(host, to: statement, at: 1)
         return sqlite3_step(statement) == SQLITE_DONE
     }
     
-    private func deleteSettingsLocked(for url: String) -> Bool {
+    private func deleteSettingsLocked(for host: String) -> Bool {
         guard let statement = prepareStatementLocked(
             """
             DELETE FROM site_settings
-            WHERE url = ?;
+            WHERE host = ?;
             """
         ) else {
             return false
@@ -436,7 +436,7 @@ final class SiteSettingsStore {
             sqlite3_finalize(statement)
         }
         
-        bind(url, to: statement, at: 1)
+        bind(host, to: statement, at: 1)
         return sqlite3_step(statement) == SQLITE_DONE
     }
     
@@ -476,19 +476,9 @@ final class SiteSettingsStore {
         return String(cString: cString)
     }
     
-    // MARK: - Helpers
-    
-    private func normalizedURLString(for url: URL) -> String? {
-        guard let sanitizedURL = URLUtils.sanitizedURL(for: url) else {
-            return nil
-        }
-        
-        return sanitizedURL.absoluteString
-    }
-    
     private func record(from statement: OpaquePointer) -> SiteSettingsRecord? {
-        let urlString = string(from: statement, at: 0)
-        guard let url = URL(string: urlString) else {
+        let host = string(from: statement, at: 0)
+        guard !host.isEmpty else {
             return nil
         }
         
@@ -516,7 +506,7 @@ final class SiteSettingsStore {
         let createdAt = Date(timeIntervalSince1970: sqlite3_column_double(statement, 4))
         let updatedAt = Date(timeIntervalSince1970: sqlite3_column_double(statement, 5))
         return SiteSettingsRecord(
-            url: url,
+            host: host,
             pageZoom: pageZoom,
             websiteMode: websiteMode,
             readerMode: readerMode,

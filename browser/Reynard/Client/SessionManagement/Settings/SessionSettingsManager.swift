@@ -2,62 +2,37 @@
 //  SessionSettingsManager.swift
 //  Reynard
 //
-//  Created by Minh Ton on 18/6/26.
+//  Created by Minh Ton on 28/6/26.
 //
 
 import Foundation
 import GeckoView
 
 final class SessionSettingsManager {
-    private enum BrowsingMode {
-        static let mobile = 0
-        static let desktop = 1
-    }
-    
-    private let websiteMode: WebsiteModePolicy
-    private let userAgentPolicy: UserAgentPolicy
+    let websiteMode: WebsiteModeSettingManager
+    let pageZoom: PageZoomSettingManager
     
     init(
-        websiteMode: WebsiteModePolicy = WebsiteModePolicy(),
-        userAgentPolicy: UserAgentPolicy = UserAgentPolicy()
+        websiteMode: WebsiteModeSettingManager = WebsiteModeSettingManager(),
+        pageZoom: PageZoomSettingManager = PageZoomSettingManager()
     ) {
         self.websiteMode = websiteMode
-        self.userAgentPolicy = userAgentPolicy
+        self.pageZoom = pageZoom
     }
     
-    func settings(for url: String, tabID: UUID?) -> GeckoSessionSettings {
-        let prefersDesktopMode = websiteMode.prefersDesktopMode(for: url, tabID: tabID)
-        let userAgent = userAgentPolicy.configuration(
-            for: url,
-            prefersDesktopMode: prefersDesktopMode
-        )
-        let usesDesktopMode = prefersDesktopMode && !userAgent.forcesMobileMode
-        let mode = usesDesktopMode ? BrowsingMode.desktop : BrowsingMode.mobile
+    func settings(for url: String?, tabID: UUID?) -> GeckoSessionSettings {
+        guard let url else {
+            return .default
+        }
+        
         return GeckoSessionSettings(
-            userAgentOverride: userAgent.override,
-            userAgentMode: mode,
-            viewportMode: mode
+            websiteMode: websiteMode.setting(for: url, tabID: tabID),
+            pageZoom: pageZoom.setting(for: url)
         )
-    }
-    
-    func update(_ session: GeckoSession, for url: String, tabID: UUID?) {
-        session.updateSettings(settings(for: url, tabID: tabID))
-    }
-    
-    func isDesktopMode(for url: String, tabID: UUID) -> Bool? {
-        return websiteMode.isDesktopMode(for: url, tabID: tabID)
-    }
-    
-    func toggleWebsiteMode(for url: String, tabID: UUID) -> WebsiteModeAction? {
-        return websiteMode.toggle(for: url, tabID: tabID)
-    }
-    
-    func clearWebsiteOverrides(for tabID: UUID) {
-        websiteMode.clearOverrides(for: tabID)
     }
     
     func needsUpdate(
-        to session: GeckoSession,
+        for session: GeckoSession,
         currentURL: String?,
         requestedURL: String,
         tabID: UUID

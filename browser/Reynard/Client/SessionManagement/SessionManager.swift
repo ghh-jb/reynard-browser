@@ -9,16 +9,16 @@ import Foundation
 import GeckoView
 
 final class SessionManager {
-    private let settings: SessionSettingsManager
+    private let sessionSettings: SessionSettingsManager
     private let history: NavigationHistory
     private let permissionStore: SitePermissionStore
     
     init(
-        settings: SessionSettingsManager = SessionSettingsManager(),
+        sessionSettings: SessionSettingsManager = SessionSettingsManager(),
         history: NavigationHistory = NavigationHistory(),
         permissionStore: SitePermissionStore = .shared
     ) {
-        self.settings = settings
+        self.sessionSettings = sessionSettings
         self.history = history
         self.permissionStore = permissionStore
     }
@@ -33,9 +33,8 @@ final class SessionManager {
         opening: SessionOpening,
         delegates: SessionDelegates
     ) -> GeckoSession {
-        let initialSettings = url.map { settings.settings(for: $0, tabID: tabID) } ?? .default
         let session = GeckoSession(
-            settings: initialSettings,
+            settings: sessionSettings.settings(for: url, tabID: tabID),
             isPrivateMode: isPrivate,
             isAddonPopup: isAddonPopup
         )
@@ -66,7 +65,7 @@ final class SessionManager {
     ) {
         deactivate(session)
         bindDelegates(to: session, delegates: delegates)
-        settings.update(session, for: url, tabID: tabID)
+        updateSettings(of: session, for: url, tabID: tabID)
     }
     
     // MARK: - Session Lifecycle
@@ -98,7 +97,7 @@ final class SessionManager {
     }
     
     func discard(_ session: GeckoSession, forTab tabID: UUID, keepingHistory: Bool = false) {
-        settings.clearWebsiteOverrides(for: tabID)
+        sessionSettings.websiteMode.clearWebsiteOverrides(for: tabID)
         if !keepingHistory {
             history.removeHistory(for: tabID)
         }
@@ -116,18 +115,23 @@ final class SessionManager {
         setAddonTabActive(true, for: replacementSession)
     }
     
-    // MARK: - Settings
+    // MARK: - Website Settings
     
     func updateSettings(of session: GeckoSession, for url: String, tabID: UUID?) {
-        settings.update(session, for: url, tabID: tabID)
+        session.updateSettings(sessionSettings.settings(for: url, tabID: tabID))
+    }
+    
+    func setPageZoom(_ level: Int, of session: GeckoSession, for url: String, tabID: UUID?) {
+        sessionSettings.pageZoom.save(level, for: url)
+        updateSettings(of: session, for: url, tabID: tabID)
     }
     
     func isDesktopMode(for url: String, tabID: UUID) -> Bool? {
-        return settings.isDesktopMode(for: url, tabID: tabID)
+        return sessionSettings.websiteMode.isDesktopMode(for: url, tabID: tabID)
     }
     
     func toggleWebsiteMode(for url: String, tabID: UUID) -> WebsiteModeAction? {
-        return settings.toggleWebsiteMode(for: url, tabID: tabID)
+        return sessionSettings.websiteMode.toggleWebsiteMode(for: url, tabID: tabID)
     }
     
     func needsSettingsUpdate(
@@ -136,8 +140,8 @@ final class SessionManager {
         requestedURL: String,
         tabID: UUID
     ) -> Bool {
-        settings.needsUpdate(
-            to: session,
+        sessionSettings.needsUpdate(
+            for: session,
             currentURL: currentURL,
             requestedURL: requestedURL,
             tabID: tabID

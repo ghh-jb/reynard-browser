@@ -23,6 +23,7 @@ enum AddressBarMenu {
         usesDesktopWebsite: Bool?,
         addonItems: [AddonItem],
         onAddonSelected: @escaping (AddonMenuItem) -> Void,
+        onPageZoom: @escaping () -> Void,
         onChangeWebsiteMode: @escaping () -> Void,
         onWebsiteSettings: @escaping () -> Void,
         onBookmark: @escaping (Bool) -> Void
@@ -30,8 +31,7 @@ enum AddressBarMenu {
         var tabActions: [UIMenuElement] = []
         
         let url = selectedURL.flatMap(URL.init(string:))
-        if let url,
-           url.host != nil {
+        if let url, url.host != nil {
             let title = BookmarkStore.shared.bookmark(savedFor: url) == nil ? "Add Bookmark" : "Edit Bookmark"
             tabActions.append(UIAction(title: title, image: UIImage(named: "reynard.book")) { _ in
                 onBookmark(false)
@@ -63,12 +63,18 @@ enum AddressBarMenu {
         
         var pageActions: [UIMenuElement] = [
             UIMenu(
-                title: "Manage Add-ons",
+                title: "Add-ons",
                 image: UIImage(named: "reynard.puzzlepiece.extension"),
                 identifier: Identifier.manageAddonsMenu,
                 children: addonsChildren
             )
         ]
+        
+        if url?.host != nil {
+            pageActions.append(UIAction(title: "Page Zoom", image: UIImage(named: "reynard.textformat.size")) { _ in
+                onPageZoom()
+            })
+        }
         
         if let isDesktop = usesDesktopWebsite {
             let title = isDesktop ? "Request Mobile Website" : "Request Desktop Website"

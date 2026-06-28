@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import GeckoView
 
 extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     // MARK: - Address Bar State
@@ -59,6 +60,15 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     
     func addressBar(_ addressBar: AddressBar, didSelectAddon item: AddonMenuItem) {
         addonCoordinator.activateMenuItem(item)
+    }
+    
+    func addressBarDidRequestPageZoom(_ addressBar: AddressBar) {
+        guard let selectedTab = tabManager.selectedTab else {
+            return
+        }
+        
+        browserChrome.setPageZoomLevel(selectedTab.session.settings.pageZoom.level)
+        browserChrome.showActionBar(.pageZoom, animated: true)
     }
     
     func addressBarDidRequestWebsiteModeChange(_ addressBar: AddressBar) {
@@ -141,6 +151,30 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     
     func presentTabOverviewFromGesture(animated: Bool) {
         setTabOverviewVisible(true, animated: animated)
+    }
+    
+    func addressBarGestureWillBegin() {
+        browserChrome.dismissActionBar(animated: false)
+    }
+    
+    // MARK: - Page Zoom
+    
+    func setSelectedPageZoomToPreviousLevel() {
+        setSelectedPageZoomLevel(browserChrome.previousPageZoomLevel())
+    }
+    
+    func setSelectedPageZoomToNextLevel() {
+        setSelectedPageZoomLevel(browserChrome.nextPageZoomLevel())
+    }
+    
+    func setSelectedPageZoomLevel(_ level: Int) {
+        guard let selectedTab = tabManager.selectedTab,
+              let url = selectedTab.url else {
+            return
+        }
+        
+        browserChrome.setPageZoomLevel(level)
+        sessionManager.setPageZoom(level, of: selectedTab.session, for: url, tabID: selectedTab.id)
     }
     
     // MARK: - Website Actions

@@ -276,6 +276,15 @@ final class BrowserViewController: UIViewController {
         browserChrome.onOverlayDismiss = { [weak self] in
             self?.dismissAddressBarEditingAndChromeOverlay()
         }
+        browserChrome.onPageZoomOut = { [weak self] in
+            self?.setSelectedPageZoomToPreviousLevel()
+        }
+        browserChrome.onPageZoomIn = { [weak self] in
+            self?.setSelectedPageZoomToNextLevel()
+        }
+        browserChrome.onPageZoomReset = { [weak self] in
+            self?.setSelectedPageZoomLevel(100)
+        }
     }
     
     func updateBrowserLayout(

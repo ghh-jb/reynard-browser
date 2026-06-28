@@ -41,6 +41,7 @@ extension BrowserViewController: TabManagerDelegate {
             isLoading: selectedTab.state.loadingState.isLoading
         )
         refreshAddressBar()
+        browserChrome.updatePageZoomLevel(selectedTab.session.settings.pageZoom.level)
         updateNavigationButtons()
         
         contentView.setSession(selectedTab.session)
@@ -107,7 +108,9 @@ extension BrowserViewController: TabManagerDelegate {
             
         case .location:
             if index == tabManager.selectedTabIndex {
+                let tab = tabManager.activeTabs[index]
                 refreshAddressBar()
+                browserChrome.updatePageZoomLevel(tab.session.settings.pageZoom.level)
                 updateNavigationButtons()
                 homepageOverlayCoordinator.updatePresentation(animated: true)
             }

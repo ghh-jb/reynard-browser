@@ -37,11 +37,16 @@ final class SettingsViewController: SettingsTableViewController {
     private let privacySection = PrivacySettingsSection()
     private let aboutSection = AboutSettingsSection()
     
+    private var allowUpdate: Bool {
+        let unsandboxed = getEntitlementValue("com.apple.private.security.no-sandbox")
+        return !unsandboxed || updatesSection.installedThroughTrollStore
+    }
+    
     var displayedSections: [Section] {
         var hiddenSections: Set<Section> = []
         let unsandboxed = getEntitlementValue("com.apple.private.security.no-sandbox")
         
-        if !BrowserUpdates.shared.hasUpdate || (unsandboxed && !updatesSection.installedThroughTrollStore) {
+        if !BrowserUpdates.shared.hasUpdate {
             hiddenSections.insert(.updates)
         }
         
@@ -88,7 +93,7 @@ final class SettingsViewController: SettingsTableViewController {
         
         switch displayedSections[section] {
         case .updates:
-            return updatesSection.rowCount
+            return updatesSection.rowCount(allowUpdate: allowUpdate)
         case .jit:
             return jitSection.rowCount
         case .general:
@@ -107,7 +112,11 @@ final class SettingsViewController: SettingsTableViewController {
         
         switch displayedSections[indexPath.section] {
         case .updates:
-            return updatesSection.cell(at: indexPath.row, tintColor: view.tintColor)
+            return updatesSection.cell(
+                at: indexPath.row,
+                allowUpdate: allowUpdate,
+                tintColor: view.tintColor
+            )
         case .jit:
             return jitSection.cell(at: indexPath.row, tintColor: view.tintColor)
         case .general:
@@ -129,7 +138,7 @@ final class SettingsViewController: SettingsTableViewController {
         
         switch displayedSections[indexPath.section] {
         case .updates:
-            updatesSection.selectRow(at: indexPath.row, from: self)
+            updatesSection.selectRow(at: indexPath.row, allowUpdate: allowUpdate, from: self)
         case .jit:
             jitSection.selectRow(at: indexPath.row, from: self)
         case .general:
@@ -154,6 +163,8 @@ final class SettingsViewController: SettingsTableViewController {
         }
         
         switch displayedSections[section] {
+        case .updates where !allowUpdate:
+            return updatesSection.unsupportedUpdatesFooterView()
         case .updates where updatesSection.installedThroughTrollStore:
             return updatesSection.trollStoreFooterView()
         case .jit:
@@ -169,7 +180,7 @@ final class SettingsViewController: SettingsTableViewController {
             return UITableView.automaticDimension
         }
         
-        return updatesSection.rowHeight(at: indexPath.row, in: tableView)
+        return updatesSection.rowHeight(at: indexPath.row, allowUpdate: allowUpdate, in: tableView)
     }
     
     // MARK: - View Setup

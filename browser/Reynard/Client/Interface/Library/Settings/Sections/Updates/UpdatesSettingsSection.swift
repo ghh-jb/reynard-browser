@@ -18,8 +18,8 @@ final class UpdatesSettingsSection {
         case updateNow
     }
     
-    var rowCount: Int {
-        return Row.allCases.count
+    func rowCount(allowUpdate: Bool) -> Int {
+        return displayedRows(allowUpdate: allowUpdate).count
     }
     
     var installedThroughTrollStore: Bool {
@@ -30,12 +30,13 @@ final class UpdatesSettingsSection {
     private var activeUpdateTask: URLSessionDownloadTask?
     private var updateProgressObservation: NSKeyValueObservation?
     
-    func rowHeight(at index: Int, in tableView: UITableView) -> CGFloat {
-        guard Row.allCases.indices.contains(index) else {
+    func rowHeight(at index: Int, allowUpdate: Bool, in tableView: UITableView) -> CGFloat {
+        let rows = displayedRows(allowUpdate: allowUpdate)
+        guard rows.indices.contains(index) else {
             return UITableView.automaticDimension
         }
         
-        switch Row.allCases[index] {
+        switch rows[index] {
         case .releaseNotes:
             return min(
                 tableView.bounds.height * UX.releaseNotesHeightRatio,
@@ -46,12 +47,13 @@ final class UpdatesSettingsSection {
         }
     }
     
-    func cell(at index: Int, tintColor: UIColor?) -> UITableViewCell {
-        guard Row.allCases.indices.contains(index) else {
+    func cell(at index: Int, allowUpdate: Bool, tintColor: UIColor?) -> UITableViewCell {
+        let rows = displayedRows(allowUpdate: allowUpdate)
+        guard rows.indices.contains(index) else {
             return UITableViewCell()
         }
         
-        switch Row.allCases[index] {
+        switch rows[index] {
         case .releaseNotes:
             return UpdateReleaseNotesCell()
         case .updateNow:
@@ -62,6 +64,16 @@ final class UpdatesSettingsSection {
     }
     
     func trollStoreFooterView() -> UIView {
+        return footerView(text: "Make sure TrollStore's URL Scheme is enabled.")
+    }
+    
+    func unsupportedUpdatesFooterView() -> UIView {
+        return footerView(
+            text: "This build does not support in-app updates. Visit the project's Releases page to download the latest version of the app."
+        )
+    }
+    
+    private func footerView(text: String) -> UIView {
         let footerView = UITableViewHeaderFooterView(reuseIdentifier: nil)
         footerView.contentView.preservesSuperviewLayoutMargins = true
         
@@ -71,7 +83,7 @@ final class UpdatesSettingsSection {
         footerLabel.font = UIFont.preferredFont(forTextStyle: .footnote)
         footerLabel.adjustsFontForContentSizeCategory = true
         footerLabel.textColor = .secondaryLabel
-        footerLabel.text = "Make sure TrollStore's URL Scheme is enabled."
+        footerLabel.text = text
         
         footerView.contentView.addSubview(footerLabel)
         NSLayoutConstraint.activate([
@@ -84,11 +96,19 @@ final class UpdatesSettingsSection {
         return footerView
     }
     
-    func selectRow(at index: Int, from viewController: UIViewController) {
-        guard Row.allCases.indices.contains(index), Row.allCases[index] == .updateNow else {
+    func selectRow(at index: Int, allowUpdate: Bool, from viewController: UIViewController) {
+        let rows = displayedRows(allowUpdate: allowUpdate)
+        guard rows.indices.contains(index), rows[index] == .updateNow else {
             return
         }
         beginUpdate(from: viewController)
+    }
+    
+    private func displayedRows(allowUpdate: Bool) -> [Row] {
+        guard allowUpdate else {
+            return [.releaseNotes]
+        }
+        return Row.allCases
     }
     
     private func beginUpdate(from viewController: UIViewController) {

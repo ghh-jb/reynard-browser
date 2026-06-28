@@ -202,6 +202,13 @@ final class HomepageRootViewController: UIViewController {
             viewController.setPrivateBrowsing(isPrivateBrowsing)
             return viewController
             
+        case .recommendation(.updateAvailable):
+            let viewController = UpdateAvailableViewController()
+            viewController.delegate = self
+            viewController.setContentMode(contentMode)
+            viewController.setPrivateBrowsing(isPrivateBrowsing)
+            return viewController
+            
         case .recommendation(.donation):
             let viewController = DonationRecommendationViewController()
             viewController.delegate = self

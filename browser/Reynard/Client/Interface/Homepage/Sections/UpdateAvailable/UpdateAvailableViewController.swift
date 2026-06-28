@@ -1,29 +1,23 @@
 //
-//  DonationRecommendationViewController.swift
+//  UpdateAvailableViewController.swift
 //  Reynard
 //
-//  Created by Minh Ton on 24/6/26.
+//  Created by Minh Ton on 28/6/26.
 //
 
 import UIKit
 
-final class DonationRecommendationViewController: UIViewController, HomepageRecommendationViewController {
+final class UpdateAvailableViewController: UIViewController, HomepageRecommendationViewController {
     private enum UX {
         static let horizontalInset: CGFloat = 2
         static let sectionBottomSpacing: CGFloat = 24
         static let cornerRadius: CGFloat = 17
-        static let borderWidth: CGFloat = 2
         static let labelSpacing: CGFloat = 8
         static let buttonStackTopSpacing: CGFloat = 14
         static let buttonSpacing: CGFloat = 22
         static let buttonImageSpacing: CGFloat = 6
         static let actionIconSize: CGFloat = 15
         static let titleFontSize: CGFloat = 22
-        static let coffeeImageWidth: CGFloat = 55.9
-        static let coffeeImageHeight: CGFloat = 80.6
-        static let coffeeImageTopOffset: CGFloat = -30
-        static let coffeeImageTrailingOffset: CGFloat = 2
-        static let coffeeImageRotation: CGFloat = .pi / 9
         static let narrowContentTopInset: CGFloat = 24
         static let narrowContentHorizontalInset: CGFloat = 20
         static let narrowContentBottomInset: CGFloat = 24
@@ -33,10 +27,6 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
         static let expandedContentTopInset: CGFloat = 32
         static let expandedContentHorizontalInset: CGFloat = 28
         static let expandedContentBottomInset: CGFloat = 32
-    }
-    
-    private enum DonationRecommendationLink {
-        static let buyMeACoffee = URL(string: "https://buymeacoffee.com/hnimnot")!
     }
     
     weak var delegate: HomepageSectionDelegate?
@@ -49,18 +39,8 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
         view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerCurve = .continuous
         view.layer.cornerRadius = UX.cornerRadius
-        view.layer.borderColor = UIColor.systemYellow.cgColor
-        view.layer.borderWidth = UX.borderWidth
         view.clipsToBounds = true
         view.backgroundColor = .systemGray6
-        return view
-    }()
-    
-    private let tintView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = UIColor.systemYellow.withAlphaComponent(0.08)
-        view.isUserInteractionEnabled = false
         return view
     }()
     
@@ -79,7 +59,7 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
         label.font = UIFontMetrics(forTextStyle: .title2).scaledFont(
             for: .systemFont(ofSize: UX.titleFontSize, weight: .bold)
         )
-        label.text = "Support The Project"
+        label.text = "Update Available"
         label.textAlignment = .left
         label.textColor = .label
         label.numberOfLines = 0
@@ -90,35 +70,12 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
     private let messageLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .body)
-        label.text = "Hi, I'm Minh, the developer of Reynard. If you find the project useful, sponsoring me helps keep it alive and maintained. Thanks for the support!"
+        label.text = "A new version of Reynard Browser is available. Open Settings to update."
         label.textAlignment = .left
         label.textColor = .secondaryLabel
         label.numberOfLines = 0
         label.adjustsFontForContentSizeCategory = true
         return label
-    }()
-    
-    private lazy var donateButton: UIButton = {
-        return makeActionButton(
-            title: "Buy Me a Coffee",
-            imageName: "reynard.arrow.up.right",
-            action: #selector(openDonationLink)
-        )
-    }()
-    
-    private lazy var notNowButton: UIButton = {
-        return makeActionButton(
-            title: "Not Now",
-            imageName: "reynard.clock",
-            action: #selector(postponeDonationRecommendation)
-        )
-    }()
-    
-    private let buttonTrailingSpacerView: UIView = {
-        let view = UIView()
-        view.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return view
     }()
     
     private let buttonStackView: UIStackView = {
@@ -130,13 +87,19 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
         return stackView
     }()
     
-    private let coffeeImageView: UIImageView = {
-        let imageView = UIImageView(image: UIImage(named: "bmc"))
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        imageView.contentMode = .scaleAspectFit
-        imageView.isUserInteractionEnabled = false
-        imageView.transform = CGAffineTransform(rotationAngle: UX.coffeeImageRotation)
-        return imageView
+    private let buttonTrailingSpacerView: UIView = {
+        let view = UIView()
+        view.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return view
+    }()
+    
+    private lazy var settingsButton: UIButton = {
+        return makeActionButton(
+            title: "Open Settings",
+            imageName: "reynard.gearshape",
+            action: #selector(openSettings)
+        )
     }()
     
     // MARK: - Lifecycle
@@ -187,6 +150,21 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
         }
     }
     
+    static func isRecommendationShown(isPrivateBrowsing: Bool, contentMode: HomepageContentMode) -> Bool {
+        if isPrivateBrowsing || contentMode.isDetached {
+            return false
+        }
+        
+        if PerformanceRecommendationViewController.isRecommendationShown(
+            isPrivateBrowsing: isPrivateBrowsing,
+            contentMode: contentMode
+        ) {
+            return false
+        }
+        
+        return BrowserUpdates.shared.hasUpdate
+    }
+    
     // MARK: - Configuration
     
     private func configureView() {
@@ -197,14 +175,10 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
     
     private func configureAppearance() {
         view.backgroundColor = .clear
-        view.clipsToBounds = false
     }
     
     private func configureHierarchy() {
         view.addSubview(cardView)
-        view.addSubview(coffeeImageView)
-        
-        cardView.addSubview(tintView)
         cardView.addSubview(textStackView)
         
         textStackView.addArrangedSubview(titleLabel)
@@ -212,8 +186,7 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
         textStackView.addArrangedSubview(buttonStackView)
         textStackView.setCustomSpacing(UX.buttonStackTopSpacing, after: messageLabel)
         
-        buttonStackView.addArrangedSubview(donateButton)
-        buttonStackView.addArrangedSubview(notNowButton)
+        buttonStackView.addArrangedSubview(settingsButton)
         buttonStackView.addArrangedSubview(buttonTrailingSpacerView)
     }
     
@@ -224,20 +197,10 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
             cardView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -UX.horizontalInset),
             cardView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -UX.sectionBottomSpacing),
             
-            tintView.topAnchor.constraint(equalTo: cardView.topAnchor),
-            tintView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
-            tintView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
-            tintView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
-            
             textStackView.topAnchor.constraint(equalTo: cardView.layoutMarginsGuide.topAnchor),
             textStackView.leadingAnchor.constraint(equalTo: cardView.layoutMarginsGuide.leadingAnchor),
             textStackView.trailingAnchor.constraint(equalTo: cardView.layoutMarginsGuide.trailingAnchor),
             textStackView.bottomAnchor.constraint(equalTo: cardView.layoutMarginsGuide.bottomAnchor),
-            
-            coffeeImageView.widthAnchor.constraint(equalToConstant: UX.coffeeImageWidth),
-            coffeeImageView.heightAnchor.constraint(equalToConstant: UX.coffeeImageHeight),
-            coffeeImageView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: UX.coffeeImageTopOffset),
-            coffeeImageView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: UX.coffeeImageTrailingOffset),
         ])
     }
     
@@ -269,13 +232,8 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
     
     // MARK: - Actions
     
-    @objc private func openDonationLink() {
-        delegate?.homepageSection(self, didRequestOpenURL: DonationRecommendationLink.buyMeACoffee, disposition: .currentTab)
-    }
-    
-    @objc private func postponeDonationRecommendation() {
-        Prefs.HomepageSettings.donationRecommendationShowTime = nextMonth
-        updateRecommendationState()
+    @objc private func openSettings() {
+        delegate?.homepageSectionDidSelectSettings(self)
     }
     
     @objc private func appUpdateAvailable() {
@@ -298,9 +256,7 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
             return
         }
         
-        let requiredHorizontalButtonWidth = donateButton.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
-        + notNowButton.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
-        + UX.buttonSpacing
+        let requiredHorizontalButtonWidth = settingsButton.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).width
         
         let usesVerticalButtons = requiredHorizontalButtonWidth > availableButtonWidth
         buttonStackView.axis = usesVerticalButtons ? .vertical : .horizontal
@@ -338,28 +294,6 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
     // MARK: - Helpers
     
     private var isRecommendationShown: Bool {
-        if isPrivateBrowsing || contentMode.isDetached {
-            return false
-        }
-        
-        if PerformanceRecommendationViewController.isRecommendationShown(
-            isPrivateBrowsing: isPrivateBrowsing,
-            contentMode: contentMode
-        ) {
-            return false
-        }
-        
-        if UpdateAvailableViewController.isRecommendationShown(
-            isPrivateBrowsing: isPrivateBrowsing,
-            contentMode: contentMode
-        ) {
-            return false
-        }
-        
-        return Date() >= Prefs.HomepageSettings.donationRecommendationShowTime
-    }
-    
-    private var nextMonth: Date {
-        return Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date().addingTimeInterval(30 * 86_400)
+        return Self.isRecommendationShown(isPrivateBrowsing: isPrivateBrowsing, contentMode: contentMode)
     }
 }

@@ -9,6 +9,7 @@ import UIKit
 
 enum HomepageRecommendation: CaseIterable, Hashable {
     case performance
+    case updateAvailable
     case donation
 }
 

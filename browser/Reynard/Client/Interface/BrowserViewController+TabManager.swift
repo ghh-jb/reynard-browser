@@ -130,6 +130,17 @@ extension BrowserViewController: TabManagerDelegate {
                     tab.state.loadingState.progress,
                     isLoading: tab.state.loadingState.isLoading
                 )
+                
+                if !tab.state.loadingState.isLoading {
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self,
+                              index == self.tabManager.selectedTabIndex else {
+                            return
+                        }
+                        
+                        self.captureThumbnail(forTabAt: index, mode: self.tabManager.selectedTabMode)
+                    }
+                }
             }
             
         case .thumbnail:

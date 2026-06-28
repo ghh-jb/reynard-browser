@@ -30,14 +30,14 @@ final class PageZoomActionBar: UIView {
         static let borderWidth: CGFloat = 0.5
     }
     
-    static let zoomLevels = [50, 70, 90, 100, 110, 125, 150, 175, 200, 250, 300]
+    static let zoomLevels = PageZoomLevels.all
     
     var onZoomOut: (() -> Void)?
     var onZoomIn: (() -> Void)?
     var onReset: (() -> Void)?
     var onClose: (() -> Void)?
     
-    private(set) var zoomLevel = 100
+    private(set) var zoomLevel = Prefs.AppearanceSettings.defaultPageZoomLevel
     
     private let backgroundView: UIVisualEffectView = {
         let view = UIVisualEffectView(effect: UIBlurEffect(style: .systemChromeMaterial))
@@ -159,8 +159,8 @@ final class PageZoomActionBar: UIView {
     // MARK: - Updates
     
     func setZoomLevel(_ level: Int) {
-        zoomLevel = PageZoomActionBar.zoomLevels.contains(level) ? level : 100
-        resetButton.setTitle("\(zoomLevel)%", for: .normal)
+        zoomLevel = PageZoomActionBar.zoomLevels.contains(level) ? level : Prefs.AppearanceSettings.defaultPageZoomLevel
+        resetButton.setTitle(PageZoomLevels.displayText(for: zoomLevel), for: .normal)
         zoomOutButton.isEnabled = zoomLevel > PageZoomActionBar.zoomLevels.first!
         zoomInButton.isEnabled = zoomLevel < PageZoomActionBar.zoomLevels.last!
         zoomOutButton.alpha = zoomOutButton.isEnabled ? 1 : UX.disabledAlpha
@@ -169,14 +169,14 @@ final class PageZoomActionBar: UIView {
     
     func nextZoomLevel() -> Int {
         guard let index = PageZoomActionBar.zoomLevels.firstIndex(of: zoomLevel) else {
-            return 100
+            return Prefs.AppearanceSettings.defaultPageZoomLevel
         }
         return PageZoomActionBar.zoomLevels[min(index + 1, PageZoomActionBar.zoomLevels.count - 1)]
     }
     
     func previousZoomLevel() -> Int {
         guard let index = PageZoomActionBar.zoomLevels.firstIndex(of: zoomLevel) else {
-            return 100
+            return Prefs.AppearanceSettings.defaultPageZoomLevel
         }
         return PageZoomActionBar.zoomLevels[max(index - 1, 0)]
     }

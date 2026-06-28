@@ -79,6 +79,7 @@ final class BrowserPreferences {
             key("AppearanceSettings", "addressBarPosition"): BrowserChromePosition.bottom.rawValue,
             key("AppearanceSettings", "showsFullWebsiteAddress"): false,
             key("AppearanceSettings", "showsLandscapeTabBar"): true,
+            key("AppearanceSettings", "defaultPageZoomLevel"): PageZoomLevels.defaultLevel,
             
             // Bookmarks
             key("BookmarkSettings", "placeFoldersOnTop"): true,
@@ -628,6 +629,19 @@ final class BrowserPreferences {
             set {
                 prefs.set(newValue, forSetting: "AppearanceSettings", key: "showsFullWebsiteAddress")
                 NotificationCenter.default.post(name: .showFullWebsiteAddressDidChange, object: nil)
+            }
+        }
+        
+        static var defaultPageZoomLevel: Int {
+            get {
+                let level = prefs.integer(forSetting: "AppearanceSettings", key: "defaultPageZoomLevel")
+                return PageZoomLevels.all.contains(level) ? level : PageZoomLevels.defaultLevel
+            }
+            set {
+                guard PageZoomLevels.all.contains(newValue) else {
+                    return
+                }
+                prefs.set(newValue, forSetting: "AppearanceSettings", key: "defaultPageZoomLevel")
             }
         }
     }

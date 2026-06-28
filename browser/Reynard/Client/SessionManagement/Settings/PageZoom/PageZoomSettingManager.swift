@@ -18,7 +18,7 @@ final class PageZoomSettingManager {
     func setting(for url: String) -> PageZoomSetting {
         guard let url = URL(string: url),
               let level = siteSettingsStore.settings(for: url)?.pageZoom else {
-            return .default
+            return PageZoomSetting(level: Prefs.AppearanceSettings.defaultPageZoomLevel)
         }
         
         return PageZoomSetting(level: level)

@@ -12,6 +12,7 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
         case appAppearance
         case addressBar
         case tabs
+        case pageZoom
         
         var text: SettingsSectionText {
             switch self {
@@ -21,6 +22,8 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
                 return SettingsSectionText(headerTitle: "Address Bar")
             case .tabs:
                 return SettingsSectionText(headerTitle: "Tabs")
+            case .pageZoom:
+                return SettingsSectionText(headerTitle: "Page Zoom")
             }
         }
         
@@ -38,6 +41,8 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
                     return []
                 }
                 return [.landscapeTabBar]
+            case .pageZoom:
+                return [.pageZoom]
             }
         }
     }
@@ -47,6 +52,7 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
         case BrowserChromePosition
         case showFullWebsiteAddress
         case landscapeTabBar
+        case pageZoom
     }
     
     private let showFullWebsiteAddressSwitch = UISwitch()
@@ -131,6 +137,23 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
             cell.selectionStyle = .none
             cell.accessoryView = landscapeTabBarSwitch
             return cell
+        case .pageZoom:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+            cell.textLabel?.text = "Zoom Settings"
+            cell.accessoryType = .disclosureIndicator
+            return cell
+        }
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        defer { tableView.deselectRow(at: indexPath, animated: true) }
+        guard displayedSections.indices.contains(indexPath.section),
+              displayedSections[indexPath.section].rows.indices.contains(indexPath.row) else {
+            return
+        }
+        
+        if displayedSections[indexPath.section].rows[indexPath.row] == .pageZoom {
+            navigationController?.pushViewController(PageZoomPreferencesViewController(), animated: true)
         }
     }
     

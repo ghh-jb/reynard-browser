@@ -283,7 +283,7 @@ final class BrowserViewController: UIViewController {
             self?.setSelectedPageZoomToNextLevel()
         }
         browserChrome.onPageZoomReset = { [weak self] in
-            self?.setSelectedPageZoomLevel(100)
+            self?.setSelectedPageZoomLevel(Prefs.AppearanceSettings.defaultPageZoomLevel)
         }
     }
     

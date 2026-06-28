@@ -27,7 +27,6 @@ final class SiteSettingsStore {
     
     private enum Constants {
         static let databaseName = "SiteSettings"
-        static let defaultPageZoom = 100
         static let pageZoomRange = 50...300
     }
     
@@ -128,7 +127,7 @@ final class SiteSettingsStore {
         }
         
         return stateQueue.sync {
-            if value == Constants.defaultPageZoom {
+            if value == Prefs.AppearanceSettings.defaultPageZoomLevel {
                 return clearSettingLocked(.pageZoom, for: host)
             }
             
@@ -160,8 +159,23 @@ final class SiteSettingsStore {
         }
     }
     
-    func clearPageZoom(for url: URL) -> Bool {
-        guard let host = URLUtils.normalizedHost(url.host) else {
+    func setPageZoom(_ value: Int, forHost host: String) -> Bool {
+        guard Constants.pageZoomRange.contains(value),
+              let host = URLUtils.normalizedHost(host) else {
+            return false
+        }
+        
+        return stateQueue.sync {
+            if value == Prefs.AppearanceSettings.defaultPageZoomLevel {
+                return clearSettingLocked(.pageZoom, for: host)
+            }
+            
+            return setIntSettingLocked(value, column: .pageZoom, for: host)
+        }
+    }
+    
+    func clearPageZoom(forHost host: String) -> Bool {
+        guard let host = URLUtils.normalizedHost(host) else {
             return false
         }
         
@@ -203,6 +217,12 @@ final class SiteSettingsStore {
     func clearAllSettings() -> Bool {
         return stateQueue.sync {
             executeLocked("DELETE FROM site_settings;")
+        }
+    }
+    
+    func clearAllPageZoomSettings() -> Bool {
+        return stateQueue.sync {
+            clearAllSettingsLocked(column: .pageZoom)
         }
     }
     
@@ -438,6 +458,37 @@ final class SiteSettingsStore {
         
         bind(host, to: statement, at: 1)
         return sqlite3_step(statement) == SQLITE_DONE
+    }
+    
+    private func clearAllSettingsLocked(column: SettingColumn) -> Bool {
+        let timestamp = Date().timeIntervalSince1970
+        guard let statement = prepareStatementLocked(
+            """
+            UPDATE site_settings
+            SET \(column.rawValue) = NULL, updated_at = ?
+            WHERE \(column.rawValue) IS NOT NULL;
+            """
+        ) else {
+            return false
+        }
+        
+        defer {
+            sqlite3_finalize(statement)
+        }
+        
+        sqlite3_bind_double(statement, 1, timestamp)
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            return false
+        }
+        
+        return executeLocked(
+            """
+            DELETE FROM site_settings
+            WHERE page_zoom IS NULL
+                AND website_mode IS NULL
+                AND reader_mode IS NULL;
+            """
+        )
     }
     
     // MARK: - SQLite

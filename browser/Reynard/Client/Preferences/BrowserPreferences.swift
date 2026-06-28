@@ -73,6 +73,7 @@ final class BrowserPreferences {
             key("HomepageSettings", "frequentlyVisitedSiteCount"): 8,
             key("HomepageSettings", "showsRecentlyClosedTabs"): true,
             key("HomepageSettings", "recentlyClosedTabLimit"): 10,
+            key("HomepageSettings", "donationRecommendationMultiplier"): 1,
             
             // Appearance
             key("AppearanceSettings", "appAppearance"): AppAppearance.system.rawValue,
@@ -444,6 +445,15 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue.timeIntervalSince1970, forSetting: "HomepageSettings", key: "donationRecommendationShowTime")
+            }
+        }
+        
+        static var donationRecommendationMultiplier: Int {
+            get {
+                return prefs.integer(forSetting: "HomepageSettings", key: "donationRecommendationMultiplier")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HomepageSettings", key: "donationRecommendationMultiplier")
             }
         }
     }

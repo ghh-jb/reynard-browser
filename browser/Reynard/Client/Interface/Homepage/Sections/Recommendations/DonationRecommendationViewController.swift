@@ -274,7 +274,9 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
     }
     
     @objc private func postponeDonationRecommendation() {
-        Prefs.HomepageSettings.donationRecommendationShowTime = nextMonth
+        let multiplier = max(Prefs.HomepageSettings.donationRecommendationMultiplier, 1)
+        Prefs.HomepageSettings.donationRecommendationShowTime = nextDonationRecommendationShowTime(months: multiplier)
+        Prefs.HomepageSettings.donationRecommendationMultiplier = multiplier * 2
         updateRecommendationState()
     }
     
@@ -359,7 +361,7 @@ final class DonationRecommendationViewController: UIViewController, HomepageReco
         return Date() >= Prefs.HomepageSettings.donationRecommendationShowTime
     }
     
-    private var nextMonth: Date {
-        return Calendar.current.date(byAdding: .month, value: 1, to: Date()) ?? Date().addingTimeInterval(30 * 86_400)
+    private func nextDonationRecommendationShowTime(months: Int) -> Date {
+        return Calendar.current.date(byAdding: .month, value: months, to: Date()) ?? Date().addingTimeInterval(TimeInterval(months * 30 * 86_400))
     }
 }

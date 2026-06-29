@@ -159,7 +159,7 @@ If you’ve come across this repository and find it interesting, I’d love to g
 - [LiveContainer](https://github.com/LiveContainer/LiveContainer): app extension handling and NSExtension usage.
 - [StikDebug](https://github.com/StephenDev0/StikDebug) and [idevice](https://github.com/jkcoxson/idevice): pairing-based JIT enablement support.
 - [TrollStore](https://github.com/opa334/TrollStore): spawning a binary as root and JIT enablement.
-- [Amethyst-iOS](https://github.com/AngelAuraMC/Amethyst-iOS) and [dolphin-ios](https://github.com/OatmealDome/dolphin-ios): Various utility functions, numerous private API usage, and memory mapping stuff.
+- [Amethyst-iOS](https://github.com/AngelAuraMC/Amethyst-iOS), [dolphin-ios](https://github.com/OatmealDome/dolphin-ios), [DukeX](https://github.com/MaftyManicEMU/DukeX), and [MeloNX](https://git.ryujinx.app/projects/MeloNX): Various utility functions, numerous private API usage, and JIT memory handling.
 - [Pre-existing work](https://bugzilla.mozilla.org/show_bug.cgi?id=1882872) on bringing Gecko to iOS using BrowserEngineKit: most of the difficult engine integration. 
 
 ## License

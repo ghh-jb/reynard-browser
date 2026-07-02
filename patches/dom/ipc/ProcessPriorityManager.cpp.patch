@@ -1,0 +1,24 @@
+diff --git a/dom/ipc/ProcessPriorityManager.cpp b/dom/ipc/ProcessPriorityManager.cpp
+index 5c2705dd7f8a..e676b5d8d11d 100644
+--- a/dom/ipc/ProcessPriorityManager.cpp
++++ b/dom/ipc/ProcessPriorityManager.cpp
+@@ -761,7 +761,7 @@ ProcessPriority ParticularProcessPriorityManager::ComputePriority() {
+   return PROCESS_PRIORITY_BACKGROUND;
+ }
+ 
+-#ifdef XP_MACOSX
++#if defined(XP_MACOSX) || defined(XP_IOS)
+ // Method used for setting QoS levels on background main threads.
+ static bool PriorityUsesLowPowerMainThread(
+     const hal::ProcessPriority& aPriority) {
+@@ -819,8 +819,8 @@ void ParticularProcessPriorityManager::SetPriorityNow(
+     ProcessPriorityManagerImpl::GetSingleton()->NotifyProcessPriorityChanged(
+         this, oldPriority);
+ 
+-#ifdef XP_MACOSX
+-    // In cases where we have low-power threads enabled (such as on MacOS) we
++#if defined(XP_MACOSX) || defined(XP_IOS)
++    // In cases where we have low-power threads enabled (such as on Darwin) we
+     // can go ahead and put the main thread in the background here. If the new
+     // priority is the background priority, we can tell the OS to put the main
+     // thread on low-power cores. Alternately, if we are changing from the

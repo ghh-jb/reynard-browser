@@ -1,5 +1,5 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index b96e9d02beda..4ef4a2f14d70 100644
+index b96e9d02beda..2a5b8dd00e61 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
 @@ -5763,7 +5763,7 @@
@@ -246,6 +246,19 @@ index b96e9d02beda..4ef4a2f14d70 100644
  # If the service is available, set threads to low-power mode when in the background.
  - name: threads.use_low_power.enabled
    type: RelaxedAtomicBool
+-#ifdef XP_MACOSX
++#if defined(XP_MACOSX) || defined(XP_IOS)
+   value: true
+ #else
+   value: @IS_NIGHTLY_BUILD@
+@@ -18873,10 +18906,10 @@
+ 
+ 
+ # If the process priority is set to background, put the main thread in the background.
+-# Currently off by default.
++# Enabled by default where low-power thread QoS is supported.
+ - name: threads.lower_mainthread_priority_in_background.enabled
+   type: bool
 -#ifdef XP_MACOSX
 +#if defined(XP_MACOSX) || defined(XP_IOS)
    value: true

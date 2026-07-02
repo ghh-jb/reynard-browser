@@ -1,5 +1,5 @@
 diff --git a/modules/libpref/init/StaticPrefList.yaml b/modules/libpref/init/StaticPrefList.yaml
-index b96e9d02beda..064a26b677ee 100644
+index b96e9d02beda..4ef4a2f14d70 100644
 --- a/modules/libpref/init/StaticPrefList.yaml
 +++ b/modules/libpref/init/StaticPrefList.yaml
 @@ -5763,7 +5763,7 @@
@@ -242,6 +242,15 @@ index b96e9d02beda..064a26b677ee 100644
  
  # Telemetry of traffic categories. Whether or not to enable HttpTrafficAnalyzer.
  - name: network.traffic_analyzer.enabled
+@@ -18864,7 +18897,7 @@
+ # If the service is available, set threads to low-power mode when in the background.
+ - name: threads.use_low_power.enabled
+   type: RelaxedAtomicBool
+-#ifdef XP_MACOSX
++#if defined(XP_MACOSX) || defined(XP_IOS)
+   value: true
+ #else
+   value: @IS_NIGHTLY_BUILD@
 @@ -19676,7 +19709,7 @@
  # on a platform that supports the GPU process, else true.
  - name: webgl.allow-in-parent

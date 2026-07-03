@@ -19,7 +19,7 @@ final class SystemMediaSession: MediaSessionDelegate {
     private final class SessionState {
         weak var session: GeckoSession?
         var nowPlayingInfo: [String: Any] = [:]
-        var features = MediaSessionFeatures()
+        var features: MediaSessionFeatures = [.seekForward, .seekBackward, .seekTo]
         var artworkTask: URLSessionDataTask?
         var playbackState = PlaybackState.none
         

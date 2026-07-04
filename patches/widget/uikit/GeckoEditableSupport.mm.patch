@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..cef3606cd080
+index 000000000000..d17f81fd0682
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,3373 @@
+@@ -0,0 +1,3417 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -377,6 +377,7 @@ index 000000000000..cef3606cd080
 +- (ChildViewTextRange*)textRangeForExactRange:(NSRange)aRange;
 +- (ChildViewTextRange*)textRangeForRange:(NSRange)aRange;
 +- (NSRange)rangeForTextRange:(UITextRange*)aRange;
++- (NSRange)deleteBackwardRangeInText:(NSString*)aText selection:(NSRange)aRange;
 +- (void)resetHandleState;
 +- (CGRect)selectionBounds;
 +- (BOOL)clipToSelectionBounds:(CGRect*)aRect;
@@ -414,6 +415,7 @@ index 000000000000..cef3606cd080
 +                       onLineStart:(NSUInteger)aLineStart
 +                           lineEnd:(NSUInteger)aLineEnd
 +                           handler:(widget::TextInputHandler*)aHandler;
++- (NSRange)deleteBackwardRangeWithHandler:(widget::TextInputHandler*)aHandler;
 +- (void)updateTextInteractions;
 +- (void)scheduleResponderBlur;
 +- (void)cancelResponderBlur;
@@ -639,6 +641,28 @@ index 000000000000..cef3606cd080
 +  }
 +
 +  return NSMakeRange(start, end - start);
++}
++
++// Returns the exact composed-character range that deleteBackward should remove.
++- (NSRange)deleteBackwardRangeInText:(NSString*)aText
++                           selection:(NSRange)aRange {
++  if (!aText || aRange.location == NSNotFound) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++
++  const NSUInteger textLength = [aText length];
++  const NSUInteger location = std::min(aRange.location, textLength);
++  const NSUInteger length = std::min(aRange.length, textLength - location);
++  if (length) {
++    return
++        [aText rangeOfComposedCharacterSequencesForRange:NSMakeRange(location,
++                                                                     length)];
++  }
++  if (location == 0) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++
++  return [aText rangeOfComposedCharacterSequenceAtIndex:location - 1];
 +}
 +
 +- (void)resetHandleState {
@@ -1084,6 +1108,27 @@ index 000000000000..cef3606cd080
 +  }
 +
 +  return bestOffset;
++}
++
++// Returns the Gecko document range that a normal deleteBackward should remove.
++- (NSRange)deleteBackwardRangeWithHandler:(widget::TextInputHandler*)aHandler {
++  NSRange selection = NSMakeRange(NSNotFound, 0);
++  if (!aHandler || !aHandler->SelectedRange(selection) ||
++      selection.location == NSNotFound) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++
++  NSRange textRange = selection.length ? NSMakeRange(0, UINT32_MAX)
++                                       : NSMakeRange(0, selection.location);
++  nsString text;
++  if (!aHandler->TextInRange(textRange, text)) {
++    return NSMakeRange(NSNotFound, 0);
++  }
++
++  NSString* string = [NSString
++      stringWithCharacters:reinterpret_cast<const unichar*>(text.BeginReading())
++                    length:text.Length()];
++  return [self deleteBackwardRangeInText:string selection:selection];
 +}
 +
 +// Returns the current selected text range.
@@ -2450,9 +2495,16 @@ index 000000000000..cef3606cd080
 +  BOOL hasBuffer = [self ensureVietnameseBufferWithHandler:handler];
 +  mEditable.mCaretMenuActive = NO;
 +  if (!hasBuffer) {
++    NSRange deleteRange = [self deleteBackwardRangeWithHandler:handler];
++    if (deleteRange.location == NSNotFound) {
++      return;
++    }
++
 +    [mEditable.mTextInputDelegate textWillChange:self];
-+    handler->HandleCommand(Command::DeleteCharBackward);
++    [mEditable.mTextInputDelegate selectionWillChange:self];
++    handler->ReplaceRange(deleteRange, @"");
 +    [mEditable.mTextInputDelegate textDidChange:self];
++    [mEditable.mTextInputDelegate selectionDidChange:self];
 +    [self scheduleEditSelectionUpdate];
 +    return;
 +  }
@@ -3345,16 +3397,8 @@ index 000000000000..cef3606cd080
 +    return NSMakeRange(NSNotFound, 0);
 +  }
 +
-+  NSRange selection = mEditable.mVietnameseBufferSelection;
-+  if (selection.length) {
-+    return selection;
-+  }
-+  if (selection.location == 0) {
-+    return NSMakeRange(NSNotFound, 0);
-+  }
-+
-+  return [mEditable.mVietnameseBufferText
-+      rangeOfComposedCharacterSequenceAtIndex:selection.location - 1];
++  return [self deleteBackwardRangeInText:mEditable.mVietnameseBufferText
++                               selection:mEditable.mVietnameseBufferSelection];
 +}
 +
 +// Applies a deferred Gecko delete when a Vietnamese selected delete was not

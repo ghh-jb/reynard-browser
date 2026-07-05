@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..d17f81fd0682
+index 000000000000..5b24da8bfe26
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,3417 @@
+@@ -0,0 +1,3420 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -486,6 +486,9 @@ index 000000000000..d17f81fd0682
 +@implementation ChildView (Shared)
 +
 +- (void)setupTextInput {
++  self.inputAssistantItem.leadingBarButtonGroups = @[];
++  self.inputAssistantItem.trailingBarButtonGroups = @[];
++
 +  mEditable.mTokenizer =
 +      [[UITextInputStringTokenizer alloc] initWithTextInput:self];
 +  mEditable.mTextInputDelegate = nil;

@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..5b24da8bfe26
+index 000000000000..c09753c091c5
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,3420 @@
+@@ -0,0 +1,3715 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -481,6 +481,15 @@ index 000000000000..5b24da8bfe26
 +
 +@end
 +
++@interface ChildView (Korean)
++
++- (BOOL)isKoreanInputMode;
++- (void)clearKoreanCompositionState;
++- (BOOL)handleKoreanInsertText:(NSString*)aText
++                   withHandler:(widget::TextInputHandler*)aHandler;
++
++@end
++
 +// MARK: - ChildView (Shared)
 +
 +@implementation ChildView (Shared)
@@ -501,6 +510,7 @@ index 000000000000..5b24da8bfe26
 +  mEditable.mPendingSelectionGeometryRefresh = NO;
 +  // The other Vietnamese fields are meaningful only while this buffer exists.
 +  mEditable.mVietnameseBufferText = nil;
++  mEditable.mKoreanComposedText = nil;
 +  [self resetHandleState];
 +
 +  mEditable.mEditableTextInteraction = [[UITextInteraction
@@ -529,6 +539,7 @@ index 000000000000..5b24da8bfe26
 +  mEditable.mTextInteractionInProgress = NO;
 +  // Drop any temporary Vietnamese mirror before releasing UIKit interactions.
 +  [self clearVietnameseBuffer];
++  [self clearKoreanCompositionState];
 +
 +  [self teardownModernTextInput];
 +  [self resetHandleState];
@@ -2454,7 +2465,10 @@ index 000000000000..5b24da8bfe26
 +  if (!hasBuffer) {
 +    [mEditable.mTextInputDelegate textWillChange:self];
 +    [mEditable.mTextInputDelegate selectionWillChange:self];
-+    handler->InsertText(aText);
++    if (![self isKoreanInputMode] || ![self handleKoreanInsertText:aText
++                                                       withHandler:handler]) {
++      handler->InsertText(aText);
++    }
 +    [mEditable.mTextInputDelegate textDidChange:self];
 +    [mEditable.mTextInputDelegate selectionDidChange:self];
 +    [self scheduleEditSelectionUpdate];
@@ -3421,6 +3435,287 @@ index 000000000000..5b24da8bfe26
 +  NSRange geckoDeleteRange =
 +      [self geckoRangeForVietnameseBufferRange:deleteRange];
 +  handler->ReplaceRange(geckoDeleteRange, @"");
++}
++
++@end
++
++// MARK: - ChildView (Korean)
++
++namespace {
++
++struct HangulJamoIndices {
++  int leading;
++  int trailing;
++};
++
++constexpr HangulJamoIndices kHangulConsonantIndices[] = {
++    {0, 1},   {1, 2},   {-1, 3},  {2, 4},   {-1, 5},  {-1, 6},
++    {3, 7},   {4, -1},  {5, 8},   {-1, 9},  {-1, 10}, {-1, 11},
++    {-1, 12}, {-1, 13}, {-1, 14}, {-1, 15}, {6, 16},  {7, 17},
++    {8, -1},  {-1, 18}, {9, 19},  {10, 20}, {11, 21}, {12, 22},
++    {13, -1}, {14, 23}, {15, 24}, {16, 25}, {17, 26}, {18, 27}};
++
++int HangulConsonantTableIndex(char16_t aJamo) {
++  if (aJamo < 0x3131 || aJamo > 0x314E) {
++    return -1;
++  }
++  return aJamo - 0x3131;
++}
++
++int HangulLeadingIndex(char16_t aJamo) {
++  const int index = HangulConsonantTableIndex(aJamo);
++  return index >= 0 ? kHangulConsonantIndices[index].leading : -1;
++}
++
++int HangulVowelIndex(char16_t aJamo) {
++  if (aJamo < 0x314F || aJamo > 0x3163) {
++    return -1;
++  }
++  return aJamo - 0x314F;
++}
++
++int HangulTrailingIndex(char16_t aJamo) {
++  const int index = HangulConsonantTableIndex(aJamo);
++  return index >= 0 ? kHangulConsonantIndices[index].trailing : -1;
++}
++
++char16_t HangulCompatibilityVowel(int aVowel) {
++  return static_cast<char16_t>(0x314F + aVowel);
++}
++
++char16_t ComposeHangulSyllable(int aLeading, int aVowel, int aTrailing) {
++  return static_cast<char16_t>(0xAC00 + (aLeading * 21 + aVowel) * 28 +
++                               aTrailing);
++}
++
++bool DecomposeHangulSyllable(char16_t aSyllable, int& aLeading, int& aVowel,
++                             int& aTrailing) {
++  if (aSyllable < 0xAC00 || aSyllable > 0xD7A3) {
++    return false;
++  }
++
++  int offset = aSyllable - 0xAC00;
++  aLeading = offset / (21 * 28);
++  offset %= 21 * 28;
++  aVowel = offset / 28;
++  aTrailing = offset % 28;
++  return true;
++}
++
++bool IsHangulSyllable(char16_t aChar) {
++  return aChar >= 0xAC00 && aChar <= 0xD7A3;
++}
++
++NSString* HangulString(char16_t aFirst, char16_t aSecond = 0) {
++  const unichar chars[] = {static_cast<unichar>(aFirst),
++                           static_cast<unichar>(aSecond)};
++  return [NSString stringWithCharacters:chars length:aSecond ? 2 : 1];
++}
++
++int CombineHangulVowels(int aFirst, int aSecond) {
++  switch ((aFirst << 8) | aSecond) {
++    case (8 << 8) | 0:
++      return 9;
++    case (8 << 8) | 1:
++      return 10;
++    case (8 << 8) | 20:
++      return 11;
++    case (13 << 8) | 4:
++      return 14;
++    case (13 << 8) | 5:
++      return 15;
++    case (13 << 8) | 20:
++      return 16;
++    case (18 << 8) | 20:
++      return 19;
++  }
++  return -1;
++}
++
++int CombineHangulTrailingConsonants(int aFirst, int aSecond) {
++  switch ((aFirst << 8) | aSecond) {
++    case (1 << 8) | 19:
++      return 3;
++    case (4 << 8) | 22:
++      return 5;
++    case (4 << 8) | 27:
++      return 6;
++    case (8 << 8) | 1:
++      return 9;
++    case (8 << 8) | 16:
++      return 10;
++    case (8 << 8) | 17:
++      return 11;
++    case (8 << 8) | 19:
++      return 12;
++    case (8 << 8) | 25:
++      return 13;
++    case (8 << 8) | 26:
++      return 14;
++    case (8 << 8) | 27:
++      return 15;
++    case (17 << 8) | 19:
++      return 18;
++  }
++  return -1;
++}
++
++bool HangulLeadingIndexFromTrailing(int aTrailing, int& aLeading) {
++  constexpr int kTrailingToLeading[] = {-1, 0,  1,  -1, 2,  -1, -1, 3, 5,  -1,
++                                        -1, -1, -1, -1, -1, -1, 6,  7, -1, 9,
++                                        10, 11, 12, 14, 15, 16, 17, 18};
++  if (aTrailing <= 0 || aTrailing >= 28 || kTrailingToLeading[aTrailing] < 0) {
++    return false;
++  }
++  aLeading = kTrailingToLeading[aTrailing];
++  return true;
++}
++
++bool SplitHangulTrailingConsonants(int aTrailing, int& aFirstTrailing,
++                                   int& aSecondLeading) {
++  constexpr HangulJamoIndices kTrailingSplit[] = {
++      {-1, -1}, {-1, -1}, {-1, -1}, {1, 9},   {-1, -1}, {4, 12},  {4, 18},
++      {-1, -1}, {-1, -1}, {8, 0},   {8, 6},   {8, 7},   {8, 9},   {8, 16},
++      {8, 17},  {8, 18},  {-1, -1}, {-1, -1}, {17, 9},  {-1, -1}, {-1, -1},
++      {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}};
++  if (aTrailing <= 0 || aTrailing >= 28 ||
++      kTrailingSplit[aTrailing].leading < 0) {
++    return false;
++  }
++  aFirstTrailing = kTrailingSplit[aTrailing].leading;
++  aSecondLeading = kTrailingSplit[aTrailing].trailing;
++  return true;
++}
++
++}  // namespace
++
++@implementation ChildView (Korean)
++
++- (BOOL)isKoreanInputMode {
++  NSString* primaryLanguage = self.textInputMode.primaryLanguage;
++  return primaryLanguage && [primaryLanguage hasPrefix:@"ko"];
++}
++
++- (void)clearKoreanCompositionState {
++  [mEditable.mKoreanComposedText release];
++  mEditable.mKoreanComposedText = nil;
++}
++
++- (BOOL)handleKoreanInsertText:(NSString*)aText
++                   withHandler:(widget::TextInputHandler*)aHandler {
++  if ([aText length] == 1 && IsHangulSyllable([aText characterAtIndex:0]) &&
++      mEditable.mKoreanComposedText &&
++      [mEditable.mKoreanComposedText isEqualToString:aText]) {
++    [self clearKoreanCompositionState];
++    return YES;
++  }
++
++  return [self tryComposeHangulJamo:aText withHandler:aHandler];
++}
++
++- (BOOL)tryComposeHangulJamo:(NSString*)aText
++                 withHandler:(widget::TextInputHandler*)aHandler {
++  if (!aHandler || !aText || [aText length] != 1) {
++    return NO;
++  }
++
++  const char16_t inserted = [aText characterAtIndex:0];
++  const int insertedLeading = HangulLeadingIndex(inserted);
++  const int insertedVowel = HangulVowelIndex(inserted);
++  const int insertedTrailing = HangulTrailingIndex(inserted);
++  if (insertedLeading < 0 && insertedVowel < 0 && insertedTrailing < 0) {
++    return NO;
++  }
++
++  NSRange selection = NSMakeRange(NSNotFound, 0);
++  if (!aHandler->SelectedRange(selection) || selection.location == NSNotFound ||
++      selection.length != 0 || selection.location == 0) {
++    return NO;
++  }
++
++  nsString previousText;
++  if (!aHandler->TextInRange(NSMakeRange(selection.location - 1, 1),
++                             previousText) ||
++      previousText.Length() != 1) {
++    return NO;
++  }
++
++  const char16_t previous = previousText[0];
++  NSString* replacement = nil;
++
++  if (insertedVowel >= 0) {
++    const int previousLeading = HangulLeadingIndex(previous);
++    if (previousLeading >= 0) {
++      replacement = HangulString(
++          ComposeHangulSyllable(previousLeading, insertedVowel, 0));
++    }
++
++    const int previousVowel = HangulVowelIndex(previous);
++    if (!replacement && previousVowel >= 0) {
++      const int combinedVowel =
++          CombineHangulVowels(previousVowel, insertedVowel);
++      if (combinedVowel >= 0) {
++        replacement = HangulString(HangulCompatibilityVowel(combinedVowel));
++      }
++    }
++
++    int leading = 0;
++    int vowel = 0;
++    int trailing = 0;
++    if (!replacement &&
++        DecomposeHangulSyllable(previous, leading, vowel, trailing)) {
++      if (trailing == 0) {
++        const int combinedVowel = CombineHangulVowels(vowel, insertedVowel);
++        if (combinedVowel >= 0) {
++          replacement =
++              HangulString(ComposeHangulSyllable(leading, combinedVowel, 0));
++        }
++      } else {
++        int previousTrailing = 0;
++        int nextLeading = 0;
++        if (!SplitHangulTrailingConsonants(trailing, previousTrailing,
++                                           nextLeading) &&
++            !HangulLeadingIndexFromTrailing(trailing, nextLeading)) {
++          return NO;
++        }
++
++        replacement = HangulString(
++            ComposeHangulSyllable(leading, vowel, previousTrailing),
++            ComposeHangulSyllable(nextLeading, insertedVowel, 0));
++      }
++    }
++  } else if (insertedTrailing >= 0) {
++    int leading = 0;
++    int vowel = 0;
++    int trailing = 0;
++    if (DecomposeHangulSyllable(previous, leading, vowel, trailing)) {
++      if (trailing == 0) {
++        replacement = HangulString(
++            ComposeHangulSyllable(leading, vowel, insertedTrailing));
++      } else {
++        const int combinedTrailing =
++            CombineHangulTrailingConsonants(trailing, insertedTrailing);
++        if (combinedTrailing >= 0) {
++          replacement = HangulString(
++              ComposeHangulSyllable(leading, vowel, combinedTrailing));
++        }
++      }
++    }
++  }
++
++  if (!replacement) {
++    return NO;
++  }
++
++  NSRange replacementRange = NSMakeRange(selection.location - 1, 1);
++  if (!aHandler->ReplaceRange(replacementRange, replacement)) {
++    [self clearKoreanCompositionState];
++    return NO;
++  }
++
++  [mEditable.mKoreanComposedText release];
++  mEditable.mKoreanComposedText = [replacement copy];
++  return YES;
 +}
 +
 +@end

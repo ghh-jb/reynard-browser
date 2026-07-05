@@ -1,8 +1,8 @@
 diff --git a/mobile/ios/app/mobile.js b/mobile/ios/app/mobile.js
-index e835b1c33d86..03ccc9e3bb84 100644
+index e835b1c33d86..baafad54b83d 100644
 --- a/mobile/ios/app/mobile.js
 +++ b/mobile/ios/app/mobile.js
-@@ -3,7 +3,97 @@
+@@ -3,7 +3,99 @@
  // License, v. 2.0. If a copy of the MPL was not distributed with this
  // file, You can obtain one at http://mozilla.org/MPL/2.0/.
  
@@ -93,6 +93,8 @@ index e835b1c33d86..03ccc9e3bb84 100644
 +// Disable the new sync storage
 +pref("webextensions.storage.sync.kinto", true);
 +
++pref("widget.non-native-theme.use-theme-accent", false);
++
 +// Require extensions to be signed (bug 1244329)
 +pref("xpinstall.signatures.required", true);
 +
@@ -101,7 +103,7 @@ index e835b1c33d86..03ccc9e3bb84 100644
  
  // Use software webrender on simulator due to missing APIs.
  #if TARGET_OS_SIMULATOR
-@@ -19,3 +109,5 @@ pref("security.sandbox.content.level", 1);
+@@ -19,3 +111,5 @@ pref("security.sandbox.content.level", 1);
  // 1 complete progressbar at DOMContentLoaded
  // 2 complete progressbar at first MozAfterPaint after DOMContentLoaded
  pref("page_load.progressbar_completion", 2);

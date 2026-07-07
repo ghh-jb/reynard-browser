@@ -1,5 +1,5 @@
 diff --git a/gfx/2d/UnscaledFontMac.h b/gfx/2d/UnscaledFontMac.h
-index ea3a8902d28f..bd4c24ccc97c 100644
+index ea3a8902d28f..47b3e98ec03f 100644
 --- a/gfx/2d/UnscaledFontMac.h
 +++ b/gfx/2d/UnscaledFontMac.h
 @@ -24,9 +24,15 @@ class UnscaledFontMac final : public UnscaledFont {
@@ -32,7 +32,7 @@ index ea3a8902d28f..bd4c24ccc97c 100644
    bool GetFontFileData(FontFileDataOutput aDataCallback, void* aBaton) override;
  
    bool IsDataFont() const { return mIsDataFont; }
-@@ -76,6 +86,12 @@ class UnscaledFontMac final : public UnscaledFont {
+@@ -76,11 +86,18 @@ class UnscaledFontMac final : public UnscaledFont {
    // part of the string (= starting offset of the path).
    bool GetFontDescriptor(FontDescriptorOutput aCb, void* aBaton) override;
  
@@ -45,7 +45,14 @@ index ea3a8902d28f..bd4c24ccc97c 100644
    CFArrayRef& CGAxesCache() { return mCGAxesCache; }
    CFArrayRef& CTAxesCache() { return mCTAxesCache; }
  
-@@ -88,6 +104,8 @@ class UnscaledFontMac final : public UnscaledFont {
+   static already_AddRefed<UnscaledFont> CreateFromFontDescriptor(
+-      const uint8_t* aData, uint32_t aDataLength, uint32_t aIndex);
++      const uint8_t* aData, uint32_t aDataLength, uint32_t aIndex,
++      DescriptorProvenance aProvenance, uint32_t aSystemFontTraits);
+ 
+  private:
+   CTFontDescriptorRef mFontDesc = nullptr;
+@@ -88,6 +105,8 @@ class UnscaledFontMac final : public UnscaledFont {
    CFArrayRef mCGAxesCache = nullptr;  // Cached arrays of variation axis details
    CFArrayRef mCTAxesCache = nullptr;
    bool mIsDataFont;

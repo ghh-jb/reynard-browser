@@ -100,6 +100,14 @@ final class TopToolbar: UIView {
         return stack
     }()
     
+    private lazy var contentLayoutGuide: UILayoutGuide = {
+        if #available(iOS 26.0, *) {
+            return layoutGuide(for: .safeArea(cornerAdaptation: .horizontal))
+        }
+        
+        return safeAreaLayoutGuide
+    }()
+    
     private var heightConstraint: NSLayoutConstraint!
     private var contentTopConstraint: NSLayoutConstraint!
     private var leadingWidthConstraint: NSLayoutConstraint!
@@ -145,15 +153,15 @@ final class TopToolbar: UIView {
                 addressBar.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             ]
             widthLimitedStandardAddressBarConstraints = [
-                addressBar.centerXAnchor.constraint(equalTo: safeAreaLayoutGuide.centerXAnchor),
+                addressBar.centerXAnchor.constraint(equalTo: contentLayoutGuide.centerXAnchor),
                 addressBar.widthAnchor.constraint(equalToConstant: UX.topToolbarAddressBarWidthLimit),
                 addressBar.leadingAnchor.constraint(greaterThanOrEqualTo: leadingButtons.trailingAnchor, constant: UX.topToolbarAddressBarSpacing),
                 addressBar.trailingAnchor.constraint(lessThanOrEqualTo: trailingButtons.leadingAnchor, constant: -UX.topToolbarAddressBarSpacing),
                 addressBar.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             ]
             compactAddressBarConstraints = [
-                addressBar.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: UX.topToolbarHorizontalInset),
-                addressBar.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -UX.topToolbarHorizontalInset),
+                addressBar.leadingAnchor.constraint(equalTo: contentLayoutGuide.leadingAnchor, constant: UX.topToolbarHorizontalInset),
+                addressBar.trailingAnchor.constraint(equalTo: contentLayoutGuide.trailingAnchor, constant: -UX.topToolbarHorizontalInset),
                 addressBar.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             ]
         }
@@ -276,12 +284,12 @@ final class TopToolbar: UIView {
             contentView.trailingAnchor.constraint(equalTo: trailingAnchor),
             contentView.heightAnchor.constraint(equalToConstant: UX.topToolbarContentHeight),
             
-            leadingButtons.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: UX.topToolbarHorizontalInset),
+            leadingButtons.leadingAnchor.constraint(equalTo: contentLayoutGuide.leadingAnchor, constant: UX.topToolbarHorizontalInset),
             leadingButtons.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             leadingWidthConstraint,
             leadingButtons.heightAnchor.constraint(equalToConstant: UX.topToolbarButtonStackHeight),
             
-            trailingButtons.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -UX.topToolbarHorizontalInset),
+            trailingButtons.trailingAnchor.constraint(equalTo: contentLayoutGuide.trailingAnchor, constant: -UX.topToolbarHorizontalInset),
             trailingButtons.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             trailingWidthConstraint,
             trailingButtons.heightAnchor.constraint(equalToConstant: UX.topToolbarButtonStackHeight),
@@ -300,7 +308,8 @@ final class TopToolbar: UIView {
     }
     
     private var shouldLimitStandardAddressBarWidth: Bool {
-        let safeWidth = bounds.width - safeAreaInsets.left - safeAreaInsets.right
+        let layoutInsets = contentLayoutInsets
+        let safeWidth = bounds.width - layoutInsets.left - layoutInsets.right
         guard safeWidth > 0 else { return false }
         
         let leadingBoundary = UX.topToolbarHorizontalInset
@@ -316,6 +325,14 @@ final class TopToolbar: UIView {
         ) * 2
         
         return centeredWidth > UX.topToolbarAddressBarWidthLimit
+    }
+    
+    private var contentLayoutInsets: UIEdgeInsets {
+        if #available(iOS 26.0, *) {
+            return edgeInsets(for: .safeArea(cornerAdaptation: .horizontal))
+        }
+        
+        return safeAreaInsets
     }
     
     private func updateStandardAddressBarLayout() {

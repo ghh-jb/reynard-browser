@@ -70,6 +70,11 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
         refreshSidebarButton()
     }
     
+    override func viewSafeAreaInsetsDidChange() {
+        super.viewSafeAreaInsetsDidChange()
+        refreshSidebarButton()
+    }
+    
     // MARK: - UINavigationControllerDelegate
     
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
@@ -142,9 +147,11 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
         if viewController === self {
             if showChromeSidebarButton {
                 navigationItem.leftBarButtonItem = nil
+                navigationItem.leftBarButtonItems = nil
             } else {
                 configureSidebarButton(sidebarButton)
-                navigationItem.leftBarButtonItem = UIBarButtonItem(customView: sidebarButton)
+                navigationItem.leftBarButtonItem = nil
+                navigationItem.leftBarButtonItems = standaloneSidebarButtonItems(for: sidebarButton)
             }
             navigationItem.rightBarButtonItem = nil
             return
@@ -171,9 +178,33 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
         return button
     }
     
+    private func standaloneSidebarButtonItems(for button: UIButton) -> [UIBarButtonItem] {
+        let item = UIBarButtonItem(customView: button)
+        let leadingSpace = standaloneSidebarButtonLeadingSpace
+        guard leadingSpace > 0 else {
+            return [item]
+        }
+        
+        let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        spacer.width = leadingSpace
+        return [spacer, item]
+    }
+    
     private func configureSidebarButton(_ button: UIButton) {
         button.setImage(splitViewController?.displayModeButtonItem.image ?? UIImage(named: "reynard.sidebar.left"), for: .normal)
         button.accessibilityLabel = splitViewController?.displayModeButtonItem.accessibilityLabel
+    }
+    
+    private var standaloneSidebarButtonLeadingSpace: CGFloat {
+        if #available(iOS 26.0, *) {
+            let layoutInsets = view.directionalEdgeInsets(for: .safeArea(cornerAdaptation: .horizontal))
+            let safeAreaLeadingInset = view.effectiveUserInterfaceLayoutDirection == .rightToLeft
+            ? view.safeAreaInsets.right
+            : view.safeAreaInsets.left
+            return max(0, layoutInsets.leading - safeAreaLeadingInset)
+        }
+        
+        return 0
     }
     
     private func rightBarButtonItemsExcludingSidebarButton(from navigationItem: UINavigationItem) -> [UIBarButtonItem] {

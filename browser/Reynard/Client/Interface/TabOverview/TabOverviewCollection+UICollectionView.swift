@@ -57,7 +57,9 @@ extension TabOverviewCollection: UICollectionViewDataSource, UICollectionViewDel
         let previewImage = (collectionView.cellForItem(at: indexPath) as? TabOverviewCard)?.previewImage
         ?? selectedTab.thumbnail
         tabOverview.prepareDismissSelection(to: indexPath.item, mode: tabMode.tabMode, previewImage: previewImage)
-        tabOverview.reloadTabs()
+        if !tabOverview.isTransitionRunning {
+            tabOverview.reloadTabs()
+        }
         tabOverview.delegate?.tabOverviewDidRequestDismiss(tabOverview, animated: true)
     }
     

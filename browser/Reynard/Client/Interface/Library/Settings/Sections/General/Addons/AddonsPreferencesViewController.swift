@@ -228,7 +228,7 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
                 return
             }
             navigationController?.pushViewController(
-                AddonDetailsPreferencesViewController(addonID: addon.id),
+                AddonDetailsPreferencesViewController(addonID: addon.id, addonName: addon.metaData.name ?? addon.id),
                 animated: true
             )
         case .more:

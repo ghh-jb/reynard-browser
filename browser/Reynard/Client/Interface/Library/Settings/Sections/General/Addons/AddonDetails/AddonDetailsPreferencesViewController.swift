@@ -134,10 +134,10 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
     
     // MARK: - Lifecycle
     
-    init(addonID: String) {
+    init(addonID: String, addonName: String) {
         self.addonID = addonID
         super.init(style: .insetGrouped)
-        title = "Add-on"
+        title = addonName
     }
     
     required init?(coder: NSCoder) {
@@ -354,7 +354,6 @@ final class AddonDetailsPreferencesViewController: SettingsTableViewController {
     
     private func display(addon: Addon) {
         self.addon = addon
-        title = addon.metaData.name ?? addon.id
         enableSwitch.isOn = addon.metaData.enabled
         enableSwitch.isEnabled = addon.metaData.canBeEnabled && !isUpdatingAddon
         privateBrowsingSwitch.isOn = addon.metaData.allowedInPrivateBrowsing

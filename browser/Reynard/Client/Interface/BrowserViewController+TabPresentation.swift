@@ -25,6 +25,11 @@ extension BrowserViewController: TabBarDataSource, TabOverviewDataSource, TabOve
     func selectTab(at index: Int, mode: TabMode) {
         if mode == tabManager.selectedTabMode,
            index != tabManager.selectedTabIndex {
+            if tabOverview.isPresented || tabOverview.isTransitionRunning {
+                tabManager.selectTab(at: index, mode: mode)
+                return
+            }
+            
             captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode) { [weak self] _ in
                 self?.tabManager.selectTab(at: index, mode: mode)
             }

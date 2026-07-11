@@ -171,8 +171,10 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
 
     private func captureTabThumbnailIfNeeded() {
         if let tab = tabManager.activeTabs[safe: tabManager.selectedTabIndex],
-           homepageOverlayCoordinator.needsHomepageThumbnail(for: tab),
-           tab.thumbnail != nil {
+           homepageOverlayCoordinator.needsHomepageThumbnail(for: tab) {
+            if let thumbnail = homepageOverlayCoordinator.previewImage(for: tab, size: contentView.bounds.size) {
+                tabManager.updateThumbnail(thumbnail, forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode)
+            }
             return
         }
 

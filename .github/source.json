@@ -25,7 +25,8 @@
       ],
       "appPermissions": {
         "entitlements": [
-          "com.apple.developer.kernel.increased-memory-limit"
+          "com.apple.developer.kernel.increased-memory-limit",
+          "get-task-allow"
         ],
         "privacy": {
           "NSCameraUsageDescription": "Camera access lets websites in this browser scan QR codes, capture photos, and start video calls.",

@@ -87,6 +87,14 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         presentBookmarkEditor(addToFavorites: favorites)
     }
     
+    func addressBarShareableURL(_ addressBar: AddressBar) -> URL? {
+        guard let selectedTab = tabManager.selectedTab else {
+            return nil
+        }
+        
+        return tabManager.shareableURL(for: selectedTab)
+    }
+    
     // MARK: - AddressBarGestureDelegate
     
     var transitionContainerView: UIView {
@@ -126,25 +134,28 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     }
     
     func selectTabFromGesture(at index: Int, mode: TabMode) {
-        if mode == tabManager.selectedTabMode,
-           index != tabManager.selectedTabIndex {
-            captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode) { [weak self] _ in
-                self?.tabManager.selectTab(at: index, mode: mode)
-            }
-            return
-        }
-        
         tabManager.selectTab(at: index, mode: mode)
     }
     
     func createTabForSwipe() -> Int {
-        captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode)
-        homepageOverlayCoordinator.prepareHomepageForNewTab(mode: tabManager.selectedTabMode)
-        let index = tabManager.createTab(selecting: true)
-        applyNewTabDisplayOption(toTabAt: index)
+        let mode = tabManager.selectedTabMode
+        captureTabThumbnailIfNeeded()
+        homepageOverlayCoordinator.prepareHomepageForNewTab(mode: mode)
+        let index = tabManager.createTab(selecting: false)
+
+        if Prefs.NewTabSettings.newTabDisplayOption == .customURL {
+            applyNewTabDisplayOption(toTabAt: index)
+            return index
+        }
+
+        if let tab = tabManager.activeTabs[safe: index],
+           let previewImage = homepageOverlayCoordinator.previewImage(for: tab, size: contentView.bounds.size) {
+            tabManager.updateThumbnail(previewImage, forTabAt: index, mode: mode)
+        }
+
         return index
     }
-    
+
     func setPendingTabExpansion(at index: Int?) {
         tabBar.setPendingExpansion(at: index)
     }
@@ -155,8 +166,27 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     
     func addressBarGestureWillBegin() {
         browserChrome.dismissActionBar(animated: false)
+        captureTabThumbnailIfNeeded()
+    }
+
+    private func captureTabThumbnailIfNeeded() {
+        if let tab = tabManager.activeTabs[safe: tabManager.selectedTabIndex],
+           homepageOverlayCoordinator.needsHomepageThumbnail(for: tab),
+           tab.thumbnail != nil {
+            return
+        }
+
+        captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode)
     }
     
+    func storedContentPreview(from tab: Tab) -> UIImage? {
+        guard homepageOverlayCoordinator.needsHomepageThumbnail(for: tab) else {
+            return nil
+        }
+
+        return tab.thumbnail
+    }
+
     // MARK: - Page Zoom
     
     func setSelectedPageZoomToPreviousLevel() {

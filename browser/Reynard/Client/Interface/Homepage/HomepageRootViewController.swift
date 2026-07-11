@@ -122,6 +122,9 @@ final class HomepageRootViewController: UIViewController {
         }
         
         self.isPrivateBrowsing = isPrivateBrowsing
+        guard isViewLoaded else {
+            return
+        }
         
         if folder == nil {
             reloadSections()
@@ -185,6 +188,7 @@ final class HomepageRootViewController: UIViewController {
     private func reloadSections() {
         sectionViewControllers.values.forEach { viewController in
             viewController.willMove(toParent: nil)
+            sectionStackView.removeArrangedSubview(viewController.view)
             viewController.view.removeFromSuperview()
             viewController.removeFromParent()
         }
@@ -288,6 +292,8 @@ final class HomepageRootViewController: UIViewController {
         
         return sections.filter { section in
             switch section {
+            case .privateBrowsing:
+                return isPrivateBrowsing
             case .favorites:
                 return Prefs.HomepageSettings.showsFavorites &&
                 (!isPrivateBrowsing || Prefs.HomepageSettings.showsFavoritesInPrivateBrowsing)

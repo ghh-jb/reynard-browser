@@ -33,6 +33,7 @@ public class GeckoSession {
     
     public func updateSettings(_ settings: GeckoSessionSettings) {
         self.settings = settings
+        GeckoRuntime.setLocale(acceptLanguages: settings.language.acceptLanguages)
         
         guard isOpen() else { return }
         
@@ -144,6 +145,8 @@ public class GeckoSession {
         id = windowId ?? UUID().uuidString.replacingOccurrences(of: "-", with: "")
         
         let sessionSettings = settings
+        GeckoRuntime.setLocale(acceptLanguages: sessionSettings.language.acceptLanguages)
+        
         let settings: [String: Any?] = [
             "chromeUri": nil,
             "screenId": 0,

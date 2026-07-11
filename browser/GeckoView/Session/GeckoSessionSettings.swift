@@ -39,20 +39,38 @@ public struct PageZoomSetting: Equatable {
     }
 }
 
+public struct LanguageSetting: Equatable {
+    public static let `default` = LanguageSetting(codes: ["en"])
+    
+    public let codes: [String]
+    
+    public var acceptLanguages: String {
+        return codes.joined(separator: ",")
+    }
+    
+    public init(codes: [String]) {
+        self.codes = codes
+    }
+}
+
 public struct GeckoSessionSettings: Equatable {
     public static let `default` = GeckoSessionSettings(
         websiteMode: .mobile,
-        pageZoom: .default
+        pageZoom: .default,
+        language: .default
     )
     
     public let websiteMode: WebsiteModeSetting
     public let pageZoom: PageZoomSetting
+    public let language: LanguageSetting
     
     public init(
         websiteMode: WebsiteModeSetting,
-        pageZoom: PageZoomSetting
+        pageZoom: PageZoomSetting,
+        language: LanguageSetting
     ) {
         self.websiteMode = websiteMode
         self.pageZoom = pageZoom
+        self.language = language
     }
 }

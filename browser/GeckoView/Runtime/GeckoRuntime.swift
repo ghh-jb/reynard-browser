@@ -40,6 +40,15 @@ public class GeckoRuntime {
         return GeckoRuntimeBridge.version()
     }
     
+    public static func setLocale(acceptLanguages: String) {
+        GeckoEventDispatcherWrapper.runtimeInstance.dispatch(
+            type: "GeckoView:SetLocale",
+            message: [
+                "acceptLanguages": acceptLanguages
+            ]
+        )
+    }
+    
     public static func main(
         argc: Int32,
         argv: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>

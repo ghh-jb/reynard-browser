@@ -14,6 +14,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         static let focusedInputBottomClearance: CGFloat = 12
         static let focusedInputOffsetThreshold: CGFloat = 0.5
         static let historyPreviewParallaxRatio: CGFloat = 0.33
+        static let historyTransitionOverlayMaximumAlpha: CGFloat = 0.12
         static let historyTransitionProjectionDuration: CGFloat = 0.2
         static let historyTransitionDuration: TimeInterval = 0.35
     }
@@ -71,6 +72,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     private let webContentView = WebContentView()
     private let overlayContentView = OverlayContentView()
     private let historyPreviewImageView = UIImageView()
+    private let historyTransitionOverlayView = UIView()
     
     var onBack: (() -> Void)?
     var onForward: (() -> Void)?
@@ -108,18 +110,23 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
     private func configureHierarchy() {
         webContentView.translatesAutoresizingMaskIntoConstraints = false
         historyPreviewImageView.translatesAutoresizingMaskIntoConstraints = false
+        historyTransitionOverlayView.translatesAutoresizingMaskIntoConstraints = false
         overlayContentView.translatesAutoresizingMaskIntoConstraints = false
         historyPreviewImageView.isHidden = true
         historyPreviewImageView.backgroundColor = .systemBackground
         historyPreviewImageView.contentMode = .scaleAspectFill
         historyPreviewImageView.clipsToBounds = true
+        historyTransitionOverlayView.isHidden = true
+        historyTransitionOverlayView.backgroundColor = .black
+        historyTransitionOverlayView.alpha = 0
         addSubview(webContentView)
         addSubview(historyPreviewImageView)
+        addSubview(historyTransitionOverlayView)
         addSubview(overlayContentView)
     }
     
     private func configureConstraints() {
-        [webContentView, historyPreviewImageView, overlayContentView].forEach { contentView in
+        [webContentView, historyPreviewImageView, historyTransitionOverlayView, overlayContentView].forEach { contentView in
             NSLayoutConstraint.activate([
                 contentView.topAnchor.constraint(equalTo: topAnchor),
                 contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -416,18 +423,23 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         historySwipeState = .swiping(direction)
         historyPreviewImageView.image = direction == .back ? backPreviewImage : forwardPreviewImage
         historyPreviewImageView.isHidden = false
+        historyTransitionOverlayView.isHidden = false
         
         let width = bounds.width
         switch direction {
         case .back:
             insertSubview(historyPreviewImageView, belowSubview: webContentView)
+            insertSubview(historyTransitionOverlayView, belowSubview: webContentView)
             historyPreviewImageView.transform = CGAffineTransform(
                 translationX: -width * UX.historyPreviewParallaxRatio,
                 y: 0
             )
+            updateHistoryTransitionOverlay(direction: direction, progress: 0)
         case .forward:
-            insertSubview(historyPreviewImageView, aboveSubview: webContentView)
+            insertSubview(historyTransitionOverlayView, aboveSubview: webContentView)
+            insertSubview(historyPreviewImageView, aboveSubview: historyTransitionOverlayView)
             historyPreviewImageView.transform = CGAffineTransform(translationX: width, y: 0)
+            updateHistoryTransitionOverlay(direction: direction, progress: 0)
         }
     }
     
@@ -455,6 +467,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
                 y: 0
             )
         }
+        updateHistoryTransitionOverlay(direction: direction, progress: progress)
     }
     
     private func finishHistoryNavigation(
@@ -496,9 +509,11 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
                 case .back:
                     self.webContentView.transform = CGAffineTransform(translationX: width, y: 0)
                     self.historyPreviewImageView.transform = .identity
+                    self.updateHistoryTransitionOverlay(direction: direction, progress: 1)
                     self.onBack?()
                 case .forward:
                     self.historyPreviewImageView.transform = .identity
+                    self.updateHistoryTransitionOverlay(direction: direction, progress: 1)
                     self.onForward?()
                 }
             } else {
@@ -509,8 +524,10 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
                         translationX: -width * UX.historyPreviewParallaxRatio,
                         y: 0
                     )
+                    self.updateHistoryTransitionOverlay(direction: direction, progress: 0)
                 case .forward:
                     self.historyPreviewImageView.transform = CGAffineTransform(translationX: width, y: 0)
+                    self.updateHistoryTransitionOverlay(direction: direction, progress: 0)
                 }
             }
         } completion: { _ in
@@ -550,11 +567,28 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         return min(max(distance / max(bounds.width, 1), 0), 1)
     }
     
+    private func updateHistoryTransitionOverlay(
+        direction: HistorySwipeDirection,
+        progress: CGFloat
+    ) {
+        let leadingEdgeProgress: CGFloat
+        switch direction {
+        case .back:
+            leadingEdgeProgress = 1 - progress
+        case .forward:
+            leadingEdgeProgress = progress
+        }
+        
+        historyTransitionOverlayView.alpha = UX.historyTransitionOverlayMaximumAlpha * leadingEdgeProgress
+    }
+    
     private func resetHistoryNavigation() {
         webContentView.transform = .identity
         historyPreviewImageView.transform = .identity
         historyPreviewImageView.image = nil
         historyPreviewImageView.isHidden = true
+        historyTransitionOverlayView.alpha = 0
+        historyTransitionOverlayView.isHidden = true
         historySwipeState = .idle
     }
     

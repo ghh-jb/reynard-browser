@@ -2,23 +2,53 @@
   "sourceLanguage" : "en",
   "strings" : {
     " of %@" : {
-      "comment" : "Total file size"
+      "comment" : "Total file size",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " of %@"
+          }
+        }
+      }
     },
     " Tab" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Tab"
+          }
+        }
+      }
     },
     " Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Tabs"
+          }
+        }
+      }
     },
     "%@ · Opened Tab" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Opened Tab"
+          }
+        }
+      }
     },
     "%@ · Visited %@" : {
       "comment" : "Host and date",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@ · Visited %2$@"
           }
         }
@@ -29,36 +59,84 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@ and %2$@"
           }
         }
       }
     },
     "%@ are disabled for Reynard. Open Settings to allow access." : {
-      "comment" : "Permission list placeholder"
+      "comment" : "Permission list placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ are disabled for Reynard. Open Settings to allow access."
+          }
+        }
+      }
     },
     "%@ couldn’t be verified and has been disabled." : {
-      "comment" : "Add-on name"
+      "comment" : "Add-on name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ couldn’t be verified and has been disabled."
+          }
+        }
+      }
     },
     "%@ has been updated. Approve the additional permissions before the updated version is installed. Dismissing this prompt keeps your current add-on version." : {
-      "comment" : "Add-on name"
+      "comment" : "Add-on name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ has been updated. Approve the additional permissions before the updated version is installed. Dismissing this prompt keeps your current add-on version."
+          }
+        }
+      }
     },
     "%@ is disabled for Reynard. Open Settings to allow access." : {
-      "comment" : "Permission list placeholder"
+      "comment" : "Permission list placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is disabled for Reynard. Open Settings to allow access."
+          }
+        }
+      }
     },
     "%@ isn’t compatible with this version of Reynard." : {
-      "comment" : "Add-on name"
+      "comment" : "Add-on name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ isn’t compatible with this version of Reynard."
+          }
+        }
+      }
     },
     "%@ out of 5" : {
-      "comment" : "Rating value"
+      "comment" : "Rating value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ out of 5"
+          }
+        }
+      }
     },
     "%@ out of 5 • %@ Review" : {
       "comment" : "Rating and review count",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@ out of 5 • %2$@ Review"
           }
         }
@@ -69,1092 +147,3542 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@ out of 5 • %2$@ Reviews"
           }
         }
       }
     },
     "%@ requests additional data collection." : {
-      "comment" : "Add-on name"
+      "comment" : "Add-on name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ requests additional data collection."
+          }
+        }
+      }
     },
     "%@ requests additional permissions." : {
-      "comment" : "Add-on name"
+      "comment" : "Add-on name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ requests additional permissions."
+          }
+        }
+      }
     },
     "%@ Suggestions" : {
-      "comment" : "Search provider name"
+      "comment" : "Search provider name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Suggestions"
+          }
+        }
+      }
     },
     "%@, and %@" : {
       "comment" : "List final item",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "%1$@, and %2$@"
           }
         }
       }
     },
     "%@/sec" : {
-      "comment" : "Download speed"
+      "comment" : "Download speed",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/sec"
+          }
+        }
+      }
     },
     "%d add-ons couldn’t be updated." : {
-      "comment" : "Add-on count"
+      "comment" : "Add-on count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d add-ons couldn’t be updated."
+          }
+        }
+      }
     },
     "%d add-ons need permission to update." : {
-      "comment" : "Add-on count"
+      "comment" : "Add-on count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d add-ons need permission to update."
+          }
+        }
+      }
     },
     "%d add-ons updated." : {
-      "comment" : "Add-on count"
+      "comment" : "Add-on count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d add-ons updated."
+          }
+        }
+      }
     },
     "%d domains" : {
-      "comment" : "Domain count"
+      "comment" : "Domain count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d domains"
+          }
+        }
+      }
     },
     "▲ JIT-Less Mode is Currently Active" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▲ JIT-Less Mode is Currently Active"
+          }
+        }
+      }
     },
     "0 Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0 Tabs"
+          }
+        }
+      }
     },
     "1 add-on couldn’t be updated." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 add-on couldn’t be updated."
+          }
+        }
+      }
     },
     "1 add-on needs permission to update." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 add-on needs permission to update."
+          }
+        }
+      }
     },
     "1 add-on updated." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 add-on updated."
+          }
+        }
+      }
     },
     "1 domain" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 domain"
+          }
+        }
+      }
     },
     "A Developer Disk Image download is already in progress." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A Developer Disk Image download is already in progress."
+          }
+        }
+      }
     },
     "A new version of Reynard Browser is available. Open Settings to update." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A new version of Reynard Browser is available. Open Settings to update."
+          }
+        }
+      }
     },
     "About" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
     },
     "Access" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access"
+          }
+        }
+      }
     },
     "Access your data on websites in %@" : {
-      "comment" : "Domain count text"
+      "comment" : "Domain count text",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Access your data on websites in %@"
+          }
+        }
+      }
     },
     "Activate JIT-Less Mode" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activate JIT-Less Mode"
+          }
+        }
+      }
     },
     "Add" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
+          }
+        }
+      }
     },
     "Add %@?" : {
-      "comment" : "Add-on name"
+      "comment" : "Add-on name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add %@?"
+          }
+        }
+      }
     },
     "Add Add-on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Add-on"
+          }
+        }
+      }
     },
     "Add Bookmark" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Bookmark"
+          }
+        }
+      }
     },
     "Add Language" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Language"
+          }
+        }
+      }
     },
     "Add Language…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Language…"
+          }
+        }
+      }
     },
     "Add to Favorites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Favorites"
+          }
+        }
+      }
     },
     "Add Website" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Website"
+          }
+        }
+      }
     },
     "Add Website…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Website…"
+          }
+        }
+      }
     },
     "Add websites with sign-in failures, human verification challenges, or other issues to use the %@ user agent." : {
-      "comment" : "User agent name placeholder"
+      "comment" : "User agent name placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add websites with sign-in failures, human verification challenges, or other issues to use the %@ user agent."
+          }
+        }
+      }
     },
     "Add-ons" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add-ons"
+          }
+        }
+      }
     },
     "Additional Options" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Additional Options"
+          }
+        }
+      }
     },
     "Address" : {
-      "comment" : "Sort option"
+      "comment" : "Sort option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Address"
+          }
+        }
+      }
     },
     "Address Bar" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Address Bar"
+          }
+        }
+      }
     },
     "Admin Only" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Admin Only"
+          }
+        }
+      }
     },
     "Advanced" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced"
+          }
+        }
+      }
     },
     "After you close a tab, Reynard won’t remember any of your browsing history or cookies. However, downloads and new bookmarks will be saved." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After you close a tab, Reynard won’t remember any of your browsing history or cookies. However, downloads and new bookmarks will be saved."
+          }
+        }
+      }
     },
     "All Downloads" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Downloads"
+          }
+        }
+      }
     },
     "All History" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All History"
+          }
+        }
+      }
     },
     "All Websites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Websites"
+          }
+        }
+      }
     },
     "Allow" : {
-      "comment" : "Permission option"
+      "comment" : "Permission option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow"
+          }
+        }
+      }
     },
     "Allow %@ to access apps and services on devices connected to your local network?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to access apps and services on devices connected to your local network?"
+          }
+        }
+      }
     },
     "Allow %@ to access other apps and services on this device?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to access other apps and services on this device?"
+          }
+        }
+      }
     },
     "Allow %@ to play DRM-controlled content?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to play DRM-controlled content?"
+          }
+        }
+      }
     },
     "Allow %@ to send notifications?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to send notifications?"
+          }
+        }
+      }
     },
     "Allow %@ to store data in persistent storage?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to store data in persistent storage?"
+          }
+        }
+      }
     },
     "Allow %@ to use its cookies on %@?" : {
       "comment" : "Third-party and site hosts",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "Allow %1$@ to use its cookies on %2$@?"
           }
         }
       }
     },
     "Allow %@ to use motion & orientation sensors?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use motion & orientation sensors?"
+          }
+        }
+      }
     },
     "Allow %@ to use your camera and microphone?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your camera and microphone?"
+          }
+        }
+      }
     },
     "Allow %@ to use your camera?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your camera?"
+          }
+        }
+      }
     },
     "Allow %@ to use your location?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your location?"
+          }
+        }
+      }
     },
     "Allow %@ to use your microphone?" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your microphone?"
+          }
+        }
+      }
     },
     "Allow Audio and Video" : {
-      "comment" : "Autoplay option"
+      "comment" : "Autoplay option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow Audio and Video"
+          }
+        }
+      }
     },
     "Allow in Private Browsing" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow in Private Browsing"
+          }
+        }
+      }
     },
     "Allowed %@" : {
-      "comment" : "Timestamp placeholder"
+      "comment" : "Timestamp placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allowed %@"
+          }
+        }
+      }
     },
     "Allowed Websites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allowed Websites"
+          }
+        }
+      }
     },
     "Appearance" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appearance"
+          }
+        }
+      }
     },
     "Apps and Services" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps and Services"
+          }
+        }
+      }
     },
     "Are you sure you want to upload all files? Only do this if you trust the site." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to upload all files? Only do this if you trust the site."
+          }
+        }
+      }
     },
     "Ask" : {
-      "comment" : "Permission option"
+      "comment" : "Permission option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask"
+          }
+        }
+      }
     },
     "Author" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Author"
+          }
+        }
+      }
     },
     "Autoplay" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoplay"
+          }
+        }
+      }
     },
     "Blank Page" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blank Page"
+          }
+        }
+      }
     },
     "Block Audio and Video" : {
-      "comment" : "Autoplay option"
+      "comment" : "Autoplay option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Block Audio and Video"
+          }
+        }
+      }
     },
     "Block Audio Only" : {
-      "comment" : "Autoplay option"
+      "comment" : "Autoplay option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Block Audio Only"
+          }
+        }
+      }
     },
     "Blocked" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocked"
+          }
+        }
+      }
     },
     "Bookmarks" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmarks"
+          }
+        }
+      }
     },
     "Bookmarks, History, and Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmarks, History, and Tabs"
+          }
+        }
+      }
     },
     "Bottom" : {
-      "comment" : "Address bar position"
+      "comment" : "Address bar position",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bottom"
+          }
+        }
+      }
     },
     "Browsing" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsing"
+          }
+        }
+      }
     },
     "Browsing History" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browsing History"
+          }
+        }
+      }
     },
     "bytes" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bytes"
+          }
+        }
+      }
     },
     "Cached Images and Files" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cached Images and Files"
+          }
+        }
+      }
     },
     "Camera" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera"
+          }
+        }
+      }
     },
     "Cancel" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
     },
     "Cancel Download" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel Download"
+          }
+        }
+      }
     },
     "Cancel Download?" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel Download?"
+          }
+        }
+      }
     },
     "Changed %@" : {
-      "comment" : "Timestamp placeholder"
+      "comment" : "Timestamp placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Changed %@"
+          }
+        }
+      }
     },
     "Choose File" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose File"
+          }
+        }
+      }
     },
     "Choose Folder" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Folder"
+          }
+        }
+      }
     },
     "Clear" : {
-      "comment" : "Destructive button\nSwipe action"
+      "comment" : "Destructive button\nSwipe action",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
     },
     "Clear All" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear All"
+          }
+        }
+      }
     },
     "Clear Browsing Data" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Browsing Data"
+          }
+        }
+      }
     },
     "Clear Downloads" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Downloads"
+          }
+        }
+      }
     },
     "Clear History" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear History"
+          }
+        }
+      }
     },
     "Clear Timeframe" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Timeframe"
+          }
+        }
+      }
     },
     "Close All Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close All Tabs"
+          }
+        }
+      }
     },
     "Compatibility" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compatibility"
+          }
+        }
+      }
     },
     "Complete Add-on Updates" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Complete Add-on Updates"
+          }
+        }
+      }
     },
     "Confirm Upload" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Confirm Upload"
+          }
+        }
+      }
     },
     "Cookies and Website Data" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies and Website Data"
+          }
+        }
+      }
     },
     "Copy" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        }
+      }
     },
     "Copy Link" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Link"
+          }
+        }
+      }
     },
     "Copy URL" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy URL"
+          }
+        }
+      }
     },
     "Corrupt File" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Corrupt File"
+          }
+        }
+      }
     },
     "Could not retrieve the download URL." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not retrieve the download URL."
+          }
+        }
+      }
     },
     "Couldn’t Clear Browsing Data" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Clear Browsing Data"
+          }
+        }
+      }
     },
     "Couldn’t Clear History" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Clear History"
+          }
+        }
+      }
     },
     "Couldn’t Disable Add-on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Disable Add-on"
+          }
+        }
+      }
     },
     "Couldn’t Enable Add-on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Enable Add-on"
+          }
+        }
+      }
     },
     "Couldn’t install %@." : {
-      "comment" : "Add-on name"
+      "comment" : "Add-on name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t install %@."
+          }
+        }
+      }
     },
     "Couldn’t install this add-on." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t install this add-on."
+          }
+        }
+      }
     },
     "Couldn’t Reload Add-on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Reload Add-on"
+          }
+        }
+      }
     },
     "Couldn’t Remove Add-on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Remove Add-on"
+          }
+        }
+      }
     },
     "Couldn’t Update Permissions" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Update Permissions"
+          }
+        }
+      }
     },
     "Couldn’t Update Private Browsing Access" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t Update Private Browsing Access"
+          }
+        }
+      }
     },
     "Cross-Site Cookies" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cross-Site Cookies"
+          }
+        }
+      }
     },
     "Custom Search URL" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Search URL"
+          }
+        }
+      }
     },
     "Custom URL" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom URL"
+          }
+        }
+      }
     },
     "Date Added" : {
-      "comment" : "Sort option"
+      "comment" : "Sort option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date Added"
+          }
+        }
+      }
     },
     "Day" : {
-      "comment" : "Light appearance option"
+      "comment" : "Light appearance option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day"
+          }
+        }
+      }
     },
     "Default Setting" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default Setting"
+          }
+        }
+      }
     },
     "Delete" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        }
+      }
     },
     "Delete Bookmark" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Bookmark"
+          }
+        }
+      }
     },
     "Delete Folder" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Folder"
+          }
+        }
+      }
     },
     "Deleted" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deleted"
+          }
+        }
+      }
     },
     "Denied %@" : {
-      "comment" : "Timestamp placeholder"
+      "comment" : "Timestamp placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denied %@"
+          }
+        }
+      }
     },
     "Denied Websites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denied Websites"
+          }
+        }
+      }
     },
     "Deny" : {
-      "comment" : "Permission option"
+      "comment" : "Permission option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deny"
+          }
+        }
+      }
     },
     "Desktop Firefox" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desktop Firefox"
+          }
+        }
+      }
     },
     "Details" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details"
+          }
+        }
+      }
     },
     "Developer Disk Image download was cancelled." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer Disk Image download was cancelled."
+          }
+        }
+      }
     },
     "Developer Disk Image source URL is invalid." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Developer Disk Image source URL is invalid."
+          }
+        }
+      }
     },
     "Device Apps and Services" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device Apps and Services"
+          }
+        }
+      }
     },
     "Discover Add-ons…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discover Add-ons…"
+          }
+        }
+      }
     },
     "Do you want to download \"%@\"?" : {
-      "comment" : "File name"
+      "comment" : "File name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do you want to download \"%@\"?"
+          }
+        }
+      }
     },
     "Do you want to stop downloading %@?" : {
-      "comment" : "File name"
+      "comment" : "File name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do you want to stop downloading %@?"
+          }
+        }
+      }
     },
     "Don’t Allow" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don’t Allow"
+          }
+        }
+      }
     },
     "Download" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download"
+          }
+        }
+      }
     },
     "Download Failed" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Failed"
+          }
+        }
+      }
     },
     "Download Reynard (.tipa)" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Reynard (.tipa)"
+          }
+        }
+      }
     },
     "Downloading" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading"
+          }
+        }
+      }
     },
     "Downloading Update" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading Update"
+          }
+        }
+      }
     },
     "Downloads" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloads"
+          }
+        }
+      }
     },
     "e.g. youtube.com" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. youtube.com"
+          }
+        }
+      }
     },
     "Edit" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        }
+      }
     },
     "Edit Bookmark" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Bookmark"
+          }
+        }
+      }
     },
     "Edit Bookmarks" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Bookmarks"
+          }
+        }
+      }
     },
     "Enable Add-on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Add-on"
+          }
+        }
+      }
     },
     "Enable JIT" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable JIT"
+          }
+        }
+      }
     },
     "Enable JIT to improve performance and ensure websites work properly." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable JIT to improve performance and ensure websites work properly."
+          }
+        }
+      }
     },
     "Engine Version" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Engine Version"
+          }
+        }
+      }
     },
     "Error" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error"
+          }
+        }
+      }
     },
     "Error %d: %@" : {
       "comment" : "Code and description",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "Error %1$d: %2$@"
           }
         }
       }
     },
     "Failed to enable JIT" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to enable JIT"
+          }
+        }
+      }
     },
     "Favorites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites"
+          }
+        }
+      }
     },
     "Files you download appear here" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Files you download appear here"
+          }
+        }
+      }
     },
     "Firefox for Android" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Firefox for Android"
+          }
+        }
+      }
     },
     "Folders" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folders"
+          }
+        }
+      }
     },
     "Frequently Visited" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frequently Visited"
+          }
+        }
+      }
     },
     "General" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "General"
+          }
+        }
+      }
     },
     "GitHub - @minh-ton" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub - @minh-ton"
+          }
+        }
+      }
     },
     "History" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        }
+      }
     },
     "Homepage" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Homepage"
+          }
+        }
+      }
     },
     "Homepage Sections" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Homepage Sections"
+          }
+        }
+      }
     },
     "Import Failed" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Failed"
+          }
+        }
+      }
     },
     "Import Pairing File…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Pairing File…"
+          }
+        }
+      }
     },
     "Incompatible" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Incompatible"
+          }
+        }
+      }
     },
     "Information" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Information"
+          }
+        }
+      }
     },
     "Install Add-on from File…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install Add-on from File…"
+          }
+        }
+      }
     },
     "Install the TrollStore version of Reynard to enable JIT automatically for improved performance and to ensure websites work properly." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install the TrollStore version of Reynard to enable JIT automatically for improved performance and to ensure websites work properly."
+          }
+        }
+      }
     },
     "Install TrollStore" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install TrollStore"
+          }
+        }
+      }
     },
     "Installed Add-ons" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installed Add-ons"
+          }
+        }
+      }
     },
     "Installing Add-on…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installing Add-on…"
+          }
+        }
+      }
     },
     "It's extremely rare that you encounter this issue! Make sure that your TrollStore installation or jailbroken environment is properly configured.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode." : {
-      "comment" : "Paragraph break intentional"
+      "comment" : "Paragraph break intentional",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's extremely rare that you encounter this issue! Make sure that your TrollStore installation or jailbroken environment is properly configured.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode."
+          }
+        }
+      }
     },
     "JIT" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JIT"
+          }
+        }
+      }
     },
     "JIT is not supported on the OS version you are using." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JIT is not supported on the OS version you are using."
+          }
+        }
+      }
     },
     "Keep Downloading" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep Downloading"
+          }
+        }
+      }
     },
     "Languages" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Languages"
+          }
+        }
+      }
     },
     "Last checked %@." : {
-      "comment" : "Date placeholder"
+      "comment" : "Date placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last checked %@."
+          }
+        }
+      }
     },
     "Last Hour" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Hour"
+          }
+        }
+      }
     },
     "Last Tab" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Tab"
+          }
+        }
+      }
     },
     "Last Updated" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last Updated"
+          }
+        }
+      }
     },
     "Learn More" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Learn More"
+          }
+        }
+      }
     },
     "Links" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links"
+          }
+        }
+      }
     },
     "Loading Add-ons…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading Add-ons…"
+          }
+        }
+      }
     },
     "Local Network" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local Network"
+          }
+        }
+      }
     },
     "Local Network Devices" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Local Network Devices"
+          }
+        }
+      }
     },
     "Location" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
+          }
+        }
+      }
     },
     "Make sure TrollStore's URL Scheme is enabled." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Make sure TrollStore's URL Scheme is enabled."
+          }
+        }
+      }
     },
     "Media" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Media"
+          }
+        }
+      }
     },
     "Microphone" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Microphone"
+          }
+        }
+      }
     },
     "More About This Add-on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More About This Add-on"
+          }
+        }
+      }
     },
     "Name" : {
-      "comment" : "Sort option"
+      "comment" : "Sort option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        }
+      }
     },
     "Needs Permission to Update" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Needs Permission to Update"
+          }
+        }
+      }
     },
     "Network Error" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network Error"
+          }
+        }
+      }
     },
     "New Folder" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Folder"
+          }
+        }
+      }
     },
     "New Tab" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Tab"
+          }
+        }
+      }
     },
     "Night" : {
-      "comment" : "Dark appearance option"
+      "comment" : "Dark appearance option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Night"
+          }
+        }
+      }
     },
     "No" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No"
+          }
+        }
+      }
     },
     "No Add-ons" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Add-ons"
+          }
+        }
+      }
     },
     "No Add-ons Installed" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Add-ons Installed"
+          }
+        }
+      }
     },
     "No matching bookmarks" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching bookmarks"
+          }
+        }
+      }
     },
     "No matching downloads" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching downloads"
+          }
+        }
+      }
     },
     "No matching history" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching history"
+          }
+        }
+      }
     },
     "No release notes available." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No release notes available."
+          }
+        }
+      }
     },
     "No Update Available" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Update Available"
+          }
+        }
+      }
     },
     "No updates found." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No updates found."
+          }
+        }
+      }
     },
     "None" : {
-      "comment" : "Sort option"
+      "comment" : "Sort option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "None"
+          }
+        }
+      }
     },
     "Not Allowed in Private Browsing" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Allowed in Private Browsing"
+          }
+        }
+      }
     },
     "Not Verified" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Verified"
+          }
+        }
+      }
     },
     "Number of Rows" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number of Rows"
+          }
+        }
+      }
     },
     "Number of Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number of Tabs"
+          }
+        }
+      }
     },
     "Number of Websites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Number of Websites"
+          }
+        }
+      }
     },
     "Off" : {
-      "comment" : "Disabled state"
+      "comment" : "Disabled state",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
     },
     "OK" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
     },
     "On" : {
-      "comment" : "Enabled state"
+      "comment" : "Enabled state",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On"
+          }
+        }
+      }
     },
     "On Startup" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On Startup"
+          }
+        }
+      }
     },
     "Open in\nFiles" : {
-      "comment" : "Line break intentional"
+      "comment" : "Line break intentional",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in\nFiles"
+          }
+        }
+      }
     },
     "Open in New Private Tab" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in New Private Tab"
+          }
+        }
+      }
     },
     "Open in New Tab" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in New Tab"
+          }
+        }
+      }
     },
     "Open New Tabs To" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open New Tabs To"
+          }
+        }
+      }
     },
     "Open Settings" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings"
+          }
+        }
+      }
     },
     "Open Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Tabs"
+          }
+        }
+      }
     },
     "Option" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Option"
+          }
+        }
+      }
     },
     "Optional Data Collection" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optional Data Collection"
+          }
+        }
+      }
     },
     "Optional Permissions" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Optional Permissions"
+          }
+        }
+      }
     },
     "Page Zoom" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page Zoom"
+          }
+        }
+      }
     },
     "Page Zoom on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Page Zoom on"
+          }
+        }
+      }
     },
     "Performance Recommendation" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Performance Recommendation"
+          }
+        }
+      }
     },
     "Permissions" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permissions"
+          }
+        }
+      }
     },
     "Persistent Storage" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Persistent Storage"
+          }
+        }
+      }
     },
     "Photo Library" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Library"
+          }
+        }
+      }
     },
     "Please check that your pairing file is valid, your loopback VPN is on, and you're connected to a stable Wi-Fi network.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode." : {
-      "comment" : "Paragraph break intentional"
+      "comment" : "Paragraph break intentional",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please check that your pairing file is valid, your loopback VPN is on, and you're connected to a stable Wi-Fi network.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode."
+          }
+        }
+      }
     },
     "Preparing JIT" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing JIT"
+          }
+        }
+      }
     },
     "Previous 7 Days" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous 7 Days"
+          }
+        }
+      }
     },
     "Previous 30 Days" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous 30 Days"
+          }
+        }
+      }
     },
     "Privacy" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy"
+          }
+        }
+      }
     },
     "Private" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Private"
+          }
+        }
+      }
     },
     "Private Browsing" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Private Browsing"
+          }
+        }
+      }
     },
     "Quit Reynard" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit Reynard"
+          }
+        }
+      }
     },
     "Rating" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rating"
+          }
+        }
+      }
     },
     "Recently Closed Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Closed Tabs"
+          }
+        }
+      }
     },
     "Remove" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        }
+      }
     },
     "Remove %@?" : {
-      "comment" : "Add-on name"
+      "comment" : "Add-on name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove %@?"
+          }
+        }
+      }
     },
     "Remove Add-on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Add-on"
+          }
+        }
+      }
     },
     "Remove Link" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Link"
+          }
+        }
+      }
     },
     "Remove Recently Closed Tab" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Recently Closed Tab"
+          }
+        }
+      }
     },
     "Request Desktop Website" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request Desktop Website"
+          }
+        }
+      }
     },
     "Request Desktop Website On" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request Desktop Website On"
+          }
+        }
+      }
     },
     "Request Mobile Website" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request Mobile Website"
+          }
+        }
+      }
     },
     "Required Data Collection" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Required Data Collection"
+          }
+        }
+      }
     },
     "Required DDI files are missing." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Required DDI files are missing."
+          }
+        }
+      }
     },
     "Required Permissions" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Required Permissions"
+          }
+        }
+      }
     },
     "Reset" : {
-      "comment" : "Destructive button"
+      "comment" : "Destructive button",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
+          }
+        }
+      }
     },
     "Reset Page Zoom Settings" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Page Zoom Settings"
+          }
+        }
+      }
     },
     "Reset Permissions for All Websites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Permissions for All Websites"
+          }
+        }
+      }
     },
     "Reset Settings for This Website" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Settings for This Website"
+          }
+        }
+      }
     },
     "Restart Required" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart Required"
+          }
+        }
+      }
     },
     "Restricted" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restricted"
+          }
+        }
+      }
     },
     "Reynard Browser" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reynard Browser"
+          }
+        }
+      }
     },
     "Reynard won’t remember any of your browsing history or cookies. However, downloads and new bookmarks will be saved." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reynard won’t remember any of your browsing history or cookies. However, downloads and new bookmarks will be saved."
+          }
+        }
+      }
     },
     "Save" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        }
+      }
     },
     "Save to Photos" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save to Photos"
+          }
+        }
+      }
     },
     "Search" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        }
+      }
     },
     "Search Bookmarks" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Bookmarks"
+          }
+        }
+      }
     },
     "Search Browsing History" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Browsing History"
+          }
+        }
+      }
     },
     "Search Downloads" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Downloads"
+          }
+        }
+      }
     },
     "Search Engine" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Engine"
+          }
+        }
+      }
     },
     "Search History" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search History"
+          }
+        }
+      }
     },
     "Search Languages" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Languages"
+          }
+        }
+      }
     },
     "Search Opened Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Opened Tabs"
+          }
+        }
+      }
     },
     "Search or enter address" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search or enter address"
+          }
+        }
+      }
     },
     "Search Suggestion Provider" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Suggestion Provider"
+          }
+        }
+      }
     },
     "Search Suggestions" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Suggestions"
+          }
+        }
+      }
     },
     "Select Option" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Option"
+          }
+        }
+      }
     },
     "Settings" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
     },
     "Settings for %@" : {
-      "comment" : "Website host"
+      "comment" : "Website host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings for %@"
+          }
+        }
+      }
     },
     "Share" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share"
+          }
+        }
+      }
     },
     "Share Image" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share Image"
+          }
+        }
+      }
     },
     "Share Link" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share Link"
+          }
+        }
+      }
     },
     "Show All" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show All"
+          }
+        }
+      }
     },
     "Show All Websites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show All Websites"
+          }
+        }
+      }
     },
     "Show Favorites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Favorites"
+          }
+        }
+      }
     },
     "Show Folders on Top" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Folders on Top"
+          }
+        }
+      }
     },
     "Show Frequently Visited" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Frequently Visited"
+          }
+        }
+      }
     },
     "Show Full Website Address" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Full Website Address"
+          }
+        }
+      }
     },
     "Show Image Previews" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Image Previews"
+          }
+        }
+      }
     },
     "Show in Private Browsing" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show in Private Browsing"
+          }
+        }
+      }
     },
     "Show Less" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Less"
+          }
+        }
+      }
     },
     "Show Link Previews" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Link Previews"
+          }
+        }
+      }
     },
     "Show Recently Closed Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Recently Closed Tabs"
+          }
+        }
+      }
     },
     "Show Search Suggestions" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Search Suggestions"
+          }
+        }
+      }
     },
     "Show Tab Bar in Landscape" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Tab Bar in Landscape"
+          }
+        }
+      }
     },
     "Since this is your first time enabling JIT, Reynard needs to download and mount the Developer Disk Image. This is required for JIT to work properly." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Since this is your first time enabling JIT, Reynard needs to download and mount the Developer Disk Image. This is required for JIT to work properly."
+          }
+        }
+      }
     },
     "Some websites are available in multiple languages. Choose languages in the order you prefer." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some websites are available in multiple languages. Choose languages in the order you prefer."
+          }
+        }
+      }
     },
     "Sort By" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort By"
+          }
+        }
+      }
     },
     "Support The Project" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support The Project"
+          }
+        }
+      }
     },
     "System" : {
-      "comment" : "Appearance option"
+      "comment" : "Appearance option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
     },
     "tab" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tab"
+          }
+        }
+      }
     },
     "tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tabs"
+          }
+        }
+      }
     },
     "Tabs" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tabs"
+          }
+        }
+      }
     },
     "Take Photo" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take Photo"
+          }
+        }
+      }
     },
     "Take Photo or Video" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take Photo or Video"
+          }
+        }
+      }
     },
     "Take Video" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take Video"
+          }
+        }
+      }
     },
     "The app will now close for the JIT setting to take effect." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app will now close for the JIT setting to take effect."
+          }
+        }
+      }
     },
     "The required Developer Disk Image files for enabling JIT were not found.\n\nJIT has been disabled. Quit the app using the button below, then re-enable JIT from the browser settings." : {
-      "comment" : "Paragraph break intentional"
+      "comment" : "Paragraph break intentional",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The required Developer Disk Image files for enabling JIT were not found.\n\nJIT has been disabled. Quit the app using the button below, then re-enable JIT from the browser settings."
+          }
+        }
+      }
     },
     "This add-on" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This add-on"
+          }
+        }
+      }
     },
     "This add-on is restricted and has been disabled. You can enable it, but this may be risky." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This add-on is restricted and has been disabled. You can enable it, but this may be risky."
+          }
+        }
+      }
     },
     "This add-on is restricted. Using it may be risky." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This add-on is restricted. Using it may be risky."
+          }
+        }
+      }
     },
     "This add-on isn’t supported by this version of Reynard and has been disabled." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This add-on isn’t supported by this version of Reynard and has been disabled."
+          }
+        }
+      }
     },
     "This add-on was blocked for violating Mozilla’s policies and has been disabled." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This add-on was blocked for violating Mozilla’s policies and has been disabled."
+          }
+        }
+      }
     },
     "This build does not support in-app updates. Visit the project's Releases page to download the latest version of the app." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This build does not support in-app updates. Visit the project's Releases page to download the latest version of the app."
+          }
+        }
+      }
     },
     "This will clear selected browsing data. This action cannot be undone." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will clear selected browsing data. This action cannot be undone."
+          }
+        }
+      }
     },
     "This will close your %d %@." : {
       "comment" : "Tab count and unit",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "This will close your %1$d %2$@."
           }
         }
       }
     },
     "This will reset permissions for all websites. This action cannot be undone." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will reset permissions for all websites. This action cannot be undone."
+          }
+        }
+      }
     },
     "This will reset settings for this website. This action cannot be undone." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will reset settings for this website. This action cannot be undone."
+          }
+        }
+      }
     },
     "Title" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title"
+          }
+        }
+      }
     },
     "Today" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        }
+      }
     },
     "Today and Yesterday" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today and Yesterday"
+          }
+        }
+      }
     },
     "Top" : {
-      "comment" : "Address bar position"
+      "comment" : "Address bar position",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top"
+          }
+        }
+      }
     },
     "Unable to access the app Application Support directory." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to access the app Application Support directory."
+          }
+        }
+      }
     },
     "Unknown error." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown error."
+          }
+        }
+      }
     },
     "Unknown size" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown size"
+          }
+        }
+      }
     },
     "Unsupported" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsupported"
+          }
+        }
+      }
     },
     "Unsupported Add-ons" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsupported Add-ons"
+          }
+        }
+      }
     },
     "Untitled" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Untitled"
+          }
+        }
+      }
     },
     "Update Add-on Permissions" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Add-on Permissions"
+          }
+        }
+      }
     },
     "Update All Add-ons" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update All Add-ons"
+          }
+        }
+      }
     },
     "Update Available" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Available"
+          }
+        }
+      }
     },
     "Update Failed" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Failed"
+          }
+        }
+      }
     },
     "Update Now" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Now"
+          }
+        }
+      }
     },
     "Update Unavailable" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update Unavailable"
+          }
+        }
+      }
     },
     "Updated" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated"
+          }
+        }
+      }
     },
     "Updating Add-ons…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating Add-ons…"
+          }
+        }
+      }
     },
     "Updating…" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updating…"
+          }
+        }
+      }
     },
     "Upload" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upload"
+          }
+        }
+      }
     },
     "URL" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL"
+          }
+        }
+      }
     },
     "Use %s for search terms, as in example.com⁠/⁠search⁠?⁠q⁠=⁠%s." : {
       "comment" : "Literal %s, word joiners",
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
             "value" : "Use %1$s for search terms, as in example.com⁠/⁠search⁠?⁠q⁠=⁠%2$s."
           }
         }
       }
     },
     "Use Compatibility User Agent" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use Compatibility User Agent"
+          }
+        }
+      }
     },
     "Use the %@ user agent for all websites to improve compatibility." : {
-      "comment" : "User agent name placeholder"
+      "comment" : "User agent name placeholder",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use the %@ user agent for all websites to improve compatibility."
+          }
+        }
+      }
     },
     "User Agent Overrides" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "User Agent Overrides"
+          }
+        }
+      }
     },
     "Version" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version"
+          }
+        }
+      }
     },
     "Version %@" : {
-      "comment" : "Version number"
+      "comment" : "Version number",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@"
+          }
+        }
+      }
     },
     "View Source Code" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View Source Code"
+          }
+        }
+      }
     },
     "Website Language" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website Language"
+          }
+        }
+      }
     },
     "Website Permissions" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website Permissions"
+          }
+        }
+      }
     },
     "Website Settings" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Website Settings"
+          }
+        }
+      }
     },
     "Websites" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Websites"
+          }
+        }
+      }
     },
     "Websites With Custom Settings" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Websites With Custom Settings"
+          }
+        }
+      }
     },
     "When the download finishes, choose the app that you used to sideload Reynard in the share sheet to install the update." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When the download finishes, choose the app that you used to sideload Reynard in the share sheet to install the update."
+          }
+        }
+      }
     },
     "Yes" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yes"
+          }
+        }
+      }
     },
     "Yesterday" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yesterday"
+          }
+        }
+      }
     },
     "You may want to block access if it’s not clear why %@ needs this data." : {
-      "comment" : "Third-party host"
+      "comment" : "Third-party host",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You may want to block access if it’s not clear why %@ needs this data."
+          }
+        }
+      }
     },
     "Your browsing history appears here" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your browsing history appears here"
+          }
+        }
+      }
     },
     "Zoom Level" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoom Level"
+          }
+        }
+      }
     }
   },
   "version" : "1.2"

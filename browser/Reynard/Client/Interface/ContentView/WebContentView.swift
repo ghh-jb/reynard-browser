@@ -71,4 +71,16 @@ final class WebContentView: UIView {
     func addWebViewInteraction(_ interaction: UIInteraction) {
         webView.addInteraction(interaction)
     }
+    
+    func makeThumbnail() -> UIImage? {
+        layoutIfNeeded()
+        guard bounds.width > 1, bounds.height > 1 else {
+            return nil
+        }
+        
+        let renderer = UIGraphicsImageRenderer(size: bounds.size)
+        return renderer.image { context in
+            layer.render(in: context.cgContext)
+        }
+    }
 }

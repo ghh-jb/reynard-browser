@@ -6,39 +6,56 @@
 //
 
 import Foundation
+import UIKit
 
 final class NavigationHistoryStore {
     static let shared = NavigationHistoryStore()
     
     struct Snapshot {
-        let currentURL: String?
-        let backHistory: [String]
-        let forwardHistory: [String]
+        let canGoBack: Bool
+        let canGoForward: Bool
+        let backPreviewImage: UIImage?
+        let forwardPreviewImage: UIImage?
         let usesStoredHistory: Bool
-        
-        var canGoBack: Bool {
-            return !backHistory.isEmpty
-        }
-        
-        var canGoForward: Bool {
-            return !forwardHistory.isEmpty
-        }
+    }
+    
+    private struct NavigationEntry: Codable {
+        var url: String
+        var thumbnailData: Data?
     }
     
     private struct StoredHistory: Codable {
         var currentURL: String?
-        var backHistory: [String]
-        var forwardHistory: [String]
+        var currentThumbnailData: Data?
+        var backHistory: [NavigationEntry]
+        var forwardHistory: [NavigationEntry]
         var usesStoredHistory: Bool?
         
         private enum CodingKeys: String, CodingKey {
             case currentURL
+            case currentThumbnailData = "currentThumbnail"
             case backHistory = "backList"
             case forwardHistory = "forwardList"
             case usesStoredHistory = "ownsNav"
         }
+        
+        init(
+            currentURL: String?,
+            currentThumbnailData: Data?,
+            backHistory: [NavigationEntry],
+            forwardHistory: [NavigationEntry],
+            usesStoredHistory: Bool?
+        ) {
+            self.currentURL = currentURL
+            self.currentThumbnailData = currentThumbnailData
+            self.backHistory = backHistory
+            self.forwardHistory = forwardHistory
+            self.usesStoredHistory = usesStoredHistory
+        }
+        
     }
     
+    private let thumbnailJPEGQuality = 0.8
     private let fileManager: FileManager
     private let storageURL: URL
     private let queue = DispatchQueue(label: "com.minh-ton.Reynard.NavigationHistoryStore.Queue", qos: .userInitiated)
@@ -62,12 +79,7 @@ final class NavigationHistoryStore {
     func currentSnapshot(for tabID: UUID) -> Snapshot {
         queue.sync {
             let history = loadHistory(for: tabID)
-            return Snapshot(
-                currentURL: history.currentURL,
-                backHistory: history.backHistory,
-                forwardHistory: history.forwardHistory,
-                usesStoredHistory: history.usesStoredHistory ?? false
-            )
+            return snapshot(from: history)
         }
     }
     
@@ -80,10 +92,14 @@ final class NavigationHistoryStore {
             
             if let currentURL = history.currentURL,
                !currentURL.isEmpty {
-                history.backHistory.append(currentURL)
+                history.backHistory.append(NavigationEntry(
+                    url: currentURL,
+                    thumbnailData: history.currentThumbnailData
+                ))
             }
             
             history.currentURL = url
+            history.currentThumbnailData = nil
             history.forwardHistory.removeAll(keepingCapacity: false)
             saveHistory(history, for: tabID)
             return snapshot(from: history)
@@ -102,18 +118,22 @@ final class NavigationHistoryStore {
     func goBack(for tabID: UUID) -> String? {
         queue.sync {
             var history = loadHistory(for: tabID)
-            guard let targetURL = history.backHistory.popLast() else {
+            guard let target = history.backHistory.popLast() else {
                 return nil
             }
             
             if let currentURL = history.currentURL,
                !currentURL.isEmpty {
-                history.forwardHistory.insert(currentURL, at: 0)
+                history.forwardHistory.insert(NavigationEntry(
+                    url: currentURL,
+                    thumbnailData: history.currentThumbnailData
+                ), at: 0)
             }
             
-            history.currentURL = targetURL
+            history.currentURL = target.url
+            history.currentThumbnailData = target.thumbnailData
             saveHistory(history, for: tabID)
-            return targetURL
+            return target.url
         }
     }
     
@@ -124,15 +144,58 @@ final class NavigationHistoryStore {
                 return nil
             }
             
-            let targetURL = history.forwardHistory.removeFirst()
+            let target = history.forwardHistory.removeFirst()
             if let currentURL = history.currentURL,
                !currentURL.isEmpty {
-                history.backHistory.append(currentURL)
+                history.backHistory.append(NavigationEntry(
+                    url: currentURL,
+                    thumbnailData: history.currentThumbnailData
+                ))
             }
             
-            history.currentURL = targetURL
+            history.currentURL = target.url
+            history.currentThumbnailData = target.thumbnailData
             saveHistory(history, for: tabID)
-            return targetURL
+            return target.url
+        }
+    }
+    
+    func updateCurrentHistoryThumbnail(_ image: UIImage?, for tabID: UUID, matching url: String) {
+        queue.async {
+            var history = self.loadHistory(for: tabID)
+            guard history.currentURL == url else {
+                return
+            }
+            
+            history.currentThumbnailData = image?.jpegData(compressionQuality: self.thumbnailJPEGQuality)
+            self.saveHistory(history, for: tabID)
+        }
+    }
+    
+    func invalidateThumbnails() {
+        queue.sync {
+            guard let fileURLs = try? self.fileManager.contentsOfDirectory(
+                at: self.storageURL,
+                includingPropertiesForKeys: nil
+            ) else {
+                return
+            }
+            
+            fileURLs.forEach { fileURL in
+                guard let tabID = UUID(uuidString: fileURL.lastPathComponent) else {
+                    return
+                }
+                
+                var history = self.loadHistory(for: tabID)
+                history.currentThumbnailData = nil
+                history.backHistory = history.backHistory.map {
+                    NavigationEntry(url: $0.url, thumbnailData: nil)
+                }
+                history.forwardHistory = history.forwardHistory.map {
+                    NavigationEntry(url: $0.url, thumbnailData: nil)
+                }
+                self.saveHistory(history, for: tabID)
+            }
         }
     }
     
@@ -156,6 +219,7 @@ final class NavigationHistoryStore {
               let decoded = try? JSONDecoder().decode(StoredHistory.self, from: data) else {
             return StoredHistory(
                 currentURL: nil,
+                currentThumbnailData: nil,
                 backHistory: [],
                 forwardHistory: [],
                 usesStoredHistory: nil
@@ -175,9 +239,10 @@ final class NavigationHistoryStore {
     
     private func snapshot(from history: StoredHistory) -> Snapshot {
         Snapshot(
-            currentURL: history.currentURL,
-            backHistory: history.backHistory,
-            forwardHistory: history.forwardHistory,
+            canGoBack: !history.backHistory.isEmpty,
+            canGoForward: !history.forwardHistory.isEmpty,
+            backPreviewImage: history.backHistory.last?.thumbnailData.flatMap(UIImage.init(data:)),
+            forwardPreviewImage: history.forwardHistory.first?.thumbnailData.flatMap(UIImage.init(data:)),
             usesStoredHistory: history.usesStoredHistory ?? false
         )
     }

@@ -65,6 +65,10 @@ extension BrowserViewController: TabManagerDelegate {
         addonCoordinator.handleSelectedTabSessionReplacement(from: previousSession, to: replacementSession)
     }
     
+    func tabManager(_ tabManager: TabManager, captureHistoryThumbnailForTabAt index: Int, mode: TabMode, url: String) {
+        captureHistoryThumbnail(forTabAt: index, mode: mode, url: url)
+    }
+    
     func tabManager(_ tabManager: TabManager, didRequestContextMenuAt point: CGPoint, for element: ContextElement, in session: GeckoSession) {
         guard contentView.isDisplaying(session: session) else {
             return
@@ -110,6 +114,7 @@ extension BrowserViewController: TabManagerDelegate {
         case .location:
             if index == tabManager.selectedTabIndex {
                 let tab = tabManager.activeTabs[index]
+                contentView.noteHistoryLocationChange()
                 refreshAddressBar()
                 browserChrome.updatePageZoomLevel(tab.session.settings.pageZoom.level)
                 updateNavigationButtons()
@@ -136,6 +141,7 @@ extension BrowserViewController: TabManagerDelegate {
                 )
                 
                 if !tab.state.loadingState.isLoading {
+                    contentView.finishHistoryLoad()
                     DispatchQueue.main.async { [weak self] in
                         guard let self,
                               index == self.tabManager.selectedTabIndex else {
@@ -233,12 +239,46 @@ extension BrowserViewController {
             return
         }
         
-        guard let thumbnail = contentView.makeThumbnail() else {
+        guard let thumbnail = contentView.makeWebThumbnail() else {
             completion?(nil)
             return
         }
         
         tabManager.updateThumbnail(thumbnail, forTabAt: index, mode: mode)
         completion?(thumbnail)
+    }
+    
+    func captureOutgoingHistoryThumbnail() {
+        guard let url = tabManager.selectedTab?.url else {
+            return
+        }
+        
+        captureHistoryThumbnail(
+            forTabAt: tabManager.selectedTabIndex,
+            mode: tabManager.selectedTabMode,
+            url: url
+        )
+    }
+    
+    private func captureHistoryThumbnail(
+        forTabAt index: Int,
+        mode: TabMode,
+        url: String
+    ) {
+        guard mode == tabManager.selectedTabMode,
+              index == tabManager.selectedTabIndex,
+              let tab = tabManager.activeTabs[safe: index],
+              tab.url == url,
+              !contentView.isHidden,
+              contentView.isDisplaying(session: tab.session) else {
+            return
+        }
+        
+        guard let thumbnail = contentView.makeWebThumbnail() else {
+            return
+        }
+        
+        tabManager.updateThumbnail(thumbnail, forTabAt: index, mode: mode)
+        tabManager.updateHistoryThumbnail(thumbnail, for: tab, url: url)
     }
 }

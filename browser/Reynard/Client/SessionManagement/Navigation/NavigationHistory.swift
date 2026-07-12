@@ -6,14 +6,15 @@
 //
 
 import Foundation
+import UIKit
 
 final class NavigationHistory {
     private let store: NavigationHistoryStore
-
+    
     init(store: NavigationHistoryStore = .shared) {
         self.store = store
     }
-
+    
     func restoreState(for tabID: UUID) -> NavigationAvailability {
         let snapshot = store.currentSnapshot(for: tabID)
         if snapshot.canGoBack || snapshot.canGoForward {
@@ -21,7 +22,7 @@ final class NavigationHistory {
         }
         return availability(for: tabID, sessionState: .unavailable)
     }
-
+    
     func availability(
         for tabID: UUID,
         sessionState: SessionNavigationAvailability
@@ -38,7 +39,7 @@ final class NavigationHistory {
             canGoForward: snapshot.canGoForward || sessionState.canGoForward
         )
     }
-
+    
     func record(
         to url: String,
         for tabID: UUID,
@@ -52,7 +53,7 @@ final class NavigationHistory {
         _ = store.recordNavigation(to: trimmedURL, for: tabID)
         return availability(for: tabID, sessionState: sessionState)
     }
-
+    
     func goBack(
         for tabID: UUID,
         sessionState: SessionNavigationAvailability
@@ -65,7 +66,7 @@ final class NavigationHistory {
                 availability: availability(for: tabID, sessionState: sessionState)
             )
         }
-
+        
         guard let url = store.goBack(for: tabID) else {
             return nil
         }
@@ -75,7 +76,7 @@ final class NavigationHistory {
             availability: availability(for: tabID, sessionState: sessionState)
         )
     }
-
+    
     func goForward(
         for tabID: UUID,
         sessionState: SessionNavigationAvailability
@@ -88,7 +89,7 @@ final class NavigationHistory {
                 availability: availability(for: tabID, sessionState: sessionState)
             )
         }
-
+        
         guard let url = store.goForward(for: tabID) else {
             return nil
         }
@@ -98,12 +99,25 @@ final class NavigationHistory {
             availability: availability(for: tabID, sessionState: sessionState)
         )
     }
-
+    
     func useStoredHistory(for tabID: UUID) -> NavigationAvailability {
         _ = store.setUsesPersistedHistory(true, for: tabID)
         return availability(for: tabID, sessionState: .unavailable)
     }
-
+    
+    func updateCurrentHistoryThumbnail(_ image: UIImage?, for tabID: UUID, matching url: String) {
+        store.updateCurrentHistoryThumbnail(image, for: tabID, matching: url)
+    }
+    
+    func previewImages(for tabID: UUID) -> NavigationPreviewImages {
+        let snapshot = store.currentSnapshot(for: tabID)
+        return NavigationPreviewImages(backImage: snapshot.backPreviewImage, forwardImage: snapshot.forwardPreviewImage)
+    }
+    
+    func invalidateThumbnails() {
+        store.invalidateThumbnails()
+    }
+    
     func removeHistory(for tabID: UUID) {
         store.removeNavigationHistory(for: tabID)
     }

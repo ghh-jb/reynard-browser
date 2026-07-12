@@ -171,6 +171,11 @@ final class BrowserViewController: UIViewController {
         }
     }
     
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        invalidateNavigationThumbnailsIfNeeded()
+    }
+    
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if sidebarCoordinator.refreshHostVisibility() {
@@ -249,13 +254,24 @@ final class BrowserViewController: UIViewController {
     }
     
     private func configureBrowserChromeActions() {
+        contentView.onBack = { [weak self] in
+            self?.tabManager.goBack()
+        }
+        contentView.onForward = { [weak self] in
+            self?.tabManager.goForward()
+        }
+        contentView.onHistorySwipeBegan = { [weak self] in
+            self?.captureOutgoingHistoryThumbnail()
+        }
         browserChrome.onSidebar = { [weak self] in
             self?.sidebarCoordinator.toggle(animated: true)
         }
         browserChrome.onBack = { [weak self] in
+            self?.captureOutgoingHistoryThumbnail()
             self?.tabManager.goBack()
         }
         browserChrome.onForward = { [weak self] in
+            self?.captureOutgoingHistoryThumbnail()
             self?.tabManager.goForward()
         }
         browserChrome.onShare = { [weak self] in
@@ -475,6 +491,16 @@ final class BrowserViewController: UIViewController {
         }
         
         return view.bounds.width > view.bounds.height ? .landscape : .portrait
+    }
+    
+    private func invalidateNavigationThumbnailsIfNeeded() {
+        let didResizeWebContent = contentView.updateWebContentSize()
+        guard didResizeWebContent else {
+            return
+        }
+        
+        tabManager.invalidateNavigationThumbnails()
+        updateNavigationButtons()
     }
     
     var isCompactPadLayout: Bool {
@@ -703,6 +729,13 @@ final class BrowserViewController: UIViewController {
     
     func updateNavigationButtons() {
         guard let tab = tabManager.selectedTab else {
+            contentView.setHistoryNavigation(
+                canGoBack: false,
+                canGoForward: false,
+                backPreviewImage: nil,
+                forwardPreviewImage: nil,
+                isSwipeEnabled: false
+            )
             return
         }
         
@@ -710,6 +743,15 @@ final class BrowserViewController: UIViewController {
             canGoBack: tab.state.navigationState.canGoBack,
             canGoForward: tab.state.navigationState.canGoForward,
             canShare: tabManager.shareableURL(for: tab) != nil
+        )
+        
+        let previewImages = tabManager.navigationPreviewImages(for: tab)
+        contentView.setHistoryNavigation(
+            canGoBack: tab.state.navigationState.canGoBack,
+            canGoForward: tab.state.navigationState.canGoForward,
+            backPreviewImage: previewImages.backImage,
+            forwardPreviewImage: previewImages.forwardImage,
+            isSwipeEnabled: true
         )
     }
     

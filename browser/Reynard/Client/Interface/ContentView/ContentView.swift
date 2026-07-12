@@ -8,11 +8,29 @@
 import GeckoView
 import UIKit
 
-final class ContentView: UIView {
+final class ContentView: UIView, UIGestureRecognizerDelegate {
     private enum UX {
         static let phoneSearchFocusedBottomInset: CGFloat = 94
         static let focusedInputBottomClearance: CGFloat = 12
         static let focusedInputOffsetThreshold: CGFloat = 0.5
+        static let historyPreviewParallaxRatio: CGFloat = 0.33
+        static let historyTransitionProjectionDuration: CGFloat = 0.2
+        static let historyTransitionDuration: TimeInterval = 0.35
+    }
+    
+    private enum HistorySwipeDirection: Equatable {
+        case back
+        case forward
+    }
+    
+    private enum HistorySwipeState {
+        case idle // No history swipe is active.
+        case swiping(HistorySwipeDirection) // Gesture is tracking the user's drag.
+        case settling // Swipe completed; finish animation is running.
+        case settled // Location changed before finish animation ended.
+        case loaded // Page load completed before finish animation ended.
+        case loading // Finish animation ended; waiting for page load.
+        case resetting // Location changed without a load; reset on next run loop.
     }
     
     struct State: Equatable {
@@ -42,8 +60,21 @@ final class ContentView: UIView {
     private var inputBottomRatio: CGFloat?
     private var focusedInputOffset: CGFloat = 0
     
+    private var canGoBack = false
+    private var canGoForward = false
+    private var backPreviewImage: UIImage?
+    private var forwardPreviewImage: UIImage?
+    private var isHistorySwipeEnabled = false
+    private var historySwipeState = HistorySwipeState.idle
+    private var webContentSize: CGSize?
+    
     private let webContentView = WebContentView()
     private let overlayContentView = OverlayContentView()
+    private let historyPreviewImageView = UIImageView()
+    
+    var onBack: (() -> Void)?
+    var onForward: (() -> Void)?
+    var onHistorySwipeBegan: (() -> Void)?
     
     private var topConstraint: NSLayoutConstraint?
     private var bottomConstraint: NSLayoutConstraint?
@@ -55,6 +86,7 @@ final class ContentView: UIView {
         configureAppearance()
         configureHierarchy()
         configureConstraints()
+        configureHistoryNavigation()
         applyState()
     }
     
@@ -75,13 +107,19 @@ final class ContentView: UIView {
     
     private func configureHierarchy() {
         webContentView.translatesAutoresizingMaskIntoConstraints = false
+        historyPreviewImageView.translatesAutoresizingMaskIntoConstraints = false
         overlayContentView.translatesAutoresizingMaskIntoConstraints = false
+        historyPreviewImageView.isHidden = true
+        historyPreviewImageView.backgroundColor = .systemBackground
+        historyPreviewImageView.contentMode = .scaleAspectFill
+        historyPreviewImageView.clipsToBounds = true
         addSubview(webContentView)
+        addSubview(historyPreviewImageView)
         addSubview(overlayContentView)
     }
     
     private func configureConstraints() {
-        [webContentView, overlayContentView].forEach { contentView in
+        [webContentView, historyPreviewImageView, overlayContentView].forEach { contentView in
             NSLayoutConstraint.activate([
                 contentView.topAnchor.constraint(equalTo: topAnchor),
                 contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -89,6 +127,24 @@ final class ContentView: UIView {
                 contentView.bottomAnchor.constraint(equalTo: bottomAnchor),
             ])
         }
+    }
+    
+    private func configureHistoryNavigation() {
+        let backGesture = UIScreenEdgePanGestureRecognizer(
+            target: self,
+            action: #selector(handleBackHistoryPan(_:))
+        )
+        backGesture.edges = .left
+        backGesture.delegate = self
+        addGestureRecognizer(backGesture)
+        
+        let forwardGesture = UIScreenEdgePanGestureRecognizer(
+            target: self,
+            action: #selector(handleForwardHistoryPan(_:))
+        )
+        forwardGesture.edges = .right
+        forwardGesture.delegate = self
+        addGestureRecognizer(forwardGesture)
     }
     
     // MARK: - Layout
@@ -100,6 +156,20 @@ final class ContentView: UIView {
     ) {
         self.layoutState = layoutState
         applyLayoutState(topAnchor: topAnchor, bottomAnchor: bottomAnchor)
+    }
+    
+    func updateWebContentSize() -> Bool {
+        let size = webContentView.bounds.size
+        guard size.width > 1, size.height > 1 else {
+            return false
+        }
+        defer { webContentSize = size }
+        
+        guard let previousSize = webContentSize else {
+            return false
+        }
+        
+        return previousSize != size
     }
     
     private func applyLayoutState(
@@ -275,6 +345,7 @@ final class ContentView: UIView {
     // MARK: - Session
     
     func setSession(_ session: GeckoSession?) {
+        resetHistoryNavigation()
         self.session = session
         resetFocusedInputRelocation()
         webContentView.setSession(session)
@@ -294,6 +365,250 @@ final class ContentView: UIView {
         webContentView.addWebViewInteraction(interaction)
     }
     
+    // MARK: - History Navigation
+    
+    func setHistoryNavigation(
+        canGoBack: Bool,
+        canGoForward: Bool,
+        backPreviewImage: UIImage?,
+        forwardPreviewImage: UIImage?,
+        isSwipeEnabled: Bool
+    ) {
+        self.canGoBack = canGoBack
+        self.canGoForward = canGoForward
+        self.backPreviewImage = backPreviewImage
+        self.forwardPreviewImage = forwardPreviewImage
+        isHistorySwipeEnabled = isSwipeEnabled
+    }
+    
+    @objc private func handleBackHistoryPan(_ gesture: UIScreenEdgePanGestureRecognizer) {
+        handleHistoryPan(gesture, direction: .back)
+    }
+    
+    @objc private func handleForwardHistoryPan(_ gesture: UIScreenEdgePanGestureRecognizer) {
+        handleHistoryPan(gesture, direction: .forward)
+    }
+    
+    private func handleHistoryPan(
+        _ gesture: UIScreenEdgePanGestureRecognizer,
+        direction: HistorySwipeDirection
+    ) {
+        switch gesture.state {
+        case .began:
+            beginHistoryNavigation(direction)
+        case .changed:
+            updateHistoryNavigation(gesture, direction: direction)
+        case .ended:
+            finishHistoryNavigation(gesture, direction: direction, cancelled: false)
+        case .cancelled, .failed:
+            finishHistoryNavigation(gesture, direction: direction, cancelled: true)
+        default:
+            break
+        }
+    }
+    
+    private func beginHistoryNavigation(_ direction: HistorySwipeDirection) {
+        guard case .idle = historySwipeState else {
+            return
+        }
+        
+        onHistorySwipeBegan?()
+        historySwipeState = .swiping(direction)
+        historyPreviewImageView.image = direction == .back ? backPreviewImage : forwardPreviewImage
+        historyPreviewImageView.isHidden = false
+        
+        let width = bounds.width
+        switch direction {
+        case .back:
+            insertSubview(historyPreviewImageView, belowSubview: webContentView)
+            historyPreviewImageView.transform = CGAffineTransform(
+                translationX: -width * UX.historyPreviewParallaxRatio,
+                y: 0
+            )
+        case .forward:
+            insertSubview(historyPreviewImageView, aboveSubview: webContentView)
+            historyPreviewImageView.transform = CGAffineTransform(translationX: width, y: 0)
+        }
+    }
+    
+    private func updateHistoryNavigation(
+        _ gesture: UIScreenEdgePanGestureRecognizer,
+        direction: HistorySwipeDirection
+    ) {
+        guard case .swiping(let activeDirection) = historySwipeState,
+              activeDirection == direction else {
+            return
+        }
+        
+        let progress = historyNavigationProgress(for: gesture, direction: direction)
+        let width = bounds.width
+        switch direction {
+        case .back:
+            webContentView.transform = CGAffineTransform(translationX: width * progress, y: 0)
+            historyPreviewImageView.transform = CGAffineTransform(
+                translationX: -width * UX.historyPreviewParallaxRatio * (1 - progress),
+                y: 0
+            )
+        case .forward:
+            historyPreviewImageView.transform = CGAffineTransform(
+                translationX: width * (1 - progress),
+                y: 0
+            )
+        }
+    }
+    
+    private func finishHistoryNavigation(
+        _ gesture: UIScreenEdgePanGestureRecognizer,
+        direction: HistorySwipeDirection,
+        cancelled: Bool
+    ) {
+        guard case .swiping(let activeDirection) = historySwipeState,
+              activeDirection == direction else {
+            resetHistoryNavigation()
+            return
+        }
+        
+        let progress = historyNavigationProgress(for: gesture, direction: direction)
+        let velocityX = gesture.velocity(in: self).x
+        let directionalVelocity: CGFloat
+        switch direction {
+        case .back:
+            directionalVelocity = max(velocityX, 0)
+        case .forward:
+            directionalVelocity = max(-velocityX, 0)
+        }
+        
+        let width = bounds.width
+        let projectedDistance = width * progress
+        + directionalVelocity * UX.historyTransitionProjectionDuration
+        let shouldComplete = !cancelled && projectedDistance >= width
+        
+        UIView.animate(
+            withDuration: UX.historyTransitionDuration,
+            delay: 0,
+            usingSpringWithDamping: 1,
+            initialSpringVelocity: abs(velocityX) / max(width, 1),
+            options: [.beginFromCurrentState, .allowUserInteraction]
+        ) {
+            if shouldComplete {
+                self.historySwipeState = .settling
+                switch direction {
+                case .back:
+                    self.webContentView.transform = CGAffineTransform(translationX: width, y: 0)
+                    self.historyPreviewImageView.transform = .identity
+                    self.onBack?()
+                case .forward:
+                    self.historyPreviewImageView.transform = .identity
+                    self.onForward?()
+                }
+            } else {
+                self.webContentView.transform = .identity
+                switch direction {
+                case .back:
+                    self.historyPreviewImageView.transform = CGAffineTransform(
+                        translationX: -width * UX.historyPreviewParallaxRatio,
+                        y: 0
+                    )
+                case .forward:
+                    self.historyPreviewImageView.transform = CGAffineTransform(translationX: width, y: 0)
+                }
+            }
+        } completion: { _ in
+            guard shouldComplete else {
+                self.resetHistoryNavigation()
+                return
+            }
+            
+            if case .loaded = self.historySwipeState {
+                self.resetHistoryNavigation()
+                return
+            }
+            
+            switch self.historySwipeState {
+            case .settling:
+                self.historySwipeState = .loading
+            case .settled:
+                self.scheduleHistoryLocationReset()
+            default:
+                break
+            }
+        }
+    }
+    
+    private func historyNavigationProgress(
+        for gesture: UIScreenEdgePanGestureRecognizer,
+        direction: HistorySwipeDirection
+    ) -> CGFloat {
+        let translationX = gesture.translation(in: self).x
+        let distance: CGFloat
+        switch direction {
+        case .back:
+            distance = translationX
+        case .forward:
+            distance = -translationX
+        }
+        return min(max(distance / max(bounds.width, 1), 0), 1)
+    }
+    
+    private func resetHistoryNavigation() {
+        webContentView.transform = .identity
+        historyPreviewImageView.transform = .identity
+        historyPreviewImageView.image = nil
+        historyPreviewImageView.isHidden = true
+        historySwipeState = .idle
+    }
+    
+    func finishHistoryLoad() {
+        switch historySwipeState {
+        case .settling, .settled:
+            historySwipeState = .loaded
+        case .loading, .resetting:
+            resetHistoryNavigation()
+        case .idle, .swiping, .loaded:
+            break
+        }
+    }
+    
+    func noteHistoryLocationChange() {
+        switch historySwipeState {
+        case .settling:
+            historySwipeState = .settled
+        case .loading:
+            scheduleHistoryLocationReset()
+        case .idle, .swiping, .settled, .loaded, .resetting:
+            break
+        }
+    }
+    
+    private func scheduleHistoryLocationReset() {
+        historySwipeState = .resetting
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  case .resetting = self.historySwipeState else {
+                return
+            }
+            
+            self.resetHistoryNavigation()
+        }
+    }
+    
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard gestureRecognizer is UIScreenEdgePanGestureRecognizer,
+              case .idle = historySwipeState,
+              isHistorySwipeEnabled,
+              state == .browsing,
+              webContentView.visibility == .visible else {
+            return false
+        }
+        
+        if let backGesture = gestureRecognizer as? UIScreenEdgePanGestureRecognizer,
+           backGesture.edges == .left {
+            return canGoBack
+        }
+        
+        return canGoForward
+    }
+    
     // MARK: - Presentation
     
     func setTransitionTransform(_ transform: CGAffineTransform) {
@@ -308,16 +623,10 @@ final class ContentView: UIView {
         convert(bounds, to: view)
     }
     
-    func makeThumbnail() -> UIImage? {
-        layoutIfNeeded()
-        guard bounds.width > 1, bounds.height > 1 else {
-            return nil
-        }
-        
-        let renderer = UIGraphicsImageRenderer(size: bounds.size)
-        return renderer.image { context in
-            layer.render(in: context.cgContext)
-        }
+    // MARK: - Thumbnail
+    
+    func makeWebThumbnail() -> UIImage? {
+        return webContentView.makeThumbnail()
     }
     
     // MARK: - Overlay Hosting
@@ -333,5 +642,5 @@ final class ContentView: UIView {
     func removeOverlayController(for page: OverlayContentView.Page) {
         overlayContentView.removeController(for: page)
     }
+    
 }
-

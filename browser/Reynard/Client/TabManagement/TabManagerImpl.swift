@@ -823,6 +823,18 @@ final class TabManagerImplementation: NSObject, TabManager {
         notifyUpdate(at: index, mode: mode, reason: .thumbnail)
     }
     
+    func updateHistoryThumbnail(_ image: UIImage?, for tab: Tab, url: String) {
+        sessionManager.updateCurrentHistoryThumbnail(image, for: tab.id, matching: url)
+    }
+    
+    func navigationPreviewImages(for tab: Tab) -> NavigationPreviewImages {
+        return sessionManager.navigationPreviewImages(for: tab.id)
+    }
+    
+    func invalidateNavigationThumbnails() {
+        sessionManager.invalidateNavigationThumbnails()
+    }
+    
     // MARK: - Session Factory
     
     private func createSession(
@@ -978,9 +990,21 @@ extension TabManagerImplementation: NavigationDelegate {
             permissionCoordinator.restorePermissions(for: session, at: url)
         }
         
-        tab.url = url
         if let url {
+            if let currentURL = tab.url,
+               currentURL != url {
+                delegate?.tabManager(
+                    self,
+                    captureHistoryThumbnailForTabAt: location.index,
+                    mode: location.mode,
+                    url: currentURL
+                )
+            }
+            
+            tab.url = url
             recordNavigation(url, for: tab)
+        } else {
+            tab.url = url
         }
         tab.state.displayState = .committed
         tab.favicon = nil

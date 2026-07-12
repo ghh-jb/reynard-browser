@@ -7,6 +7,7 @@
 
 import Foundation
 import GeckoView
+import UIKit
 
 final class SessionManager {
     private let sessionSettings: SessionSettingsManager
@@ -201,5 +202,17 @@ final class SessionManager {
     
     func useStoredNavigationHistory(for tabID: UUID) -> NavigationAvailability {
         return history.useStoredHistory(for: tabID)
+    }
+    
+    func updateCurrentHistoryThumbnail(_ image: UIImage?, for tabID: UUID, matching url: String) {
+        history.updateCurrentHistoryThumbnail(image, for: tabID, matching: url)
+    }
+    
+    func navigationPreviewImages(for tabID: UUID) -> NavigationPreviewImages {
+        return history.previewImages(for: tabID)
+    }
+    
+    func invalidateNavigationThumbnails() {
+        history.invalidateThumbnails()
     }
 }

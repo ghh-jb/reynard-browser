@@ -33,7 +33,7 @@ final class AddWebsiteLanguageViewController: SettingsTableViewController {
         self.onSelect = onSelect
         
         super.init(style: .insetGrouped)
-        title = "Add Language"
+        title = NSLocalizedString("Add Language", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -89,7 +89,7 @@ final class AddWebsiteLanguageViewController: SettingsTableViewController {
     private func configureSearch() {
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = "Search Languages"
+        searchController.searchBar.placeholder = NSLocalizedString("Search Languages", comment: "")
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true

@@ -28,12 +28,12 @@ final class CompatibilityPreferencesViewController: SettingsTableViewController 
     }
     
     private var compatibilityUserAgentName: String {
-        return Prefs.BrowsingSettings.requestDesktopWebsite ? "Desktop Firefox" : "Firefox for Android"
+        return Prefs.BrowsingSettings.requestDesktopWebsite ? NSLocalizedString("Desktop Firefox", comment: "") : NSLocalizedString("Firefox for Android", comment: "")
     }
     
     init() {
         super.init(style: .insetGrouped)
-        title = "Compatibility"
+        title = NSLocalizedString("Compatibility", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -77,13 +77,13 @@ final class CompatibilityPreferencesViewController: SettingsTableViewController 
         switch row {
         case .useAndroidUserAgent:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = "Use Compatibility User Agent"
+            cell.textLabel?.text = NSLocalizedString("Use Compatibility User Agent", comment: "")
             cell.selectionStyle = .none
             cell.accessoryView = androidUserAgentSwitch
             return cell
         case .userAgentOverrides:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = "User Agent Overrides"
+            cell.textLabel?.text = NSLocalizedString("User Agent Overrides", comment: "")
             cell.accessoryType = .disclosureIndicator
             return cell
         }
@@ -107,13 +107,13 @@ final class CompatibilityPreferencesViewController: SettingsTableViewController 
         
         let headerTitle = Section.allCases[section].text.headerTitle
         if Prefs.CompatibilitySettings.useAndroidUserAgent {
-            let footerTitle = "Use the \(compatibilityUserAgentName) user agent for all websites to improve compatibility."
+            let footerTitle = String(format: NSLocalizedString("Use the %@ user agent for all websites to improve compatibility.", comment: "User agent name placeholder"), compatibilityUserAgentName)
             return SettingsSectionText(headerTitle: headerTitle, footerTitle: footerTitle)
         }
         
         return SettingsSectionText(
             headerTitle: headerTitle,
-            footerTitle: "Add websites with sign-in failures, human verification challenges, or other issues to use the \(compatibilityUserAgentName) user agent."
+            footerTitle: String(format: NSLocalizedString("Add websites with sign-in failures, human verification challenges, or other issues to use the %@ user agent.", comment: "User agent name placeholder"), compatibilityUserAgentName)
         )
     }
     

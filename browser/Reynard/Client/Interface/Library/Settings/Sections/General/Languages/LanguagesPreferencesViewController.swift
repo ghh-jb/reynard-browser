@@ -15,8 +15,8 @@ final class LanguagesPreferencesViewController: SettingsTableViewController {
             switch self {
             case .websiteLanguage:
                 return SettingsSectionText(
-                    headerTitle: "Website Language",
-                    footerTitle: "Some websites are available in multiple languages. Choose languages in the order you prefer."
+                    headerTitle: NSLocalizedString("Website Language", comment: ""),
+                    footerTitle: NSLocalizedString("Some websites are available in multiple languages. Choose languages in the order you prefer.", comment: "")
                 )
             }
         }
@@ -39,7 +39,7 @@ final class LanguagesPreferencesViewController: SettingsTableViewController {
     
     init() {
         super.init(style: .insetGrouped)
-        title = "Languages"
+        title = NSLocalizedString("Languages", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -91,7 +91,7 @@ final class LanguagesPreferencesViewController: SettingsTableViewController {
             return cell
         case .addLanguage:
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = "Add Language…"
+            cell.textLabel?.text = NSLocalizedString("Add Language…", comment: "")
             cell.textLabel?.textColor = tableView.tintColor
             cell.imageView?.image = UIImage(named: "reynard.plus")?.withRenderingMode(.alwaysTemplate)
             cell.imageView?.tintColor = tableView.tintColor

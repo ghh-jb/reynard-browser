@@ -28,7 +28,7 @@ final class TabOverviewTopToolbar: UIView {
     private let doneButton = TabOverviewToolbarButton(action: .done)
     private lazy var actionButtonStackView = UIStackView(arrangedSubviews: [clearTabsButton, addTabButton, doneButton])
     private lazy var liquidGlassActionToolbar = makeLiquidGlassActionToolbar()
-    private let tabModeControl = UISegmentedControl(items: ["Private", "0 Tabs"])
+    private let tabModeControl = UISegmentedControl(items: [NSLocalizedString("Private", comment: ""), NSLocalizedString("0 Tabs", comment: "")])
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -47,7 +47,7 @@ final class TabOverviewTopToolbar: UIView {
     }
     
     func apply(tabCount: Int, hasVisibleTab: Bool) {
-        tabModeControl.setTitle("\(tabCount)" + (tabCount == 1 ? " Tab" : " Tabs"), forSegmentAt: TabOverview.Mode.regularTabs.rawValue)
+        tabModeControl.setTitle("\(tabCount)" + (tabCount == 1 ? NSLocalizedString(" Tab", comment: "") : NSLocalizedString(" Tabs", comment: "")), forSegmentAt: TabOverview.Mode.regularTabs.rawValue)
         doneButton.setActionEnabled(hasVisibleTab)
         if #available(iOS 26.0, *) {
             liquidGlassActionToolbar.items?.last?.isEnabled = hasVisibleTab

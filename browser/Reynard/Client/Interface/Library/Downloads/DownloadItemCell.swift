@@ -142,14 +142,14 @@ final class DownloadItemCell: UITableViewCell {
             let sizeText = item.totalBytes.map { Self.formattedByteCount($0) }
             let speedText: String?
             if item.bytesPerSecond > 0 {
-                speedText = "\(Self.formattedByteCount(item.bytesPerSecond))/sec"
+                speedText = String(format: NSLocalizedString("%@/sec", comment: "Download speed"), Self.formattedByteCount(item.bytesPerSecond))
             } else {
                 speedText = nil
             }
             
             var detailsText = downloadedText
             if let sizeText {
-                detailsText += " of \(sizeText)"
+                detailsText += String(format: NSLocalizedString(" of %@", comment: "Total file size"), sizeText)
             }
             if let speedText {
                 detailsText += " (\(speedText))"
@@ -174,7 +174,7 @@ final class DownloadItemCell: UITableViewCell {
         case .completed:
             representedDownloadID = item.id
             lastStatusUpdateTime = 0
-            statusLabel.text = item.fileExists ? (item.totalBytes.map { Self.formattedByteCount($0) } ?? "Unknown size") : "Deleted"
+            statusLabel.text = item.fileExists ? (item.totalBytes.map { Self.formattedByteCount($0) } ?? NSLocalizedString("Unknown size", comment: "")) : NSLocalizedString("Deleted", comment: "")
             progressView.isHidden = true
             progressView.progress = 0
             fileIconView.transform = .identity
@@ -210,7 +210,13 @@ final class DownloadItemCell: UITableViewCell {
     // MARK: - Formatting
     
     private static func formattedByteCount(_ byteCount: Int64) -> String {
-        let units = ["bytes", "KB", "MB", "GB", "TB"]
+        let units = [
+            NSLocalizedString("bytes", comment: ""),
+            "KB",
+            "MB",
+            "GB",
+            "TB",
+        ]
         var value = Double(abs(byteCount))
         var unitIndex = 0
         

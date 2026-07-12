@@ -27,13 +27,13 @@ final class SitePermissionDetailsViewController: SettingsTableViewController {
         var text: SettingsSectionText {
             switch self {
             case .defaultBehavior:
-                return SettingsSectionText(headerTitle: "Default Setting")
+                return SettingsSectionText(headerTitle: NSLocalizedString("Default Setting", comment: ""))
             case .allowedSiteEntries:
-                return SettingsSectionText(headerTitle: "Allowed Websites")
+                return SettingsSectionText(headerTitle: NSLocalizedString("Allowed Websites", comment: ""))
             case .blockedSiteEntries:
-                return SettingsSectionText(headerTitle: "Denied Websites")
+                return SettingsSectionText(headerTitle: NSLocalizedString("Denied Websites", comment: ""))
             case .customSiteActions:
-                return SettingsSectionText(headerTitle: "Websites With Custom Settings")
+                return SettingsSectionText(headerTitle: NSLocalizedString("Websites With Custom Settings", comment: ""))
             }
         }
     }
@@ -273,7 +273,7 @@ final class SitePermissionDetailsViewController: SettingsTableViewController {
     }
     
     private func clearSiteActionSwipeConfiguration(for host: String) -> UISwipeActionsConfiguration {
-        let clearAction = UIContextualAction(style: .destructive, title: "Clear") { [weak self] _, _, completion in
+        let clearAction = UIContextualAction(style: .destructive, title: NSLocalizedString("Clear", comment: "Swipe action")) { [weak self] _, _, completion in
             guard let self else {
                 completion(false)
                 return
@@ -295,11 +295,11 @@ final class SitePermissionDetailsViewController: SettingsTableViewController {
         let timestamp = timestampFormatter.string(from: date)
         switch action {
         case .allowed:
-            return "Allowed \(timestamp)"
+            return String(format: NSLocalizedString("Allowed %@", comment: "Timestamp placeholder"), timestamp)
         case .blocked:
-            return "Denied \(timestamp)"
+            return String(format: NSLocalizedString("Denied %@", comment: "Timestamp placeholder"), timestamp)
         case .askToAllow:
-            return "Changed \(timestamp)"
+            return String(format: NSLocalizedString("Changed %@", comment: "Timestamp placeholder"), timestamp)
         }
     }
     

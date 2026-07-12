@@ -30,16 +30,16 @@ enum ClearDataTimeframe: Int, CaseIterable {
         _ cell: UITableViewCell,
         at indexPath: IndexPath,
         selectedTimeframe: ClearDataTimeframe,
-        allTimeTitle: String = "All History"
+        allTimeTitle: String = NSLocalizedString("All History", comment: "")
     ) {
         let option = allCases[indexPath.row]
         switch option {
         case .lastHour:
-            cell.textLabel?.text = "Last Hour"
+            cell.textLabel?.text = NSLocalizedString("Last Hour", comment: "")
         case .today:
-            cell.textLabel?.text = "Today"
+            cell.textLabel?.text = NSLocalizedString("Today", comment: "")
         case .todayAndYesterday:
-            cell.textLabel?.text = "Today and Yesterday"
+            cell.textLabel?.text = NSLocalizedString("Today and Yesterday", comment: "")
         case .allTime:
             cell.textLabel?.text = allTimeTitle
         }

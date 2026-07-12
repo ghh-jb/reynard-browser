@@ -15,16 +15,16 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
         var text: SettingsSectionText {
             switch self {
             case .openingScreen:
-                return SettingsSectionText(headerTitle: "On Startup")
+                return SettingsSectionText(headerTitle: NSLocalizedString("On Startup", comment: ""))
             case .includeOnHomepage:
-                return SettingsSectionText(headerTitle: "Homepage Sections")
+                return SettingsSectionText(headerTitle: NSLocalizedString("Homepage Sections", comment: ""))
             }
         }
     }
     
     init() {
         super.init(style: .insetGrouped)
-        title = "Homepage"
+        title = NSLocalizedString("Homepage", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -85,7 +85,7 @@ final class HomepagePreferencesViewController: SettingsTableViewController {
             let row = HomepageSectionPreferencesViewController.OverviewRow.allCases[indexPath.row]
             let cell = UITableViewCell(style: .value1, reuseIdentifier: nil)
             cell.textLabel?.text = row.title
-            cell.detailTextLabel?.text = row.isEnabled ? "On" : "Off"
+            cell.detailTextLabel?.text = row.isEnabled ? NSLocalizedString("On", comment: "Enabled state") : NSLocalizedString("Off", comment: "Disabled state")
             cell.accessoryType = .disclosureIndicator
             return cell
         }

@@ -85,7 +85,7 @@ public struct AddonErrorPresenter {
         if let trimmedAddonName, !trimmedAddonName.isEmpty {
             resolvedAddonName = trimmedAddonName
         } else {
-            resolvedAddonName = "This add-on"
+            resolvedAddonName = NSLocalizedString("This add-on", comment: "")
         }
         let normalizedCode = normalizeCode(code)
         
@@ -100,49 +100,49 @@ public struct AddonErrorPresenter {
         switch normalizedCode {
         case "ERROR_BLOCKLISTED":
             return AddonErrorPresentation(
-                statusText: "Blocked",
+                statusText: NSLocalizedString("Blocked", comment: ""),
                 alertMessage: "\(resolvedAddonName) violates Mozilla’s policies and can’t be installed on Reynard.",
                 isUserCancelled: false
             )
         case "ERROR_SOFT_BLOCKED":
             return AddonErrorPresentation(
-                statusText: "Restricted",
+                statusText: NSLocalizedString("Restricted", comment: ""),
                 alertMessage: "\(resolvedAddonName) is restricted and can’t be installed on Reynard.",
                 isUserCancelled: false
             )
         case "ERROR_NETWORK_FAILURE":
             return AddonErrorPresentation(
-                statusText: "Network Error",
+                statusText: NSLocalizedString("Network Error", comment: ""),
                 alertMessage: "This add-on couldn’t be downloaded because of a connection failure.",
                 isUserCancelled: false
             )
         case "ERROR_CORRUPT_FILE":
             return AddonErrorPresentation(
-                statusText: "Corrupt File",
+                statusText: NSLocalizedString("Corrupt File", comment: ""),
                 alertMessage: "This add-on couldn’t be installed because it appears to be corrupt.",
                 isUserCancelled: false
             )
         case "ERROR_SIGNEDSTATE_REQUIRED":
             return AddonErrorPresentation(
-                statusText: "Not Verified",
+                statusText: NSLocalizedString("Not Verified", comment: ""),
                 alertMessage: "This add-on couldn’t be installed because it hasn’t been verified.",
                 isUserCancelled: false
             )
         case "ERROR_INCOMPATIBLE":
             return AddonErrorPresentation(
-                statusText: "Incompatible",
+                statusText: NSLocalizedString("Incompatible", comment: ""),
                 alertMessage: "\(resolvedAddonName) couldn’t be installed because it isn’t compatible with this version of Reynard.",
                 isUserCancelled: false
             )
         case "ERROR_ADMIN_INSTALL_ONLY":
             return AddonErrorPresentation(
-                statusText: "Admin Only",
+                statusText: NSLocalizedString("Admin Only", comment: ""),
                 alertMessage: "\(resolvedAddonName) couldn’t be installed because it can only be installed by an organization using enterprise policies, which isn’t supported on this platform.",
                 isUserCancelled: false
             )
         default:
             return AddonErrorPresentation(
-                statusText: isInstallation ? "Error" : "Update Failed",
+                statusText: isInstallation ? NSLocalizedString("Error", comment: "") : NSLocalizedString("Update Failed", comment: ""),
                 alertMessage: isInstallation ? defaultInstallMessage(for: trimmedAddonName) : "This add-on couldn’t be updated.",
                 isUserCancelled: false
             )
@@ -151,9 +151,9 @@ public struct AddonErrorPresenter {
     
     private static func defaultInstallMessage(for addonName: String?) -> String {
         if let addonName, !addonName.isEmpty {
-            return "Couldn’t install \(addonName)."
+            return String(format: NSLocalizedString("Couldn’t install %@.", comment: "Add-on name"), addonName)
         }
-        return "Couldn’t install this add-on."
+        return NSLocalizedString("Couldn’t install this add-on.", comment: "")
     }
     
     private static func normalizeCode(_ code: String?) -> String? {

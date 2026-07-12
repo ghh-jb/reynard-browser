@@ -24,9 +24,9 @@ struct PrivacySettingsSection {
         
         switch Row.allCases[index] {
         case .sitePermissions:
-            return SettingsViewUtils.disclosureCell(title: "Website Permissions")
+            return SettingsViewUtils.disclosureCell(title: NSLocalizedString("Website Permissions", comment: ""))
         case .clearBrowsingData:
-            return SettingsViewUtils.disclosureCell(title: "Clear Browsing Data")
+            return SettingsViewUtils.disclosureCell(title: NSLocalizedString("Clear Browsing Data", comment: ""))
         }
     }
     

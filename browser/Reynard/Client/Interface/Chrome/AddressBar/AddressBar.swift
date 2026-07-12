@@ -80,7 +80,7 @@ final class AddressBar: UIView {
         let trailingButton: TrailingButtonState
     }
     
-    static let placeholderText = "Search or enter address"
+    static let placeholderText = NSLocalizedString("Search or enter address", comment: "")
     
     private weak var delegate: AddressBarDelegate?
     private weak var searchDelegate: AddressBarSearchDelegate?
@@ -962,7 +962,7 @@ extension AddressBar: UIContextMenuInteractionDelegate {
         
         return UIContextMenuConfiguration(identifier: url as NSURL, previewProvider: nil) { _ in
             UIMenu(title: "", children: [
-                UIAction(title: "Copy URL", image: UIImage(named: "reynard.document.on.document")) { _ in
+                UIAction(title: NSLocalizedString("Copy URL", comment: ""), image: UIImage(named: "reynard.document.on.document")) { _ in
                     UIPasteboard.general.string = url.absoluteString
                 },
             ])

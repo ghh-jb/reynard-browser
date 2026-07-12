@@ -31,15 +31,15 @@ struct AboutSettingsSection {
             let info = Bundle.main.infoDictionary
             let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"
             let build = info?["CFBundleVersion"] as? String ?? "Unknown"
-            return valueCell(title: "Reynard Browser", value: "\(version) (\(build))")
+            return valueCell(title: NSLocalizedString("Reynard Browser", comment: ""), value: "\(version) (\(build))")
         case .engineVersion:
-            return valueCell(title: "Engine Version", value: GeckoRuntime.version)
+            return valueCell(title: NSLocalizedString("Engine Version", comment: ""), value: GeckoRuntime.version)
         case .sourceCode:
-            return linkCell(title: "View Source Code")
+            return linkCell(title: NSLocalizedString("View Source Code", comment: ""))
         case .supportProject:
-            return linkCell(title: "Support The Project")
+            return linkCell(title: NSLocalizedString("Support The Project", comment: ""))
         case .githubProfile:
-            return linkCell(title: "GitHub - @minh-ton")
+            return linkCell(title: NSLocalizedString("GitHub - @minh-ton", comment: ""))
         }
     }
     

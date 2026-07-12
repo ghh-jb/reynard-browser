@@ -25,17 +25,17 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
         var title: String {
             switch self {
             case .browsingHistory:
-                return "Browsing History"
+                return NSLocalizedString("Browsing History", comment: "")
             case .cookiesAndSiteData:
-                return "Cookies and Website Data"
+                return NSLocalizedString("Cookies and Website Data", comment: "")
             case .cachedImagesAndFiles:
-                return "Cached Images and Files"
+                return NSLocalizedString("Cached Images and Files", comment: "")
             case .downloadedFiles:
-                return "Downloads"
+                return NSLocalizedString("Downloads", comment: "")
             case .sitePermissions:
-                return "Website Permissions"
+                return NSLocalizedString("Website Permissions", comment: "")
             case .openedTabs:
-                return "Open Tabs"
+                return NSLocalizedString("Open Tabs", comment: "")
             }
         }
         
@@ -82,7 +82,7 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
     
     init() {
         super.init(style: .insetGrouped)
-        title = "Clear Browsing Data"
+        title = NSLocalizedString("Clear Browsing Data", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -166,7 +166,7 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
     
     private func clearActionCell() -> UITableViewCell {
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-        cell.textLabel?.text = "Clear Browsing Data"
+        cell.textLabel?.text = NSLocalizedString("Clear Browsing Data", comment: "")
         cell.textLabel?.textColor = .systemRed
         cell.textLabel?.textAlignment = .center
         cell.accessoryType = .none
@@ -189,12 +189,12 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
     @objc private func confirmClearBrowsingData() {
         AlertPresenter.show(
             title: nil,
-            message: "This will clear selected browsing data. This action cannot be undone.",
+            message: NSLocalizedString("This will clear selected browsing data. This action cannot be undone.", comment: ""),
             buttons: [
-                AlertPresenter.Button(title: "Clear", style: .destructive) { [weak self] in
+                AlertPresenter.Button(title: NSLocalizedString("Clear", comment: "Destructive button"), style: .destructive) { [weak self] in
                     self?.clearSelectedData()
                 },
-                AlertPresenter.Button(title: "Cancel"),
+                AlertPresenter.Button(title: NSLocalizedString("Cancel", comment: "")),
             ]
         )
     }
@@ -255,7 +255,7 @@ final class ClearBrowsingDataViewController: SettingsTableViewController {
                 try await GeckoStorageController.clearData(flags: GeckoStorageClearFlags.allCaches)
             }
         } catch {
-            AlertPresenter.show(title: "Couldn’t Clear Browsing Data", message: "\(error)")
+            AlertPresenter.show(title: NSLocalizedString("Couldn’t Clear Browsing Data", comment: ""), message: "\(error)")
         }
     }
 }

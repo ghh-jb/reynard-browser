@@ -14,7 +14,7 @@ final class ClearDownloadsViewController: UITableViewController {
     init(onClear: @escaping (Date?) -> Void) {
         self.onClear = onClear
         super.init(style: .insetGrouped)
-        title = "Clear Downloads"
+        title = NSLocalizedString("Clear Downloads", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -38,7 +38,7 @@ final class ClearDownloadsViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return section == 0 ? "Clear Timeframe" : nil
+        return section == 0 ? NSLocalizedString("Clear Timeframe", comment: "") : nil
     }
     
     override func tableView(
@@ -52,13 +52,13 @@ final class ClearDownloadsViewController: UITableViewController {
                 cell,
                 at: indexPath,
                 selectedTimeframe: selectedTimeframe,
-                allTimeTitle: "All Downloads"
+                allTimeTitle: NSLocalizedString("All Downloads", comment: "")
             )
             return cell
         }
         
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-        cell.textLabel?.text = "Clear Downloads"
+        cell.textLabel?.text = NSLocalizedString("Clear Downloads", comment: "")
         cell.textLabel?.textColor = .systemRed
         cell.textLabel?.textAlignment = .center
         cell.accessoryType = .none

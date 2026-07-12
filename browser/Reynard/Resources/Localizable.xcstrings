@@ -1,0 +1,1161 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    " of %@" : {
+      "comment" : "Total file size"
+    },
+    " Tab" : {
+
+    },
+    " Tabs" : {
+
+    },
+    "%@ · Opened Tab" : {
+      "comment" : "Website host"
+    },
+    "%@ · Visited %@" : {
+      "comment" : "Host and date",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · Visited %2$@"
+          }
+        }
+      }
+    },
+    "%@ and %@" : {
+      "comment" : "Two-item list",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ and %2$@"
+          }
+        }
+      }
+    },
+    "%@ are disabled for Reynard. Open Settings to allow access." : {
+      "comment" : "Permission list placeholder"
+    },
+    "%@ couldn’t be verified and has been disabled." : {
+      "comment" : "Add-on name"
+    },
+    "%@ has been updated. Approve the additional permissions before the updated version is installed. Dismissing this prompt keeps your current add-on version." : {
+      "comment" : "Add-on name"
+    },
+    "%@ is disabled for Reynard. Open Settings to allow access." : {
+      "comment" : "Permission list placeholder"
+    },
+    "%@ isn’t compatible with this version of Reynard." : {
+      "comment" : "Add-on name"
+    },
+    "%@ out of 5" : {
+      "comment" : "Rating value"
+    },
+    "%@ out of 5 • %@ Review" : {
+      "comment" : "Rating and review count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ out of 5 • %2$@ Review"
+          }
+        }
+      }
+    },
+    "%@ out of 5 • %@ Reviews" : {
+      "comment" : "Rating and review count",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ out of 5 • %2$@ Reviews"
+          }
+        }
+      }
+    },
+    "%@ requests additional data collection." : {
+      "comment" : "Add-on name"
+    },
+    "%@ requests additional permissions." : {
+      "comment" : "Add-on name"
+    },
+    "%@ Suggestions" : {
+      "comment" : "Search provider name"
+    },
+    "%@, and %@" : {
+      "comment" : "List final item",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, and %2$@"
+          }
+        }
+      }
+    },
+    "%@/sec" : {
+      "comment" : "Download speed"
+    },
+    "%d add-ons couldn’t be updated." : {
+      "comment" : "Add-on count"
+    },
+    "%d add-ons need permission to update." : {
+      "comment" : "Add-on count"
+    },
+    "%d add-ons updated." : {
+      "comment" : "Add-on count"
+    },
+    "%d domains" : {
+      "comment" : "Domain count"
+    },
+    "▲ JIT-Less Mode is Currently Active" : {
+
+    },
+    "0 Tabs" : {
+
+    },
+    "1 add-on couldn’t be updated." : {
+
+    },
+    "1 add-on needs permission to update." : {
+
+    },
+    "1 add-on updated." : {
+
+    },
+    "1 domain" : {
+
+    },
+    "A Developer Disk Image download is already in progress." : {
+
+    },
+    "A new version of Reynard Browser is available. Open Settings to update." : {
+
+    },
+    "About" : {
+
+    },
+    "Access" : {
+
+    },
+    "Access your data on websites in %@" : {
+      "comment" : "Domain count text"
+    },
+    "Activate JIT-Less Mode" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add %@?" : {
+      "comment" : "Add-on name"
+    },
+    "Add Add-on" : {
+
+    },
+    "Add Bookmark" : {
+
+    },
+    "Add Language" : {
+
+    },
+    "Add Language…" : {
+
+    },
+    "Add to Favorites" : {
+
+    },
+    "Add Website" : {
+
+    },
+    "Add Website…" : {
+
+    },
+    "Add websites with sign-in failures, human verification challenges, or other issues to use the %@ user agent." : {
+      "comment" : "User agent name placeholder"
+    },
+    "Add-ons" : {
+
+    },
+    "Additional Options" : {
+
+    },
+    "Address" : {
+      "comment" : "Sort option"
+    },
+    "Address Bar" : {
+
+    },
+    "Admin Only" : {
+
+    },
+    "Advanced" : {
+
+    },
+    "After you close a tab, Reynard won’t remember any of your browsing history or cookies. However, downloads and new bookmarks will be saved." : {
+
+    },
+    "All Downloads" : {
+
+    },
+    "All History" : {
+
+    },
+    "All Websites" : {
+
+    },
+    "Allow" : {
+      "comment" : "Permission option"
+    },
+    "Allow %@ to access apps and services on devices connected to your local network?" : {
+      "comment" : "Website host"
+    },
+    "Allow %@ to access other apps and services on this device?" : {
+      "comment" : "Website host"
+    },
+    "Allow %@ to play DRM-controlled content?" : {
+      "comment" : "Website host"
+    },
+    "Allow %@ to send notifications?" : {
+      "comment" : "Website host"
+    },
+    "Allow %@ to store data in persistent storage?" : {
+      "comment" : "Website host"
+    },
+    "Allow %@ to use its cookies on %@?" : {
+      "comment" : "Third-party and site hosts",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow %1$@ to use its cookies on %2$@?"
+          }
+        }
+      }
+    },
+    "Allow %@ to use motion & orientation sensors?" : {
+      "comment" : "Website host"
+    },
+    "Allow %@ to use your camera and microphone?" : {
+      "comment" : "Website host"
+    },
+    "Allow %@ to use your camera?" : {
+      "comment" : "Website host"
+    },
+    "Allow %@ to use your location?" : {
+      "comment" : "Website host"
+    },
+    "Allow %@ to use your microphone?" : {
+      "comment" : "Website host"
+    },
+    "Allow Audio and Video" : {
+      "comment" : "Autoplay option"
+    },
+    "Allow in Private Browsing" : {
+
+    },
+    "Allowed %@" : {
+      "comment" : "Timestamp placeholder"
+    },
+    "Allowed Websites" : {
+
+    },
+    "Appearance" : {
+
+    },
+    "Apps and Services" : {
+
+    },
+    "Are you sure you want to upload all files? Only do this if you trust the site." : {
+
+    },
+    "Ask" : {
+      "comment" : "Permission option"
+    },
+    "Author" : {
+
+    },
+    "Autoplay" : {
+
+    },
+    "Blank Page" : {
+
+    },
+    "Block Audio and Video" : {
+      "comment" : "Autoplay option"
+    },
+    "Block Audio Only" : {
+      "comment" : "Autoplay option"
+    },
+    "Blocked" : {
+
+    },
+    "Bookmarks" : {
+
+    },
+    "Bookmarks, History, and Tabs" : {
+
+    },
+    "Bottom" : {
+      "comment" : "Address bar position"
+    },
+    "Browsing" : {
+
+    },
+    "Browsing History" : {
+
+    },
+    "bytes" : {
+
+    },
+    "Cached Images and Files" : {
+
+    },
+    "Camera" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Cancel Download" : {
+
+    },
+    "Cancel Download?" : {
+
+    },
+    "Changed %@" : {
+      "comment" : "Timestamp placeholder"
+    },
+    "Choose File" : {
+
+    },
+    "Choose Folder" : {
+
+    },
+    "Clear" : {
+      "comment" : "Destructive button\nSwipe action"
+    },
+    "Clear All" : {
+
+    },
+    "Clear Browsing Data" : {
+
+    },
+    "Clear Downloads" : {
+
+    },
+    "Clear History" : {
+
+    },
+    "Clear Timeframe" : {
+
+    },
+    "Close All Tabs" : {
+
+    },
+    "Compatibility" : {
+
+    },
+    "Complete Add-on Updates" : {
+
+    },
+    "Confirm Upload" : {
+
+    },
+    "Cookies and Website Data" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Copy Link" : {
+
+    },
+    "Copy URL" : {
+
+    },
+    "Corrupt File" : {
+
+    },
+    "Could not retrieve the download URL." : {
+
+    },
+    "Couldn’t Clear Browsing Data" : {
+
+    },
+    "Couldn’t Clear History" : {
+
+    },
+    "Couldn’t Disable Add-on" : {
+
+    },
+    "Couldn’t Enable Add-on" : {
+
+    },
+    "Couldn’t install %@." : {
+      "comment" : "Add-on name"
+    },
+    "Couldn’t install this add-on." : {
+
+    },
+    "Couldn’t Reload Add-on" : {
+
+    },
+    "Couldn’t Remove Add-on" : {
+
+    },
+    "Couldn’t Update Permissions" : {
+
+    },
+    "Couldn’t Update Private Browsing Access" : {
+
+    },
+    "Cross-Site Cookies" : {
+
+    },
+    "Custom Search URL" : {
+
+    },
+    "Custom URL" : {
+
+    },
+    "Date Added" : {
+      "comment" : "Sort option"
+    },
+    "Day" : {
+      "comment" : "Light appearance option"
+    },
+    "Default Setting" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete Bookmark" : {
+
+    },
+    "Delete Folder" : {
+
+    },
+    "Deleted" : {
+
+    },
+    "Denied %@" : {
+      "comment" : "Timestamp placeholder"
+    },
+    "Denied Websites" : {
+
+    },
+    "Deny" : {
+      "comment" : "Permission option"
+    },
+    "Desktop Firefox" : {
+
+    },
+    "Details" : {
+
+    },
+    "Developer Disk Image download was cancelled." : {
+
+    },
+    "Developer Disk Image source URL is invalid." : {
+
+    },
+    "Device Apps and Services" : {
+
+    },
+    "Discover Add-ons…" : {
+
+    },
+    "Do you want to download \"%@\"?" : {
+      "comment" : "File name"
+    },
+    "Do you want to stop downloading %@?" : {
+      "comment" : "File name"
+    },
+    "Don’t Allow" : {
+
+    },
+    "Download" : {
+
+    },
+    "Download Failed" : {
+
+    },
+    "Download Reynard (.tipa)" : {
+
+    },
+    "Downloading" : {
+
+    },
+    "Downloading Update" : {
+
+    },
+    "Downloads" : {
+
+    },
+    "e.g. youtube.com" : {
+
+    },
+    "Edit" : {
+
+    },
+    "Edit Bookmark" : {
+
+    },
+    "Edit Bookmarks" : {
+
+    },
+    "Enable Add-on" : {
+
+    },
+    "Enable JIT" : {
+
+    },
+    "Enable JIT to improve performance and ensure websites work properly." : {
+
+    },
+    "Engine Version" : {
+
+    },
+    "Error" : {
+
+    },
+    "Error %d: %@" : {
+      "comment" : "Code and description",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Error %1$d: %2$@"
+          }
+        }
+      }
+    },
+    "Failed to enable JIT" : {
+
+    },
+    "Favorites" : {
+
+    },
+    "Files you download appear here" : {
+
+    },
+    "Firefox for Android" : {
+
+    },
+    "Folders" : {
+
+    },
+    "Frequently Visited" : {
+
+    },
+    "General" : {
+
+    },
+    "GitHub - @minh-ton" : {
+
+    },
+    "History" : {
+
+    },
+    "Homepage" : {
+
+    },
+    "Homepage Sections" : {
+
+    },
+    "Import Failed" : {
+
+    },
+    "Import Pairing File…" : {
+
+    },
+    "Incompatible" : {
+
+    },
+    "Information" : {
+
+    },
+    "Install Add-on from File…" : {
+
+    },
+    "Install the TrollStore version of Reynard to enable JIT automatically for improved performance and to ensure websites work properly." : {
+
+    },
+    "Install TrollStore" : {
+
+    },
+    "Installed Add-ons" : {
+
+    },
+    "Installing Add-on…" : {
+
+    },
+    "It's extremely rare that you encounter this issue! Make sure that your TrollStore installation or jailbroken environment is properly configured.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode." : {
+      "comment" : "Paragraph break intentional"
+    },
+    "JIT" : {
+
+    },
+    "JIT is not supported on the OS version you are using." : {
+
+    },
+    "Keep Downloading" : {
+
+    },
+    "Languages" : {
+
+    },
+    "Last checked %@." : {
+      "comment" : "Date placeholder"
+    },
+    "Last Hour" : {
+
+    },
+    "Last Tab" : {
+
+    },
+    "Last Updated" : {
+
+    },
+    "Learn More" : {
+
+    },
+    "Links" : {
+
+    },
+    "Loading Add-ons…" : {
+
+    },
+    "Local Network" : {
+
+    },
+    "Local Network Devices" : {
+
+    },
+    "Location" : {
+
+    },
+    "Make sure TrollStore's URL Scheme is enabled." : {
+
+    },
+    "Media" : {
+
+    },
+    "Microphone" : {
+
+    },
+    "More About This Add-on" : {
+
+    },
+    "Name" : {
+      "comment" : "Sort option"
+    },
+    "Needs Permission to Update" : {
+
+    },
+    "Network Error" : {
+
+    },
+    "New Folder" : {
+
+    },
+    "New Tab" : {
+
+    },
+    "Night" : {
+      "comment" : "Dark appearance option"
+    },
+    "No" : {
+
+    },
+    "No Add-ons" : {
+
+    },
+    "No Add-ons Installed" : {
+
+    },
+    "No matching bookmarks" : {
+
+    },
+    "No matching downloads" : {
+
+    },
+    "No matching history" : {
+
+    },
+    "No release notes available." : {
+
+    },
+    "No Update Available" : {
+
+    },
+    "No updates found." : {
+
+    },
+    "None" : {
+      "comment" : "Sort option"
+    },
+    "Not Allowed in Private Browsing" : {
+
+    },
+    "Not Verified" : {
+
+    },
+    "Number of Rows" : {
+
+    },
+    "Number of Tabs" : {
+
+    },
+    "Number of Websites" : {
+
+    },
+    "Off" : {
+      "comment" : "Disabled state"
+    },
+    "OK" : {
+
+    },
+    "On" : {
+      "comment" : "Enabled state"
+    },
+    "On Startup" : {
+
+    },
+    "Open in\nFiles" : {
+      "comment" : "Line break intentional"
+    },
+    "Open in New Private Tab" : {
+
+    },
+    "Open in New Tab" : {
+
+    },
+    "Open New Tabs To" : {
+
+    },
+    "Open Settings" : {
+
+    },
+    "Open Tabs" : {
+
+    },
+    "Option" : {
+
+    },
+    "Optional Data Collection" : {
+
+    },
+    "Optional Permissions" : {
+
+    },
+    "Page Zoom" : {
+
+    },
+    "Page Zoom on" : {
+
+    },
+    "Performance Recommendation" : {
+
+    },
+    "Permissions" : {
+
+    },
+    "Persistent Storage" : {
+
+    },
+    "Photo Library" : {
+
+    },
+    "Please check that your pairing file is valid, your loopback VPN is on, and you're connected to a stable Wi-Fi network.\n\nYou may use the browser without JIT temporarily until the next launch by activating JIT-Less Mode." : {
+      "comment" : "Paragraph break intentional"
+    },
+    "Preparing JIT" : {
+
+    },
+    "Previous 7 Days" : {
+
+    },
+    "Previous 30 Days" : {
+
+    },
+    "Privacy" : {
+
+    },
+    "Private" : {
+
+    },
+    "Private Browsing" : {
+
+    },
+    "Quit Reynard" : {
+
+    },
+    "Rating" : {
+
+    },
+    "Recently Closed Tabs" : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove %@?" : {
+      "comment" : "Add-on name"
+    },
+    "Remove Add-on" : {
+
+    },
+    "Remove Link" : {
+
+    },
+    "Remove Recently Closed Tab" : {
+
+    },
+    "Request Desktop Website" : {
+
+    },
+    "Request Desktop Website On" : {
+
+    },
+    "Request Mobile Website" : {
+
+    },
+    "Required Data Collection" : {
+
+    },
+    "Required DDI files are missing." : {
+
+    },
+    "Required Permissions" : {
+
+    },
+    "Reset" : {
+      "comment" : "Destructive button"
+    },
+    "Reset Page Zoom Settings" : {
+
+    },
+    "Reset Permissions for All Websites" : {
+
+    },
+    "Reset Settings for This Website" : {
+
+    },
+    "Restart Required" : {
+
+    },
+    "Restricted" : {
+
+    },
+    "Reynard Browser" : {
+
+    },
+    "Reynard won’t remember any of your browsing history or cookies. However, downloads and new bookmarks will be saved." : {
+
+    },
+    "Save" : {
+
+    },
+    "Save to Photos" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search Bookmarks" : {
+
+    },
+    "Search Browsing History" : {
+
+    },
+    "Search Downloads" : {
+
+    },
+    "Search Engine" : {
+
+    },
+    "Search History" : {
+
+    },
+    "Search Languages" : {
+
+    },
+    "Search Opened Tabs" : {
+
+    },
+    "Search or enter address" : {
+
+    },
+    "Search Suggestion Provider" : {
+
+    },
+    "Search Suggestions" : {
+
+    },
+    "Select Option" : {
+
+    },
+    "Settings" : {
+
+    },
+    "Settings for %@" : {
+      "comment" : "Website host"
+    },
+    "Share" : {
+
+    },
+    "Share Image" : {
+
+    },
+    "Share Link" : {
+
+    },
+    "Show All" : {
+
+    },
+    "Show All Websites" : {
+
+    },
+    "Show Favorites" : {
+
+    },
+    "Show Folders on Top" : {
+
+    },
+    "Show Frequently Visited" : {
+
+    },
+    "Show Full Website Address" : {
+
+    },
+    "Show Image Previews" : {
+
+    },
+    "Show in Private Browsing" : {
+
+    },
+    "Show Less" : {
+
+    },
+    "Show Link Previews" : {
+
+    },
+    "Show Recently Closed Tabs" : {
+
+    },
+    "Show Search Suggestions" : {
+
+    },
+    "Show Tab Bar in Landscape" : {
+
+    },
+    "Since this is your first time enabling JIT, Reynard needs to download and mount the Developer Disk Image. This is required for JIT to work properly." : {
+
+    },
+    "Some websites are available in multiple languages. Choose languages in the order you prefer." : {
+
+    },
+    "Sort By" : {
+
+    },
+    "Support The Project" : {
+
+    },
+    "System" : {
+      "comment" : "Appearance option"
+    },
+    "tab" : {
+
+    },
+    "tabs" : {
+
+    },
+    "Tabs" : {
+
+    },
+    "Take Photo" : {
+
+    },
+    "Take Photo or Video" : {
+
+    },
+    "Take Video" : {
+
+    },
+    "The app will now close for the JIT setting to take effect." : {
+
+    },
+    "The required Developer Disk Image files for enabling JIT were not found.\n\nJIT has been disabled. Quit the app using the button below, then re-enable JIT from the browser settings." : {
+      "comment" : "Paragraph break intentional"
+    },
+    "This add-on" : {
+
+    },
+    "This add-on is restricted and has been disabled. You can enable it, but this may be risky." : {
+
+    },
+    "This add-on is restricted. Using it may be risky." : {
+
+    },
+    "This add-on isn’t supported by this version of Reynard and has been disabled." : {
+
+    },
+    "This add-on was blocked for violating Mozilla’s policies and has been disabled." : {
+
+    },
+    "This build does not support in-app updates. Visit the project's Releases page to download the latest version of the app." : {
+
+    },
+    "This will clear selected browsing data. This action cannot be undone." : {
+
+    },
+    "This will close your %d %@." : {
+      "comment" : "Tab count and unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will close your %1$d %2$@."
+          }
+        }
+      }
+    },
+    "This will reset permissions for all websites. This action cannot be undone." : {
+
+    },
+    "This will reset settings for this website. This action cannot be undone." : {
+
+    },
+    "Title" : {
+
+    },
+    "Today" : {
+
+    },
+    "Today and Yesterday" : {
+
+    },
+    "Top" : {
+      "comment" : "Address bar position"
+    },
+    "Unable to access the app Application Support directory." : {
+
+    },
+    "Unknown error." : {
+
+    },
+    "Unknown size" : {
+
+    },
+    "Unsupported" : {
+
+    },
+    "Unsupported Add-ons" : {
+
+    },
+    "Untitled" : {
+
+    },
+    "Update Add-on Permissions" : {
+
+    },
+    "Update All Add-ons" : {
+
+    },
+    "Update Available" : {
+
+    },
+    "Update Failed" : {
+
+    },
+    "Update Now" : {
+
+    },
+    "Update Unavailable" : {
+
+    },
+    "Updated" : {
+
+    },
+    "Updating Add-ons…" : {
+
+    },
+    "Updating…" : {
+
+    },
+    "Upload" : {
+
+    },
+    "URL" : {
+
+    },
+    "Use %s for search terms, as in example.com⁠/⁠search⁠?⁠q⁠=⁠%s." : {
+      "comment" : "Literal %s, word joiners",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use %1$s for search terms, as in example.com⁠/⁠search⁠?⁠q⁠=⁠%2$s."
+          }
+        }
+      }
+    },
+    "Use Compatibility User Agent" : {
+
+    },
+    "Use the %@ user agent for all websites to improve compatibility." : {
+      "comment" : "User agent name placeholder"
+    },
+    "User Agent Overrides" : {
+
+    },
+    "Version" : {
+
+    },
+    "Version %@" : {
+      "comment" : "Version number"
+    },
+    "View Source Code" : {
+
+    },
+    "Website Language" : {
+
+    },
+    "Website Permissions" : {
+
+    },
+    "Website Settings" : {
+
+    },
+    "Websites" : {
+
+    },
+    "Websites With Custom Settings" : {
+
+    },
+    "When the download finishes, choose the app that you used to sideload Reynard in the share sheet to install the update." : {
+
+    },
+    "Yes" : {
+
+    },
+    "Yesterday" : {
+
+    },
+    "You may want to block access if it’s not clear why %@ needs this data." : {
+      "comment" : "Third-party host"
+    },
+    "Your browsing history appears here" : {
+
+    },
+    "Zoom Level" : {
+
+    }
+  },
+  "version" : "1.2"
+}

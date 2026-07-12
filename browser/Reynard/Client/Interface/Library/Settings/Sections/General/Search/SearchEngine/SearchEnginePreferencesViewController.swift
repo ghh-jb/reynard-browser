@@ -15,8 +15,8 @@ final class SearchEnginePreferencesViewController: SettingsTableViewController, 
             switch self {
             case .engines:
                 return SettingsSectionText(
-                    headerTitle: "Search Engine",
-                    footerTitle: "Use %s for search terms, as in example.com\u{2060}/\u{2060}search\u{2060}?\u{2060}q\u{2060}=\u{2060}%s."
+                    headerTitle: NSLocalizedString("Search Engine", comment: ""),
+                    footerTitle: NSLocalizedString("Use %s for search terms, as in example.com\u{2060}/\u{2060}search\u{2060}?\u{2060}q\u{2060}=\u{2060}%s.", comment: "Literal %s, word joiners")
                 )
             }
         }
@@ -24,7 +24,7 @@ final class SearchEnginePreferencesViewController: SettingsTableViewController, 
     
     init() {
         super.init(style: .insetGrouped)
-        title = "Search Engine"
+        title = NSLocalizedString("Search Engine", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -184,7 +184,7 @@ final class SearchEnginePreferencesViewController: SettingsTableViewController, 
         }
         
         cell.textField.delegate = self
-        cell.textField.placeholder = "Custom Search URL"
+        cell.textField.placeholder = NSLocalizedString("Custom Search URL", comment: "")
         cell.textField.text = Prefs.SearchSettings.customSearchTemplate
         cell.accessoryType = selectedSearchEngine == .custom ? .checkmark : .none
         return cell

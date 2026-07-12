@@ -19,9 +19,9 @@ final class SitePermissionsViewController: SettingsTableViewController {
             case .availability:
                 return SettingsSectionText()
             case .access:
-                return SettingsSectionText(headerTitle: "Access")
+                return SettingsSectionText(headerTitle: NSLocalizedString("Access", comment: ""))
             case .advanced:
-                return SettingsSectionText(headerTitle: "Advanced")
+                return SettingsSectionText(headerTitle: NSLocalizedString("Advanced", comment: ""))
             case .websiteActions:
                 return SettingsSectionText()
             }
@@ -49,19 +49,19 @@ final class SitePermissionsViewController: SettingsTableViewController {
         var title: String {
             switch self {
             case .camera:
-                return "Camera"
+                return NSLocalizedString("Camera", comment: "")
             case .microphone:
-                return "Microphone"
+                return NSLocalizedString("Microphone", comment: "")
             case .location:
-                return "Location"
+                return NSLocalizedString("Location", comment: "")
             case .persistentStorage:
-                return "Persistent Storage"
+                return NSLocalizedString("Persistent Storage", comment: "")
             case .crossOriginStorageAccess:
-                return "Cross-Site Cookies"
+                return NSLocalizedString("Cross-Site Cookies", comment: "")
             case .localDeviceAccess:
-                return "Apps and Services"
+                return NSLocalizedString("Apps and Services", comment: "")
             case .localNetworkAccess:
-                return "Local Network"
+                return NSLocalizedString("Local Network", comment: "")
             }
         }
         
@@ -112,7 +112,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
     
     init() {
         super.init(style: .insetGrouped)
-        title = "Website Permissions"
+        title = NSLocalizedString("Website Permissions", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -162,7 +162,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
                 return disabledPermissionMessageCell()
             case .openSettings:
                 let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-                cell.textLabel?.text = "Open Settings"
+                cell.textLabel?.text = NSLocalizedString("Open Settings", comment: "")
                 cell.textLabel?.textColor = view.tintColor
                 cell.accessoryType = .none
                 return cell
@@ -199,7 +199,7 @@ final class SitePermissionsViewController: SettingsTableViewController {
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
             switch WebsiteActionRow.allCases[indexPath.row] {
             case .resetPermissions:
-                cell.textLabel?.text = "Reset Permissions for All Websites"
+                cell.textLabel?.text = NSLocalizedString("Reset Permissions for All Websites", comment: "")
                 cell.textLabel?.textColor = .systemRed
                 cell.textLabel?.textAlignment = .center
                 cell.accessoryType = .none
@@ -282,12 +282,12 @@ final class SitePermissionsViewController: SettingsTableViewController {
     private func confirmResetSitePermissions() {
         AlertPresenter.show(
             title: nil,
-            message: "This will reset permissions for all websites. This action cannot be undone.",
+            message: NSLocalizedString("This will reset permissions for all websites. This action cannot be undone.", comment: ""),
             buttons: [
-                AlertPresenter.Button(title: "Reset", style: .destructive) {
+                AlertPresenter.Button(title: NSLocalizedString("Reset", comment: "Destructive button"), style: .destructive) {
                     SiteSettingsUtils.resetStoredSitePermissions()
                 },
-                AlertPresenter.Button(title: "Cancel"),
+                AlertPresenter.Button(title: NSLocalizedString("Cancel", comment: "")),
             ]
         )
     }

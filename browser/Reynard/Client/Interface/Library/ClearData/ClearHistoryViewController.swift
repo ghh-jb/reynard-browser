@@ -19,7 +19,7 @@ final class ClearHistoryViewController: UITableViewController {
         self.tabCount = tabCount
         self.onClear = onClear
         super.init(style: .insetGrouped)
-        title = "Clear History"
+        title = NSLocalizedString("Clear History", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -44,10 +44,10 @@ final class ClearHistoryViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         if section == 0 {
-            return "Clear Timeframe"
+            return NSLocalizedString("Clear Timeframe", comment: "")
         }
         
-        return section == 1 ? "Additional Options" : nil
+        return section == 1 ? NSLocalizedString("Additional Options", comment: "") : nil
     }
     
     override func tableView(_ tableView: UITableView, titleForFooterInSection section: Int) -> String? {
@@ -55,7 +55,8 @@ final class ClearHistoryViewController: UITableViewController {
             return nil
         }
         
-        return "This will close your \(tabCount) \(tabCount == 1 ? "tab" : "tabs")."
+        let tabText = tabCount == 1 ? NSLocalizedString("tab", comment: "") : NSLocalizedString("tabs", comment: "")
+        return String(format: NSLocalizedString("This will close your %d %@.", comment: "Tab count and unit"), tabCount, tabText)
     }
     
     override func tableView(
@@ -64,7 +65,7 @@ final class ClearHistoryViewController: UITableViewController {
     ) -> UITableViewCell {
         if indexPath.section == 2 {
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = "Clear History"
+            cell.textLabel?.text = NSLocalizedString("Clear History", comment: "")
             cell.textLabel?.textColor = .systemRed
             cell.textLabel?.textAlignment = .center
             cell.accessoryType = .none
@@ -76,7 +77,7 @@ final class ClearHistoryViewController: UITableViewController {
         if indexPath.section == 0 {
             ClearDataTimeframe.configureCell(cell, at: indexPath, selectedTimeframe: selectedTimeframe)
         } else {
-            cell.textLabel?.text = "Close All Tabs"
+            cell.textLabel?.text = NSLocalizedString("Close All Tabs", comment: "")
             cell.textLabel?.textColor = .label
             cell.accessoryView = closeAllTabsSwitch
             cell.accessoryType = .none
@@ -113,7 +114,7 @@ final class ClearHistoryViewController: UITableViewController {
             do {
                 try await GeckoStorageController.clearHistory(since: startDate)
             } catch {
-                AlertPresenter.show(title: "Couldn’t Clear History", message: "\(error)")
+                AlertPresenter.show(title: NSLocalizedString("Couldn’t Clear History", comment: ""), message: "\(error)")
             }
         }
         dismiss(animated: true)

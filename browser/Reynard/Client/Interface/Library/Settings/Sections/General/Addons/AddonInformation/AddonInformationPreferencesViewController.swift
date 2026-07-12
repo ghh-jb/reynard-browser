@@ -19,9 +19,9 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
             case .description:
                 return SettingsSectionText()
             case .information:
-                return SettingsSectionText(headerTitle: "Information")
+                return SettingsSectionText(headerTitle: NSLocalizedString("Information", comment: ""))
             case .links:
-                return SettingsSectionText(headerTitle: "Links")
+                return SettingsSectionText(headerTitle: NSLocalizedString("Links", comment: ""))
             }
         }
     }
@@ -88,17 +88,17 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
         
         if let creatorName = metaData.creatorName?.trimmingCharacters(in: .whitespacesAndNewlines),
            !creatorName.isEmpty {
-            rows.append(InformationRow(title: "Author", value: creatorName, link: normalizedURLString(metaData.creatorURL)))
+            rows.append(InformationRow(title: NSLocalizedString("Author", comment: ""), value: creatorName, link: normalizedURLString(metaData.creatorURL)))
         }
         
-        rows.append(InformationRow(title: "Version", value: metaData.version, link: nil))
+        rows.append(InformationRow(title: NSLocalizedString("Version", comment: ""), value: metaData.version, link: nil))
         
         if let updateDate = updateDateText(metaData.updateDate) {
-            rows.append(InformationRow(title: "Last Updated", value: updateDate, link: nil))
+            rows.append(InformationRow(title: NSLocalizedString("Last Updated", comment: ""), value: updateDate, link: nil))
         }
         
         if let ratingText = ratingText(metaData) {
-            rows.append(InformationRow(title: "Rating", value: ratingText, link: normalizedURLString(metaData.reviewURL)))
+            rows.append(InformationRow(title: NSLocalizedString("Rating", comment: ""), value: ratingText, link: normalizedURLString(metaData.reviewURL)))
         }
         
         return rows
@@ -112,11 +112,11 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
         var rows: [InformationRow] = []
         
         if let homepageURL = normalizedURLString(metaData.homepageURL) {
-            rows.append(InformationRow(title: "Homepage", value: homepageURL, link: homepageURL))
+            rows.append(InformationRow(title: NSLocalizedString("Homepage", comment: ""), value: homepageURL, link: homepageURL))
         }
         
         if let listingURL = normalizedURLString(metaData.amoListingURL) {
-            rows.append(InformationRow(title: "More About This Add-on", value: listingURL, link: listingURL))
+            rows.append(InformationRow(title: NSLocalizedString("More About This Add-on", comment: ""), value: listingURL, link: listingURL))
         }
         
         return rows
@@ -127,7 +127,7 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
     init(addonID: String) {
         self.addonID = addonID
         super.init(style: .insetGrouped)
-        title = "Details"
+        title = NSLocalizedString("Details", comment: "")
     }
     
     required init?(coder: NSCoder) {
@@ -259,7 +259,7 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
             }
         } catch {
             await MainActor.run {
-                AlertPresenter.show(title: "Couldn’t Reload Add-on", message: "\(error)")
+                AlertPresenter.show(title: NSLocalizedString("Couldn’t Reload Add-on", comment: ""), message: "\(error)")
             }
         }
     }
@@ -293,10 +293,10 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
         if let reviewCount = metaData.reviewCount {
             let reviewText = reviewCountFormatter.string(from: NSNumber(value: reviewCount)) ?? "\(reviewCount)"
             return reviewCount == 1
-            ? "\(roundedRating) out of 5 • \(reviewText) Review"
-            : "\(roundedRating) out of 5 • \(reviewText) Reviews"
+            ? String(format: NSLocalizedString("%@ out of 5 • %@ Review", comment: "Rating and review count"), roundedRating, reviewText)
+            : String(format: NSLocalizedString("%@ out of 5 • %@ Reviews", comment: "Rating and review count"), roundedRating, reviewText)
         }
         
-        return "\(roundedRating) out of 5"
+        return String(format: NSLocalizedString("%@ out of 5", comment: "Rating value"), roundedRating)
     }
 }

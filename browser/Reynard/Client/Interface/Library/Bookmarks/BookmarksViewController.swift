@@ -71,6 +71,9 @@ final class BookmarksViewController: UIViewController, UITableViewDataSource, UI
         tableView.delegate = self
         tableView.keyboardDismissMode = .interactive
         tableView.separatorStyle = .singleLine
+        if #available(iOS 14.0, *) {
+            tableView.selectionFollowsFocus = false
+        }
         if #available(iOS 15.0, *) {
             tableView.sectionHeaderTopPadding = UX.sectionHeaderTopPadding
         }

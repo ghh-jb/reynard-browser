@@ -73,6 +73,9 @@ final class HistoryViewController: UIViewController, UITableViewDataSource, UITa
         view.rowHeight = UITableView.automaticDimension
         view.estimatedRowHeight = UX.estimatedRowHeight
         view.separatorStyle = .singleLine
+        if #available(iOS 14.0, *) {
+            view.selectionFollowsFocus = false
+        }
         if #available(iOS 15.0, *) {
             view.sectionHeaderTopPadding = UX.sectionHeaderTopPadding
         }

@@ -42,6 +42,9 @@ final class SidebarMenuViewController: UIViewController, UICollectionViewDelegat
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .systemGray6
         view.delegate = self
+        if #available(iOS 14.0, *) {
+            view.selectionFollowsFocus = false
+        }
         return view
     }()
     

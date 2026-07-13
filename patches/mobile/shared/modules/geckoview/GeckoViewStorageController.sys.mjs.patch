@@ -1,7 +1,16 @@
 diff --git a/mobile/shared/modules/geckoview/GeckoViewStorageController.sys.mjs b/mobile/shared/modules/geckoview/GeckoViewStorageController.sys.mjs
-index 3e93dbca031b..7b66908af41d 100644
+index 3e93dbca031b..18921ffc5830 100644
 --- a/mobile/shared/modules/geckoview/GeckoViewStorageController.sys.mjs
 +++ b/mobile/shared/modules/geckoview/GeckoViewStorageController.sys.mjs
+@@ -115,7 +115,7 @@ export const GeckoViewStorageController = {
+ 
+     switch (aEvent) {
+       case "GeckoView:ClearData": {
+-        this.clearData(aData.flags, aCallback);
++        this.clearData(aData.flags, aCallback, aData.from, aData.to);
+         break;
+       }
+       case "GeckoView:ClearSessionContextData": {
 @@ -215,6 +215,28 @@ export const GeckoViewStorageController = {
          );
          break;
@@ -31,3 +40,39 @@ index 3e93dbca031b..7b66908af41d 100644
  
        case "GeckoView:SetCookieBannerModeForDomain": {
          let exceptionLabel = "SetCookieBannerModeForDomain";
+@@ -284,8 +306,9 @@ export const GeckoViewStorageController = {
+     }
+   },
+ 
+-  async clearData(aFlags, aCallback) {
++  async clearData(aFlags, aCallback, aFrom, aTo) {
+     const flags = convertFlags(aFlags);
++    const from = Number.isFinite(aFrom) ? aFrom : 0;
+ 
+     // storageAccessAPI permissions record every site that the user
+     // interacted with and thus mirror history quite closely. It makes
+@@ -299,13 +322,23 @@ export const GeckoViewStorageController = {
+       await new Promise(resolve => {
+         Services.clearData.deleteUserInteractionForClearingHistory(
+           principals,
+-          0,
++          from,
+           resolve
+         );
+       });
+     }
+ 
+     new Promise(resolve => {
++      if (Number.isFinite(aFrom) && Number.isFinite(aTo)) {
++        Services.clearData.deleteDataInTimeRange(
++          aFrom,
++          aTo,
++          /* isUserRequest */ true,
++          flags,
++          resolve
++        );
++        return;
++      }
+       Services.clearData.deleteData(flags, resolve);
+     }).then(() => {
+       aCallback.onSuccess();

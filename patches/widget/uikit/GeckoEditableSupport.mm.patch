@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/GeckoEditableSupport.mm b/widget/uikit/GeckoEditableSupport.mm
 new file mode 100644
-index 000000000000..c09753c091c5
+index 000000000000..9d86127ada92
 --- /dev/null
 +++ b/widget/uikit/GeckoEditableSupport.mm
-@@ -0,0 +1,3715 @@
+@@ -0,0 +1,3712 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -2518,11 +2518,8 @@ index 000000000000..c09753c091c5
 +    }
 +
 +    [mEditable.mTextInputDelegate textWillChange:self];
-+    [mEditable.mTextInputDelegate selectionWillChange:self];
 +    handler->ReplaceRange(deleteRange, @"");
 +    [mEditable.mTextInputDelegate textDidChange:self];
-+    [mEditable.mTextInputDelegate selectionDidChange:self];
-+    [self scheduleEditSelectionUpdate];
 +    return;
 +  }
 +

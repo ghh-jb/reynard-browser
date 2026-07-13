@@ -38,11 +38,6 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
     
     private let addonID: String
     private var addon: Addon?
-    private let reviewCountFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter
-    }()
     private let displayDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -291,10 +286,11 @@ final class AddonInformationPreferencesViewController: SettingsTableViewControll
         
         let roundedRating = String(format: "%.2f", averageRating)
         if let reviewCount = metaData.reviewCount {
-            let reviewText = reviewCountFormatter.string(from: NSNumber(value: reviewCount)) ?? "\(reviewCount)"
-            return reviewCount == 1
-            ? String(format: NSLocalizedString("%@ out of 5 • %@ Review", comment: "Rating and review count"), roundedRating, reviewText)
-            : String(format: NSLocalizedString("%@ out of 5 • %@ Reviews", comment: "Rating and review count"), roundedRating, reviewText)
+            return String.localizedStringWithFormat(
+                NSLocalizedString("%@ out of 5 • %d Reviews", comment: "Rating and review count"),
+                roundedRating,
+                reviewCount
+            )
         }
         
         return String(format: NSLocalizedString("%@ out of 5", comment: "Rating value"), roundedRating)

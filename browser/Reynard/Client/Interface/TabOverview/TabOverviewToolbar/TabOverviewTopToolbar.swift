@@ -47,7 +47,10 @@ final class TabOverviewTopToolbar: UIView {
     }
     
     func apply(tabCount: Int, hasVisibleTab: Bool) {
-        tabModeControl.setTitle("\(tabCount)" + (tabCount == 1 ? NSLocalizedString(" Tab", comment: "") : NSLocalizedString(" Tabs", comment: "")), forSegmentAt: TabOverview.Mode.regularTabs.rawValue)
+        tabModeControl.setTitle(
+            String.localizedStringWithFormat(NSLocalizedString("%d Tabs", comment: "Tab count"), tabCount),
+            forSegmentAt: TabOverview.Mode.regularTabs.rawValue
+        )
         doneButton.setActionEnabled(hasVisibleTab)
         if #available(iOS 26.0, *) {
             liquidGlassActionToolbar.items?.last?.isEnabled = hasVisibleTab

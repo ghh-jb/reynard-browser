@@ -12,26 +12,6 @@
         }
       }
     },
-    " Tab" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " Tab"
-          }
-        }
-      }
-    },
-    " Tabs" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : " Tabs"
-          }
-        }
-      }
-    },
     "%@ · Opened Tab" : {
       "comment" : "Website host",
       "localizations" : {
@@ -131,24 +111,25 @@
         }
       }
     },
-    "%@ out of 5 • %@ Review" : {
+    "%@ out of 5 • %d Reviews" : {
       "comment" : "Rating and review count",
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ out of 5 • %2$@ Review"
-          }
-        }
-      }
-    },
-    "%@ out of 5 • %@ Reviews" : {
-      "comment" : "Rating and review count",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ out of 5 • %2$@ Reviews"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%1$@ out of 5 • %2$d Review"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%1$@ out of 5 • %2$d Reviews"
+                }
+              }
+            }
           }
         }
       }
@@ -212,9 +193,21 @@
       "comment" : "Add-on count",
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d add-ons couldn’t be updated."
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d add-on couldn’t be updated."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d add-ons couldn’t be updated."
+                }
+              }
+            }
           }
         }
       }
@@ -223,9 +216,21 @@
       "comment" : "Add-on count",
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d add-ons need permission to update."
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d add-on need permission to update."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d add-ons need permission to update."
+                }
+              }
+            }
           }
         }
       }
@@ -234,9 +239,21 @@
       "comment" : "Add-on count",
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d add-ons updated."
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d add-on updated."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d add-ons updated."
+                }
+              }
+            }
           }
         }
       }
@@ -245,9 +262,44 @@
       "comment" : "Domain count",
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%d domains"
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d domain"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d domains"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%d Tabs" : {
+      "comment" : "Tab count",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%d Tab"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "%d Tabs"
+                }
+              }
+            }
           }
         }
       }
@@ -268,46 +320,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "0 Tabs"
-          }
-        }
-      }
-    },
-    "1 add-on couldn’t be updated." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 add-on couldn’t be updated."
-          }
-        }
-      }
-    },
-    "1 add-on needs permission to update." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 add-on needs permission to update."
-          }
-        }
-      }
-    },
-    "1 add-on updated." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 add-on updated."
-          }
-        }
-      }
-    },
-    "1 domain" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 domain"
           }
         }
       }
@@ -3108,6 +3120,7 @@
       }
     },
     "tab" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3118,6 +3131,7 @@
       }
     },
     "tabs" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -3258,13 +3272,25 @@
         }
       }
     },
-    "This will close your %d %@." : {
-      "comment" : "Tab count and unit",
+    "This will close your %d tabs." : {
+      "comment" : "Tab count",
       "localizations" : {
         "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This will close your %1$d %2$@."
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "This will close your %d tab."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "new",
+                  "value" : "This will close your %d tabs."
+                }
+              }
+            }
           }
         }
       }

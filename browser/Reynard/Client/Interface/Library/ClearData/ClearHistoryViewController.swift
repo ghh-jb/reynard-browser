@@ -55,8 +55,10 @@ final class ClearHistoryViewController: UITableViewController {
             return nil
         }
         
-        let tabText = tabCount == 1 ? NSLocalizedString("tab", comment: "") : NSLocalizedString("tabs", comment: "")
-        return String(format: NSLocalizedString("This will close your %d %@.", comment: "Tab count and unit"), tabCount, tabText)
+        return String.localizedStringWithFormat(
+            NSLocalizedString("This will close your %d tabs.", comment: "Tab count"),
+            tabCount
+        )
     }
     
     override func tableView(

@@ -304,7 +304,7 @@ final class AddonPermissionPromptViewController: UITableViewController {
         var rows: [PermissionRow] = []
         
         if !domains.isEmpty {
-            let domainText = domains.count == 1 ? NSLocalizedString("1 domain", comment: "") : String(format: NSLocalizedString("%d domains", comment: "Domain count"), domains.count)
+            let domainText = String.localizedStringWithFormat(NSLocalizedString("%d domains", comment: "Domain count"), domains.count)
             rows.append(.domainHeader(String(format: NSLocalizedString("Access your data on websites in %@", comment: "Domain count text"), domainText)))
             rows.append(.showAllSites)
         }

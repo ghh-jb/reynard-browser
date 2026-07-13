@@ -502,9 +502,10 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
         }
         
         pendingApprovalAddonIDs.forEach { addonStatusTextByID[$0] = NSLocalizedString("Needs Permission to Update", comment: "") }
-        updateFooterMessage = pendingApprovalAddonIDs.count == 1
-        ? NSLocalizedString("1 add-on needs permission to update.", comment: "")
-        : String(format: NSLocalizedString("%d add-ons need permission to update.", comment: "Add-on count"), pendingApprovalAddonIDs.count)
+        updateFooterMessage = String.localizedStringWithFormat(
+            NSLocalizedString("%d add-ons need permission to update.", comment: "Add-on count"),
+            pendingApprovalAddonIDs.count
+        )
     }
     
     private func updateAddons() {
@@ -563,19 +564,30 @@ final class AddonsPreferencesViewController: SettingsTableViewController {
         var parts: [String] = []
         
         if result.updatedCount > 0 {
-            parts.append(result.updatedCount == 1 ? NSLocalizedString("1 add-on updated.", comment: "") : String(format: NSLocalizedString("%d add-ons updated.", comment: "Add-on count"), result.updatedCount))
+            parts.append(
+                String.localizedStringWithFormat(
+                    NSLocalizedString("%d add-ons updated.", comment: "Add-on count"),
+                    result.updatedCount
+                )
+            )
         }
         
         if result.pendingApprovalCount > 0 {
             parts.append(
-                result.pendingApprovalCount == 1
-                ? NSLocalizedString("1 add-on needs permission to update.", comment: "")
-                : String(format: NSLocalizedString("%d add-ons need permission to update.", comment: "Add-on count"), result.pendingApprovalCount)
+                String.localizedStringWithFormat(
+                    NSLocalizedString("%d add-ons need permission to update.", comment: "Add-on count"),
+                    result.pendingApprovalCount
+                )
             )
         }
         
         if result.failedCount > 0 {
-            parts.append(result.failedCount == 1 ? NSLocalizedString("1 add-on couldn’t be updated.", comment: "") : String(format: NSLocalizedString("%d add-ons couldn’t be updated.", comment: "Add-on count"), result.failedCount))
+            parts.append(
+                String.localizedStringWithFormat(
+                    NSLocalizedString("%d add-ons couldn’t be updated.", comment: "Add-on count"),
+                    result.failedCount
+                )
+            )
         }
         
         if parts.isEmpty, result.noUpdateCount > 0 {

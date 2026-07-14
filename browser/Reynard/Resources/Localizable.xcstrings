@@ -1277,6 +1277,17 @@
         }
       }
     },
+    "Custom" : {
+      "comment" : "Search engine option",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom"
+          }
+        }
+      }
+    },
     "Custom Search URL" : {
       "localizations" : {
         "en" : {
@@ -2334,6 +2345,16 @@
         }
       }
     },
+    "Open in Files" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in Files"
+          }
+        }
+      }
+    },
     "Open in New Private Tab" : {
       "localizations" : {
         "en" : {
@@ -2903,6 +2924,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select Option"
+          }
+        }
+      }
+    },
+    "Select Options" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Options"
           }
         }
       }
@@ -3514,13 +3545,13 @@
         }
       }
     },
-    "Use %s for search terms, as in example.com⁠/⁠search⁠?⁠q⁠=⁠%s." : {
+    "Use %%s for search terms, as in example.com⁠/⁠search⁠?⁠q⁠=⁠%%s." : {
       "comment" : "Literal %s, word joiners",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Use %1$s for search terms, as in example.com⁠/⁠search⁠?⁠q⁠=⁠%2$s."
+            "value" : "Use %%s for search terms, as in example.com⁠/⁠search⁠?⁠q⁠=⁠%%s."
           }
         }
       }

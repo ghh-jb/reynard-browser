@@ -528,7 +528,7 @@ final class BookmarksViewController: UIViewController, UITableViewDataSource, UI
     private func reloadFolder() {
         let snapshot = store.contents(of: folderID)
         sections = makeBookmarkSections(from: snapshot.items)
-        title = snapshot.parent.title
+        title = snapshot.parent.isProtected && snapshot.parent.title == "Bookmarks" ? NSLocalizedString("Bookmarks", comment: "") : snapshot.parent.title
         updateEmptyState()
         tableView.reloadData()
     }

@@ -16,7 +16,7 @@ final class SearchEnginePreferencesViewController: SettingsTableViewController, 
             case .engines:
                 return SettingsSectionText(
                     headerTitle: NSLocalizedString("Search Engine", comment: ""),
-                    footerTitle: NSLocalizedString("Use %s for search terms, as in example.com\u{2060}/\u{2060}search\u{2060}?\u{2060}q\u{2060}=\u{2060}%s.", comment: "Literal %s, word joiners")
+                    footerTitle: String(format: NSLocalizedString("Use %%s for search terms, as in example.com\u{2060}/\u{2060}search\u{2060}?\u{2060}q\u{2060}=\u{2060}%%s.", comment: "Literal %s, word joiners"))
                 )
             }
         }

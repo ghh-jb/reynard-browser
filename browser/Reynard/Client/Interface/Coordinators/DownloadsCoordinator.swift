@@ -15,8 +15,13 @@ protocol DownloadsCoordinatorDelegate: AnyObject {
 }
 
 final class DownloadsCoordinator {
+    private struct ConfirmationRequest {
+        let download: DownloadStore.PendingDownload
+        let completion: (Bool) -> Void
+    }
+    
     private weak var delegate: DownloadsCoordinatorDelegate?
-    private var confirmationQueue: [DownloadStore.PendingDownload] = []
+    private var confirmationQueue: [ConfirmationRequest] = []
     private var isShowingConfirmationAlert = false
     private var storeObserver: NSObjectProtocol?
     
@@ -53,20 +58,44 @@ final class DownloadsCoordinator {
     }
     
     func enqueueConfirmation(_ pendingDownload: DownloadStore.PendingDownload) {
-        confirmationQueue.append(pendingDownload)
+        queueConfirmation(pendingDownload) { shouldStart in
+            if shouldStart {
+                DownloadStore.shared.start(pendingDownload)
+            }
+        }
+    }
+    
+    func confirm(_ pendingDownload: DownloadStore.PendingDownload) async -> Bool {
+        return await withCheckedContinuation { continuation in
+            queueConfirmation(pendingDownload) { shouldStart in
+                if shouldStart {
+                    DownloadStore.shared.start(pendingDownload)
+                }
+                continuation.resume(returning: shouldStart)
+            }
+        }
+    }
+    
+    private func queueConfirmation(
+        _ pendingDownload: DownloadStore.PendingDownload,
+        completion: @escaping (Bool) -> Void
+    ) {
+        confirmationQueue.append(
+            ConfirmationRequest(download: pendingDownload, completion: completion)
+        )
         presentNextConfirmationAlertIfNeeded()
     }
     
     private func presentNextConfirmationAlertIfNeeded() {
         guard !isShowingConfirmationAlert,
-              let pendingDownload = confirmationQueue.first else {
+              let request = confirmationQueue.first else {
             return
         }
         
         isShowingConfirmationAlert = true
         
         AlertPresenter.show(
-            title: String(format: NSLocalizedString("Do you want to download \"%@\"?", comment: "File name"), pendingDownload.fileName),
+            title: String(format: NSLocalizedString("Do you want to download \"%@\"?", comment: "File name"), request.download.fileName),
             message: nil,
             buttons: [
                 AlertPresenter.Button(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { [weak self] in
@@ -86,12 +115,9 @@ final class DownloadsCoordinator {
             return
         }
         
-        let pendingDownload = confirmationQueue.removeFirst()
+        let request = confirmationQueue.removeFirst()
         isShowingConfirmationAlert = false
-        
-        if shouldStartDownload {
-            DownloadStore.shared.start(pendingDownload)
-        }
+        request.completion(shouldStartDownload)
         
         DispatchQueue.main.async { [weak self] in
             self?.presentNextConfirmationAlertIfNeeded()

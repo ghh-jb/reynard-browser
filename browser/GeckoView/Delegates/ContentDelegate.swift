@@ -33,12 +33,10 @@ public enum SlowScriptResponse {
 
 public struct ExternalResponseInfo {
     public let url: String
-    public let localFilePath: String?
+    public let localFilePath: String
     public let filename: String?
     public let mimeType: String?
     public let contentLength: Int64?
-    public let requestMethod: String?
-    public let requestHeaders: [String: String]
 }
 
 public struct SavePdfInfo {
@@ -68,7 +66,9 @@ public protocol ContentDelegate {
     func onShowDynamicToolbar(session: GeckoSession)
     func onCookieBannerDetected(session: GeckoSession)
     func onCookieBannerHandled(session: GeckoSession)
-    func onExternalResponse(session: GeckoSession, response: ExternalResponseInfo)
+    func onExternalResponse(session: GeckoSession, response: ExternalResponseInfo) async -> Bool
+    func onExternalResponseProgress(session: GeckoSession, localFilePath: String, bytesReceived: Int64) -> Bool
+    func onExternalResponseComplete(session: GeckoSession, localFilePath: String, succeeded: Bool)
     func onSavePdf(session: GeckoSession, request: SavePdfInfo)
 }
 
@@ -91,7 +91,9 @@ extension ContentDelegate {
     public func onShowDynamicToolbar(session: GeckoSession) {}
     public func onCookieBannerDetected(session: GeckoSession) {}
     public func onCookieBannerHandled(session: GeckoSession) {}
-    public func onExternalResponse(session: GeckoSession, response: ExternalResponseInfo) {}
+    public func onExternalResponse(session: GeckoSession, response: ExternalResponseInfo) async -> Bool { false }
+    public func onExternalResponseProgress(session: GeckoSession, localFilePath: String, bytesReceived: Int64) -> Bool { false }
+    public func onExternalResponseComplete(session: GeckoSession, localFilePath: String, succeeded: Bool) {}
     public func onSavePdf(session: GeckoSession, request: SavePdfInfo) {}
 }
 
@@ -105,6 +107,8 @@ enum ContentEvents: String, CaseIterable {
     case pageTitleChanged = "GeckoView:PageTitleChanged"
     case domWindowClose = "GeckoView:DOMWindowClose"
     case externalResponse = "GeckoView:ExternalResponse"
+    case externalResponseProgress = "GeckoView:ExternalResponseProgress"
+    case externalResponseComplete = "GeckoView:ExternalResponseComplete"
     case focusRequest = "GeckoView:FocusRequest"
     case fullscreenEnter = "GeckoView:FullScreenEnter"
     case fullscreenExit = "GeckoView:FullScreenExit"
@@ -126,20 +130,6 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler {
         events: ContentEvents.allCases.map(\.rawValue),
         session: session
     ) { @MainActor session, delegate, type, message in
-        func parseStringDictionary(_ value: Any?) -> [String: String] {
-            guard let dictionary = value as? [String: Any] else {
-                return [:]
-            }
-            
-            return dictionary.reduce(into: [:]) { result, entry in
-                if let value = entry.value as? String {
-                    result[entry.key] = value
-                } else if let number = entry.value as? NSNumber {
-                    result[entry.key] = number.stringValue
-                }
-            }
-        }
-        
         guard let event = ContentEvents(rawValue: type) else {
             throw GeckoHandlerError("unknown message \(type)")
         }
@@ -202,17 +192,39 @@ func newContentHandler(_ session: GeckoSession) -> GeckoSessionHandler {
             return nil
             
         case .externalResponse:
-            delegate?.onExternalResponse(
+            guard let url = message?["url"] as? String,
+                  let localFilePath = message?["localFilePath"] as? String else {
+                return false
+            }
+            return await delegate?.onExternalResponse(
                 session: session,
                 response: ExternalResponseInfo(
-                    url: message?["url"] as? String ?? "",
-                    localFilePath: message?["localFilePath"] as? String,
+                    url: url,
+                    localFilePath: localFilePath,
                     filename: message?["filename"] as? String,
                     mimeType: message?["mimeType"] as? String,
-                    contentLength: PayloadValue.int64(message?["contentLength"]),
-                    requestMethod: message?["requestMethod"] as? String,
-                    requestHeaders: parseStringDictionary(message?["requestHeaders"])
+                    contentLength: PayloadValue.int64(message?["contentLength"])
                 )
+            ) ?? false
+            
+        case .externalResponseProgress:
+            guard let localFilePath = message?["localFilePath"] as? String else {
+                return false
+            }
+            return delegate?.onExternalResponseProgress(
+                session: session,
+                localFilePath: localFilePath,
+                bytesReceived: PayloadValue.int64(message?["bytesReceived"]) ?? 0
+            ) ?? false
+            
+        case .externalResponseComplete:
+            guard let localFilePath = message?["localFilePath"] as? String else {
+                return nil
+            }
+            delegate?.onExternalResponseComplete(
+                session: session,
+                localFilePath: localFilePath,
+                succeeded: message?["succeeded"] as? Bool ?? false
             )
             return nil
             

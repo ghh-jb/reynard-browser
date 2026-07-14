@@ -67,7 +67,6 @@ final class DownloadItemCell: UITableViewCell {
     
     private var representedFileURL: URL?
     private var representedDownloadID: UUID?
-    private var lastStatusUpdateTime: TimeInterval = 0
     
     // MARK: - Lifecycle
     
@@ -115,7 +114,6 @@ final class DownloadItemCell: UITableViewCell {
         super.prepareForReuse()
         representedFileURL = nil
         representedDownloadID = nil
-        lastStatusUpdateTime = 0
         contentView.alpha = 1
         fileNameLabel.textColor = .label
         statusLabel.textColor = .secondaryLabel
@@ -136,7 +134,6 @@ final class DownloadItemCell: UITableViewCell {
         switch item.state {
         case .downloading:
             representedFileURL = nil
-            let previousItemID = representedDownloadID
             representedDownloadID = item.id
             let downloadedText = Self.formattedByteCount(item.downloadedBytes)
             let sizeText = item.totalBytes.map { Self.formattedByteCount($0) }
@@ -155,11 +152,7 @@ final class DownloadItemCell: UITableViewCell {
                 detailsText += " (\(speedText))"
             }
             
-            let now = ProcessInfo.processInfo.systemUptime
-            if previousItemID != item.id || now - lastStatusUpdateTime >= 0.5 || statusLabel.text == nil {
-                statusLabel.text = detailsText
-                lastStatusUpdateTime = now
-            }
+            statusLabel.text = detailsText
             progressView.isHidden = false
             if let totalBytes = item.totalBytes, totalBytes > 0 {
                 progressView.progress = min(max(Float(item.downloadedBytes) / Float(totalBytes), 0), 1)
@@ -173,7 +166,6 @@ final class DownloadItemCell: UITableViewCell {
             
         case .completed:
             representedDownloadID = item.id
-            lastStatusUpdateTime = 0
             statusLabel.text = item.fileExists ? (item.totalBytes.map { Self.formattedByteCount($0) } ?? NSLocalizedString("Unknown size", comment: "")) : NSLocalizedString("Deleted", comment: "")
             progressView.isHidden = true
             progressView.progress = 0

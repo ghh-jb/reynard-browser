@@ -49,6 +49,7 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
     private let iconCache = NSCache<NSString, UIImage>()
     private let iconLoadingQueue = DispatchQueue(label: "com.minh-ton.Reynard.AddonCoordinator.IconLoadingQueue", qos: .utility)
     private var loadingIconIDs = Set<String>()
+    private var pendingAddonDownloadPaths = Set<String>()
     let updateCoordinator: AddonUpdateCoordinator
     
     init(
@@ -78,9 +79,35 @@ final class AddonCoordinator: NSObject, AddonEmbedderDelegate {
             return false
         }
         
+        pendingAddonDownloadPaths.insert(response.localFilePath)
+        return true
+    }
+    
+    func shouldContinueExternalResponse(localFilePath: String) -> Bool {
+        return pendingAddonDownloadPaths.contains(localFilePath)
+    }
+    
+    func completeExternalResponse(localFilePath: String, succeeded: Bool) -> Bool {
+        guard pendingAddonDownloadPaths.remove(localFilePath) != nil else {
+            return false
+        }
+        
+        let packageFileURL = URL(fileURLWithPath: localFilePath)
+        guard succeeded else {
+            try? FileManager.default.removeItem(at: packageFileURL)
+            return true
+        }
+        
         Task { @MainActor [weak self] in
+            defer {
+                try? FileManager.default.removeItem(at: packageFileURL)
+            }
+            
             do {
-                _ = try await AddonRuntime.shared.install(url: response.url, installMethod: .manager)
+                _ = try await AddonRuntime.shared.install(
+                    url: packageFileURL.absoluteString,
+                    installMethod: .manager
+                )
             } catch {
                 guard let self else {
                     return

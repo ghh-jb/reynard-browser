@@ -60,7 +60,11 @@ final class LinkPreviewViewController: UIViewController {
         )
         sessionManager.bindDelegates(
             to: session,
-            delegates: SessionDelegates(content: self, navigation: self, history: self)
+            delegates: SessionDelegates(
+                content: self,
+                navigation: self,
+                history: self
+            )
         )
         self.session = session
     }
@@ -76,6 +80,7 @@ final class LinkPreviewViewController: UIViewController {
     func releaseSession() -> GeckoSession? {
         hasClosedSession = true
         if let session {
+            session.mediaSession.muteAudio(false)
             sessionManager.deactivate(session)
         }
         let committedSession = session
@@ -102,6 +107,7 @@ final class LinkPreviewViewController: UIViewController {
         }
         
         sessionManager.open(session)
+        session.mediaSession.muteAudio(true)
         geckoView.session = session
         sessionManager.activate(session)
         session.load(pageURL)

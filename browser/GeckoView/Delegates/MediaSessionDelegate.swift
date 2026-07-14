@@ -113,6 +113,13 @@ public class MediaSession {
             message: ["time": time, "fast": fast]
         )
     }
+    
+    public func muteAudio(_ mute: Bool) {
+        session?.dispatcher.dispatch(
+            type: "GeckoView:MediaSession:MuteAudio",
+            message: ["mute": mute]
+        )
+    }
 }
 
 // MARK: - Media Session Events

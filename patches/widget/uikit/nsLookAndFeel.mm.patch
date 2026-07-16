@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/nsLookAndFeel.mm b/widget/uikit/nsLookAndFeel.mm
-index e5198c6f3fac..8b0629a9b930 100644
+index e5198c6f3fac..04d7a248fc1a 100644
 --- a/widget/uikit/nsLookAndFeel.mm
 +++ b/widget/uikit/nsLookAndFeel.mm
 @@ -4,20 +4,58 @@
@@ -161,7 +161,15 @@ index e5198c6f3fac..8b0629a9b930 100644
        break;
      case ColorID::MozMacFocusring:
        aResult = NS_RGB(0x3F, 0x98, 0xDD);
-@@ -293,6 +342,9 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -196,6 +245,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+       break;
+     case ColorID::Linktext:
+     case ColorID::Activetext:
++    case ColorID::MozAutofillBackground:
+     case ColorID::TargetTextBackground:
+     case ColorID::TargetTextForeground:
+       aResult = GetStandinForNativeColor(aID, aColorScheme);
+@@ -293,6 +343,9 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
      case IntID::SpellCheckerUnderlineStyle:
        aResult = static_cast<int32_t>(StyleTextDecorationStyle::Dotted);
        break;
@@ -171,7 +179,7 @@ index e5198c6f3fac..8b0629a9b930 100644
      case IntID::ContextMenuOffsetVertical:
      case IntID::ContextMenuOffsetHorizontal:
        aResult = 2;
-@@ -301,6 +353,11 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -301,6 +354,11 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
        aResult = 0;
        res = NS_ERROR_FAILURE;
    }
@@ -183,7 +191,7 @@ index e5198c6f3fac..8b0629a9b930 100644
    return res;
  }
  
-@@ -325,20 +382,10 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -325,20 +383,10 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
  
  bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
                                    gfxFontStyle& aFontStyle) {
@@ -208,7 +216,7 @@ index e5198c6f3fac..8b0629a9b930 100644
  }
  
  void nsLookAndFeel::EnsureInit() {
-@@ -347,7 +394,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
+@@ -347,7 +395,7 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
    }
    mInitialized = true;
  

@@ -102,6 +102,7 @@ public class GeckoSession {
         set { mediaSessionHandler.setDelegate(newValue) }
     }
     public lazy var mediaSession = MediaSession(session: self)
+    private lazy var autofillHandler = GeckoAutofillHandler(session: self)
     
     // MARK: - Session Handlers
     
@@ -115,6 +116,7 @@ public class GeckoSession {
         promptHandler,
         selectionActionHandler,
         mediaSessionHandler,
+        autofillHandler,
     ]
     
     // MARK: - Lifecycle
@@ -177,6 +179,10 @@ public class GeckoSession {
             ],
             isPrivateMode
         )
+        guard let engineView = window?.view() else {
+            fatalError("GeckoView window has no view")
+        }
+        autofillHandler.attach(to: engineView)
     }
     
     public func isOpen() -> Bool { window != nil }
@@ -200,6 +206,10 @@ public class GeckoSession {
             return
         }
         
+        if let engineView = window.view() {
+            autofillHandler.detach(from: engineView)
+        }
+        autofillHandler.close()
         window.close()
         self.window = nil
         id = nil

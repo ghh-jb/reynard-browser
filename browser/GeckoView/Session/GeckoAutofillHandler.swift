@@ -64,7 +64,7 @@ private struct CredentialForm {
 }
 
 final class GeckoAutofillHandler: NSObject, GeckoSessionHandlerCommon {
-    let moduleName = "GeckoViewAutofill"
+    let moduleName: String? = "GeckoViewAutofill"
     let events = CredentialEvent.allCases.map(\.rawValue)
     let enabled = true
     

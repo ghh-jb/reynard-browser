@@ -1,13 +1,41 @@
 diff --git a/widget/uikit/GeckoViewSwiftSupport.h b/widget/uikit/GeckoViewSwiftSupport.h
-index e68fca9134c0..a723338a8f1e 100644
+index e68fca9134c0..2c7e5acd2c9a 100644
 --- a/widget/uikit/GeckoViewSwiftSupport.h
 +++ b/widget/uikit/GeckoViewSwiftSupport.h
-@@ -26,6 +26,8 @@
+@@ -18,14 +18,28 @@
+ #endif
+ 
+ #import <Foundation/Foundation.h>
++#import <AVFoundation/AVSampleBufferDisplayLayer.h>
+ #import <UIKit/UIKit.h>
+ #import <xpc/xpc.h>
+ 
+ @protocol SwiftEventDispatcher;
+ 
++@interface GeckoViewPictureInPictureSnapshot : NSObject
++@property(nonatomic, readonly) AVSampleBufferDisplayLayer* displayLayer;
++@property(nonatomic, readonly) uint64_t enqueueCount;
++@end
++
++@interface GeckoViewPictureInPictureCandidateList : NSObject
++@property(nonatomic, readonly) NSUInteger count;
++- (GeckoViewPictureInPictureSnapshot*)candidateAtIndex:(NSUInteger)index;
++@end
++
  @protocol SwiftGeckoViewRuntime <NSObject>
  - (id<SwiftEventDispatcher>)runtimeDispatcher;
  - (id<SwiftEventDispatcher>)dispatcherByName:(const char*)name;
 +@optional
-+- (void)childProcessDidStartWithPID:(int32_t)pid processType:(NSString*)processType;
++- (void)childProcessDidStartWithPID:(int32_t)pid
++                        processType:(NSString*)processType;
  @end
  
  @protocol GeckoProcessExtension <NSObject>
+@@ -56,6 +70,7 @@
+ 
+ @protocol GeckoViewWindow <NSObject>
+ - (UIView*)view;
++- (GeckoViewPictureInPictureCandidateList*)pictureInPictureCandidates;
+ - (void)close;
+ @end
+ 

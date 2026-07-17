@@ -34,6 +34,16 @@ final class TabManagerImplementation: NSObject, TabManager {
         promptPresenter: PermissionPromptPresenter()
     )
     private let systemMediaSession = SystemMediaSession()
+    private lazy var pictureInPictureCoordinator: PictureInPictureCoordinating? = {
+        guard #available(iOS 15.0, *) else {
+            return nil
+        }
+        return PictureInPictureCoordinator(
+            delegate: self,
+            mediaSession: systemMediaSession,
+            sessionManager: sessionManager
+        )
+    }()
     
     private weak var delegate: TabManagerDelegate?
     private let store: TabManagementStore
@@ -579,6 +589,7 @@ final class TabManagerImplementation: NSObject, TabManager {
         }
         sessionManager.activate(selectedTab.session)
         systemMediaSession.select(session: selectedTab.session)
+        pictureInPictureCoordinator?.selectedSessionDidChange()
         applyNavigationState(to: selectedTab)
         
         delegate?.tabManager(self, didSelectTabAt: index, previousIndex: previousIndex)
@@ -783,6 +794,8 @@ final class TabManagerImplementation: NSObject, TabManager {
         recordNavigation(url, for: tab)
         tab.state.navigationState = sessionManager.useStoredNavigationHistory(for: tab.id)
         sessionManager.activate(session)
+        systemMediaSession.select(session: session)
+        pictureInPictureCoordinator?.selectedSessionDidChange()
         
         delegate?.tabManagerDidChangeTabs(self)
         delegate?.tabManager(self, didReplaceSelectedSession: oldSession, with: session)
@@ -1124,6 +1137,21 @@ extension TabManagerImplementation: NavigationDelegate {
     }
 }
 
+@available(iOS 15.0, *)
+extension TabManagerImplementation: PictureInPictureCoordinatorDelegate {
+    func pictureInPictureCoordinator(
+        _ coordinator: PictureInPictureCoordinator,
+        restore session: GeckoSession
+    ) -> Bool {
+        guard let location = tabLocation(for: session) else {
+            return false
+        }
+        selectTab(at: location.index, mode: location.mode)
+        return true
+    }
+    
+}
+
 extension TabManagerImplementation: HistoryDelegate {
     func onVisited(session: GeckoSession, url: String, lastVisitedURL: String?, flags: Int) async -> Bool {
         guard !session.isPrivateMode,
@@ -1146,6 +1174,8 @@ extension TabManagerImplementation: HistoryDelegate {
 
 extension TabManagerImplementation: ProgressDelegate {
     func onPageStart(session: GeckoSession, url: String) {
+        systemMediaSession.navigationStarted(in: session)
+        pictureInPictureCoordinator?.navigationStarted(in: session)
         guard let location = tabLocation(for: session) else {
             return
         }

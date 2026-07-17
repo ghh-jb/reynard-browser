@@ -8,7 +8,7 @@
 import UIKit
 
 protocol GeckoSessionHandlerCommon: GeckoEventListenerInternal {
-    var moduleName: String { get }
+    var moduleName: String? { get }
     var events: [String] { get }
     var enabled: Bool { get }
 }
@@ -103,6 +103,14 @@ public class GeckoSession {
     }
     public lazy var mediaSession = MediaSession(session: self)
     private lazy var autofillHandler = GeckoAutofillHandler(session: self)
+    private lazy var pictureInPictureHandler = newPictureInPictureHandler(self)
+    public var pictureInPictureDelegate: PictureInPictureDelegate? {
+        get { pictureInPictureHandler.delegate }
+        set { pictureInPictureHandler.delegate = newValue }
+    }
+    public var pictureInPictureCandidates: [PictureInPictureCandidate] {
+        return pictureInPictureHandler.candidates
+    }
     
     // MARK: - Session Handlers
     
@@ -117,6 +125,7 @@ public class GeckoSession {
         selectionActionHandler,
         mediaSessionHandler,
         autofillHandler,
+        pictureInPictureHandler,
     ]
     
     // MARK: - Lifecycle
@@ -166,9 +175,14 @@ public class GeckoSession {
             "unsafeSessionContextId": nil,
         ]
         
-        let modules = Dictionary(uniqueKeysWithValues: sessionHandlers.map {
-            ($0.moduleName, $0.enabled)
-        })
+        let modules: [String: Bool] = Dictionary(
+            uniqueKeysWithValues: sessionHandlers.compactMap {
+                guard let moduleName = $0.moduleName else {
+                    return nil
+                }
+                return (moduleName, $0.enabled)
+            }
+        )
         
         window = GeckoViewOpenWindow(
             id,
@@ -201,6 +215,7 @@ public class GeckoSession {
         selectionActionDelegate = nil
         mediaSessionDelegate?.onDeactivated(session: self)
         mediaSessionDelegate = nil
+        pictureInPictureDelegate = nil
         
         guard let window else {
             return

@@ -1,5 +1,5 @@
 diff --git a/widget/uikit/EventDispatcher.mm b/widget/uikit/EventDispatcher.mm
-index 97d0ae64653b..c26fc1d639e2 100644
+index 97d0ae64653b..e6c0866b8b23 100644
 --- a/widget/uikit/EventDispatcher.mm
 +++ b/widget/uikit/EventDispatcher.mm
 @@ -83,7 +83,7 @@ nsresult BoxArray(JSContext* aCx, JS::Handle<JSObject*> aArray,
@@ -11,3 +11,21 @@ index 97d0ae64653b..c26fc1d639e2 100644
    }
  
    // NOTE: A CFRetain() and CFRelease() could be avoided here if we could steal
+@@ -519,6 +519,17 @@ - (BOOL)hasListener:(NSString*)type {
+   return NS_OK;
+ }
+ 
++void EventDispatcher::DispatchToEmbedder(const nsAString& aEvent) {
++  AssertIsOnMainThread();
++  if (!mDispatcher) {
++    return;
++  }
++  id<SwiftEventDispatcher> dispatcher = (id<SwiftEventDispatcher>)mDispatcher;
++  [dispatcher dispatchToSwift:XPCOMStringToNSString(aEvent)
++                      message:nil
++                     callback:nil];
++}
++
+ void EventDispatcher::Attach(id aDispatcher) {
+   AssertIsOnMainThread();
+   MOZ_ASSERT(aDispatcher);

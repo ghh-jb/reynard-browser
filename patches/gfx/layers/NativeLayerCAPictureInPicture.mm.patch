@@ -1,0 +1,200 @@
+diff --git a/gfx/layers/NativeLayerCAPictureInPicture.mm b/gfx/layers/NativeLayerCAPictureInPicture.mm
+new file mode 100644
+index 000000000000..c77b9020073b
+--- /dev/null
++++ b/gfx/layers/NativeLayerCAPictureInPicture.mm
+@@ -0,0 +1,194 @@
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++/* This source code is introduced during the work of an iOS 13+ browser
++ * https://github.com/minh-ton/reynard-browser in Feb 2026. */
++
++#include "mozilla/layers/NativeLayerCA.h"
++#include "mozilla/layers/NativeLayerCAPictureInPicture.h"
++
++#import <AVFoundation/AVFoundation.h>
++
++#include <utility>
++
++#include "nsThreadUtils.h"
++
++namespace mozilla::layers {
++
++static bool IsEligiblePictureInPictureSurface(IOSurfaceRef aSurface) {
++  static const bool supportsInlineVideoSpecialization =
++      NSProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 15;
++  if (!supportsInlineVideoSpecialization) {
++    return false;
++  }
++  OSType format = IOSurfaceGetPixelFormat(aSurface);
++  return format == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
++         format == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange ||
++         format == kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange ||
++         format == kCVPixelFormatType_420YpCbCr10BiPlanarFullRange;
++}
++
++/* static */ PictureInPictureCandidate PictureInPictureCandidate::Adopt(
++    CALayer* aLayer, uint64_t aEnqueueCount) {
++  return PictureInPictureCandidate(aLayer, aEnqueueCount);
++}
++
++PictureInPictureCandidate::PictureInPictureCandidate(CALayer* aLayer,
++                                                     uint64_t aEnqueueCount)
++    : mLayer(aLayer), mEnqueueCount(aEnqueueCount) {}
++
++PictureInPictureCandidate::PictureInPictureCandidate(
++    const PictureInPictureCandidate& aOther)
++    : mLayer([aOther.mLayer retain]), mEnqueueCount(aOther.mEnqueueCount) {}
++
++PictureInPictureCandidate::PictureInPictureCandidate(
++    PictureInPictureCandidate&& aOther)
++    : mLayer(std::exchange(aOther.mLayer, nullptr)),
++      mEnqueueCount(aOther.mEnqueueCount) {}
++
++PictureInPictureCandidate& PictureInPictureCandidate::operator=(
++    const PictureInPictureCandidate& aOther) {
++  if (this != &aOther) {
++    CALayer* layer = [aOther.mLayer retain];
++    [mLayer release];
++    mLayer = layer;
++    mEnqueueCount = aOther.mEnqueueCount;
++  }
++  return *this;
++}
++
++PictureInPictureCandidate& PictureInPictureCandidate::operator=(
++    PictureInPictureCandidate&& aOther) {
++  if (this != &aOther) {
++    [mLayer release];
++    mLayer = std::exchange(aOther.mLayer, nullptr);
++    mEnqueueCount = aOther.mEnqueueCount;
++  }
++  return *this;
++}
++
++PictureInPictureCandidate::~PictureInPictureCandidate() { [mLayer release]; }
++
++nsTArray<PictureInPictureCandidate>
++NativeLayerRootCA::CopyPictureInPictureCandidates() {
++  nsTArray<PictureInPictureCandidateData> candidateData;
++  {
++    MutexAutoLock lock(mMutex);
++    CollectPictureInPictureCandidates(lock, candidateData);
++    for (const auto& candidate : candidateData) {
++      [candidate.mLayer retain];
++    }
++  }
++
++  nsTArray<PictureInPictureCandidate> candidates;
++  candidates.SetCapacity(candidateData.Length());
++  for (const auto& candidate : candidateData) {
++    candidates.AppendElement(PictureInPictureCandidate::Adopt(
++        candidate.mLayer, candidate.mEnqueueCount));
++  }
++  return candidates;
++}
++
++void NativeLayerRootCA::SetPictureInPictureLayerChangedCallback(
++    std::function<void()>&& aCallback) {
++  MutexAutoLock lock(mMutex);
++  mPictureInPictureLayerChangedCallback = std::move(aCallback);
++}
++
++void NativeLayerRootCA::CollectPictureInPictureCandidates(
++    const MutexAutoLock& aProofOfLock,
++    nsTArray<PictureInPictureCandidateData>& aCandidates) {
++  for (const auto& nativeLayer : mSublayers) {
++    uint64_t enqueueCount = 0;
++    if (CALayer* layer =
++            nativeLayer->PictureInPictureCandidateLayer(&enqueueCount)) {
++      aCandidates.AppendElement(
++          PictureInPictureCandidateData{layer, enqueueCount});
++    }
++  }
++}
++
++bool NativeLayerRootCA::UpdatePictureInPictureCandidates(
++    const MutexAutoLock& aProofOfLock) {
++  nsTArray<PictureInPictureCandidateData> candidates;
++  CollectPictureInPictureCandidates(aProofOfLock, candidates);
++
++  bool identitiesMatch =
++      candidates.Length() == mPictureInPictureCandidateLayers.Length();
++  if (identitiesMatch) {
++    for (const auto& candidate : candidates) {
++      if (!mPictureInPictureCandidateLayers.Contains(candidate.mLayer)) {
++        identitiesMatch = false;
++        break;
++      }
++    }
++  }
++  if (identitiesMatch) {
++    return false;
++  }
++
++  mPictureInPictureCandidateLayers.Clear();
++  mPictureInPictureCandidateLayers.SetCapacity(candidates.Length());
++  for (const auto& candidate : candidates) {
++    mPictureInPictureCandidateLayers.AppendElement(candidate.mLayer);
++  }
++  if (mPictureInPictureNotificationPending) {
++    return false;
++  }
++  mPictureInPictureNotificationPending = true;
++  return true;
++}
++
++void NativeLayerRootCA::DispatchPictureInPictureLayerChanged() {
++  RefPtr<NativeLayerRootCA> self = this;
++  NS_DispatchToMainThread(NS_NewRunnableFunction(
++      "NativeLayerRootCA::DispatchPictureInPictureLayerChanged",
++      [self = std::move(self)]() {
++        std::function<void()> callback;
++        {
++          MutexAutoLock lock(self->mMutex);
++          self->mPictureInPictureNotificationPending = false;
++          callback = self->mPictureInPictureLayerChangedCallback;
++        }
++        if (callback) {
++          callback();
++        }
++      }));
++}
++
++bool NativeLayerCA::IsPictureInPictureEligibleSurface(
++    const MutexAutoLock& aProofOfLock) {
++  IOSurfaceRef surface = nullptr;
++  CFTypeRefPtr<IOSurfaceRef> retainedSurface;
++  if (mSurfaceToPresent) {
++    surface = mSurfaceToPresent.get();
++  } else if (mTextureHost) {
++    retainedSurface = mTextureHost->GetSurface()->GetIOSurfaceRef();
++    surface = retainedSurface.get();
++  }
++  return surface && IsEligiblePictureInPictureSurface(surface);
++}
++
++CALayer* NativeLayerCA::PictureInPictureCandidateLayer(
++    uint64_t* aEnqueueCount) {
++  MutexAutoLock lock(mMutex);
++  if (!IsVideo(lock) ||
++      mOnscreenRepresentation.UnderlyingCALayer() == nullptr ||
++      !IsPictureInPictureEligibleSurface(lock)) {
++    return nil;
++  }
++  return mOnscreenRepresentation.PictureInPictureCandidateLayer(aEnqueueCount);
++}
++
++CALayer* NativeLayerCARepresentation::PictureInPictureCandidateLayer(
++    uint64_t* aEnqueueCount) {
++  if (!mWrappingCALayerHasExtent || mPictureInPictureFailureLatched ||
++      ![mContentCALayer isKindOfClass:[AVSampleBufferDisplayLayer class]]) {
++    return nil;
++  }
++  *aEnqueueCount = mSuccessfulVideoEnqueueCount;
++  return mContentCALayer;
++}
++
++}  // namespace mozilla::layers

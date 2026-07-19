@@ -30,18 +30,20 @@ final class PictureInPictureHandler: GeckoSessionHandlerCommon {
     weak var delegate: PictureInPictureDelegate?
     
     var candidates: [PictureInPictureCandidate] {
-        guard let candidates = session?.window?.pictureInPictureCandidates() else {
-            return []
-        }
-        return (0..<candidates.count).map {
-            guard let candidate = candidates.candidate(at: $0) else {
-                preconditionFailure("missing picture in picture candidate")
+        return autoreleasepool {
+            guard let candidates = session?.window?.pictureInPictureCandidates() else {
+                return []
             }
-            return PictureInPictureCandidate(
-                displayLayer: candidate.displayLayer,
-                enqueueCount: candidate.enqueueCount,
-                isFullscreen: candidate.fullscreen
-            )
+            return (0..<candidates.count).map {
+                guard let candidate = candidates.candidate(at: $0) else {
+                    preconditionFailure("missing picture in picture candidate")
+                }
+                return PictureInPictureCandidate(
+                    displayLayer: candidate.displayLayer,
+                    enqueueCount: candidate.enqueueCount,
+                    isFullscreen: candidate.fullscreen
+                )
+            }
         }
     }
     

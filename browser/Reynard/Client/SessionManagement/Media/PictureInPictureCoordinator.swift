@@ -34,14 +34,14 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
     
     private struct FrameObservation {
         var enqueueCounts: [ObjectIdentifier: UInt64]
-        var advancingLayer: AVSampleBufferDisplayLayer? = nil
+        var advancingLayerID: ObjectIdentifier? = nil
         var advancementCount = 0
     }
     
     private final class Presentation {
         let session: GeckoSession
-        let displayLayer: AVSampleBufferDisplayLayer
-        let contentSource: AVPictureInPictureController.ContentSource
+        var displayLayer: AVSampleBufferDisplayLayer
+        var contentSource: AVPictureInPictureController.ContentSource
         let controller: AVPictureInPictureController
         var invalidatedDuration: Double
         var invalidatedPlaybackState: SystemMediaSession.PlaybackState
@@ -49,6 +49,9 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
         var isSeeking = false
         var candidateCounters: [ObjectIdentifier: UInt64]
         var nonAdvancingSampleCount = 0
+        weak var replacementLayer: AVSampleBufferDisplayLayer?
+        var replacementEnqueueCount: UInt64?
+        var missingLayerSampleCount = 0
         
         init(
             session: GeckoSession,
@@ -108,6 +111,7 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             }
             return false
         }
+        
     }
     
     private weak var delegate: PictureInPictureCoordinatorDelegate?
@@ -118,6 +122,7 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
     private var awaitsLayerAfterForeground = false
     private var frameObservation: FrameObservation?
     private var pollingTimer: Timer?
+    private var activeMonitorTimer: Timer?
     
     init?(
         delegate: PictureInPictureCoordinatorDelegate,
@@ -215,8 +220,7 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
            selectedSnapshot?.session.pictureInPictureCandidates.isEmpty != false {
             awaitsLayerAfterForeground = false
         }
-        if let presentation = state.presentation,
-           !state.isPrepared,
+        if case let .starting(presentation) = state,
            !presentation.session.pictureInPictureCandidates.contains(where: {
                $0.displayLayer === presentation.displayLayer
            }) {
@@ -272,22 +276,27 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             observation.enqueueCounts = enqueueCounts
             if advancing.count == 1 {
                 let candidate = advancing[0]
-                if observation.advancingLayer === candidate.displayLayer {
+                let candidateID = ObjectIdentifier(candidate.displayLayer)
+                if observation.advancingLayerID == candidateID {
                     observation.advancementCount += 1
                 } else {
-                    observation.advancingLayer = candidate.displayLayer
+                    observation.advancingLayerID = candidateID
                     observation.advancementCount = 1
                 }
-                frameObservation = observation
-                if observation.advancementCount >= 2 {
-                    prepare(candidate, eligibility: eligibility)
-                    return
-                }
             } else {
-                observation.advancingLayer = nil
+                observation.advancingLayerID = nil
                 observation.advancementCount = 0
             }
             frameObservation = observation
+        }
+        if observation.advancementCount >= 2,
+           let advancingLayerID = observation.advancingLayerID,
+           let candidate = eligibility.candidates.first(where: {
+               ObjectIdentifier($0.displayLayer) == advancingLayerID &&
+               $0.isFullscreen
+           }) {
+            prepare(candidate, eligibility: eligibility)
+            return
         }
         startPollingIfNeeded()
     }
@@ -306,7 +315,7 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             return nil
         }
         let candidates = media.session.pictureInPictureCandidates
-        guard candidates.first?.isFullscreen == true else {
+        guard !candidates.isEmpty else {
             return nil
         }
         return Eligibility(
@@ -322,7 +331,9 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             return
         }
         pollingTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
-            self?.reevaluate(sampleFrames: true)
+            autoreleasepool {
+                self?.reevaluate(sampleFrames: true)
+            }
         }
     }
     
@@ -339,6 +350,7 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
               let verified = verifiedCandidates.first(where: {
                   $0.displayLayer === candidate.displayLayer
               }),
+              verified.isFullscreen,
               verified.enqueueCount >= candidate.enqueueCount else {
             reevaluate()
             return
@@ -370,7 +382,11 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
         sampleFrames: Bool
     ) {
         guard let eligibility = eligibility(),
-              eligibility.session === presentation.session else {
+              eligibility.session === presentation.session,
+              eligibility.candidates.contains(where: {
+                  $0.displayLayer === presentation.displayLayer &&
+                  $0.isFullscreen
+              }) else {
             requestTeardown()
             return
         }
@@ -425,9 +441,16 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
     }
     
     private func willResignActive() {
+        if case .idle = state {
+            reevaluate(sampleFrames: true)
+        }
         guard case let .prepared(presentation) = state,
               let eligibility = eligibility(),
-              eligibility.session === presentation.session else {
+              eligibility.session === presentation.session,
+              eligibility.candidates.contains(where: {
+                  $0.displayLayer === presentation.displayLayer &&
+                  $0.isFullscreen
+              }) else {
             if case .prepared = state {
                 requestTeardown()
             }
@@ -528,6 +551,79 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
         frameObservation = nil
     }
     
+    private func startActiveMonitor() {
+        resetActiveMonitor()
+        activeMonitorTimer = Timer.scheduledTimer(
+            withTimeInterval: 0.25,
+            repeats: true
+        ) { [weak self] _ in
+            autoreleasepool {
+                self?.monitorActivePresentation()
+            }
+        }
+    }
+    
+    private func monitorActivePresentation() {
+        guard case let .active(presentation) = state else {
+            resetActiveMonitor()
+            return
+        }
+        let candidates = presentation.session.pictureInPictureCandidates
+        if candidates.contains(where: {
+            $0.displayLayer === presentation.displayLayer
+        }) {
+            presentation.replacementLayer = nil
+            presentation.replacementEnqueueCount = nil
+            presentation.missingLayerSampleCount = 0
+            return
+        }
+        presentation.missingLayerSampleCount += 1
+        guard presentation.missingLayerSampleCount < 4 else {
+            requestTeardown()
+            return
+        }
+        guard candidates.count == 1,
+              let candidate = candidates.first else {
+            presentation.replacementLayer = nil
+            presentation.replacementEnqueueCount = nil
+            return
+        }
+        guard presentation.replacementLayer === candidate.displayLayer,
+              let previousCount = presentation.replacementEnqueueCount else {
+            presentation.replacementLayer = candidate.displayLayer
+            presentation.replacementEnqueueCount = candidate.enqueueCount
+            return
+        }
+        presentation.replacementEnqueueCount = candidate.enqueueCount
+        guard candidate.enqueueCount > previousCount,
+              candidate.displayLayer.status == .rendering,
+              let snapshot = mediaSession.selectedSnapshot,
+              snapshot.session === presentation.session,
+              snapshot.playbackState == .playing,
+              let position = snapshot.positionState,
+              synchronizeTimebase(
+                of: candidate.displayLayer,
+                with: position
+              ) else {
+            return
+        }
+        let source = AVPictureInPictureController.ContentSource(
+            sampleBufferDisplayLayer: candidate.displayLayer,
+            playbackDelegate: self
+        )
+        presentation.displayLayer = candidate.displayLayer
+        presentation.contentSource = source
+        presentation.replacementLayer = nil
+        presentation.replacementEnqueueCount = nil
+        presentation.missingLayerSampleCount = 0
+        presentation.controller.contentSource = source
+    }
+    
+    private func resetActiveMonitor() {
+        activeMonitorTimer?.invalidate()
+        activeMonitorTimer = nil
+    }
+    
     private func requestTeardown() {
         switch state {
         case .idle:
@@ -540,6 +636,7 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
         case let .starting(presentation), let .active(presentation):
             state = .stopping(presentation, requestedByCoordinator: true)
             resetPolling()
+            resetActiveMonitor()
             presentation.controller.stopPictureInPicture()
         case .stopping:
             break
@@ -562,6 +659,7 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
     
     private func release(_ presentation: Presentation) {
         resetPolling()
+        resetActiveMonitor()
         presentation.controller.delegate = nil
     }
 }
@@ -733,6 +831,7 @@ extension PictureInPictureCoordinator: AVPictureInPictureControllerDelegate {
         }
         awaitsLayerAfterForeground = false
         state = .active(presentation)
+        startActiveMonitor()
     }
     
     func pictureInPictureController(
@@ -755,6 +854,7 @@ extension PictureInPictureCoordinator: AVPictureInPictureControllerDelegate {
         guard presentation.controller === pictureInPictureController else {
             return
         }
+        resetActiveMonitor()
         state = .stopping(presentation, requestedByCoordinator: false)
     }
     

@@ -1,5 +1,5 @@
 diff --git a/ipc/glue/BackgroundParentImpl.h b/ipc/glue/BackgroundParentImpl.h
-index 429fd9b3f571..7ac573bbef18 100644
+index 8a6f056be76b..7a5cc40e4006 100644
 --- a/ipc/glue/BackgroundParentImpl.h
 +++ b/ipc/glue/BackgroundParentImpl.h
 @@ -335,7 +335,8 @@ class BackgroundParentImpl : public PBackgroundParent {

@@ -1,8 +1,8 @@
 diff --git a/widget/uikit/EventDispatcher.mm b/widget/uikit/EventDispatcher.mm
-index 97d0ae64653b..e6c0866b8b23 100644
+index e08816147a2a..d09230479dc5 100644
 --- a/widget/uikit/EventDispatcher.mm
 +++ b/widget/uikit/EventDispatcher.mm
-@@ -83,7 +83,7 @@ nsresult BoxArray(JSContext* aCx, JS::Handle<JSObject*> aArray,
+@@ -84,7 +84,7 @@ nsresult BoxArray(JSContext* aCx, JS::Handle<JSObject*> aArray,
      }
      nsresult rv = BoxValue(aCx, valJS, valCF);
      NS_ENSURE_SUCCESS(rv, rv);
@@ -11,7 +11,7 @@ index 97d0ae64653b..e6c0866b8b23 100644
    }
  
    // NOTE: A CFRetain() and CFRelease() could be avoided here if we could steal
-@@ -519,6 +519,17 @@ - (BOOL)hasListener:(NSString*)type {
+@@ -520,6 +520,17 @@ - (BOOL)hasListener:(NSString*)type {
    return NS_OK;
  }
  

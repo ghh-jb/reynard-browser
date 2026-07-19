@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/wr/WebRenderBridgeParent.cpp b/gfx/layers/wr/WebRenderBridgeParent.cpp
-index a58c4d319439..bec31ca2ccbb 100644
+index 802cb7cfa8e1..b386e350a777 100644
 --- a/gfx/layers/wr/WebRenderBridgeParent.cpp
 +++ b/gfx/layers/wr/WebRenderBridgeParent.cpp
 @@ -776,7 +776,8 @@ bool WebRenderBridgeParent::UpdateResources(

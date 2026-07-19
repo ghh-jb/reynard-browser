@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/nsClipboard.mm b/widget/uikit/nsClipboard.mm
 new file mode 100644
-index 000000000000..dbbd7971780e
+index 000000000000..8a1c46feb4f0
 --- /dev/null
 +++ b/widget/uikit/nsClipboard.mm
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,300 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -217,7 +217,8 @@ index 000000000000..dbbd7971780e
 +
 +mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
 +nsClipboard::GetNativeClipboardData(const nsACString& aFlavor,
-+                                    ClipboardType aWhichClipboard) {
++                                    ClipboardType aWhichClipboard,
++                                    uint64_t aThreshold) {
 +  MOZ_DIAGNOSTIC_ASSERT(
 +      nsIClipboard::IsClipboardTypeSupported(aWhichClipboard));
 +
@@ -233,6 +234,9 @@ index 000000000000..dbbd7971780e
 +    }
 +    if (!text) {
 +      text = GetStringValue(pasteboard, kUIKitClipboardTextType);
++    }
++    if (aThreshold && [text length] * 2 > aThreshold) {
++      return Err(NS_ERROR_CLIPBOARD_TOO_BIG);
 +    }
 +    return PrimitiveFromNSString(aFlavor, text);
 +  }

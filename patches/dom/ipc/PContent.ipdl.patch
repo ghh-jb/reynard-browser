@@ -1,5 +1,5 @@
 diff --git a/dom/ipc/PContent.ipdl b/dom/ipc/PContent.ipdl
-index edb1259e51ff..878ac8b8a937 100644
+index 23fb64851635..9226486d4351 100644
 --- a/dom/ipc/PContent.ipdl
 +++ b/dom/ipc/PContent.ipdl
 @@ -571,6 +571,10 @@ parent:

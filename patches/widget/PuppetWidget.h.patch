@@ -1,5 +1,5 @@
 diff --git a/widget/PuppetWidget.h b/widget/PuppetWidget.h
-index cfdb81cc03e4..346734a7abe8 100644
+index 911c31e5d908..e3d0c068a999 100644
 --- a/widget/PuppetWidget.h
 +++ b/widget/PuppetWidget.h
 @@ -311,8 +311,14 @@ class PuppetWidget final : public nsIWidget,

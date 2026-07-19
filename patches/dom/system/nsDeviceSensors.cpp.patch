@@ -1,5 +1,5 @@
 diff --git a/dom/system/nsDeviceSensors.cpp b/dom/system/nsDeviceSensors.cpp
-index e9c3911830da..fb7e58c7421a 100644
+index 41065d26b9d2..123239557320 100644
 --- a/dom/system/nsDeviceSensors.cpp
 +++ b/dom/system/nsDeviceSensors.cpp
 @@ -5,10 +5,14 @@
@@ -31,8 +31,8 @@ index e9c3911830da..fb7e58c7421a 100644
 +#endif
  #include "nsIScriptObjectPrincipal.h"
  #include "nsPIDOMWindow.h"
- 
-@@ -35,6 +45,10 @@ class nsIDOMWindow;
+ #include "nsPIDOMWindowInlines.h"
+@@ -36,6 +46,10 @@ class nsIDOMWindow;
  static const nsTArray<nsIDOMWindow*>::index_type NoIndex =
      nsTArray<nsIDOMWindow*>::NoIndex;
  
@@ -43,7 +43,7 @@ index e9c3911830da..fb7e58c7421a 100644
  class nsDeviceSensorData final : public nsIDeviceSensorData {
   public:
    NS_DECL_ISUPPORTS
-@@ -50,6 +64,62 @@ class nsDeviceSensorData final : public nsIDeviceSensorData {
+@@ -51,6 +65,62 @@ class nsDeviceSensorData final : public nsIDeviceSensorData {
    double mX, mY, mZ;
  };
  
@@ -106,7 +106,7 @@ index e9c3911830da..fb7e58c7421a 100644
  nsDeviceSensorData::nsDeviceSensorData(unsigned long type, double x, double y,
                                         double z)
      : mType(type), mX(x), mY(y), mZ(z) {}
-@@ -114,8 +184,12 @@ nsDeviceSensors::~nsDeviceSensors() {
+@@ -113,8 +183,12 @@ nsDeviceSensors::~nsDeviceSensors() {
  NS_IMETHODIMP nsDeviceSensors::HasWindowListener(uint32_t aType,
                                                   nsIDOMWindow* aWindow,
                                                   bool* aRetVal) {
@@ -120,7 +120,7 @@ index e9c3911830da..fb7e58c7421a 100644
    else
      *aRetVal = mWindowListeners[aType]->IndexOf(aWindow) != NoIndex;
  
-@@ -148,8 +222,28 @@ class DeviceSensorTestEvent : public Runnable {
+@@ -147,8 +221,28 @@ class DeviceSensorTestEvent : public Runnable {
  
  NS_IMETHODIMP nsDeviceSensors::AddWindowListener(uint32_t aType,
                                                   nsIDOMWindow* aWindow) {
@@ -149,7 +149,7 @@ index e9c3911830da..fb7e58c7421a 100644
    if (mWindowListeners[aType]->IndexOf(aWindow) != NoIndex) return NS_OK;
  
    if (!IsSensorEnabled(aType)) {
-@@ -182,9 +276,120 @@ NS_IMETHODIMP nsDeviceSensors::RemoveWindowAsListener(nsIDOMWindow* aWindow) {
+@@ -181,9 +275,120 @@ NS_IMETHODIMP nsDeviceSensors::RemoveWindowAsListener(nsIDOMWindow* aWindow) {
    for (int i = 0; i < NUM_SENSOR_TYPE; i++) {
      RemoveWindowListener((SensorType)i, aWindow);
    }

@@ -1,5 +1,5 @@
 diff --git a/gfx/2d/ScaledFontMac.cpp b/gfx/2d/ScaledFontMac.cpp
-index 72892768df4b..2001d645c3e4 100644
+index a3fba650eb8d..55a4f4aa835e 100644
 --- a/gfx/2d/ScaledFontMac.cpp
 +++ b/gfx/2d/ScaledFontMac.cpp
 @@ -780,9 +780,58 @@ cairo_font_face_t* ScaledFontMac::CreateCairoFontFace(
@@ -79,7 +79,7 @@ index 72892768df4b..2001d645c3e4 100644
      return nullptr;
    }
  
-@@ -803,24 +858,43 @@ already_AddRefed<UnscaledFont> UnscaledFontMac::CreateFromFontDescriptor(
+@@ -803,20 +858,40 @@ already_AddRefed<UnscaledFont> UnscaledFontMac::CreateFromFontDescriptor(
      AutoRelease<CFStringRef> path(CFStringCreateWithBytes(
          kCFAllocatorDefault, (const UInt8*)aData + aIndex, aDataLength - aIndex,
          kCFStringEncodingUTF8, false));
@@ -129,8 +129,4 @@ index 72892768df4b..2001d645c3e4 100644
 +    return nullptr;
    }
  
-   RefPtr<UnscaledFont> unscaledFont = new UnscaledFontMac(font);
--  CFRelease(font);
-   return unscaledFont.forget();
- }
- 
+   RefPtr unscaledFont = MakeRefPtr<UnscaledFontMac>(font);

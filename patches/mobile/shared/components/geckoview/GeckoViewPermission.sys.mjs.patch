@@ -1,8 +1,8 @@
 diff --git a/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs b/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
-index 31789c65d0aa..444cb623375e 100644
+index 316bafd2b24b..4765e1bbd71c 100644
 --- a/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
 +++ b/mobile/shared/components/geckoview/GeckoViewPermission.sys.mjs
-@@ -145,7 +145,7 @@ export class GeckoViewPermission {
+@@ -179,7 +179,7 @@ export class GeckoViewPermission {
  
        if (allowOrDeny === Services.perms.ALLOW_ACTION) {
          // Ask for app permission after asking for content permission.
@@ -11,7 +11,7 @@ index 31789c65d0aa..444cb623375e 100644
            const granted = await actor.getAppPermissions([
              PERM_ACCESS_FINE_LOCATION,
            ]);
-@@ -164,6 +164,24 @@ export class GeckoViewPermission {
+@@ -200,6 +200,24 @@ export class GeckoViewPermission {
  
      const allow = allowOrDeny === Services.perms.ALLOW_ACTION;
  

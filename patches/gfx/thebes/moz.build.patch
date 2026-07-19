@@ -1,8 +1,8 @@
 diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
-index 2bb893d84f50..5c768be5f044 100644
+index 6919fcff1cd3..4b5631db3e1e 100644
 --- a/gfx/thebes/moz.build
 +++ b/gfx/thebes/moz.build
-@@ -242,6 +242,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
+@@ -243,6 +243,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
      ]
  elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "uikit":
      UNIFIED_SOURCES += [

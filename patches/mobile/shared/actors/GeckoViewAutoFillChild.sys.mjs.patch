@@ -1,5 +1,5 @@
 diff --git a/mobile/shared/actors/GeckoViewAutoFillChild.sys.mjs b/mobile/shared/actors/GeckoViewAutoFillChild.sys.mjs
-index 561dc18792b5..506e48733194 100644
+index 55704ec24d23..cc79fa020d27 100644
 --- a/mobile/shared/actors/GeckoViewAutoFillChild.sys.mjs
 +++ b/mobile/shared/actors/GeckoViewAutoFillChild.sys.mjs
 @@ -4,6 +4,11 @@
@@ -14,7 +14,7 @@ index 561dc18792b5..506e48733194 100644
  
  const lazy = {};
  
-@@ -21,6 +26,13 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -20,6 +25,13 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
      this._autofillInfos = undefined;
    }
  
@@ -28,7 +28,7 @@ index 561dc18792b5..506e48733194 100644
    // eslint-disable-next-line complexity
    handleEvent(aEvent) {
      debug`handleEvent: ${aEvent.type}`;
-@@ -40,9 +52,35 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -39,9 +51,35 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
        }
        case "focusin": {
          const element = aEvent.composedTarget;
@@ -65,7 +65,7 @@ index 561dc18792b5..506e48733194 100644
          GeckoViewUtils.waitForPanZoomState(this.contentWindow).finally(() => {
            if (Cu.isDeadWrapper(element)) {
              // Focus element is removed or document is navigated to new page.
-@@ -51,16 +89,35 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -50,16 +88,35 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
            const focusedElement =
              Services.focus.focusedElement ||
              element.ownerDocument?.activeElement;
@@ -105,7 +105,7 @@ index 561dc18792b5..506e48733194 100644
            this.onFocus(null);
          }
          break;
-@@ -85,6 +142,35 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -84,6 +141,35 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
      }
    }
  
@@ -141,7 +141,7 @@ index 561dc18792b5..506e48733194 100644
    /**
     * Process an auto-fillable form and send the relevant details of the form
     * to Java. Multiple calls within a short time period for the same form are
-@@ -94,14 +180,27 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -93,14 +179,27 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
     * there is no difference in how we process them.
     *
     * @param aFormLike A FormLike object produced by FormLikeFactory.
@@ -171,7 +171,7 @@ index 561dc18792b5..506e48733194 100644
        if (
          ChromeUtils.getClassName(field) === "HTMLInputElement" &&
          field.type == "password"
-@@ -113,11 +212,15 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -112,11 +211,15 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
  
      const loginManagerChild = lazy.LoginManagerChild.forWindow(window);
      const docState = loginManagerChild.stateForDocument(
@@ -191,7 +191,7 @@ index 561dc18792b5..506e48733194 100644
  
      const focusedElement = aFormLike.rootElement.ownerDocument.activeElement;
      let sendFocusEvent = aFormLike.rootElement === focusedElement;
-@@ -130,10 +233,11 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -129,10 +232,11 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
      );
  
      rootInfo.rootUuid = rootInfo.uuid;
@@ -204,7 +204,7 @@ index 561dc18792b5..506e48733194 100644
            (!usernameField ||
              element.type != "text" ||
              element == usernameField ||
-@@ -146,9 +250,18 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -145,9 +249,18 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
            element,
            rootInfo.uuid,
            rootInfo.uuid,
@@ -224,7 +224,7 @@ index 561dc18792b5..506e48733194 100644
  
      try {
        // We don't await here so that we can send a focus event immediately
-@@ -200,7 +313,15 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -199,7 +312,15 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
      }
    }
  
@@ -241,7 +241,7 @@ index 561dc18792b5..506e48733194 100644
      if (!this._autofillInfos) {
        this._autofillInfos = new WeakMap();
        this._autofillElements = new Map();
-@@ -208,6 +329,9 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -207,6 +328,9 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
  
      let info = this._autofillInfos.get(aElement);
      if (info) {
@@ -251,7 +251,7 @@ index 561dc18792b5..506e48733194 100644
        return info;
      }
  
-@@ -250,6 +374,7 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -249,6 +373,7 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
        ),
        origin: aElement.ownerDocument.location.origin,
        autofillhint: "",
@@ -259,7 +259,7 @@ index 561dc18792b5..506e48733194 100644
        bounds: {
          left: bounds.left,
          top: bounds.top,
-@@ -258,16 +383,32 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -257,16 +382,32 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
        },
      };
  
@@ -293,7 +293,7 @@ index 561dc18792b5..506e48733194 100644
        }
      }
  
-@@ -276,6 +417,227 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
+@@ -275,6 +416,227 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
      return info;
    }
  

@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/opengl/MacIOSurfaceTextureClientOGL.cpp b/gfx/layers/opengl/MacIOSurfaceTextureClientOGL.cpp
-index 71e07a59eaa2..d0a8d7264997 100644
+index 448673da5f9d..e4f5bfb3d02e 100644
 --- a/gfx/layers/opengl/MacIOSurfaceTextureClientOGL.cpp
 +++ b/gfx/layers/opengl/MacIOSurfaceTextureClientOGL.cpp
 @@ -6,12 +6,23 @@
@@ -26,7 +26,7 @@ index 71e07a59eaa2..d0a8d7264997 100644
  MacIOSurfaceTextureData::MacIOSurfaceTextureData(MacIOSurface* aSurface,
                                                   BackendType aBackend)
      : mSurface(aSurface), mBackend(aBackend) {
-@@ -48,28 +59,19 @@ MacIOSurfaceTextureData* MacIOSurfaceTextureData::Create(const IntSize& aSize,
+@@ -51,28 +62,19 @@ MacIOSurfaceTextureData* MacIOSurfaceTextureData::Create(const IntSize& aSize,
  }
  
  bool MacIOSurfaceTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {

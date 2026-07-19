@@ -1,5 +1,5 @@
 diff --git a/gfx/thebes/CoreTextFontList.cpp b/gfx/thebes/CoreTextFontList.cpp
-index 09cc159cad78..d0bae2468b3e 100644
+index e2a4ed57c87d..f579d75f53c7 100644
 --- a/gfx/thebes/CoreTextFontList.cpp
 +++ b/gfx/thebes/CoreTextFontList.cpp
 @@ -354,6 +354,12 @@ nsresult CTFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
@@ -148,7 +148,7 @@ index 09cc159cad78..d0bae2468b3e 100644
 -  bool cantUseFallbackFont = false;
  
    if (!mDefaultFont) {
-     mDefaultFont = CTFontCreateWithName(CFSTR("LucidaGrande"), 12.f, NULL);
+     mDefaultFont = CTFontCreateWithName(CFSTR("LucidaGrande"), 12.f, nullptr);
 @@ -1380,7 +1441,6 @@ gfxFontEntry* CoreTextFontList::PlatformGlobalFontFallback(
                aMatchedFamily = FontFamily(family);
              } else {
@@ -230,7 +230,7 @@ index 09cc159cad78..d0bae2468b3e 100644
    }
  
    CFRelease(str);
-@@ -1541,9 +1648,6 @@ bool CoreTextFontList::FindAndAddFamiliesLocked(
+@@ -1540,9 +1647,6 @@ bool CoreTextFontList::FindAndAddFamiliesLocked(
      nsTArray<FamilyAndGeneric>* aOutput, FindFamiliesFlags aFlags,
      gfxFontStyle* aStyle, nsAtom* aLanguage, gfxFloat aDevToCssSize) {
    if (aFamily.EqualsLiteral(kSystemFont_system)) {
@@ -240,7 +240,7 @@ index 09cc159cad78..d0bae2468b3e 100644
      if (auto* fam = FindSystemFontFamily(mSystemFontFamilyName)) {
        aOutput->AppendElement(fam);
        return true;
-@@ -1904,7 +2008,9 @@ void CoreTextFontList::InitSystemFontNames() {
+@@ -1900,7 +2004,9 @@ void CoreTextFontList::InitSystemFontNames() {
    // shared fontlist to manage "normal" fonts, because the hidden system fonts
    // may be excluded from the font list altogether. This family will be
    // populated based on the given NSFont.
@@ -251,7 +251,7 @@ index 09cc159cad78..d0bae2468b3e 100644
    if (fam) {
      nsAutoCString key;
      GenerateFontListKey(mSystemFontFamilyName, key);
-@@ -1915,14 +2021,10 @@ void CoreTextFontList::InitSystemFontNames() {
+@@ -1911,14 +2017,10 @@ void CoreTextFontList::InitSystemFontNames() {
  FontFamily CoreTextFontList::GetDefaultFontForPlatform(
      FontVisibilityProvider* aFontVisibilityProvider, const gfxFontStyle* aStyle,
      nsAtom* aLanguage) {

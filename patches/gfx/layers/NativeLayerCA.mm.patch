@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/NativeLayerCA.mm b/gfx/layers/NativeLayerCA.mm
-index a1522a742b95..b3bbeda7faeb 100644
+index 94efd9b6c370..539e2d63644f 100644
 --- a/gfx/layers/NativeLayerCA.mm
 +++ b/gfx/layers/NativeLayerCA.mm
 @@ -320,6 +320,11 @@ static void EmitTelemetryForVideoLowPower(VideoLowPowerType aVideoLowPower) {
@@ -44,7 +44,7 @@ index a1522a742b95..b3bbeda7faeb 100644
    }
  }
  
-@@ -928,6 +946,10 @@ CGColorRef CGColorCreateForDeviceColor(const gfx::DeviceColor& aColor) {
+@@ -926,6 +944,10 @@ CGColorRef CGColorCreateForDeviceColor(const gfx::DeviceColor& aColor) {
      return false;
    }
  

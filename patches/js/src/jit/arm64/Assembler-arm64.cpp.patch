@@ -1,5 +1,5 @@
 diff --git a/js/src/jit/arm64/Assembler-arm64.cpp b/js/src/jit/arm64/Assembler-arm64.cpp
-index f8296d72e32c..2028ed4edb3e 100644
+index 460453cdd993..3385bd85d6d8 100644
 --- a/js/src/jit/arm64/Assembler-arm64.cpp
 +++ b/js/src/jit/arm64/Assembler-arm64.cpp
 @@ -13,9 +13,14 @@
@@ -34,7 +34,7 @@ index f8296d72e32c..2028ed4edb3e 100644
  ABIArg ABIArgGenerator::next(MIRType type) {
    switch (type) {
      case MIRType::Int32:
-@@ -170,8 +185,11 @@ BufferOffset Assembler::emitExtendedJumpTable() {
+@@ -173,8 +188,11 @@ BufferOffset Assembler::emitExtendedJumpTable() {
  }
  
  void Assembler::executableCopy(uint8_t* buffer) {
@@ -47,7 +47,7 @@ index f8296d72e32c..2028ed4edb3e 100644
  
    // Patch any relative jumps that target code outside the buffer.
    // The extended jump table may be used for distant jumps.
-@@ -180,16 +198,30 @@ void Assembler::executableCopy(uint8_t* buffer) {
+@@ -183,16 +201,30 @@ void Assembler::executableCopy(uint8_t* buffer) {
      MOZ_ASSERT(rp.target);
  
      Instruction* target = (Instruction*)rp.target;
@@ -86,7 +86,7 @@ index f8296d72e32c..2028ed4edb3e 100644
        }
      } else {
        // Currently a two-instruction call, it should be possible to optimize
-@@ -197,6 +229,12 @@ void Assembler::executableCopy(uint8_t* buffer) {
+@@ -200,6 +232,12 @@ void Assembler::executableCopy(uint8_t* buffer) {
        // will work.
      }
    }

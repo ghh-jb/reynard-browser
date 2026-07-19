@@ -1,9 +1,9 @@
 diff --git a/widget/uikit/PictureInPictureSupport.mm b/widget/uikit/PictureInPictureSupport.mm
 new file mode 100644
-index 000000000000..cb30772d8e77
+index 000000000000..d9417e62bdf7
 --- /dev/null
 +++ b/widget/uikit/PictureInPictureSupport.mm
-@@ -0,0 +1,132 @@
+@@ -0,0 +1,141 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -29,18 +29,22 @@ index 000000000000..cb30772d8e77
 +@interface GeckoViewPictureInPictureSnapshot () {
 +  AVSampleBufferDisplayLayer* _displayLayer;
 +  uint64_t _enqueueCount;
++  BOOL _fullscreen;
 +}
 +- (instancetype)initWithDisplayLayer:(AVSampleBufferDisplayLayer*)displayLayer
-+                        enqueueCount:(uint64_t)enqueueCount;
++                        enqueueCount:(uint64_t)enqueueCount
++                          fullscreen:(BOOL)fullscreen;
 +@end
 +
 +@implementation GeckoViewPictureInPictureSnapshot
 +- (instancetype)initWithDisplayLayer:(AVSampleBufferDisplayLayer*)displayLayer
-+                        enqueueCount:(uint64_t)enqueueCount {
++                        enqueueCount:(uint64_t)enqueueCount
++                          fullscreen:(BOOL)fullscreen {
 +  self = [super init];
 +  if (self) {
 +    _displayLayer = [displayLayer retain];
 +    _enqueueCount = enqueueCount;
++    _fullscreen = fullscreen;
 +  }
 +  return self;
 +}
@@ -51,6 +55,10 @@ index 000000000000..cb30772d8e77
 +
 +- (uint64_t)enqueueCount {
 +  return _enqueueCount;
++}
++
++- (BOOL)fullscreen {
++  return _fullscreen;
 +}
 +
 +- (void)dealloc {
@@ -128,7 +136,8 @@ index 000000000000..cb30772d8e77
 +        [[[GeckoViewPictureInPictureSnapshot alloc]
 +            initWithDisplayLayer:(AVSampleBufferDisplayLayer*)
 +                                     nativeCandidate.Layer()
-+                    enqueueCount:nativeCandidate.EnqueueCount()] autorelease];
++                    enqueueCount:nativeCandidate.EnqueueCount()
++                      fullscreen:nativeCandidate.IsFullscreen()] autorelease];
 +    [candidates addObject:candidate];
 +  }
 +  return [[[GeckoViewPictureInPictureCandidateList alloc]

@@ -6,11 +6,11 @@
 //
 
 import AVFoundation
-import Foundation
 
 public struct PictureInPictureCandidate {
     public let displayLayer: AVSampleBufferDisplayLayer
     public let enqueueCount: UInt64
+    public let isFullscreen: Bool
 }
 
 public protocol PictureInPictureDelegate: AnyObject {
@@ -39,7 +39,8 @@ final class PictureInPictureHandler: GeckoSessionHandlerCommon {
             }
             return PictureInPictureCandidate(
                 displayLayer: candidate.displayLayer,
-                enqueueCount: candidate.enqueueCount
+                enqueueCount: candidate.enqueueCount,
+                isFullscreen: candidate.fullscreen
             )
         }
     }

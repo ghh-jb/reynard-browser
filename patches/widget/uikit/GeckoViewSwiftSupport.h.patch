@@ -1,8 +1,8 @@
 diff --git a/widget/uikit/GeckoViewSwiftSupport.h b/widget/uikit/GeckoViewSwiftSupport.h
-index e68fca9134c0..2c7e5acd2c9a 100644
+index e68fca9134c0..751b4875867a 100644
 --- a/widget/uikit/GeckoViewSwiftSupport.h
 +++ b/widget/uikit/GeckoViewSwiftSupport.h
-@@ -18,14 +18,28 @@
+@@ -18,14 +18,29 @@
  #endif
  
  #import <Foundation/Foundation.h>
@@ -15,6 +15,7 @@ index e68fca9134c0..2c7e5acd2c9a 100644
 +@interface GeckoViewPictureInPictureSnapshot : NSObject
 +@property(nonatomic, readonly) AVSampleBufferDisplayLayer* displayLayer;
 +@property(nonatomic, readonly) uint64_t enqueueCount;
++@property(nonatomic, readonly) BOOL fullscreen;
 +@end
 +
 +@interface GeckoViewPictureInPictureCandidateList : NSObject
@@ -31,7 +32,7 @@ index e68fca9134c0..2c7e5acd2c9a 100644
  @end
  
  @protocol GeckoProcessExtension <NSObject>
-@@ -56,6 +70,7 @@
+@@ -56,6 +71,7 @@
  
  @protocol GeckoViewWindow <NSObject>
  - (UIView*)view;

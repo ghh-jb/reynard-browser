@@ -48,7 +48,6 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
         var pauseRequestID = 0
         var isSeeking = false
         var candidateCounters: [ObjectIdentifier: UInt64]
-        var mostRecentAdvancingLayer: AVSampleBufferDisplayLayer
         var nonAdvancingSampleCount = 0
         
         init(
@@ -67,7 +66,6 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             invalidatedDuration = duration
             invalidatedPlaybackState = playbackState
             self.candidateCounters = candidateCounters
-            mostRecentAdvancingLayer = displayLayer
         }
     }
     
@@ -110,7 +108,6 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             }
             return false
         }
-        
     }
     
     private weak var delegate: PictureInPictureCoordinatorDelegate?
@@ -309,7 +306,7 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             return nil
         }
         let candidates = media.session.pictureInPictureCandidates
-        guard !candidates.isEmpty else {
+        guard candidates.first?.isFullscreen == true else {
             return nil
         }
         return Eligibility(
@@ -378,18 +375,11 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             return
         }
         let enqueueCounts = candidateCounters(eligibility.candidates)
-        guard enqueueCounts[
-            ObjectIdentifier(presentation.displayLayer)
-        ] != nil else {
-            requestTeardown()
-            return
-        }
         guard candidateSetsMatch(
             presentation.candidateCounters,
             enqueueCounts
         ) else {
-            presentation.candidateCounters = enqueueCounts
-            startPollingIfNeeded()
+            requestTeardown()
             return
         }
         guard sampleFrames else {
@@ -402,21 +392,18 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             (presentation.candidateCounters[ObjectIdentifier($0.displayLayer)] ?? 0)
         }
         presentation.candidateCounters = enqueueCounts
-        if advancing.contains(where: {
-            $0.displayLayer !== presentation.displayLayer
-        }) {
-            requestTeardown()
-            return
-        }
-        if advancing.count == 1 {
-            presentation.mostRecentAdvancingLayer = presentation.displayLayer
+        if advancing.count == 1,
+           advancing[0].displayLayer === presentation.displayLayer {
             presentation.nonAdvancingSampleCount = 0
-        } else {
+        } else if advancing.isEmpty {
             presentation.nonAdvancingSampleCount += 1
             if presentation.nonAdvancingSampleCount >= 4 {
                 requestTeardown()
                 return
             }
+        } else {
+            requestTeardown()
+            return
         }
         startPollingIfNeeded()
     }
@@ -447,11 +434,10 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
             return
         }
         let enqueueCounts = candidateCounters(eligibility.candidates)
-        let selectedIdentifier = ObjectIdentifier(presentation.displayLayer)
-        guard enqueueCounts[selectedIdentifier] != nil,
-              enqueueCounts.keys.allSatisfy({
-                  presentation.candidateCounters[$0] != nil
-              }) else {
+        guard candidateSetsMatch(
+            presentation.candidateCounters,
+            enqueueCounts
+        ) else {
             requestTeardown()
             return
         }
@@ -469,15 +455,11 @@ final class PictureInPictureCoordinator: NSObject, PictureInPictureCoordinating 
         let selectedAdvanced = advancing.contains {
             $0.displayLayer === presentation.displayLayer
         }
-        guard selectedAdvanced ||
-                (presentation.mostRecentAdvancingLayer ===
-                 presentation.displayLayer &&
-                 presentation.nonAdvancingSampleCount < 4) else {
+        guard presentation.nonAdvancingSampleCount < 4 else {
             requestTeardown()
             return
         }
         if selectedAdvanced {
-            presentation.mostRecentAdvancingLayer = presentation.displayLayer
             presentation.nonAdvancingSampleCount = 0
         }
         presentation.candidateCounters = enqueueCounts

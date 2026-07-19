@@ -1,9 +1,9 @@
 diff --git a/gfx/layers/NativeLayerCAPictureInPicture.h b/gfx/layers/NativeLayerCAPictureInPicture.h
 new file mode 100644
-index 000000000000..8739e410003b
+index 000000000000..b1816ecfc373
 --- /dev/null
 +++ b/gfx/layers/NativeLayerCAPictureInPicture.h
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,53 @@
 +/* This Source Code Form is subject to the terms of the Mozilla Public
 + * License, v. 2.0. If a copy of the MPL was not distributed with this
 + * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -27,7 +27,8 @@ index 000000000000..8739e410003b
 +class PictureInPictureCandidate {
 + public:
 +  static PictureInPictureCandidate Adopt(CALayer* aLayer,
-+                                         uint64_t aEnqueueCount);
++                                         uint64_t aEnqueueCount,
++                                         bool aFullscreen);
 +  PictureInPictureCandidate(const PictureInPictureCandidate& aOther);
 +  PictureInPictureCandidate(PictureInPictureCandidate&& aOther);
 +  PictureInPictureCandidate& operator=(const PictureInPictureCandidate& aOther);
@@ -36,17 +37,21 @@ index 000000000000..8739e410003b
 +
 +  CALayer* Layer() const { return mLayer; }
 +  uint64_t EnqueueCount() const { return mEnqueueCount; }
++  bool IsFullscreen() const { return mFullscreen; }
 +
 + private:
-+  PictureInPictureCandidate(CALayer* aLayer, uint64_t aEnqueueCount);
++  PictureInPictureCandidate(CALayer* aLayer, uint64_t aEnqueueCount,
++                            bool aFullscreen);
 +
 +  CALayer* mLayer;
 +  uint64_t mEnqueueCount;
++  bool mFullscreen;
 +};
 +
 +struct PictureInPictureCandidateData {
 +  CALayer* mLayer;
 +  uint64_t mEnqueueCount;
++  bool mFullscreen;
 +};
 +
 +}  // namespace mozilla::layers

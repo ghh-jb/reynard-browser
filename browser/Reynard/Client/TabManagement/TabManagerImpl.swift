@@ -1149,7 +1149,6 @@ extension TabManagerImplementation: PictureInPictureCoordinatorDelegate {
         selectTab(at: location.index, mode: location.mode)
         return true
     }
-    
 }
 
 extension TabManagerImplementation: HistoryDelegate {

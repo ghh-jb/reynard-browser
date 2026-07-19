@@ -278,6 +278,10 @@ final class PromptPresenter: PromptPresenting {
             return nil
         }
         
+        if session.isAddonPopup {
+            return (geckoView, rect)
+        }
+        
         var localRect = rect
         let windowPoint = window.convert(rect.origin, from: nil)
         localRect.origin = geckoView.convert(windowPoint, from: nil)

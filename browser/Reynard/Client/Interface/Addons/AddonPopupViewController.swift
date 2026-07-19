@@ -30,6 +30,7 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
     private let didDismiss: () -> Void
     private let geckoView = GeckoView()
     private let session: GeckoSession
+    private let promptCoordinator = PromptCoordinator(presenter: PromptPresenter())
     private var hasClosedSession = false
     
     // MARK: - Lifecycle
@@ -87,7 +88,11 @@ final class AddonPopupViewController: UIViewController, ContentDelegate, Navigat
     private func configureSession() {
         sessionManager.bindDelegates(
             to: session,
-            delegates: SessionDelegates(content: self, navigation: self)
+            delegates: SessionDelegates(
+                content: self,
+                navigation: self,
+                prompt: promptCoordinator
+            )
         )
         sessionManager.open(session)
     }

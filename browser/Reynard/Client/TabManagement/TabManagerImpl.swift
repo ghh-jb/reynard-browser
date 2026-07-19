@@ -35,7 +35,8 @@ final class TabManagerImplementation: NSObject, TabManager {
     )
     private let systemMediaSession = SystemMediaSession()
     private lazy var pictureInPictureCoordinator: PictureInPictureCoordinating? = {
-        guard #available(iOS 15.0, *) else {
+        guard Prefs.ExperimentalSettings.isVideoPictureInPictureEnabled,
+              #available(iOS 15.0, *) else {
             return nil
         }
         return PictureInPictureCoordinator(

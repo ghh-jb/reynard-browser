@@ -8,8 +8,9 @@
 import GeckoView
 import UIKit
 
-struct AboutSettingsSection {
+final class AboutSettingsSection {
     enum Row: CaseIterable {
+        case experimentalFeatures
         case appVersion
         case engineVersion
         case sourceCode
@@ -17,16 +18,39 @@ struct AboutSettingsSection {
         case githubProfile
     }
     
+    private var showsExperimentalFeatures = false
+    
+    private var displayedRows: [Row] {
+        return Row.allCases.filter {
+            showsExperimentalFeatures || $0 != .experimentalFeatures
+        }
+    }
+    
     var rowCount: Int {
-        return Row.allCases.count
+        return displayedRows.count
+    }
+    
+    func revealExperimentalFeatures() -> Bool {
+        guard !showsExperimentalFeatures else {
+            return false
+        }
+        showsExperimentalFeatures = true
+        return true
+    }
+    
+    func isAppVersionRow(at index: Int) -> Bool {
+        return displayedRows.indices.contains(index) &&
+        displayedRows[index] == .appVersion
     }
     
     func cell(at index: Int) -> UITableViewCell {
-        guard Row.allCases.indices.contains(index) else {
+        guard displayedRows.indices.contains(index) else {
             return UITableViewCell()
         }
         
-        switch Row.allCases[index] {
+        switch displayedRows[index] {
+        case .experimentalFeatures:
+            return SettingsViewUtils.disclosureCell(title: "Experimental Features")
         case .appVersion:
             let info = Bundle.main.infoDictionary
             let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"
@@ -43,13 +67,23 @@ struct AboutSettingsSection {
         }
     }
     
-    func selectRow(at index: Int) {
-        guard Row.allCases.indices.contains(index),
-              let url = url(for: Row.allCases[index]) else {
+    func selectRow(at index: Int, from viewController: UIViewController) {
+        guard displayedRows.indices.contains(index) else {
             return
         }
         
-        UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        let row = displayedRows[index]
+        if row == .experimentalFeatures {
+            viewController.navigationController?.pushViewController(
+                ExperimentalFeaturesViewController(),
+                animated: true
+            )
+            return
+        }
+        
+        if let url = url(for: row) {
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        }
     }
     
     private func url(for row: Row) -> URL? {
@@ -60,7 +94,7 @@ struct AboutSettingsSection {
             return URL(string: "https://buymeacoffee.com/hnimnot")
         case .githubProfile:
             return URL(string: "https://github.com/minh-ton")
-        case .appVersion, .engineVersion:
+        case .experimentalFeatures, .appVersion, .engineVersion:
             return nil
         }
     }

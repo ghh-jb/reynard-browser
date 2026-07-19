@@ -124,7 +124,16 @@ final class SettingsViewController: SettingsTableViewController {
         case .privacy:
             return privacySection.cell(at: indexPath.row)
         case .about:
-            return aboutSection.cell(at: indexPath.row)
+            let cell = aboutSection.cell(at: indexPath.row)
+            if aboutSection.isAppVersionRow(at: indexPath.row) {
+                let gestureRecognizer = UITapGestureRecognizer(
+                    target: self,
+                    action: #selector(revealExperimentalFeatures(_:))
+                )
+                gestureRecognizer.numberOfTapsRequired = 10
+                cell.addGestureRecognizer(gestureRecognizer)
+            }
+            return cell
         }
     }
     
@@ -146,7 +155,7 @@ final class SettingsViewController: SettingsTableViewController {
         case .privacy:
             privacySection.selectRow(at: indexPath.row, from: self)
         case .about:
-            aboutSection.selectRow(at: indexPath.row)
+            aboutSection.selectRow(at: indexPath.row, from: self)
         }
     }
     
@@ -202,6 +211,19 @@ final class SettingsViewController: SettingsTableViewController {
     @objc private func syncJITModeBanner(_ notification: Notification) {
         jitSection.refreshDisplayedState()
         tableView.reloadData()
+    }
+    
+    @objc private func revealExperimentalFeatures(_ gestureRecognizer: UITapGestureRecognizer) {
+        guard gestureRecognizer.state == .ended,
+              aboutSection.revealExperimentalFeatures(),
+              let section = displayedSections.firstIndex(of: .about) else {
+            return
+        }
+        
+        tableView.insertRows(
+            at: [IndexPath(row: 0, section: section)],
+            with: .automatic
+        )
     }
     
 }

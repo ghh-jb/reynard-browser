@@ -44,8 +44,8 @@ final class AddWebsiteLanguageViewController: SettingsTableViewController {
         super.viewDidLoad()
         configureSearch()
         tableView.register(AddWebsiteLanguageCell.self, forCellReuseIdentifier: AddWebsiteLanguageCell.reuseIdentifier)
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .cancel,
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .done,
             target: self,
             action: #selector(cancelButtonTapped)
         )

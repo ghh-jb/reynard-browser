@@ -22,8 +22,8 @@ final class TabOverviewCollection: NSObject {
     
     enum ReorderState {
         case idle
-        case pending(cell: TabOverviewCard, workItem: DispatchWorkItem)
-        case active(cell: TabOverviewCard)
+        case pending(cell: TabOverviewCard, targetOffset: CGPoint, workItem: DispatchWorkItem)
+        case active(cell: TabOverviewCard, targetOffset: CGPoint)
     }
     
     enum SwipeState {
@@ -421,27 +421,30 @@ final class TabOverviewCollection: NSObject {
             guard let indexPath = collectionView.indexPathForItem(at: location),
                   let cell = collectionView.cellForItem(at: indexPath) as? TabOverviewCard,
                   !cell.isCloseButton(at: collectionView.convert(location, to: cell)) else { return }
+            let targetOffset = CGPoint(x: cell.center.x - location.x, y: cell.center.y - location.y)
             cell.setReorderState(.lifted, animated: true)
             let workItem = DispatchWorkItem { [weak self, weak collectionView, weak cell, weak gestureRecognizer] in
                 guard let self, let collectionView, let cell, let gestureRecognizer,
-                      case .pending(let pendingCell, _) = self.reorderState,
+                      case .pending(let pendingCell, let targetOffset, _) = self.reorderState,
                       pendingCell === cell else { return }
                 if collectionView.beginInteractiveMovementForItem(at: indexPath) {
                     let location = gestureRecognizer.location(in: collectionView)
-                    collectionView.updateInteractiveMovementTargetPosition(location)
-                    self.updateTabCardReorderAutoScroll(at: location, in: collectionView)
-                    self.reorderState = .active(cell: cell)
+                    let targetPosition = CGPoint(x: location.x + targetOffset.x, y: location.y + targetOffset.y)
+                    collectionView.updateInteractiveMovementTargetPosition(targetPosition)
+                    self.updateTabCardReorderAutoScroll(at: location, targetPosition: targetPosition, in: collectionView)
+                    self.reorderState = .active(cell: cell, targetOffset: targetOffset)
                 } else {
                     cell.setReorderState(.resting, animated: true)
                     self.reorderState = .idle
                 }
             }
-            reorderState = .pending(cell: cell, workItem: workItem)
+            reorderState = .pending(cell: cell, targetOffset: targetOffset, workItem: workItem)
             DispatchQueue.main.asyncAfter(deadline: .now() + UX.tabCardReorderStartDelay, execute: workItem)
         case .changed:
-            if case .active = reorderState {
-                collectionView.updateInteractiveMovementTargetPosition(location)
-                updateTabCardReorderAutoScroll(at: location, in: collectionView)
+            if case .active(_, let targetOffset) = reorderState {
+                let targetPosition = CGPoint(x: location.x + targetOffset.x, y: location.y + targetOffset.y)
+                collectionView.updateInteractiveMovementTargetPosition(targetPosition)
+                updateTabCardReorderAutoScroll(at: location, targetPosition: targetPosition, in: collectionView)
             }
         case .ended:
             finishTabCardReordering(in: collectionView, cancelled: false)
@@ -452,10 +455,10 @@ final class TabOverviewCollection: NSObject {
     
     private func finishTabCardReordering(in collectionView: UICollectionView, cancelled: Bool) {
         switch reorderState {
-        case .pending(let cell, let workItem):
+        case .pending(let cell, _, let workItem):
             workItem.cancel()
             cell.setReorderState(.resting, animated: true)
-        case .active(let cell):
+        case .active(let cell, _):
             cancelled ? collectionView.cancelInteractiveMovement() : collectionView.endInteractiveMovement()
             cell.setReorderState(.resting, animated: true)
         case .idle:
@@ -465,9 +468,13 @@ final class TabOverviewCollection: NSObject {
         reorderState = .idle
     }
     
-    private func updateTabCardReorderAutoScroll(at location: CGPoint, in collectionView: UICollectionView) {
+    private func updateTabCardReorderAutoScroll(
+        at location: CGPoint,
+        targetPosition: CGPoint,
+        in collectionView: UICollectionView
+    ) {
         reorderAutoScrollCollectionView = collectionView
-        reorderAutoScrollTargetPosition = location
+        reorderAutoScrollTargetPosition = targetPosition
         
         let visibleY = location.y - collectionView.bounds.minY
         let topDistance = visibleY - collectionView.adjustedContentInset.top

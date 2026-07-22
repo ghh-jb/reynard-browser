@@ -1214,6 +1214,7 @@ extension TabManagerImplementation: ProgressDelegate {
         tab.state.loadingState = .idle
         notifyUpdate(at: location.index, mode: location.mode, reason: .loading)
         notifyUpdate(at: location.index, mode: location.mode, reason: .thumbnail)
+        delegate?.tabManager(self, didFinishLoading: session)
     }
     
     func onProgressChange(session: GeckoSession, progress: Int) {

@@ -196,6 +196,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         topConstraint = nextTopConstraint
         bottomConstraint = nextBottomConstraint
         updateLayoutOffsets()
+        updatePullToRefreshAvailability()
     }
     
     private func canActivateConstraints(_ constraints: [NSLayoutConstraint]) -> Bool {
@@ -342,11 +343,13 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         )
         webContentView.setVisibility(state.webVisibility)
         overlayContentView.setPresentation(presentation, animated: animated, completion: completion)
+        updatePullToRefreshAvailability()
     }
     
     private func applyState() {
         webContentView.setVisibility(state.webVisibility)
         overlayContentView.setPresentation(state.overlayPresentation, animated: false)
+        updatePullToRefreshAvailability()
     }
     
     // MARK: - Session
@@ -356,6 +359,11 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         self.session = session
         resetFocusedInputRelocation()
         webContentView.setSession(session)
+        updatePullToRefreshAvailability()
+    }
+    
+    func didFinishLoading(session: GeckoSession) {
+        webContentView.didFinishLoading(session: session)
     }
     
     func isDisplaying(session: GeckoSession) -> Bool {
@@ -421,6 +429,7 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         
         onHistorySwipeBegan?()
         historySwipeState = .swiping(direction)
+        updatePullToRefreshAvailability()
         historyPreviewImageView.image = direction == .back ? backPreviewImage : forwardPreviewImage
         historyPreviewImageView.isHidden = false
         historyTransitionOverlayView.isHidden = false
@@ -590,6 +599,22 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         historyTransitionOverlayView.alpha = 0
         historyTransitionOverlayView.isHidden = true
         historySwipeState = .idle
+        updatePullToRefreshAvailability()
+    }
+    
+    private func updatePullToRefreshAvailability() {
+        let isHistoryNavigationIdle: Bool
+        if case .idle = historySwipeState {
+            isHistoryNavigationIdle = true
+        } else {
+            isHistoryNavigationIdle = false
+        }
+        let isEnabled = session != nil &&
+        state == .browsing &&
+        webContentView.visibility == .visible &&
+        layoutState.mode != .fullscreen &&
+        isHistoryNavigationIdle
+        webContentView.setPullToRefreshEnabled(isEnabled)
     }
     
     func finishHistoryLoad() {

@@ -29,6 +29,10 @@ extension BrowserViewController: TabManagerDelegate {
         tabBar.updateLayout()
     }
     
+    func tabManager(_ tabManager: TabManager, didFinishLoading session: GeckoSession) {
+        contentView.didFinishLoading(session: session)
+    }
+    
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?) {
         tabBar.setPendingExpansion(at: nil)
         

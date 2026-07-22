@@ -1,8 +1,8 @@
 diff --git a/widget/uikit/GeckoViewSwiftSupport.h b/widget/uikit/GeckoViewSwiftSupport.h
-index e68fca9134c0..7acd432aa05d 100644
+index e68fca9134c0..79b39c6a5ca3 100644
 --- a/widget/uikit/GeckoViewSwiftSupport.h
 +++ b/widget/uikit/GeckoViewSwiftSupport.h
-@@ -18,6 +18,7 @@
+@@ -18,14 +18,45 @@
  #endif
  
  #import <Foundation/Foundation.h>
@@ -10,7 +10,35 @@ index e68fca9134c0..7acd432aa05d 100644
  #import <UIKit/UIKit.h>
  #import <xpc/xpc.h>
  
-@@ -26,6 +27,9 @@
+ @protocol SwiftEventDispatcher;
+ 
++typedef NS_ENUM(NSInteger, GeckoInputHandling) {
++  GeckoInputHandlingUnhandled = 0,
++  GeckoInputHandlingBrowser = 1,
++  GeckoInputHandlingContent = 2,
++};
++
++typedef NS_OPTIONS(NSUInteger, GeckoScrollableEdges) {
++  GeckoScrollableEdgeTop = 1 << 0,
++  GeckoScrollableEdgeRight = 1 << 1,
++  GeckoScrollableEdgeBottom = 1 << 2,
++  GeckoScrollableEdgeLeft = 1 << 3,
++};
++
++typedef NS_OPTIONS(NSUInteger, GeckoOverscrollAxes) {
++  GeckoOverscrollAxisHorizontal = 1 << 0,
++  GeckoOverscrollAxisVertical = 1 << 1,
++};
++
++@protocol GeckoViewInputResultDelegate <NSObject>
++- (void)touchSequenceDidBegin:(uint64_t)sequenceId;
++- (void)touchSequence:(uint64_t)sequenceId
++    didResolveHandling:(GeckoInputHandling)handling
++       scrollableEdges:(GeckoScrollableEdges)scrollableEdges
++        overscrollAxes:(GeckoOverscrollAxes)overscrollAxes;
++- (void)touchSequenceDidEnd:(uint64_t)sequenceId;
++@end
++
  @protocol SwiftGeckoViewRuntime <NSObject>
  - (id<SwiftEventDispatcher>)runtimeDispatcher;
  - (id<SwiftEventDispatcher>)dispatcherByName:(const char*)name;
@@ -20,11 +48,12 @@ index e68fca9134c0..7acd432aa05d 100644
  @end
  
  @protocol GeckoProcessExtension <NSObject>
-@@ -56,6 +60,7 @@
+@@ -56,6 +87,8 @@
  
  @protocol GeckoViewWindow <NSObject>
  - (UIView*)view;
 +- (AVSampleBufferDisplayLayer*)pictureInPictureDisplayLayer;
++- (void)setInputResultDelegate:(id<GeckoViewInputResultDelegate>)delegate;
  - (void)close;
  @end
  

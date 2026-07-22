@@ -160,8 +160,8 @@ final class TopToolbar: UIView {
                 addressBar.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             ]
             compactAddressBarConstraints = [
-                addressBar.leadingAnchor.constraint(equalTo: contentLayoutGuide.leadingAnchor, constant: UX.topToolbarHorizontalInset),
-                addressBar.trailingAnchor.constraint(equalTo: contentLayoutGuide.trailingAnchor, constant: -UX.topToolbarHorizontalInset),
+                addressBar.leadingAnchor.constraint(equalTo: contentLayoutGuide.leadingAnchor),
+                addressBar.trailingAnchor.constraint(equalTo: contentLayoutGuide.trailingAnchor),
                 addressBar.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             ]
         }

@@ -204,9 +204,16 @@ final class RecentlyClosedTabsSectionViewController: UIViewController {
             return
         }
         
-        closedTabs.remove(at: index)
+        let previousCount = closedTabs.count
+        closedTabs = tabStore.recentlyClosedTabs(limit: Prefs.HomepageSettings.recentlyClosedTabLimit)
+        let insertedIndexPath = closedTabs.count == previousCount
+        ? IndexPath(item: closedTabs.count - 1, section: 0)
+        : nil
         collectionView.performBatchUpdates {
             collectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
+            if let insertedIndexPath {
+                collectionView.insertItems(at: [insertedIndexPath])
+            }
             updateCollectionHeight()
             view.layoutIfNeeded()
         } completion: { [weak self] _ in

@@ -8,7 +8,7 @@
 import GeckoView
 import UIKit
 
-final class SiteSettingsViewController: UITableViewController {
+final class SiteSettingsViewController: UITableViewController, UINavigationControllerDelegate {
     private let permissionCellReuseIdentifier = "Cell"
     private let trackingProtectionSwitch = UISwitch()
     
@@ -148,6 +148,7 @@ final class SiteSettingsViewController: UITableViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.delegate = self
         trackingProtection.addObserver(self)
     }
     
@@ -240,6 +241,17 @@ final class SiteSettingsViewController: UITableViewController {
         }
         
         tableView.deselectRow(at: indexPath, animated: true)
+    }
+    
+    func navigationController(
+        _ navigationController: UINavigationController,
+        willShow viewController: UIViewController,
+        animated: Bool
+    ) {
+        viewController.navigationItem.rightBarButtonItem = SiteSettingsUtils.makeDismissButton(
+            target: self,
+            action: #selector(dismissModal)
+        )
     }
     
     // MARK: - Table Data

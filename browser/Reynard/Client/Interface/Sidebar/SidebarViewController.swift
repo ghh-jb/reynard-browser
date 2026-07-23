@@ -28,12 +28,11 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
     }
     
     var showChromeSidebarButton: Bool {
-        updateSplitBehavior()
         guard sidebarVisible else {
             return true
         }
         if #available(iOS 14.0, *) {
-            return preferredSplitBehavior == .overlay
+            return usesOverlaySplitBehavior
         }
         return false
     }
@@ -206,15 +205,18 @@ final class SidebarViewController: UISplitViewController, UISplitViewControllerD
     
     // MARK: - Layout
     
+    private var usesOverlaySplitBehavior: Bool {
+        let browserLayout = contentController.sidebarContentLayout
+        return browserLayout.orientation == .portrait
+        || (contentController.isSidebarOverlayLayout && browserLayout.chromeMode != .compact)
+    }
+    
     private func updateSplitBehavior() {
         guard #available(iOS 14.0, *) else {
             return
         }
         
-        let browserLayout = contentController.sidebarContentLayout
-        let shouldOverlay = browserLayout.orientation == .portrait
-        || (contentController.isSidebarOverlayLayout && browserLayout.chromeMode != .compact)
-        let splitBehavior: UISplitViewController.SplitBehavior = shouldOverlay ? .overlay : .tile
+        let splitBehavior: UISplitViewController.SplitBehavior = usesOverlaySplitBehavior ? .overlay : .tile
         
         if preferredSplitBehavior != splitBehavior {
             preferredSplitBehavior = splitBehavior

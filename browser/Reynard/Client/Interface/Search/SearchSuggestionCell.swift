@@ -21,7 +21,6 @@ final class SearchSuggestionCell: UITableViewCell {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFit
-        imageView.image = UIImage(named: "reynard.magnifyingglass")
         imageView.tintColor = .label
         return imageView
     }()
@@ -72,6 +71,10 @@ final class SearchSuggestionCell: UITableViewCell {
     
     func apply(text: String, query: String) {
         titleLabel.attributedText = attributedTitle(for: text, query: query)
+    }
+    
+    func setIcon(_ image: UIImage?) {
+        iconImageView.image = image
     }
     
     func setFilledBackgroundVisible(_ visible: Bool) {

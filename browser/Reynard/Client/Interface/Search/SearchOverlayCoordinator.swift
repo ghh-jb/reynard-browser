@@ -329,7 +329,11 @@ extension SearchOverlayCoordinator: AddressBarSearchDelegate, SearchViewControll
         delegate?.endSearchEditing()
     }
     
-    func searchViewController(_ controller: SearchViewController, didUpdateAutocompleteFor query: String, result: UserDataSearchResult?) {
-        delegate?.searchChrome.applyAddressBarAutocomplete(query: query, result: result)
+    func searchViewController(_ controller: SearchViewController, didUpdateAutocompleteFor query: String, result: UserDataSearchResult?, topDomain: String?) {
+        delegate?.searchChrome.applyAddressBarAutocomplete(
+            query: query,
+            result: result,
+            topDomain: topDomain
+        )
     }
 }

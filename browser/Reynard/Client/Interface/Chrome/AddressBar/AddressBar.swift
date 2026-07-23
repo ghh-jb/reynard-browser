@@ -384,7 +384,7 @@ final class AddressBar: UIView {
         autocompleteDeletedText = isDelete && previousText.count > currentText.count ? currentText : nil
     }
     
-    func applySearchAutocomplete(query: String, result: UserDataSearchResult?) {
+    func applySearchAutocomplete(query: String, result: UserDataSearchResult?, topDomain: String?) {
         guard isEditingText else {
             clearAutocomplete()
             return
@@ -393,9 +393,17 @@ final class AddressBar: UIView {
         let currentText = editingText ?? ""
         guard !query.isEmpty,
               currentText == query,
-              autocompleteDeletedText != query,
-              let result,
-              let autocomplete = searchAutocompletePresentation(for: result, query: query) else {
+              autocompleteDeletedText != query else {
+            clearAutocomplete()
+            return
+        }
+        
+        let autocomplete = result.flatMap {
+            searchAutocompletePresentation(for: $0, query: query)
+        } ?? topDomain.flatMap {
+            topDomainAutocompletePresentation(for: $0, query: query)
+        }
+        guard let autocomplete else {
             clearAutocomplete()
             return
         }
@@ -920,6 +928,28 @@ final class AddressBar: UIView {
         }
         attributed.append(NSAttributedString(string: " — \(title)", attributes: suffixAttributes))
         return (attributed, completedURL, result.url.absoluteString)
+    }
+    
+    private func topDomainAutocompletePresentation(
+        for domain: String,
+        query: String
+    ) -> (displayText: NSAttributedString, committedText: String, submissionText: String)? {
+        guard domain.range(of: query, options: [.anchored, .caseInsensitive]) != nil else {
+            return nil
+        }
+        
+        let attributed = NSMutableAttributedString(
+            string: query,
+            attributes: [.foregroundColor: UIColor.label]
+        )
+        attributed.append(NSAttributedString(
+            string: String(domain.dropFirst(query.count)),
+            attributes: [
+                .foregroundColor: UIColor.label,
+                .backgroundColor: UIColor.systemGray4
+            ]
+        ))
+        return (attributed, domain, "https://\(domain)")
     }
     
     private func clearFocusPreview() {

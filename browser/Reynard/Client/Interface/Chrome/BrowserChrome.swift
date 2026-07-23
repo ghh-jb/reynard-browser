@@ -372,8 +372,8 @@ final class BrowserChrome: UIView {
         addressBar.recordEditForAutocomplete(previousText: previousText, currentText: currentText, isDelete: isDelete)
     }
     
-    func applyAddressBarAutocomplete(query: String, result: UserDataSearchResult?) {
-        addressBar.applySearchAutocomplete(query: query, result: result)
+    func applyAddressBarAutocomplete(query: String, result: UserDataSearchResult?, topDomain: String?) {
+        addressBar.applySearchAutocomplete(query: query, result: result, topDomain: topDomain)
     }
     
     func resetAddressBarEditing() {
@@ -384,11 +384,11 @@ final class BrowserChrome: UIView {
     }
     
     func resetHorizontalTransition() { addressBar.resetHorizontalTransition() }
-
+    
     func performAfterTransition(_ completion: @escaping () -> Void) -> Bool {
         addressBar.performAfterTransition(completion)
     }
-
+    
     func resignAddressBarFirstResponder() { _ = addressBar.resignFirstResponder() }
     
     func performAfterAddressBarMenuDismissal(_ action: @escaping () -> Void) {

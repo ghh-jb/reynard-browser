@@ -72,13 +72,8 @@ final class SearchViewModel {
         let activeRequestID = requestID
         completionTask?.cancel()
         updateSearchCompletionProviderIfNeeded()
-        results = SearchResults(
-            query: query,
-            bestMatch: nil,
-            topDomainCompletions: topDomainCompletion.completions(for: query, limit: 4),
-            completions: [],
-            userDataResults: []
-        )
+        results.query = query
+        results.topDomainCompletions = topDomainCompletion.completions(for: query, limit: 4)
         resultsDidChange?(results)
         
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in

@@ -1779,6 +1779,16 @@
         }
       }
     },
+    "Automatically attempts to connect to websites using HTTPS encryption protocol for increased security." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically attempts to connect to websites using HTTPS encryption protocol for increased security."
+          }
+        }
+      }
+    },
     "Autoplay" : {
       "localizations" : {
         "en" : {
@@ -3650,6 +3660,16 @@
         }
       }
     },
+    "Enable in All Tabs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable in All Tabs"
+          }
+        }
+      }
+    },
     "Enable JIT" : {
       "localizations" : {
         "en" : {
@@ -3690,6 +3710,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "启用 JIT 以提高性能并确保网站正常工作。"
+          }
+        }
+      }
+    },
+    "Enable Only in Private Tabs" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Only in Private Tabs"
           }
         }
       }
@@ -4069,6 +4099,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "主页分区"
+          }
+        }
+      }
+    },
+    "HTTPS-Only Mode" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HTTPS-Only Mode"
           }
         }
       }

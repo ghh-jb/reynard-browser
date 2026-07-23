@@ -116,6 +116,10 @@ final class BrowserPreferences {
             key("ClearBrowsingData", "clearsSitePermissions"): true,
             key("ClearBrowsingData", "clearsOpenedTabs"): true,
             
+            // HTTPS-Only Mode
+            key("HTTPSOnlyMode", "enabled"): false,
+            key("HTTPSOnlyMode", "scope"): HTTPSOnlyModeScope.allTabs.rawValue,
+            
             // Tracking Protection
             key("TrackingProtection", "enhancedTrackingProtectionLevel"): TrackingProtectionLevel.standard.rawValue,
             key("TrackingProtection", "strictBaselineAllowListEnabled"): true,
@@ -332,6 +336,28 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsOpenedTabs")
+            }
+        }
+    }
+    
+    // MARK: - HTTPS-Only Mode
+    struct HTTPSOnlyModePreferences {
+        static var enabled: Bool {
+            get {
+                return prefs.bool(forSetting: "HTTPSOnlyMode", key: "enabled")
+            }
+            set {
+                prefs.set(newValue, forSetting: "HTTPSOnlyMode", key: "enabled")
+            }
+        }
+        
+        static var scope: HTTPSOnlyModeScope {
+            get {
+                let rawValue = prefs.string(forSetting: "HTTPSOnlyMode", key: "scope") ?? HTTPSOnlyModeScope.allTabs.rawValue
+                return HTTPSOnlyModeScope(rawValue: rawValue) ?? .allTabs
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "HTTPSOnlyMode", key: "scope")
             }
         }
     }

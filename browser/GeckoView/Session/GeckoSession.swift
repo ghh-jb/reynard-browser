@@ -57,6 +57,12 @@ public class GeckoSession {
         }
     }
     
+    lazy var contentBlockingHandler = newContentBlockingHandler(self)
+    public var contentBlockingDelegate: ContentBlockingDelegate? {
+        get { contentBlockingHandler.delegate(as: ContentBlockingDelegate.self) }
+        set { contentBlockingHandler.setDelegate(newValue) }
+    }
+    
     lazy var navigationHandler = newNavigationHandler(self)
     public var navigationDelegate: NavigationDelegate? {
         get { navigationHandler.delegate(as: NavigationDelegate.self) }
@@ -116,6 +122,7 @@ public class GeckoSession {
     
     lazy var sessionHandlers: [GeckoSessionHandlerCommon] = [
         contentHandler,
+        contentBlockingHandler,
         processHangHandler,
         navigationHandler,
         historyHandler,
@@ -207,6 +214,7 @@ public class GeckoSession {
     
     public func close() {
         contentDelegate = nil
+        contentBlockingDelegate = nil
         navigationDelegate = nil
         historyDelegate = nil
         permissionDelegate = nil

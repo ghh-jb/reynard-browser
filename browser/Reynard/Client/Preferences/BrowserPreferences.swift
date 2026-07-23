@@ -115,6 +115,20 @@ final class BrowserPreferences {
             key("ClearBrowsingData", "clearsDownloadedFiles"): false,
             key("ClearBrowsingData", "clearsSitePermissions"): true,
             key("ClearBrowsingData", "clearsOpenedTabs"): true,
+            
+            // Tracking Protection
+            key("TrackingProtection", "enhancedTrackingProtectionLevel"): TrackingProtectionLevel.standard.rawValue,
+            key("TrackingProtection", "strictBaselineAllowListEnabled"): true,
+            key("TrackingProtection", "strictConvenienceAllowListEnabled"): false,
+            key("TrackingProtection", "customBaselineAllowListEnabled"): true,
+            key("TrackingProtection", "customConvenienceAllowListEnabled"): false,
+            key("TrackingProtection", "customCookiePolicy"): CustomCookiePolicy.isolateCrossSite.rawValue,
+            key("TrackingProtection", "customTrackingContentScope"): CustomBlockingScope.all.rawValue,
+            key("TrackingProtection", "customBlocksCryptominers"): true,
+            key("TrackingProtection", "customBlocksKnownFingerprinters"): true,
+            key("TrackingProtection", "customBlocksRedirectTrackers"): true,
+            key("TrackingProtection", "customSuspectedFingerprinterScope"): CustomBlockingScope.privateOnly.rawValue,
+            key("TrackingProtection", "globalPrivacyControlEnabled"): false,
         ])
     }
     
@@ -319,6 +333,90 @@ final class BrowserPreferences {
             set {
                 prefs.set(newValue, forSetting: "ClearBrowsingData", key: "clearsOpenedTabs")
             }
+        }
+    }
+    
+    // MARK: - Tracking Protection
+    struct TrackingProtectionPreferences {
+        static var level: TrackingProtectionLevel {
+            get {
+                let rawValue = prefs.string(forSetting: "TrackingProtection", key: "enhancedTrackingProtectionLevel") ?? TrackingProtectionLevel.standard.rawValue
+                return TrackingProtectionLevel(rawValue: rawValue) ?? .standard
+            }
+            set {
+                prefs.set(newValue.rawValue, forSetting: "TrackingProtection", key: "enhancedTrackingProtectionLevel")
+            }
+        }
+        
+        static var strictBaselineAllowListEnabled: Bool {
+            get {
+                return prefs.bool(forSetting: "TrackingProtection", key: "strictBaselineAllowListEnabled")
+            }
+            set {
+                prefs.set(newValue, forSetting: "TrackingProtection", key: "strictBaselineAllowListEnabled")
+            }
+        }
+        
+        static var strictConvenienceAllowListEnabled: Bool {
+            get {
+                return prefs.bool(forSetting: "TrackingProtection", key: "strictConvenienceAllowListEnabled")
+            }
+            set {
+                prefs.set(newValue, forSetting: "TrackingProtection", key: "strictConvenienceAllowListEnabled")
+            }
+        }
+        
+        static var customBaselineAllowListEnabled: Bool {
+            get { return prefs.bool(forSetting: "TrackingProtection", key: "customBaselineAllowListEnabled") }
+            set { prefs.set(newValue, forSetting: "TrackingProtection", key: "customBaselineAllowListEnabled") }
+        }
+        
+        static var customConvenienceAllowListEnabled: Bool {
+            get { return prefs.bool(forSetting: "TrackingProtection", key: "customConvenienceAllowListEnabled") }
+            set { prefs.set(newValue, forSetting: "TrackingProtection", key: "customConvenienceAllowListEnabled") }
+        }
+        
+        static var customCookiePolicy: CustomCookiePolicy {
+            get {
+                return CustomCookiePolicy(rawValue: prefs.integer(forSetting: "TrackingProtection", key: "customCookiePolicy")) ?? .isolateCrossSite
+            }
+            set { prefs.set(newValue.rawValue, forSetting: "TrackingProtection", key: "customCookiePolicy") }
+        }
+        
+        static var customTrackingContentScope: CustomBlockingScope {
+            get {
+                let rawValue = prefs.string(forSetting: "TrackingProtection", key: "customTrackingContentScope") ?? CustomBlockingScope.all.rawValue
+                return CustomBlockingScope(rawValue: rawValue) ?? .all
+            }
+            set { prefs.set(newValue.rawValue, forSetting: "TrackingProtection", key: "customTrackingContentScope") }
+        }
+        
+        static var customBlocksCryptominers: Bool {
+            get { return prefs.bool(forSetting: "TrackingProtection", key: "customBlocksCryptominers") }
+            set { prefs.set(newValue, forSetting: "TrackingProtection", key: "customBlocksCryptominers") }
+        }
+        
+        static var customBlocksKnownFingerprinters: Bool {
+            get { return prefs.bool(forSetting: "TrackingProtection", key: "customBlocksKnownFingerprinters") }
+            set { prefs.set(newValue, forSetting: "TrackingProtection", key: "customBlocksKnownFingerprinters") }
+        }
+        
+        static var customBlocksRedirectTrackers: Bool {
+            get { return prefs.bool(forSetting: "TrackingProtection", key: "customBlocksRedirectTrackers") }
+            set { prefs.set(newValue, forSetting: "TrackingProtection", key: "customBlocksRedirectTrackers") }
+        }
+        
+        static var customSuspectedFingerprinterScope: CustomBlockingScope {
+            get {
+                let rawValue = prefs.string(forSetting: "TrackingProtection", key: "customSuspectedFingerprinterScope") ?? CustomBlockingScope.privateOnly.rawValue
+                return CustomBlockingScope(rawValue: rawValue) ?? .privateOnly
+            }
+            set { prefs.set(newValue.rawValue, forSetting: "TrackingProtection", key: "customSuspectedFingerprinterScope") }
+        }
+        
+        static var globalPrivacyControlEnabled: Bool {
+            get { return prefs.bool(forSetting: "TrackingProtection", key: "globalPrivacyControlEnabled") }
+            set { prefs.set(newValue, forSetting: "TrackingProtection", key: "globalPrivacyControlEnabled") }
         }
     }
     

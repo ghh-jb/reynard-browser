@@ -49,6 +49,13 @@ public class GeckoRuntime {
         )
     }
     
+    public static func setDefaultPrefs(_ preferences: [String: Any]) {
+        GeckoEventDispatcherWrapper.runtimeInstance.dispatch(
+            type: "GeckoView:SetDefaultPrefs",
+            message: preferences
+        )
+    }
+    
     public static func main(
         argc: Int32,
         argv: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>

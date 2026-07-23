@@ -1187,6 +1187,7 @@ extension TabManagerImplementation: ProgressDelegate {
             return
         }
         
+        sessionManager.trackingProtection.clearBlockedTrackers(for: session)
         if sessionManager.needsSettingsUpdate(
             to: session,
             currentURL: tab.url,

@@ -10,9 +10,11 @@ import UIKit
 
 final class SiteSettingsViewController: UITableViewController {
     private let permissionCellReuseIdentifier = "Cell"
+    private let trackingProtectionSwitch = UISwitch()
     
     private enum Section {
         case availability
+        case trackingProtection
         case media
         case permissions
         case websiteActions
@@ -87,8 +89,10 @@ final class SiteSettingsViewController: UITableViewController {
     private let host: String
     private let origin: String
     private let session: GeckoSession
+    private let trackingProtection: TrackingProtectionManager
     private var loadState: LoadingState = .loading
     private var loadedGeckoPermissions: [ContentPermission] = []
+    private var hasTrackingProtectionException = false
     
     private var visibleSections: [Section] {
         var sections: [Section] = []
@@ -97,13 +101,18 @@ final class SiteSettingsViewController: UITableViewController {
             sections.append(.availability)
         }
         
+        sections.append(.trackingProtection)
         sections.append(.media)
         sections.append(.permissions)
         sections.append(.websiteActions)
         return sections
     }
     
-    init?(url: URL, session: GeckoSession) {
+    init?(
+        url: URL,
+        session: GeckoSession,
+        trackingProtection: TrackingProtectionManager
+    ) {
         guard let host = URLUtils.normalizedHost(url.host),
               let origin = URLUtils.httpOriginString(for: url) else {
             return nil
@@ -112,6 +121,7 @@ final class SiteSettingsViewController: UITableViewController {
         self.host = host
         self.origin = origin
         self.session = session
+        self.trackingProtection = trackingProtection
         super.init(style: .insetGrouped)
         title = String(format: NSLocalizedString("Settings for %@", comment: "Website host"), host)
     }
@@ -123,9 +133,27 @@ final class SiteSettingsViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         configureView()
+        trackingProtectionSwitch.addTarget(self, action: #selector(trackingProtectionSwitchDidChange), for: .valueChanged)
         Task { [weak self] in
             await self?.loadPermissionsFromGecko()
         }
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            await self.trackingProtection.refreshBlockedTrackers(for: self.session)
+            self.tableView.reloadData()
+        }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        trackingProtection.addObserver(self)
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        trackingProtection.removeObserver(self)
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -140,6 +168,9 @@ final class SiteSettingsViewController: UITableViewController {
         switch visibleSections[section] {
         case .availability:
             return 2
+        case .trackingProtection:
+            return Prefs.TrackingProtectionPreferences.level == .off
+            || hasTrackingProtectionException ? 1 : 2
         case .media:
             return loadState == .loaded ? mediaRows.count : 0
         case .permissions:
@@ -157,6 +188,8 @@ final class SiteSettingsViewController: UITableViewController {
         switch visibleSections[section] {
         case .availability:
             return nil
+        case .trackingProtection:
+            return NSLocalizedString("Tracking Protection", comment: "")
         case .media:
             return NSLocalizedString("Media", comment: "")
         case .permissions:
@@ -177,6 +210,8 @@ final class SiteSettingsViewController: UITableViewController {
         switch visibleSections[indexPath.section] {
         case .availability:
             return availabilityCell(at: indexPath)
+        case .trackingProtection:
+            return trackingProtectionCell(at: indexPath)
         case .media:
             return permissionCell(at: indexPath)
         case .permissions:
@@ -194,6 +229,8 @@ final class SiteSettingsViewController: UITableViewController {
         switch visibleSections[indexPath.section] {
         case .availability:
             handleAvailabilitySelection(at: indexPath)
+        case .trackingProtection:
+            showBlockedTrackers(at: indexPath)
         case .media:
             handlePermissionSelection(at: indexPath)
         case .permissions:
@@ -278,6 +315,33 @@ final class SiteSettingsViewController: UITableViewController {
         return cell
     }
     
+    private func trackingProtectionCell(at indexPath: IndexPath) -> UITableViewCell {
+        let protectionEnabled = Prefs.TrackingProtectionPreferences.level != .off
+        if indexPath.row == 0 {
+            let cell = UITableViewCell(style: .subtitle, reuseIdentifier: nil)
+            cell.textLabel?.text = NSLocalizedString("Enhanced Tracking Protection", comment: "")
+            cell.detailTextLabel?.text = protectionEnabled && !hasTrackingProtectionException
+            ? NSLocalizedString("If something looks broken on this website, try turning it off.", comment: "")
+            : NSLocalizedString("Turning on tracking protection is recommended.", comment: "")
+            cell.detailTextLabel?.textColor = .secondaryLabel
+            cell.detailTextLabel?.numberOfLines = 0
+            trackingProtectionSwitch.isOn = protectionEnabled && !hasTrackingProtectionException
+            trackingProtectionSwitch.isEnabled = protectionEnabled
+            cell.accessoryView = trackingProtectionSwitch
+            cell.selectionStyle = .none
+            return cell
+        }
+        
+        let count = trackingProtection.blockedTrackers(for: session).count
+        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        cell.textLabel?.text = count == 0
+        ? NSLocalizedString("No Trackers Found", comment: "")
+        : String(format: NSLocalizedString("%d Trackers Blocked", comment: "Blocked tracker count"), count)
+        cell.accessoryType = count == 0 ? .none : .disclosureIndicator
+        cell.selectionStyle = count == 0 ? .none : .default
+        return cell
+    }
+    
     private func row(at indexPath: IndexPath) -> Row? {
         guard visibleSections.indices.contains(indexPath.section) else {
             return nil
@@ -288,7 +352,7 @@ final class SiteSettingsViewController: UITableViewController {
             return mediaRows[safe: indexPath.row]
         case .permissions:
             return permissionRows[safe: indexPath.row]
-        case .availability, .websiteActions:
+        case .availability, .trackingProtection, .websiteActions:
             return nil
         }
     }
@@ -336,6 +400,44 @@ final class SiteSettingsViewController: UITableViewController {
         }
     }
     
+    private func showBlockedTrackers(at indexPath: IndexPath) {
+        let blockedTrackers = trackingProtection.blockedTrackers(for: session)
+        guard indexPath.row == 1, !blockedTrackers.isEmpty else {
+            return
+        }
+        navigationController?.pushViewController(
+            BlockedTrackersViewController(trackers: blockedTrackers),
+            animated: true
+        )
+    }
+    
+    @objc private func trackingProtectionSwitchDidChange(_ sender: UISwitch) {
+        let permissionKey = session.isPrivateMode ? "trackingprotection-pb" : "trackingprotection"
+        PermissionDelegate.setPermission(
+            uri: origin,
+            permissionKey: permissionKey,
+            rawValue: sender.isOn ? ContentPermission.Value.deny.rawValue : ContentPermission.Value.allow.rawValue,
+            privateMode: session.isPrivateMode
+        )
+        hasTrackingProtectionException = !sender.isOn
+        tableView.reloadData()
+        
+        guard sender.isOn else {
+            trackingProtection.clearBlockedTrackers(for: session)
+            tableView.reloadData()
+            session.reload()
+            return
+        }
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            await self.trackingProtection.refreshBlockedTrackers(for: self.session)
+            self.tableView.reloadData()
+            self.session.reload()
+        }
+    }
+    
     @objc private func dismissModal() {
         dismiss(animated: true)
     }
@@ -349,6 +451,9 @@ final class SiteSettingsViewController: UITableViewController {
             privateMode: session.isPrivateMode
         )) ?? []
         loadedGeckoPermissions = permissions
+        hasTrackingProtectionException = permissions.contains {
+            $0.permission == .tracking && $0.value == .allow
+        }
         syncStore(with: permissions)
         loadState = .loaded
         tableView.reloadData()
@@ -494,12 +599,20 @@ final class SiteSettingsViewController: UITableViewController {
                 privateMode: session.isPrivateMode
             )
         }
+        PermissionDelegate.removePermission(
+            uri: origin,
+            permissionKey: session.isPrivateMode ? "trackingprotection-pb" : "trackingprotection",
+            privateMode: session.isPrivateMode
+        )
         
         for permission in SitePermission.allCases {
             SitePermissionStore.shared.removeAction(for: permission, host: host, session: session)
         }
         loadedGeckoPermissions = []
+        hasTrackingProtectionException = false
+        trackingProtection.clearBlockedTrackers(for: session)
         tableView.reloadData()
+        session.reload()
     }
     
     // MARK: - Helpers
@@ -553,5 +666,17 @@ final class SiteSettingsViewController: UITableViewController {
         case .blocked:
             return 2
         }
+    }
+}
+
+extension SiteSettingsViewController: TrackingProtectionManagerObserver {
+    func trackingProtectionManager(
+        _ manager: TrackingProtectionManager,
+        didUpdate session: GeckoSession
+    ) {
+        guard session === self.session else {
+            return
+        }
+        tableView.reloadData()
     }
 }

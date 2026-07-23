@@ -47,6 +47,18 @@ private enum PermissionEvents: String, CaseIterable {
 // MARK: - Permission Commands
 
 public enum PermissionDelegate {
+    public static func allPermissions() async throws -> [ContentPermission] {
+        let response = try await GeckoEventDispatcherWrapper.runtimeInstance.query(
+            type: "GeckoView:GetAllPermissions"
+        )
+        
+        guard let dictionary = response as? [String: Any],
+              let permissions = dictionary["permissions"] as? [[String: Any]] else {
+            return []
+        }
+        return permissions.map { ContentPermission.fromDictionary($0.mapValues { Optional($0) }) }
+    }
+    
     public static func permissions(for uri: String, privateMode: Bool = false, contextId: String? = nil) async throws -> [ContentPermission] {
         let response = try await GeckoEventDispatcherWrapper.runtimeInstance.query(
             type: "GeckoView:GetPermissionsByURI",

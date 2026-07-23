@@ -142,20 +142,20 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         captureTabThumbnailIfNeeded()
         homepageOverlayCoordinator.prepareHomepageForNewTab(mode: mode)
         let index = tabManager.createTab(selecting: false)
-
+        
         if Prefs.NewTabSettings.newTabDisplayOption == .customURL {
             applyNewTabDisplayOption(toTabAt: index)
             return index
         }
-
+        
         if let tab = tabManager.activeTabs[safe: index],
            let previewImage = homepageOverlayCoordinator.previewImage(for: tab, size: contentView.bounds.size) {
             tabManager.updateThumbnail(previewImage, forTabAt: index, mode: mode)
         }
-
+        
         return index
     }
-
+    
     func setPendingTabExpansion(at index: Int?) {
         tabBar.setPendingExpansion(at: index)
     }
@@ -168,7 +168,7 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         browserChrome.dismissActionBar(animated: false)
         captureTabThumbnailIfNeeded()
     }
-
+    
     private func captureTabThumbnailIfNeeded() {
         if let tab = tabManager.activeTabs[safe: tabManager.selectedTabIndex],
            homepageOverlayCoordinator.needsHomepageThumbnail(for: tab) {
@@ -177,7 +177,7 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
             }
             return
         }
-
+        
         captureThumbnail(forTabAt: tabManager.selectedTabIndex, mode: tabManager.selectedTabMode)
     }
     
@@ -185,10 +185,10 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         guard homepageOverlayCoordinator.needsHomepageThumbnail(for: tab) else {
             return nil
         }
-
+        
         return tab.thumbnail
     }
-
+    
     // MARK: - Page Zoom
     
     func setSelectedPageZoomToPreviousLevel() {
@@ -215,7 +215,11 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
         guard let selectedTab = tabManager.selectedTab,
               let urlString = selectedTab.url?.trimmingCharacters(in: .whitespacesAndNewlines),
               let url = URL(string: urlString),
-              let settingsController = SiteSettingsViewController(url: url, session: selectedTab.session) else {
+              let settingsController = SiteSettingsViewController(
+                url: url,
+                session: selectedTab.session,
+                trackingProtection: sessionManager.trackingProtection
+              ) else {
             return
         }
         

@@ -119,6 +119,7 @@ final class BrowserViewController: UIViewController {
             return
         }
         
+        applyGeckoPreferences()
         configureBrowserInterface()
         observeNotifications()
         contextMenuCoordinator.configure()
@@ -212,6 +213,13 @@ final class BrowserViewController: UIViewController {
                 }
             }
         }
+    }
+    
+    // MARK: - Preferences
+    
+    private func applyGeckoPreferences() {
+        TrackingProtectionPolicyController.applyEnhancedTrackingProtection()
+        TrackingProtectionPolicyController.applyGlobalPrivacyControl()
     }
     
     // MARK: - Browser Layout

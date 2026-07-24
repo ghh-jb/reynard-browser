@@ -11,10 +11,12 @@ import UIKit
 final class SiteSettingsViewController: UITableViewController, UINavigationControllerDelegate {
     private let permissionCellReuseIdentifier = "Cell"
     private let trackingProtectionSwitch = UISwitch()
+    private let requestDesktopWebsiteSwitch = UISwitch()
     
     private enum Section {
         case availability
         case trackingProtection
+        case content
         case media
         case permissions
         case websiteActions
@@ -87,6 +89,7 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
         .location,
     ]
     private let host: String
+    private let url: URL
     private let origin: String
     private let session: GeckoSession
     private let trackingProtection: TrackingProtectionManager
@@ -102,6 +105,7 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
         }
         
         sections.append(.trackingProtection)
+        sections.append(.content)
         sections.append(.media)
         sections.append(.permissions)
         sections.append(.websiteActions)
@@ -119,6 +123,7 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
         }
         
         self.host = host
+        self.url = url
         self.origin = origin
         self.session = session
         self.trackingProtection = trackingProtection
@@ -134,6 +139,7 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
         super.viewDidLoad()
         configureView()
         trackingProtectionSwitch.addTarget(self, action: #selector(trackingProtectionSwitchDidChange), for: .valueChanged)
+        requestDesktopWebsiteSwitch.addTarget(self, action: #selector(requestDesktopWebsiteSwitchDidChange), for: .valueChanged)
         Task { [weak self] in
             await self?.loadPermissionsFromGecko()
         }
@@ -172,6 +178,8 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
         case .trackingProtection:
             return Prefs.TrackingProtectionPreferences.level == .off
             || hasTrackingProtectionException ? 1 : 2
+        case .content:
+            return 1
         case .media:
             return loadState == .loaded ? mediaRows.count : 0
         case .permissions:
@@ -191,6 +199,8 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
             return nil
         case .trackingProtection:
             return NSLocalizedString("Tracking Protection", comment: "")
+        case .content:
+            return NSLocalizedString("Content", comment: "Website settings section title")
         case .media:
             return NSLocalizedString("Media", comment: "")
         case .permissions:
@@ -213,6 +223,8 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
             return availabilityCell(at: indexPath)
         case .trackingProtection:
             return trackingProtectionCell(at: indexPath)
+        case .content:
+            return contentCell()
         case .media:
             return permissionCell(at: indexPath)
         case .permissions:
@@ -232,6 +244,8 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
             handleAvailabilitySelection(at: indexPath)
         case .trackingProtection:
             showBlockedTrackers(at: indexPath)
+        case .content:
+            return
         case .media:
             handlePermissionSelection(at: indexPath)
         case .permissions:
@@ -354,6 +368,17 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
         return cell
     }
     
+    private func contentCell() -> UITableViewCell {
+        let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
+        cell.textLabel?.text = NSLocalizedString("Request Desktop Website", comment: "")
+        requestDesktopWebsiteSwitch.isOn = SiteSettingsStore.shared.settings(for: url)?.websiteMode.map {
+            $0 == .desktop
+        } ?? Prefs.BrowsingSettings.requestDesktopWebsite
+        cell.accessoryView = requestDesktopWebsiteSwitch
+        cell.selectionStyle = .none
+        return cell
+    }
+    
     private func row(at indexPath: IndexPath) -> Row? {
         guard visibleSections.indices.contains(indexPath.section) else {
             return nil
@@ -364,7 +389,7 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
             return mediaRows[safe: indexPath.row]
         case .permissions:
             return permissionRows[safe: indexPath.row]
-        case .availability, .trackingProtection, .websiteActions:
+        case .availability, .trackingProtection, .content, .websiteActions:
             return nil
         }
     }
@@ -448,6 +473,15 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
             self.tableView.reloadData()
             self.session.reload()
         }
+    }
+    
+    @objc private func requestDesktopWebsiteSwitchDidChange(_ sender: UISwitch) {
+        if sender.isOn == Prefs.BrowsingSettings.requestDesktopWebsite {
+            _ = SiteSettingsStore.shared.clearWebsiteMode(for: host)
+        } else {
+            _ = SiteSettingsStore.shared.setWebsiteMode(sender.isOn ? .desktop : .mobile, for: host)
+        }
+        session.reload()
     }
     
     @objc private func dismissModal() {
@@ -623,6 +657,8 @@ final class SiteSettingsViewController: UITableViewController, UINavigationContr
         loadedGeckoPermissions = []
         hasTrackingProtectionException = false
         trackingProtection.clearBlockedTrackers(for: session)
+        _ = SiteSettingsStore.shared.clearWebsiteMode(for: host)
+        requestDesktopWebsiteSwitch.isOn = Prefs.BrowsingSettings.requestDesktopWebsite
         tableView.reloadData()
         session.reload()
     }

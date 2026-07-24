@@ -20,7 +20,7 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
             case .media:
                 return SettingsSectionText(headerTitle: NSLocalizedString("Media", comment: ""))
             case .desktopWebsite:
-                return SettingsSectionText(headerTitle: NSLocalizedString("Request Desktop Website On", comment: ""))
+                return SettingsSectionText(headerTitle: NSLocalizedString("Content", comment: "Browsing settings section title"))
             }
         }
     }
@@ -40,7 +40,6 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
     
     private let showLinkPreviewsSwitch = UISwitch()
     private let showImagePreviewsSwitch = UISwitch()
-    private let requestDesktopWebsiteSwitch = UISwitch()
     
     init() {
         super.init(style: .insetGrouped)
@@ -132,9 +131,8 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
                 return UITableViewCell()
             }
             let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.selectionStyle = .none
-            cell.textLabel?.text = NSLocalizedString("All Websites", comment: "")
-            cell.accessoryView = requestDesktopWebsiteSwitch
+            cell.textLabel?.text = NSLocalizedString("Request Desktop Website", comment: "")
+            cell.accessoryType = .disclosureIndicator
             return cell
         }
     }
@@ -162,20 +160,18 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
                 return
             }
         case .desktopWebsite:
-            return
+            navigationController?.pushViewController(RequestDesktopWebsitePreferencesViewController(), animated: true)
         }
     }
     
     private func configureSwitch() {
         showLinkPreviewsSwitch.addTarget(self, action: #selector(showLinkPreviewsSwitchDidChange(_:)), for: .valueChanged)
         showImagePreviewsSwitch.addTarget(self, action: #selector(showImagePreviewsSwitchDidChange(_:)), for: .valueChanged)
-        requestDesktopWebsiteSwitch.addTarget(self, action: #selector(requestDesktopWebsiteSwitchDidChange(_:)), for: .valueChanged)
     }
     
     private func refreshDisplayedState() {
         showLinkPreviewsSwitch.isOn = Prefs.BrowsingSettings.showLinkPreviews
         showImagePreviewsSwitch.isOn = Prefs.BrowsingSettings.showImagePreviews
-        requestDesktopWebsiteSwitch.isOn = Prefs.BrowsingSettings.requestDesktopWebsite
     }
     
     @objc private func showLinkPreviewsSwitchDidChange(_ sender: UISwitch) {
@@ -184,9 +180,5 @@ final class BrowsingPreferencesViewController: SettingsTableViewController {
     
     @objc private func showImagePreviewsSwitchDidChange(_ sender: UISwitch) {
         Prefs.BrowsingSettings.showImagePreviews = sender.isOn
-    }
-    
-    @objc private func requestDesktopWebsiteSwitchDidChange(_ sender: UISwitch) {
-        Prefs.BrowsingSettings.requestDesktopWebsite = sender.isOn
     }
 }

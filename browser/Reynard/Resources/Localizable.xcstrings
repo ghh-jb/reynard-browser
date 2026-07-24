@@ -1239,28 +1239,6 @@
         }
       }
     },
-    "All Websites" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All Websites"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tous les sites Web"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "所有网站"
-          }
-        }
-      }
-    },
     "Allow" : {
       "comment" : "Permission option",
       "localizations" : {
@@ -2418,6 +2396,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "确认上传"
+          }
+        }
+      }
+    },
+    "Content" : {
+      "comment" : "Browsing settings section title\nWebsite settings section title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Content"
           }
         }
       }
@@ -5941,28 +5930,6 @@
         }
       }
     },
-    "Request Desktop Website On" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Request Desktop Website On"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version pour ordinateur du site activée"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请求桌面网站用于"
-          }
-        }
-      }
-    },
     "Request Mobile Website" : {
       "localizations" : {
         "en" : {
@@ -6070,6 +6037,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "还原"
+          }
+        }
+      }
+    },
+    "Reset Desktop Website Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Desktop Website Settings"
           }
         }
       }

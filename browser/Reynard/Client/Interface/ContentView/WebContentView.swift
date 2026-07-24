@@ -8,7 +8,7 @@
 import GeckoView
 import UIKit
 
-final class WebContentView: UIView {
+final class WebContentView: UIView, UIScrollViewDelegate {
     fileprivate enum UX {
         static let minimumPullDistance: CGFloat = 8
         static let refreshThreshold: CGFloat = 350
@@ -19,6 +19,7 @@ final class WebContentView: UIView {
         static let rubberBandCoefficient: CGFloat = 0.55
         static let returnAnimationDuration: TimeInterval = 0.45
         static let returnSpringDamping: CGFloat = 0.9
+        static let scrollToTopTriggerOffset: CGFloat = 1
     }
     
     enum VisibilityState: Equatable {
@@ -32,6 +33,7 @@ final class WebContentView: UIView {
     private var pullToRefreshRecognizer: PullToRefreshGestureRecognizer?
     
     private let webView = GeckoView()
+    private let scrollToTopTriggerView = UIScrollView() // For scrolling up when tap the iOS status bar
     private let refreshIndicatorContainer = UIView()
     private let refreshIndicator = UIActivityIndicatorView(style: .large)
     
@@ -50,12 +52,26 @@ final class WebContentView: UIView {
         webView.inputResultDelegate = nil
     }
     
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        scrollToTopTriggerView.contentSize = CGSize(
+            width: bounds.width,
+            height: bounds.height + UX.scrollToTopTriggerOffset
+        )
+        scrollToTopTriggerView.contentOffset.y = UX.scrollToTopTriggerOffset
+    }
+    
     private func configureHierarchy() {
         webView.translatesAutoresizingMaskIntoConstraints = false
+        scrollToTopTriggerView.translatesAutoresizingMaskIntoConstraints = false
         refreshIndicatorContainer.translatesAutoresizingMaskIntoConstraints = false
         refreshIndicator.translatesAutoresizingMaskIntoConstraints = false
+        scrollToTopTriggerView.delegate = self
+        scrollToTopTriggerView.showsVerticalScrollIndicator = false
+        scrollToTopTriggerView.contentInsetAdjustmentBehavior = .never
         refreshIndicator.hidesWhenStopped = false
         refreshIndicatorContainer.addSubview(refreshIndicator)
+        addSubview(scrollToTopTriggerView)
         addSubview(refreshIndicatorContainer)
         addSubview(webView)
         resetRefreshIndicator()
@@ -64,6 +80,11 @@ final class WebContentView: UIView {
     
     private func configureConstraints() {
         NSLayoutConstraint.activate([
+            scrollToTopTriggerView.topAnchor.constraint(equalTo: topAnchor),
+            scrollToTopTriggerView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollToTopTriggerView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollToTopTriggerView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            
             webView.topAnchor.constraint(equalTo: topAnchor),
             webView.leadingAnchor.constraint(equalTo: leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: trailingAnchor),
@@ -92,6 +113,12 @@ final class WebContentView: UIView {
     
     private func applyVisibility() {
         isHidden = visibility == .hidden
+        scrollToTopTriggerView.scrollsToTop = visibility == .visible
+    }
+    
+    func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        webView.session?.scrollTo(.zero)
+        return false
     }
     
     func setSession(_ session: GeckoSession?) {

@@ -169,6 +169,7 @@ final class TabBarCollection: UICollectionView, UIGestureRecognizerDelegate {
     private func configureCollection() {
         dataSource = self
         delegate = self
+        scrollsToTop = false
         register(TabBarCell.self, forCellWithReuseIdentifier: TabBarCell.reuseIdentifier)
     }
     

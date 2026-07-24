@@ -278,6 +278,18 @@ public class GeckoSession {
             ])
     }
     
+    public func scrollTo(_ position: CGPoint, animated: Bool = true) {
+        dispatcher.dispatch(
+            type: "GeckoView:ScrollTo",
+            message: [
+                "widthValue": position.x,
+                "widthType": 0,
+                "heightValue": position.y,
+                "heightType": 0,
+                "behavior": animated ? 0 : 1,
+            ])
+    }
+    
     // MARK: - State Updates
     
     public func setActive(_ active: Bool) {

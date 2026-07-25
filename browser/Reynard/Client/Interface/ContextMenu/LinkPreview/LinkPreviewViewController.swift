@@ -127,7 +127,12 @@ extension LinkPreviewViewController: ContentDelegate, NavigationDelegate, Histor
         pageURL = url
     }
     
-    func onVisited(session: GeckoSession, url: String, lastVisitedURL: String?, flags: Int) async -> Bool {
+    func onVisited(
+        session: GeckoSession,
+        url: String,
+        lastVisitedURL: String?,
+        flags: HistoryVisitFlags
+    ) async -> Bool {
         guard !session.isPrivateMode else {
             return false
         }

@@ -1153,14 +1153,25 @@ extension TabManagerImplementation: PictureInPictureCoordinatorDelegate {
 }
 
 extension TabManagerImplementation: HistoryDelegate {
-    func onVisited(session: GeckoSession, url: String, lastVisitedURL: String?, flags: Int) async -> Bool {
+    func onVisited(
+        session: GeckoSession,
+        url: String,
+        lastVisitedURL: String?,
+        flags: HistoryVisitFlags
+    ) async -> Bool {
         guard !session.isPrivateMode,
+              flags.contains(.topLevel),
+              !flags.contains(.unrecoverableError),
               let pageURL = remoteURL(from: url) else {
             return false
         }
         
         let title = tabLocation(for: session).map { tabs(for: $0.mode)[$0.index].title } ?? ""
-        return await historyStore.recordVisitImmediately(url: pageURL, title: title)
+        return await historyStore.recordVisitImmediately(
+            url: pageURL,
+            title: title,
+            isRedirectSource: flags.contains(.redirectSource) || flags.contains(.redirectSourcePermanent)
+        )
     }
     
     func getVisited(session: GeckoSession, urls: [String]) async -> [Bool]? {

@@ -7,15 +7,40 @@
 
 import Foundation
 
+public struct HistoryVisitFlags: OptionSet, Sendable {
+    public let rawValue: Int
+    
+    public init(rawValue: Int) {
+        self.rawValue = rawValue
+    }
+    
+    public static let topLevel = HistoryVisitFlags(rawValue: 1 << 0)
+    public static let redirectTemporary = HistoryVisitFlags(rawValue: 1 << 1)
+    public static let redirectPermanent = HistoryVisitFlags(rawValue: 1 << 2)
+    public static let redirectSource = HistoryVisitFlags(rawValue: 1 << 3)
+    public static let redirectSourcePermanent = HistoryVisitFlags(rawValue: 1 << 4)
+    public static let unrecoverableError = HistoryVisitFlags(rawValue: 1 << 5)
+}
+
 // MARK: - History Delegate
 
 public protocol HistoryDelegate {
-    func onVisited(session: GeckoSession, url: String, lastVisitedURL: String?, flags: Int) async -> Bool
+    func onVisited(
+        session: GeckoSession,
+        url: String,
+        lastVisitedURL: String?,
+        flags: HistoryVisitFlags
+    ) async -> Bool
     func getVisited(session: GeckoSession, urls: [String]) async -> [Bool]?
 }
 
 public extension HistoryDelegate {
-    func onVisited(session: GeckoSession, url: String, lastVisitedURL: String?, flags: Int) async -> Bool {
+    func onVisited(
+        session: GeckoSession,
+        url: String,
+        lastVisitedURL: String?,
+        flags: HistoryVisitFlags
+    ) async -> Bool {
         return false
     }
     
@@ -54,7 +79,7 @@ func newHistoryHandler(_ session: GeckoSession) -> GeckoSessionHandler {
                 session: session,
                 url: url,
                 lastVisitedURL: message?["lastVisitedURL"] as? String,
-                flags: PayloadValue.int(message?["flags"]) ?? 0
+                flags: HistoryVisitFlags(rawValue: PayloadValue.int(message?["flags"]) ?? 0)
             ) ?? false
             
         case .getVisited:

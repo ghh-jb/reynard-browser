@@ -949,7 +949,7 @@ final class AddressBar: UIView {
                 .backgroundColor: UIColor.systemGray4
             ]
         ))
-        return (attributed, domain, "https://\(domain)")
+        return (attributed, domain, domain)
     }
     
     private func clearFocusPreview() {

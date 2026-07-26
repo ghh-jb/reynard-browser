@@ -41,7 +41,7 @@ final class PageZoomPreferencesViewController: SettingsTableViewController {
             case .siteSettings:
                 return !pageZoomSettings.isEmpty
             case .reset:
-                return Prefs.AppearanceSettings.defaultPageZoomLevel != PageZoomLevels.defaultLevel || !pageZoomSettings.isEmpty
+                return Prefs.BrowsingSettings.defaultPageZoomLevel != PageZoomLevels.defaultLevel || !pageZoomSettings.isEmpty
             }
         }
     }
@@ -129,7 +129,7 @@ final class PageZoomPreferencesViewController: SettingsTableViewController {
             }
             handlePageZoomSelection(at: indexPath, mode: .site(host: setting.host, pageZoom: pageZoom))
         case .reset:
-            Prefs.AppearanceSettings.defaultPageZoomLevel = PageZoomLevels.defaultLevel
+            Prefs.BrowsingSettings.defaultPageZoomLevel = PageZoomLevels.defaultLevel
             _ = SiteSettingsStore.shared.clearAllPageZoomSettings()
             reloadPageZoomSettings()
             tableView.reloadData()
@@ -189,7 +189,7 @@ final class PageZoomPreferencesViewController: SettingsTableViewController {
     private func applyPageZoomLevel(_ level: Int, mode: PageZoomLevelPreferencesViewController.Mode) {
         switch mode {
         case .defaultZoom:
-            Prefs.AppearanceSettings.defaultPageZoomLevel = level
+            Prefs.BrowsingSettings.defaultPageZoomLevel = level
         case .site(let host, _):
             _ = SiteSettingsStore.shared.setPageZoom(level, forHost: host)
         }
@@ -255,7 +255,7 @@ final class PageZoomPreferencesViewController: SettingsTableViewController {
     private func selectedPageZoomLevel(for mode: PageZoomLevelPreferencesViewController.Mode) -> Int {
         switch mode {
         case .defaultZoom:
-            return Prefs.AppearanceSettings.defaultPageZoomLevel
+            return Prefs.BrowsingSettings.defaultPageZoomLevel
         case .site(_, let pageZoom):
             return pageZoom
         }

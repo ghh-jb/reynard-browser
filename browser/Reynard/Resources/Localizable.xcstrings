@@ -5600,6 +5600,17 @@
         }
       }
     },
+    "Previews" : {
+      "comment" : "Browsing settings section title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previews"
+          }
+        }
+      }
+    },
     "Previous 7 Days" : {
       "localizations" : {
         "en" : {

@@ -12,7 +12,6 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
         case appAppearance
         case addressBar
         case tabs
-        case pageZoom
         
         var text: SettingsSectionText {
             switch self {
@@ -22,8 +21,6 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
                 return SettingsSectionText(headerTitle: NSLocalizedString("Address Bar", comment: ""))
             case .tabs:
                 return SettingsSectionText(headerTitle: NSLocalizedString("Tabs", comment: ""))
-            case .pageZoom:
-                return SettingsSectionText(headerTitle: NSLocalizedString("Websites", comment: ""))
             }
         }
         
@@ -41,8 +38,6 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
                     return []
                 }
                 return [.landscapeTabBar]
-            case .pageZoom:
-                return [.pageZoom]
             }
         }
     }
@@ -52,7 +47,6 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
         case BrowserChromePosition
         case showFullWebsiteAddress
         case landscapeTabBar
-        case pageZoom
     }
     
     private let showFullWebsiteAddressSwitch = UISwitch()
@@ -137,11 +131,6 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
             cell.selectionStyle = .none
             cell.accessoryView = landscapeTabBarSwitch
             return cell
-        case .pageZoom:
-            let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
-            cell.textLabel?.text = NSLocalizedString("Page Zoom", comment: "")
-            cell.accessoryType = .disclosureIndicator
-            return cell
         }
     }
     
@@ -152,9 +141,6 @@ final class AppearancePreferencesViewController: SettingsTableViewController {
             return
         }
         
-        if displayedSections[indexPath.section].rows[indexPath.row] == .pageZoom {
-            navigationController?.pushViewController(PageZoomPreferencesViewController(), animated: true)
-        }
     }
     
     private func configureSwitch() {

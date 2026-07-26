@@ -61,6 +61,7 @@ final class BrowserPreferences {
             key("BrowsingSettings", "requestDesktopWebsite"): UIDevice.current.userInterfaceIdiom == .pad,
             key("BrowsingSettings", "showLinkPreviews"): true,
             key("BrowsingSettings", "showImagePreviews"): true,
+            key("BrowsingSettings", "defaultPageZoomLevel"): PageZoomLevels.defaultLevel,
             
             // New Tab
             key("NewTabSettings", "newTabDisplayOption"): NewTabDisplayOption.homepage.rawValue,
@@ -85,7 +86,6 @@ final class BrowserPreferences {
             key("AppearanceSettings", "addressBarPosition"): BrowserChromePosition.bottom.rawValue,
             key("AppearanceSettings", "showsFullWebsiteAddress"): false,
             key("AppearanceSettings", "showsLandscapeTabBar"): true,
-            key("AppearanceSettings", "defaultPageZoomLevel"): PageZoomLevels.defaultLevel,
             
             // Languages
             key("LanguageSettings", "websiteLanguages"): (try? JSONEncoder().encode(WebsiteLanguageCatalog.defaultLanguageCodes())) ?? Data(),
@@ -279,6 +279,19 @@ final class BrowserPreferences {
             }
             set {
                 prefs.set(newValue, forSetting: "BrowsingSettings", key: "showImagePreviews")
+            }
+        }
+        
+        static var defaultPageZoomLevel: Int {
+            get {
+                let level = prefs.integer(forSetting: "BrowsingSettings", key: "defaultPageZoomLevel")
+                return PageZoomLevels.all.contains(level) ? level : PageZoomLevels.defaultLevel
+            }
+            set {
+                guard PageZoomLevels.all.contains(newValue) else {
+                    return
+                }
+                prefs.set(newValue, forSetting: "BrowsingSettings", key: "defaultPageZoomLevel")
             }
         }
     }
@@ -784,18 +797,6 @@ final class BrowserPreferences {
             }
         }
         
-        static var defaultPageZoomLevel: Int {
-            get {
-                let level = prefs.integer(forSetting: "AppearanceSettings", key: "defaultPageZoomLevel")
-                return PageZoomLevels.all.contains(level) ? level : PageZoomLevels.defaultLevel
-            }
-            set {
-                guard PageZoomLevels.all.contains(newValue) else {
-                    return
-                }
-                prefs.set(newValue, forSetting: "AppearanceSettings", key: "defaultPageZoomLevel")
-            }
-        }
     }
     
     // MARK: - JIT

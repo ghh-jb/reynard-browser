@@ -72,7 +72,7 @@ final class PageZoomLevelPreferencesViewController: SettingsTableViewController 
         let level = PageZoomLevels.all[indexPath.row]
         switch mode {
         case .defaultZoom:
-            Prefs.AppearanceSettings.defaultPageZoomLevel = level
+            Prefs.BrowsingSettings.defaultPageZoomLevel = level
         case .site(let host, _):
             _ = SiteSettingsStore.shared.setPageZoom(level, forHost: host)
             mode = .site(host: host, pageZoom: level)
@@ -83,7 +83,7 @@ final class PageZoomLevelPreferencesViewController: SettingsTableViewController 
     private var selectedPageZoomLevel: Int {
         switch mode {
         case .defaultZoom:
-            return Prefs.AppearanceSettings.defaultPageZoomLevel
+            return Prefs.BrowsingSettings.defaultPageZoomLevel
         case .site(_, let pageZoom):
             return pageZoom
         }

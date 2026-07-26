@@ -29,6 +29,17 @@ final class JITController {
         getEntitlementValue("com.apple.private.security.no-sandbox")
     }
     
+    func startBackgroundAudioIfNeeded() {
+        guard !usePtraceJIT(),
+              Prefs.JITSettings.isJITEnabled,
+              hasTXMSupport(),
+              !hasHandledFailure else {
+            return
+        }
+        
+        BackgroundAudioManager.shared.start()
+    }
+    
     func start() {
         guard usePtraceJIT() || !isDDIMissing() else {
             hasHandledFailure = true
@@ -212,6 +223,7 @@ final class JITController {
                 return
             }
             self.hasHandledFailure = true
+            BackgroundAudioManager.shared.stop()
             self.presentEnablementFailureScreen(
                 error: error,
                 showsErrorDetails: error.code != Int(ETIMEDOUT)
@@ -315,6 +327,7 @@ final class JITController {
         }
         
         isJITLessModeActive = true
+        BackgroundAudioManager.shared.stop()
         attachQueue.async {
             self.cancelAllPreflightWatchdogs()
             self.attachedPIDs.removeAll()
@@ -369,6 +382,7 @@ final class JITController {
             }
             
             self.hasHandledFailure = true
+            BackgroundAudioManager.shared.stop()
             self.presentEnablementFailureScreen(error: NSError(domain: "Reynard.JIT", code: Int(ETIMEDOUT), userInfo: nil), showsErrorDetails: false)
         }
     }

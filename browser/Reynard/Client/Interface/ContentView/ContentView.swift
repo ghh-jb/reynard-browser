@@ -362,6 +362,10 @@ final class ContentView: UIView, UIGestureRecognizerDelegate {
         updatePullToRefreshAvailability()
     }
     
+    func showPageError(for url: String?) {
+        webContentView.showPageError(for: url)
+    }
+    
     func didFinishLoading(session: GeckoSession) {
         webContentView.didFinishLoading(session: session)
     }

@@ -29,6 +29,18 @@ extension BrowserViewController: TabManagerDelegate {
         tabBar.updateLayout()
     }
     
+    func tabManagerDidTerminateSelectedTab(_ tabManager: TabManager) {
+        guard let tab = tabManager.selectedTab else {
+            return
+        }
+        
+        contentView.showPageError(for: tab.url)
+        captureThumbnail(
+            forTabAt: tabManager.selectedTabIndex,
+            mode: tabManager.selectedTabMode
+        )
+    }
+    
     func tabManager(_ tabManager: TabManager, didFinishLoading session: GeckoSession) {
         contentView.didFinishLoading(session: session)
     }
@@ -66,6 +78,9 @@ extension BrowserViewController: TabManagerDelegate {
     }
     
     func tabManager(_ tabManager: TabManager, didReplaceSelectedSession previousSession: GeckoSession, with replacementSession: GeckoSession) {
+        if contentView.isDisplaying(session: previousSession) {
+            contentView.setSession(replacementSession)
+        }
         addonCoordinator.handleSelectedTabSessionReplacement(from: previousSession, to: replacementSession)
     }
     
@@ -221,6 +236,16 @@ extension BrowserViewController: TabManagerDelegate {
             localFilePath: localFilePath,
             succeeded: succeeded
         )
+    }
+    
+    func reloadTerminatedTab() {
+        guard tabManager.selectedTab?.session.isOpen() == false else {
+            return
+        }
+        
+        let index = tabManager.selectedTabIndex
+        let mode = tabManager.selectedTabMode
+        tabManager.selectTab(at: index, mode: mode)
     }
 }
 

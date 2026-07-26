@@ -46,6 +46,11 @@ extension BrowserViewController: AddressBarDelegate, AddressBarGestureDelegate {
     // MARK: - AddressBarDelegate
     
     func addressBarDidRequestReloadOrStop(_ addressBar: AddressBar) {
+        if tabManager.selectedTab?.session.isOpen() == false {
+            reloadTerminatedTab()
+            return
+        }
+        
         tabManager.reloadOrStopSelectedTab()
     }
     

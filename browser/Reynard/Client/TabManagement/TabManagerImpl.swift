@@ -71,6 +71,28 @@ final class TabManagerImplementation: NSObject, TabManager {
         self.store = store
         self.faviconStore = faviconStore
         self.historyStore = historyStore
+        super.init()
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    // MARK: - Application Lifecycle
+    
+    @objc private func applicationDidBecomeActive() {
+        guard selectedTab?.session.isOpen() == false else {
+            return
+        }
+        
+        selectTab(at: selectedTabIndex, mode: selectedTabMode)
     }
     
     // MARK: - Persistence And Lookup
@@ -402,7 +424,8 @@ final class TabManagerImplementation: NSObject, TabManager {
         }
         
         let tab = tabs(for: mode)[index]
-        guard case let .pending(url) = tab.state.restoreState else {
+        guard tab.session.isOpen(),
+              case let .pending(url) = tab.state.restoreState else {
             return
         }
         
@@ -441,6 +464,49 @@ final class TabManagerImplementation: NSObject, TabManager {
             self?.selectTab(at: index, mode: .regular)
         }
         return true
+    }
+    
+    // MARK: - Session Recovery
+    
+    private func recoverSelectedSessionIfNeeded() {
+        guard sessionManager.isForeground,
+              let tab = selectedTab,
+              !tab.session.isOpen() else {
+            return
+        }
+        
+        let previousSession = tab.session
+        let replacementSession = createSession(
+            tabID: tab.id,
+            url: tab.url,
+            windowId: nil,
+            isPrivate: tab.isPrivate
+        )
+        tab.session = replacementSession
+        tab.state.sessionNavigationAvailability = .unavailable
+        delegate?.tabManager(
+            self,
+            didReplaceSelectedSession: previousSession,
+            with: replacementSession
+        )
+    }
+    
+    private func handleSessionTermination(_ session: GeckoSession) {
+        guard let location = tabLocation(for: session) else {
+            return
+        }
+        
+        let didTerminateSelectedTab = selectedTab?.session === session
+        let tab = tabs(for: location.mode)[location.index]
+        sessionManager.close(session)
+        tab.state.restoreState = restoredURL(from: tab.url).map(TabRestoreState.pending) ?? .none
+        tab.state.loadingState = .idle
+        notifyUpdate(at: location.index, mode: location.mode, reason: .loading)
+        persistState()
+        
+        if sessionManager.isForeground && didTerminateSelectedTab {
+            delegate?.tabManagerDidTerminateSelectedTab(self)
+        }
     }
     
     // MARK: - Tab Lifecycle
@@ -588,6 +654,7 @@ final class TabManagerImplementation: NSObject, TabManager {
            let previousSession = previousTab?.session {
             sessionManager.deactivate(previousSession)
         }
+        recoverSelectedSessionIfNeeded()
         sessionManager.activate(selectedTab.session)
         systemMediaSession.select(session: selectedTab.session)
         pictureInPictureCoordinator?.selectedSessionDidChange()
@@ -723,6 +790,14 @@ final class TabManagerImplementation: NSObject, TabManager {
             return
         }
         
+        if selectedTab === tab {
+            recoverSelectedSessionIfNeeded()
+        }
+        guard tab.session.isOpen() else {
+            return
+        }
+        
+        tab.state.restoreState = .none
         tab.state.suppressInitialNavigation = false
         tab.state.displayState = .pending(navigationInput)
         if let location = tabLocation(for: tab.id) {
@@ -927,17 +1002,11 @@ extension TabManagerImplementation: ContentDelegate {
     }
     
     func onCrash(session: GeckoSession) {
-        guard let location = tabLocation(for: session) else {
-            return
-        }
-        removeTab(at: location.index, mode: location.mode)
+        handleSessionTermination(session)
     }
     
     func onKill(session: GeckoSession) {
-        guard let location = tabLocation(for: session) else {
-            return
-        }
-        removeTab(at: location.index, mode: location.mode)
+        handleSessionTermination(session)
     }
     
     func onFirstComposite(session: GeckoSession) {}

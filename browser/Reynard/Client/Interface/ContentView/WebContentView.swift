@@ -20,6 +20,9 @@ final class WebContentView: UIView, UIScrollViewDelegate {
         static let returnAnimationDuration: TimeInterval = 0.45
         static let returnSpringDamping: CGFloat = 0.9
         static let scrollToTopTriggerOffset: CGFloat = 1
+        static let errorTopInset: CGFloat = 96
+        static let errorHorizontalInset: CGFloat = 32
+        static let maximumErrorWidth: CGFloat = 480
     }
     
     enum VisibilityState: Equatable {
@@ -33,6 +36,7 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     private var pullToRefreshRecognizer: PullToRefreshGestureRecognizer?
     
     private let webView = GeckoView()
+    private let errorLabel = UILabel()
     private let scrollToTopTriggerView = UIScrollView() // For scrolling up when tap the iOS status bar
     private let refreshIndicatorContainer = UIView()
     private let refreshIndicator = UIActivityIndicatorView(style: .large)
@@ -63,17 +67,25 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     
     private func configureHierarchy() {
         webView.translatesAutoresizingMaskIntoConstraints = false
+        errorLabel.translatesAutoresizingMaskIntoConstraints = false
         scrollToTopTriggerView.translatesAutoresizingMaskIntoConstraints = false
         refreshIndicatorContainer.translatesAutoresizingMaskIntoConstraints = false
         refreshIndicator.translatesAutoresizingMaskIntoConstraints = false
         scrollToTopTriggerView.delegate = self
         scrollToTopTriggerView.showsVerticalScrollIndicator = false
         scrollToTopTriggerView.contentInsetAdjustmentBehavior = .never
+        errorLabel.font = .preferredFont(forTextStyle: .body)
+        errorLabel.adjustsFontForContentSizeCategory = true
+        errorLabel.numberOfLines = 0
+        errorLabel.textAlignment = .center
+        errorLabel.textColor = .secondaryLabel
+        errorLabel.isHidden = true
         refreshIndicator.hidesWhenStopped = false
         refreshIndicatorContainer.addSubview(refreshIndicator)
         addSubview(scrollToTopTriggerView)
         addSubview(refreshIndicatorContainer)
         addSubview(webView)
+        addSubview(errorLabel)
         resetRefreshIndicator()
         refreshIndicatorContainer.alpha = 0
     }
@@ -89,6 +101,18 @@ final class WebContentView: UIView, UIScrollViewDelegate {
             webView.leadingAnchor.constraint(equalTo: leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: trailingAnchor),
             webView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            
+            errorLabel.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: UX.errorTopInset),
+            errorLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            errorLabel.leadingAnchor.constraint(
+                greaterThanOrEqualTo: safeAreaLayoutGuide.leadingAnchor,
+                constant: UX.errorHorizontalInset
+            ),
+            errorLabel.trailingAnchor.constraint(
+                lessThanOrEqualTo: safeAreaLayoutGuide.trailingAnchor,
+                constant: -UX.errorHorizontalInset
+            ),
+            errorLabel.widthAnchor.constraint(lessThanOrEqualToConstant: UX.maximumErrorWidth),
             
             refreshIndicatorContainer.centerXAnchor.constraint(equalTo: centerXAnchor),
             refreshIndicatorContainer.topAnchor.constraint(
@@ -122,12 +146,30 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     }
     
     func setSession(_ session: GeckoSession?) {
+        hidePageError()
         guard webView.session !== session else {
             return
         }
         refreshingSession = nil
         pullToRefreshRecognizer?.cancelPull()
         webView.session = session
+    }
+    
+    func showPageError(for url: String?) {
+        let page = url?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let page, !page.isEmpty {
+            let format = NSLocalizedString("A problem occurred on “%@”.", comment: "Webpage URL")
+            errorLabel.text = String(format: format, page)
+        } else {
+            errorLabel.text = NSLocalizedString("A problem occurred on this webpage.", comment: "")
+        }
+        errorLabel.isHidden = false
+        setPullToRefreshEnabled(false)
+    }
+    
+    private func hidePageError() {
+        errorLabel.isHidden = true
+        errorLabel.text = nil
     }
     
     func setPullToRefreshEnabled(_ enabled: Bool) {

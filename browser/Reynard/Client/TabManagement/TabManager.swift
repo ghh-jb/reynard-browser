@@ -58,6 +58,7 @@ enum TabManagerUpdateReason {
 
 protocol TabManagerDelegate: AnyObject {
     func tabManagerDidChangeTabs(_ tabManager: TabManager)
+    func tabManagerDidTerminateSelectedTab(_ tabManager: TabManager)
     func tabManager(_ tabManager: TabManager, didSelectTabAt index: Int, previousIndex: Int?)
     func tabManager(_ tabManager: TabManager, didReplaceSelectedSession previousSession: GeckoSession, with replacementSession: GeckoSession)
     func tabManager(_ tabManager: TabManager, didUpdateTabAt index: Int, reason: TabManagerUpdateReason)
@@ -73,6 +74,7 @@ protocol TabManagerDelegate: AnyObject {
 }
 
 extension TabManagerDelegate {
+    func tabManagerDidTerminateSelectedTab(_ tabManager: TabManager) {}
     func tabManager(_ tabManager: TabManager, didFinishLoading session: GeckoSession) {}
     func tabManager(_ tabManager: TabManager, captureHistoryThumbnailForTabAt index: Int, mode: TabMode, url: String) {}
     func tabManager(_ tabManager: TabManager, didReplaceSelectedSession previousSession: GeckoSession, with replacementSession: GeckoSession) {}

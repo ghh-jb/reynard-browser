@@ -729,6 +729,27 @@
         }
       }
     },
+    "A problem occurred on “%@”." : {
+      "comment" : "Webpage URL",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A problem occurred on “%@”."
+          }
+        }
+      }
+    },
+    "A problem occurred on this webpage." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A problem occurred on this webpage."
+          }
+        }
+      }
+    },
     "About" : {
       "localizations" : {
         "en" : {

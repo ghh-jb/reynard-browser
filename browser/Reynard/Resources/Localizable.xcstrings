@@ -16,6 +16,12 @@
             "value" : "sur %@"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "из%@\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -37,6 +43,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ • Onglet Ouvert"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Открытая вкладка\n"
           }
         },
         "zh-Hans" : {
@@ -62,6 +74,12 @@
             "value" : "%1$@ · A visité %2$@"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · Посещение: %2$@\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -83,6 +101,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ et %2$@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ И \\%2$@\n"
           }
         },
         "zh-Hans" : {
@@ -108,6 +132,12 @@
             "value" : "%@ sont désactivés pour Reynard. Ouvrez les paramètres pour autoriser l'accès."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для Reynard отключены: %@. Разрешите доступ в Настройках.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -129,6 +159,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ a reçu une mise à jour. Confirmez les permissions supplémentaires avant que la nouvelle version soit installée. Fermez ce message pour conserver la version actuelle. "
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приложение %@ обновлено. Утвердите новые разрешения перед установкой. Отмена запроса сохранит текущую версию дополнения.\n"
           }
         },
         "zh-Hans" : {
@@ -154,6 +190,12 @@
             "value" : "%@ est désactivé pour Reynard. Ouvrez les paramètres pour donner accès."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для Reynard отключено: %@. Разрешите доступ в Настройках.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -175,6 +217,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ sur 5"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Из 5\n"
           }
         },
         "zh-Hans" : {
@@ -224,6 +272,36 @@
             }
           }
         },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              }
+            }
+          }
+        },
         "zh-Hans" : {
           "variations" : {
             "plural" : {
@@ -253,6 +331,12 @@
             "value" : "%@ demande une collection de données supplémentaires."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Запрашивает сбор дополнительных данных.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -274,6 +358,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ demande des permissions supplémentaires."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Запрашивает дополнительные разрешения.\n"
           }
         },
         "zh-Hans" : {
@@ -299,6 +389,12 @@
             "value" : "Suggestions pour %@"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предложения %@\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -322,6 +418,12 @@
             "value" : "%1$@, et %2$@"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ И \\%2$@\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -343,6 +445,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@/sec"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@/с\n"
           }
         },
         "zh-Hans" : {
@@ -387,6 +495,36 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%d extensions n'ont pas pu être mises à jour."
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
                 }
               }
             }
@@ -445,6 +583,36 @@
             }
           }
         },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              }
+            }
+          }
+        },
         "zh-Hans" : {
           "variations" : {
             "plural" : {
@@ -493,6 +661,36 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%d extensions mises à jour."
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
                 }
               }
             }
@@ -551,6 +749,36 @@
             }
           }
         },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              }
+            }
+          }
+        },
         "zh-Hans" : {
           "variations" : {
             "plural" : {
@@ -604,6 +832,36 @@
             }
           }
         },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              }
+            }
+          }
+        },
         "zh-Hans" : {
           "variations" : {
             "plural" : {
@@ -638,6 +896,66 @@
               }
             }
           }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已阻止 %d 个跟踪器"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -653,6 +971,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "▲ Le mode JITless est actuellement activé"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▲ Режим без JIT сейчас активен0 "
           }
         },
         "zh-Hans" : {
@@ -677,6 +1001,12 @@
             "value" : "0 onglets"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "вкладок\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -697,6 +1027,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le téléchargement d'une Image Disque de développeur est déjà en cours. "
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузка Developer Disk Image уже идет.\n\n"
           }
         },
         "zh-Hans" : {
@@ -721,6 +1057,12 @@
             "value" : "Une nouvelle version du navigateur Reynard est disponible. Ouvrez les paramètres effectuer la mise à jour."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступна новая версия Reynard Browser. Обновите её в Настройках.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -737,6 +1079,24 @@
             "state" : "translated",
             "value" : "A problem occurred on “%@”."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
         }
       }
     },
@@ -746,6 +1106,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A problem occurred on this webpage."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
           }
         }
       }
@@ -762,6 +1140,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "À propos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "О программе\n"
           }
         },
         "zh-Hans" : {
@@ -784,6 +1168,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Accès"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ\n"
           }
         },
         "zh-Hans" : {
@@ -809,6 +1199,12 @@
             "value" : "Accéder à vos données sur les sites Web sur %@"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступ к вашим данным на сайтах в %@"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -831,6 +1227,12 @@
             "value" : "Activer le mode JITless"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включить режим без JIT мод"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -851,6 +1253,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить    \n"
           }
         },
         "zh-Hans" : {
@@ -876,6 +1284,12 @@
             "value" : "Ajouter %@?"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить %@?\n\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -896,6 +1310,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter une extension "
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить дополнение\n"
           }
         },
         "zh-Hans" : {
@@ -920,6 +1340,12 @@
             "value" : "Ajouter aux marque-pages"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить закладку\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -940,6 +1366,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter une langue"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить язык\n"
           }
         },
         "zh-Hans" : {
@@ -964,6 +1396,12 @@
             "value" : "Ajouter une langue..."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Добавить язык…\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -984,6 +1422,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter aux favoris"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В Избранное\n"
           }
         },
         "zh-Hans" : {
@@ -1008,6 +1452,12 @@
             "value" : "Ajouter un site web"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить сайт\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1028,6 +1478,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajouter un site web…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить сайт…\n"
           }
         },
         "zh-Hans" : {
@@ -1053,6 +1509,12 @@
             "value" : "Ajouter des sites web avec des erreurs lors de la connexion, des vérifications d'humain ou d'autres problèmes pour utiliser l'user agent %@. "
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавляйте сайты с ошибками входа, капчей или другими сбоями, чтобы использовать юзер агент %@.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1075,6 +1537,12 @@
             "value" : "Extensions"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дополнения\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1095,6 +1563,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Options supplémentaires"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дополнительные параметры\n"
           }
         },
         "zh-Hans" : {
@@ -1120,6 +1594,12 @@
             "value" : "Adresse"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адрес\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1140,6 +1620,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Barre d'adresse"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Адресная строка\n"
           }
         },
         "zh-Hans" : {
@@ -1164,6 +1650,12 @@
             "value" : "Réservé aux administrateurs"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Только для админа\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1184,6 +1676,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avancé"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дополнительно\n"
           }
         },
         "zh-Hans" : {
@@ -1208,6 +1706,12 @@
             "value" : "Après la fermeture d'un onglet, Reynard ne conservera pas votre historique de navigation ou vos cookies. Cependant, vos téléchargements et les marques pages ajoutés seront conservés. "
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "После закрытия вкладки Reynard удалит историю поиска и файлы cookie. Скачанные файлы и новые закладки сохранятся.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1230,6 +1734,12 @@
             "value" : "Tous les téléchargements"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Все загрузки\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1250,6 +1760,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tout l'historique"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вся история\n"
           }
         },
         "zh-Hans" : {
@@ -1275,6 +1791,12 @@
             "value" : "Autoriser"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Разрешить\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1296,6 +1818,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Voulez-vous autoriser %@ à accéder aux applications et services sur les appareils connectés à votre réseau local ?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить %@ доступ к приложениям и службам на устройствах, подключённых к вашей локальной сети?\n"
           }
         },
         "zh-Hans" : {
@@ -1321,6 +1849,12 @@
             "value" : "Voulez-vous autoriser %@ à accéder à d'autres applications et services sur cet appareil ?"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Разрешить %@ доступ к другим приложениям и службам на этом устройстве?\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1342,6 +1876,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Voulez-vous autoriser %@ à jouer du contenu protégé par DRM ?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить %@ воспроизводить контент, защищенный DRM?\n"
           }
         },
         "zh-Hans" : {
@@ -1367,6 +1907,12 @@
             "value" : "Voulez-vous autoriser %@ à envoyer des notifications ?"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить %@ отправку уведомлений?\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1388,6 +1934,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Voulez-vous autoriser %@ à stocker des données dans la mémoire persistante ?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить %@ хранить данные в постоянном хранилище?\n"
           }
         },
         "zh-Hans" : {
@@ -1413,6 +1965,12 @@
             "value" : "Voulez-vous autoriser %1$@ à utiliser des cookies sur %2$@ ?"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Разрешить %1$@ использовать свои файлы cookie на \\%2$@?\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1434,6 +1992,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Voulez-vous autoriser %@ à utiliser votre caméra et votre microphone ?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить %@ использовать камеру и микрофон?\n"
           }
         },
         "zh-Hans" : {
@@ -1459,6 +2023,12 @@
             "value" : "Voulez-vous autoriser %@ à utiliser votre caméra ?"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить %@ использовать камеру?\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1480,6 +2050,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Voulez-vous autoriser %@ à utiliser votre position géographique ?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить %@ доступ к вашей геопозиции?\n"
           }
         },
         "zh-Hans" : {
@@ -1505,6 +2081,12 @@
             "value" : "Voulez-vous autoriser %@ à utiliser votre microphone ?"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cho phép %@ sử dụng micro của bạn?"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1526,6 +2108,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autoriser l'audio et la vidéo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Разрешить аудио и видео\n"
           }
         },
         "zh-Hans" : {
@@ -1550,6 +2138,12 @@
             "value" : "Permettre en mode Navigation Privée"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Разрешить в режиме приватного просмотра\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1572,6 +2166,12 @@
             "value" : "Permettre sur Tous les Sites Web"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить на всех сайтах\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1592,6 +2192,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autoriser cette extension à accéder à tous les sites web."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить этому дополнению доступ ко всем сайтам.\n"
           }
         },
         "zh-Hans" : {
@@ -1617,6 +2223,12 @@
             "value" : "%@ autorisé"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Разрешено для %@\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1637,6 +2249,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sites Web autorisés"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Разрешённые сайты\n"
           }
         },
         "zh-Hans" : {
@@ -1661,6 +2279,12 @@
             "value" : "Apparence"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Внешний вид\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1683,6 +2307,12 @@
             "value" : "Applications et Services"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Приложения и службы\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1703,6 +2333,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Êtes-vous sûr de vouloir téléverser tous les fichiers ? Ne faites ceci que si vous avez confiance en ce site web."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Вы уверены, что хотите отправить все файлы? Продолжайте, только если доверяете этому сайту.\n"
           }
         },
         "zh-Hans" : {
@@ -1728,6 +2364,12 @@
             "value" : "Demander"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Спрашивать\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1748,6 +2390,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Auteur"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Автор\n"
           }
         },
         "zh-Hans" : {
@@ -1772,6 +2420,12 @@
             "value" : "Lecture automatique"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Автовоспроизведение\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1792,6 +2446,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Page Blanche"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Пустая страница\n"
           }
         },
         "zh-Hans" : {
@@ -1817,6 +2477,12 @@
             "value" : "Bloquer l'audio et la vidéo"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Блокировать аудио и видео\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1838,6 +2504,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bloquer uniquement l'audio"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Блокировать только аудио\n"
           }
         },
         "zh-Hans" : {
@@ -1862,6 +2534,12 @@
             "value" : "Bloqué"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Заблокировано\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1876,6 +2554,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Blocked Trackers"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заблокированные трекеры\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已阻止的跟踪器"
           }
         }
       }
@@ -1892,6 +2588,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marque-pages"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Закладки\n"
           }
         },
         "zh-Hans" : {
@@ -1914,6 +2616,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marque-pages, Historique et Onglets"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Закладки, история и вкладки\n"
           }
         },
         "zh-Hans" : {
@@ -1939,6 +2647,12 @@
             "value" : "Bas"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "    Снизу\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1959,6 +2673,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Navigation"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просмотр веб-страниц\n"
           }
         },
         "zh-Hans" : {
@@ -1983,6 +2703,12 @@
             "value" : "Historique de navigation"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История посещений\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2003,6 +2729,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "octets"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "байт\n"
           }
         },
         "zh-Hans" : {
@@ -2027,6 +2759,12 @@
             "value" : "Images et fichiers en mémoire tampon"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кэшированные изображения и файлы\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2047,6 +2785,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Caméra"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Камера\n"
           }
         },
         "zh-Hans" : {
@@ -2071,6 +2815,12 @@
             "value" : "Annuler"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отмена\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2093,6 +2843,12 @@
             "value" : "Annuler le Téléchargement"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить загрузку\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2113,6 +2869,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Annuler le téléchargement ?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить загрузку?\n"
           }
         },
         "zh-Hans" : {
@@ -2138,6 +2900,12 @@
             "value" : "Modifié %@"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменено\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2160,6 +2928,12 @@
             "value" : "Choisir un Fichier"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать файл\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2180,6 +2954,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choisir un Dossier"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать папку\n"
           }
         },
         "zh-Hans" : {
@@ -2205,6 +2985,12 @@
             "value" : "Effacer"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2225,6 +3011,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tout effacer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить всё\n"
           }
         },
         "zh-Hans" : {
@@ -2249,6 +3041,12 @@
             "value" : "Effacer toutes les données de navigation"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить данные браузера\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2263,6 +3061,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Clear Cookies and Website Data"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить файлы cookie и данные сайтов\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除 Cookies 和网站数据"
           }
         }
       }
@@ -2279,6 +3095,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Effacer la liste des téléchargements"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить список загрузок\n"
           }
         },
         "zh-Hans" : {
@@ -2303,6 +3125,12 @@
             "value" : "Effacer l'historique"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Очистить историю\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2323,6 +3151,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Effacer sur une période"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать временной отрезок\n"
           }
         },
         "zh-Hans" : {
@@ -2347,6 +3181,12 @@
             "value" : "Fermer Tous les Onglets"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть все вкладки\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2367,6 +3207,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Compatibilité"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Совместимость\n"
           }
         },
         "zh-Hans" : {
@@ -2391,6 +3237,12 @@
             "value" : "Terminer les mises à jour d'extensions"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Завершить обновление дополнений\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2413,6 +3265,12 @@
             "value" : "Confirmer le Téléversement"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подтвердить загрузку\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2429,6 +3287,24 @@
             "state" : "translated",
             "value" : "Content"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
         }
       }
     },
@@ -2444,6 +3320,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cookies et données de sites Web"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Файлы cookie и данные сайтов\n"
           }
         },
         "zh-Hans" : {
@@ -2468,6 +3350,12 @@
             "value" : "Copier"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2488,6 +3376,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copier le lien"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скопировать ссылку\n"
           }
         },
         "zh-Hans" : {
@@ -2512,6 +3406,12 @@
             "value" : "Copier l'URL"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Скопировать URL-адрес\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2532,6 +3432,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fichier corrompu"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Повреждённый файл\n"
           }
         },
         "zh-Hans" : {
@@ -2556,6 +3462,12 @@
             "value" : "Impossible de récupérer l'URL de téléchargement."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось получить ссылку для загрузки.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2578,6 +3490,12 @@
             "value" : "Impossible d'effacer l'historique de navigation"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось очистить данные браузера\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2592,6 +3510,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Couldn’t Clear Cookies and Website Data"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось очистить файлы cookie и данные сайтов\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法清除 Cookies 和网站数据"
           }
         }
       }
@@ -2608,6 +3544,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible d'effacer l'historique"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось очистить историю\n"
           }
         },
         "zh-Hans" : {
@@ -2632,6 +3574,12 @@
             "value" : "Impossible de désactiver l'extension"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось отключить дополнение\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2652,6 +3600,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible d'activer l'extension"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось включить дополнение\n"
           }
         },
         "zh-Hans" : {
@@ -2677,6 +3631,12 @@
             "value" : "Impossible d'installer %@."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось установить %@."
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2697,6 +3657,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible d'installer cette extension."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось установить это дополнение.\n"
           }
         },
         "zh-Hans" : {
@@ -2721,6 +3687,12 @@
             "value" : "Impossible de recharger cette extension."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось перезагрузить дополнение\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2741,6 +3713,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible de retirer cette extension."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось удалить дополнение\n"
           }
         },
         "zh-Hans" : {
@@ -2765,6 +3743,12 @@
             "value" : "Impossible de mettre à jour les permissions"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обновить разрешения\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2787,6 +3771,12 @@
             "value" : "Impossible de mettre à jour l'accès en mode Navigation Privée"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось изменить доступ в режиме приватного просмотра\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2807,6 +3797,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cookies inter-site"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Межсайтовые файлы cookie\n"
           }
         },
         "zh-Hans" : {
@@ -2832,6 +3828,12 @@
             "value" : "Personnalisé"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пользовательский\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2854,6 +3856,12 @@
             "value" : "URL de recherche personnalisée"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пользовательский URL поиска\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2874,6 +3882,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "URL Personnalisée"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пользовательский URL\n"
           }
         },
         "zh-Hans" : {
@@ -2899,6 +3913,12 @@
             "value" : "Date d'ajout"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дата добавления\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2920,6 +3940,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Jour"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дневной режим"
           }
         },
         "zh-Hans" : {
@@ -2944,6 +3970,12 @@
             "value" : "Paramètres par défaut"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройка по умолчанию\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2964,6 +3996,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить\n"
           }
         },
         "zh-Hans" : {
@@ -2988,6 +4026,12 @@
             "value" : "Supprimer le marque-page"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить закладку\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3010,6 +4054,12 @@
             "value" : "Supprimer le Dossier"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить папку\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3030,6 +4080,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supprimé"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалено\n"
           }
         },
         "zh-Hans" : {
@@ -3055,6 +4111,12 @@
             "value" : "%@ refusé"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрещено: %@\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3075,6 +4137,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sites Web refusés"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запрещённые сайты\n"
           }
         },
         "zh-Hans" : {
@@ -3100,6 +4168,12 @@
             "value" : "Refuser"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запретить\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3120,6 +4194,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Firefox pour ordinateur"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Firefox для компьютера\n"
           }
         },
         "zh-Hans" : {
@@ -3144,6 +4224,12 @@
             "value" : "Détails"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подробнее\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3164,6 +4250,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le téléchargement d'une Image Disque de développeur a été annulé."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузка Developer Disk Image отменена.\n"
           }
         },
         "zh-Hans" : {
@@ -3188,6 +4280,12 @@
             "value" : "L'URL source de l'Image Disque de développeur est invalide."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некорректный URL источника Developer Disk Image.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3208,6 +4306,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Applications et services de l'appareil"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приложения и службы устройства\n"
           }
         },
         "zh-Hans" : {
@@ -3232,6 +4336,12 @@
             "value" : "Découvrir des extensions…"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Найти дополнения…\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3246,6 +4356,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Do Not Block"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не блокировать\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请勿阻止"
           }
         }
       }
@@ -3263,6 +4391,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Voulez-vous télécharger \"%@\" ?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хотите скачать «%@»?\n"
           }
         },
         "zh-Hans" : {
@@ -3288,6 +4422,12 @@
             "value" : "Voulez-vous arrêter de télécharger \"%@\" ?"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Остановить загрузку «%@»?\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3308,6 +4448,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ne Pas Autoriser"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не разрешать\n"
           }
         },
         "zh-Hans" : {
@@ -3332,6 +4478,12 @@
             "value" : "Télécharger"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скачать\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3352,6 +4504,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Échec de téléchargement"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбой загрузки\n"
           }
         },
         "zh-Hans" : {
@@ -3376,6 +4534,12 @@
             "value" : "Télécharger Reynard (.tipa)"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скачать Reynard (.tipa)\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3396,6 +4560,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Téléchargement en cours"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Загрузка\n"
           }
         },
         "zh-Hans" : {
@@ -3420,6 +4590,12 @@
             "value" : "Téléchargement d'une mise à jour en cours"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузка обновления\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3440,6 +4616,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Téléchargements"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузки\n"
           }
         },
         "zh-Hans" : {
@@ -3464,6 +4646,12 @@
             "value" : "Exemple : youtube.com"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "например, youtube.com\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3484,6 +4672,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modifier"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить\n"
           }
         },
         "zh-Hans" : {
@@ -3508,6 +4702,12 @@
             "value" : "Modifier le marque-page"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить закладку\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3528,6 +4728,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modifier les marque-pages"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Редактировать закладки\n"
           }
         },
         "zh-Hans" : {
@@ -3552,6 +4758,12 @@
             "value" : "Activer l'extension"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включить дополнение\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3572,6 +4784,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Activer le JIT"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Включить JIT\n"
           }
         },
         "zh-Hans" : {
@@ -3596,6 +4814,12 @@
             "value" : "Activez le JIT pour améliorer les performances et s'assurer que les sites Web fonctionnent correctement."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включите JIT для повышения производительности и корректной работы сайтов.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3618,6 +4842,12 @@
             "value" : "Version du Moteur"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Версия движка\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3632,6 +4862,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enhanced Tracking Protection"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Улучшенная защита от отслеживания\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "增强的跟踪保护"
           }
         }
       }
@@ -3648,6 +4896,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Erreur"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка\n"
           }
         },
         "zh-Hans" : {
@@ -3673,6 +4927,12 @@
             "value" : "Erreur %1$d: %2$@"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка %1$d: %2$@\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3687,6 +4947,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exceptions"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Исключения\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "例外"
           }
         }
       }
@@ -3703,6 +4981,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible d'activer le JIT"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось включить JIT\n"
           }
         },
         "zh-Hans" : {
@@ -3727,6 +5011,12 @@
             "value" : "Favoris"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Избранное\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3747,6 +5037,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Les fichiers téléchargés apparaissent ici"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скачанные файлы появятся здесь\n"
           }
         },
         "zh-Hans" : {
@@ -3771,6 +5067,12 @@
             "value" : "Firefox pour Android"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Firefox для Android\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3791,6 +5093,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dossiers"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Папки\n"
           }
         },
         "zh-Hans" : {
@@ -3815,6 +5123,12 @@
             "value" : "Visités Fréquemment"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Часто посещаемые\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3835,6 +5149,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Général"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "  Основные\n"
           }
         },
         "zh-Hans" : {
@@ -3859,6 +5179,12 @@
             "value" : "GitHub - @minh-ton"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GitHub — @minh-ton\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3879,6 +5205,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Historique"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История\n"
           }
         },
         "zh-Hans" : {
@@ -3903,6 +5235,12 @@
             "value" : "Page d'accueil"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Главная страница\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3917,6 +5255,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Homepage Banners"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Баннеры на главной\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "首页横幅"
           }
         }
       }
@@ -3935,6 +5291,12 @@
             "value" : "Sections de la page d'accueil"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разделы главной страницы\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3949,6 +5311,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "If something looks broken on this website, try turning it off."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Если сайт отображается некорректно, попробуйте отключить защиту.\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如果该站点显示不正确，尝试关闭此选项。"
           }
         }
       }
@@ -3965,6 +5345,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Échec de l'importation"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось выполнить импорт\n"
           }
         },
         "zh-Hans" : {
@@ -3989,6 +5375,12 @@
             "value" : "Importer un fichier de Pairing…"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортировать файл сопряжения…\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4009,6 +5401,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Incompatible"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Несовместимо\n"
           }
         },
         "zh-Hans" : {
@@ -4033,6 +5431,12 @@
             "value" : "Information"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Информация\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4053,6 +5457,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Installer une extension à partir d'un fichier"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установить дополнение из файла…\n"
           }
         },
         "zh-Hans" : {
@@ -4077,6 +5487,12 @@
             "value" : "Installer la version TrollStore de Reynard afin d'activer le JIT automatiquement pour améliorer les performances et s'assurer que les sites Web fonctionnent correctement."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установите версию Reynard для TrollStore, чтобы автоматически включать JIT, повысить производительность и обеспечить правильную обработку сайтов.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4097,6 +5513,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Installer TrollStore"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установить TrollStore\n"
           }
         },
         "zh-Hans" : {
@@ -4121,6 +5543,12 @@
             "value" : "Extensions installées"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установленные дополнения\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4141,6 +5569,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Installation de l'extension…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установка дополнения…\n"
           }
         },
         "zh-Hans" : {
@@ -4166,6 +5600,12 @@
             "value" : "Il est très rare de rencontrer ce problème! Assurez-vous que votre installation de TrollStore ou que votre environnement de jailbreak est configuré correctement.\n\nVous devrez peut-être utiliser le navigateur sans JIT temporairement jusqu'au prochain démarrage en activant le mode JITless."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта проблема встречается крайне редко! Убедитесь, что TrollStore или среда с джейлбрейком настроены правильноДо следующего запуска вы можете временно пользоваться браузером без JIT, включив режим JIT-Less.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4186,6 +5626,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "JIT"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JIT\n"
           }
         },
         "zh-Hans" : {
@@ -4210,6 +5656,12 @@
             "value" : "Le JIT n'est pas pris en charge par la version d'OS de votre appareil."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JIT не поддерживается в используемой вами версии ОС.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4232,6 +5684,12 @@
             "value" : "Continuer à Télécharger"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Продолжить загрузку\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4252,6 +5710,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Langues"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Языки\n"
           }
         },
         "zh-Hans" : {
@@ -4277,6 +5741,12 @@
             "value" : "Vérifié le %@."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последняя проверка: %@.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4297,6 +5767,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dernière Heure"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За последний час\n"
           }
         },
         "zh-Hans" : {
@@ -4321,6 +5797,12 @@
             "value" : "Dernier Onglet"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последняя вкладка\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4341,6 +5823,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dernière mise à jour"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последнее обновление\n"
           }
         },
         "zh-Hans" : {
@@ -4365,6 +5853,12 @@
             "value" : "En savoir plus"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подробнее\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4381,6 +5875,24 @@
             "state" : "translated",
             "value" : "Learn more about %@ Protection..."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подробнее о защите «%@»…\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
         }
       }
     },
@@ -4396,6 +5908,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Liens"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ссылки\n"
           }
         },
         "zh-Hans" : {
@@ -4420,6 +5938,12 @@
             "value" : "Chargement des extensions…"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузка дополнений…\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4440,6 +5964,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réseau Local"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Локальная сеть\n"
           }
         },
         "zh-Hans" : {
@@ -4464,6 +5994,12 @@
             "value" : "Appareils sur le réseau local"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Устройства в локальной сети\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4484,6 +6020,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Emplacement"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Геопозиция\n"
           }
         },
         "zh-Hans" : {
@@ -4508,6 +6050,12 @@
             "value" : "Assurez-vous que le Schéma d'URL est activé sur TrollStore."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убедитесь, что URL-схема TrollStore включена.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4528,6 +6076,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Média"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Медиа\n"
           }
         },
         "zh-Hans" : {
@@ -4552,6 +6106,12 @@
             "value" : "Microphone"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Микрофон\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4572,6 +6132,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En savoir plus sur cette extension"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подробнее об этом дополнении\n"
           }
         },
         "zh-Hans" : {
@@ -4597,6 +6163,12 @@
             "value" : "Nom"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4617,6 +6189,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demande l'autorisation pour la mise à jour"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Требуется разрешение для обновления\n"
           }
         },
         "zh-Hans" : {
@@ -4641,6 +6219,12 @@
             "value" : "Erreur de Réseau"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка сети\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4661,6 +6245,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nouveau dossier"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая папка\n"
           }
         },
         "zh-Hans" : {
@@ -4686,6 +6276,12 @@
             "value" : "Nouvelle collection de données requise : Le développeur indique que cette extension collectera %@."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новое требование по сбору данных: разработчик сообщает, что это дополнение будет собирать %@.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4707,6 +6303,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nouvelles permissions nécessaires : %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новые обязательные разрешения: %@\n"
           }
         },
         "zh-Hans" : {
@@ -4731,6 +6333,12 @@
             "value" : "Nouvel Onglet"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая вкладка\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4745,6 +6353,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "New Updates"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Последние обновления\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更新可用"
           }
         }
       }
@@ -4762,6 +6388,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nuit"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ночной режим\n"
           }
         },
         "zh-Hans" : {
@@ -4786,6 +6418,12 @@
             "value" : "Non"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4806,6 +6444,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune extension"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет дополнений\n"
           }
         },
         "zh-Hans" : {
@@ -4830,6 +6474,12 @@
             "value" : "Aucune extension installée"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет установленных дополнений\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4850,6 +6500,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucun marque-page correspondant"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подходящие закладки не найдены\n"
           }
         },
         "zh-Hans" : {
@@ -4874,6 +6530,12 @@
             "value" : "Aucun téléchargement correspondant"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подходящие загрузки не найдены\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4896,6 +6558,12 @@
             "value" : "Aucune entrée correspondante dans l'historique"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подходящие записи в истории не найдены\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4910,6 +6578,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Protection"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без защиты\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无保护"
           }
         }
       }
@@ -4928,6 +6614,12 @@
             "value" : "Aucune note de mise à jour disponible."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Примечания к выпуску отсутствуют.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4942,6 +6634,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Trackers Found"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Трекеры не найдены\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未发现跟踪器"
           }
         }
       }
@@ -4958,6 +6668,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune mise à jour disponible"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет доступного обновления\n"
           }
         },
         "zh-Hans" : {
@@ -4980,6 +6696,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aucune mise à jour trouvée."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновлений не найдено.\n"
           }
         },
         "zh-Hans" : {
@@ -5005,6 +6727,12 @@
             "value" : "Aucun"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5025,6 +6753,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Interdit en mode Navigation Privée"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Запрещено в режиме «Частный доступ»\n"
           }
         },
         "zh-Hans" : {
@@ -5049,6 +6783,12 @@
             "value" : "Non Vérifié"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Не проверено "
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5069,6 +6809,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nombre de lignes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Количество строк"
           }
         },
         "zh-Hans" : {
@@ -5093,6 +6839,12 @@
             "value" : "Nombre d’onglets"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Количество вкладок\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5113,6 +6865,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nombre de sites Web"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Количество сайтов\n"
           }
         },
         "zh-Hans" : {
@@ -5138,6 +6896,12 @@
             "value" : "Désactivé"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выкл.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5158,6 +6922,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK\n"
           }
         },
         "zh-Hans" : {
@@ -5183,6 +6953,12 @@
             "value" : "Activé"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкл.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5203,6 +6979,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Au Démarrage "
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "При запуске\n"
           }
         },
         "zh-Hans" : {
@@ -5228,6 +7010,12 @@
             "value" : "Ouvrir dans\nFichiers"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть в Файлах\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5248,6 +7036,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir dans Fichiers"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть в Файлах\n"
           }
         },
         "zh-Hans" : {
@@ -5272,6 +7066,12 @@
             "value" : "Ouvrir dans un nouvel onglet en Navigation Privée"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Открыть в новой частной вкладке\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5292,6 +7092,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir dans un nouvel onglet"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть в новой вкладке.\n"
           }
         },
         "zh-Hans" : {
@@ -5316,6 +7122,12 @@
             "value" : "Ouvrir les nouveaux onglets sur"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывать новые вкладки\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5336,6 +7148,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir les paramètres"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть Настройки\n"
           }
         },
         "zh-Hans" : {
@@ -5360,6 +7178,12 @@
             "value" : "Onglets ouverts"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открытые вкладки\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5380,6 +7204,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Option"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки\n"
           }
         },
         "zh-Hans" : {
@@ -5404,6 +7234,12 @@
             "value" : "Collection de données optionnelles"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Необязательный сбор данных\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5424,6 +7260,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Permissions optionnelles"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дополнительные разрешения\n"
           }
         },
         "zh-Hans" : {
@@ -5448,6 +7290,12 @@
             "value" : "Zoom sur la page"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Масштаб страницы\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5470,6 +7318,12 @@
             "value" : "Zoom sur la page activé"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Масштаб страниц на сайтах\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5484,6 +7338,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Password"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароль\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "密码"
           }
         }
       }
@@ -5500,6 +7372,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recommandation de performance"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рекомендация по производительности\n"
           }
         },
         "zh-Hans" : {
@@ -5524,6 +7402,12 @@
             "value" : "Permissions"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешения\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5546,6 +7430,12 @@
             "value" : "Mémoire persistante"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Постоянное хранилище\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5566,6 +7456,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Galerie de photos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Медиатека\n"
           }
         },
         "zh-Hans" : {
@@ -5591,6 +7487,12 @@
             "value" : "Veuillez vérifier que votre fichier de Pairing est valide, que votre VPN de loopback est activé et que vous êtes connecté à un réseau Wi-Fi stable.\n\nVous pouvez utiliser le navigateur sans JIT temporairement jusqu'au prochain démarrage en activant le mode JITless."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Убедитесь, что файл сопряжения корректен, VPN с обратной петлёй включён, а подключение к Wi-Fi стабильно.\n\n Включив режим без JITте временно использовать браузер без JIT до следующего запуска, включив режим без JIT.\n\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5613,6 +7515,12 @@
             "value" : "Préparation du JIT"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подготовка JIT\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5629,6 +7537,24 @@
             "state" : "translated",
             "value" : "Previews"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
         }
       }
     },
@@ -5644,6 +7570,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "7 derniers jours"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За последние 7 дней\n"
           }
         },
         "zh-Hans" : {
@@ -5668,6 +7600,12 @@
             "value" : "30 derniers jours"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "За последние 30 дней\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5688,6 +7626,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vie privée"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Конфиденциальность\n"
           }
         },
         "zh-Hans" : {
@@ -5712,6 +7656,12 @@
             "value" : "Privé"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частный доступ\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5732,6 +7682,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Navigation Privée"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Частный доступ\n"
           }
         },
         "zh-Hans" : {
@@ -5756,6 +7712,12 @@
             "value" : "Quitter Reynard"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть Reynard\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5776,6 +7738,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avis"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рейтинг\n"
           }
         },
         "zh-Hans" : {
@@ -5800,6 +7768,12 @@
             "value" : "Onglets récemment fermés"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Недавно закрытые вкладки\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5814,6 +7788,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Recommendations"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рекомендации\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建议"
           }
         }
       }
@@ -5830,6 +7822,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retirer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить\n"
           }
         },
         "zh-Hans" : {
@@ -5855,6 +7853,12 @@
             "value" : "Retirer %@?"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить %@?\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5875,6 +7879,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Retirer l'extension"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить дополнение\n"
           }
         },
         "zh-Hans" : {
@@ -5899,6 +7909,12 @@
             "value" : "Retirer le lien"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " Удалить ссылку\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5921,6 +7937,12 @@
             "value" : "Retirer l'onglet récemment fermé"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить вкладку из списка недавно закрытых\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5937,6 +7959,24 @@
             "state" : "translated",
             "value" : "Removing cookies and website data for %@ may require you to sign in again."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "После удаления файлов cookie и данных сайтов для %@ вам может потребоваться снова войти в аккаунт.\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "清除 %@ 的 Cookies 和网站数据可能会导致您需要重新登录。"
+          }
         }
       }
     },
@@ -5952,6 +7992,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Demander la version pour ordinateur du site Web"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запросить версию сайта для компьютера\n"
           }
         },
         "zh-Hans" : {
@@ -5976,6 +8022,12 @@
             "value" : "Demander la version pour mobile du site Web"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запросить мобильную версию сайта\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5996,6 +8048,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Collection de données requises"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обязательный сбор данных\n"
           }
         },
         "zh-Hans" : {
@@ -6020,6 +8078,12 @@
             "value" : "Les fichiers DDI nécessaires sont manquants."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отсутствуют необходимые DDI-файлы.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6040,6 +8104,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Permissions requises"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обязательные разрешения\n"
           }
         },
         "zh-Hans" : {
@@ -6065,6 +8135,12 @@
             "value" : "Réinitialiser"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6079,6 +8155,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset Desktop Website Settings"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
           }
         }
       }
@@ -6095,6 +8189,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réinitialiser les paramètres de zoom de page Web"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить настройки масштаба страниц\n"
           }
         },
         "zh-Hans" : {
@@ -6119,6 +8219,12 @@
             "value" : "Réinitialiser les permissions pour tous les sites Web"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить разрешения для всех сайтов\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6139,6 +8245,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Réaliser les paramètres pour ce site Web"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбросить настройки для этого сайта\n"
           }
         },
         "zh-Hans" : {
@@ -6163,6 +8275,12 @@
             "value" : "Redémarrage nécessaire"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Требуется перезапуск\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6183,6 +8301,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Restreint"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ограничено\n"
           }
         },
         "zh-Hans" : {
@@ -6207,6 +8331,12 @@
             "value" : "Navigateur Web Reynard"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reynard Browser\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6227,6 +8357,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reynard ne conservera pas votre historique de recherche ou vos cookies. Cependant, vos téléchargements et les marques pages ajoutés seront conservés. "
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reynard не сохранит историю посещений и файлы cookie. Скачанные файлы и новые закладки при этом сохранятся.\n"
           }
         },
         "zh-Hans" : {
@@ -6251,6 +8387,12 @@
             "value" : "Enregistrer"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6271,6 +8413,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enregistrer dans Photos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить в «Фото»\n"
           }
         },
         "zh-Hans" : {
@@ -6295,6 +8443,12 @@
             "value" : "Recherche"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6315,6 +8469,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher dans les marque-pages"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск по закладкам\n"
           }
         },
         "zh-Hans" : {
@@ -6339,6 +8499,12 @@
             "value" : "Rechercher dans l'historique de recherche"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "История поиска посещений\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6359,6 +8525,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher dans les téléchargements"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск по загрузкам\n"
           }
         },
         "zh-Hans" : {
@@ -6383,6 +8555,12 @@
             "value" : "Moteur de Recherche"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поисковая система\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6403,6 +8581,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Historique de recherche"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск по истории\n"
           }
         },
         "zh-Hans" : {
@@ -6427,6 +8611,12 @@
             "value" : "Rechercher dans les langues"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск языков\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6447,6 +8637,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rechercher dans les onglets ouverts"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поиск по открытым вкладкам\n"
           }
         },
         "zh-Hans" : {
@@ -6471,6 +8667,12 @@
             "value" : "Rechercher ou entrer une adresse"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Введите поисковый запрос или адрес\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6491,6 +8693,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fournisseur de suggestions de recherche"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сервис поисковых подсказок\n"
           }
         },
         "zh-Hans" : {
@@ -6515,6 +8723,12 @@
             "value" : "Suggestions de recherche"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поисковые подсказки\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6535,6 +8749,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sélectionner une option"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите вариант\n"
           }
         },
         "zh-Hans" : {
@@ -6559,6 +8779,12 @@
             "value" : "Sélectionner des options"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать параметры\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6579,6 +8805,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Paramètres"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки\n"
           }
         },
         "zh-Hans" : {
@@ -6604,6 +8836,12 @@
             "value" : "Paramètres pour %@"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки для %@\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6624,6 +8862,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Partager"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поделиться\n"
           }
         },
         "zh-Hans" : {
@@ -6648,6 +8892,12 @@
             "value" : "Partager l’image"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поделиться изображением\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6668,6 +8918,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Partager le Lien"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поделиться ссылкой\n"
           }
         },
         "zh-Hans" : {
@@ -6692,6 +8948,12 @@
             "value" : "Tout afficher"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать всё\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6712,6 +8974,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher tous les sites Web"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать все сайты\n"
           }
         },
         "zh-Hans" : {
@@ -6736,6 +9004,12 @@
             "value" : "Afficher les favoris"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать избранное\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6756,6 +9030,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher les fichiers au-dessus"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать папки вверху\n"
           }
         },
         "zh-Hans" : {
@@ -6780,6 +9060,12 @@
             "value" : "Afficher les sites visités fréquemment"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать часто посещаемые сайты\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6800,6 +9086,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher l'adresse complète"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать полный адрес сайта\n"
           }
         },
         "zh-Hans" : {
@@ -6824,6 +9116,12 @@
             "value" : "Afficher les aperçus d'image"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать предпросмотр изображений\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6844,6 +9142,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher en Navigation Privée"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать в режиме «Частный доступ»\n"
           }
         },
         "zh-Hans" : {
@@ -6868,6 +9172,12 @@
             "value" : "Afficher moins"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать меньше\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6888,6 +9198,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher les aperçus de liens"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать предпросмотр ссылок\n"
           }
         },
         "zh-Hans" : {
@@ -6912,6 +9228,12 @@
             "value" : "Afficher les onglets récemment fermes"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать недавно закрытые вкладки\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6932,6 +9254,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Afficher les suggestions de recherche"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать поисковые подсказки\n"
           }
         },
         "zh-Hans" : {
@@ -6956,6 +9284,12 @@
             "value" : "Afficher la barre d'onglets en mode Paysage"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать панель вкладок при альбомной ориентации\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6971,6 +9305,24 @@
             "state" : "translated",
             "value" : "Sign In"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войти\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登录"
+          }
         }
       }
     },
@@ -6981,6 +9333,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sign in to %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Войти в %@\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登录至 %@"
           }
         }
       }
@@ -6997,6 +9367,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Puisque c'est la première fois que vous activez le JIT, Reynard doit télécharger et monter l'Image Disque de développeur. Ceci est obligatoire pour le bon fonctionnement du JIT."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поскольку вы включаете JIT впервые, Reynard необходимо скачать и смонтировать Developer Disk Image. Это требуется для корректной работы JIT.\n"
           }
         },
         "zh-Hans" : {
@@ -7021,6 +9397,12 @@
             "value" : "Certains sites Web sont disponibles en plusieurs langues. Veuillez choisir les langues dans l'ordre de vos préférences"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некоторые сайты доступны на нескольких языках. Выберите языки в порядке предпочтения.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7043,6 +9425,12 @@
             "value" : "Trier Par"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сортировать по\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7063,6 +9451,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Supporter Ce Projet"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поддержать проект\n"
           }
         },
         "zh-Hans" : {
@@ -7088,6 +9482,12 @@
             "value" : "Système"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Как в системе\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7108,6 +9508,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Onglets"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вкладки\n"
           }
         },
         "zh-Hans" : {
@@ -7132,6 +9538,12 @@
             "value" : "Prendre une Photo"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Снять фото\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7152,6 +9564,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Prendre une Photo ou une Vidéo"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Снять фото или видео\n"
           }
         },
         "zh-Hans" : {
@@ -7176,6 +9594,12 @@
             "value" : "Prendre une Vidéo"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Снять видео\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7196,6 +9620,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reynard va se fermer afin d'appliquer la configuration du JIT."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Приложение закроется для применения настроек JIT. Необходимые файлы Developer Disk Image для включения JIT не найдены. JIT отключен. \n"
           }
         },
         "zh-Hans" : {
@@ -7221,6 +9651,12 @@
             "value" : "Les fichiers d'Image Disque de développeur nécessaires ont l'activation du JIT sont introuvables. \n\nLe JIT a été désactivé. Veuillez quitter Reynard en utilisant le bouton ci-dessous, puis réactivez le JIT depuis les paramètres du navigateur."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закройте приложение кнопкой ниже, затем снова включите JIT в настройках браузера.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7241,6 +9677,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cette extension"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это дополнение\n"
           }
         },
         "zh-Hans" : {
@@ -7265,6 +9707,12 @@
             "value" : "Cette extension n'a pas pu être mise à jour."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обновить это дополнение.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7285,6 +9733,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cette extension ne requiert pas de permissions."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этому дополнению не требуются разрешения.\n"
           }
         },
         "zh-Hans" : {
@@ -7309,6 +9763,12 @@
             "value" : "Cette extension n'est pas prise en charge par cette version de Reynard et a été désactivée."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта версия Reynard не поддерживает дополнение, поэтому оно отключено.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7331,6 +9791,12 @@
             "value" : "Ce build ne prend pas en charge les mises à jour dans l'application. Veuillez visites l'onglet Releases du projet pour télécharger la dernière version."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Эта сборка не поддерживает обновления в приложении. Перейдите на страницу релизов проекта, чтобы скачать последнюю версию приложения.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7351,6 +9817,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ceci effacera les données de navigation sélectionnées. Cette action ne pourra pas être annulée."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это действие очистит выбранные данные браузера. Отменить его будет невозможно.\n"
           }
         },
         "zh-Hans" : {
@@ -7400,6 +9872,36 @@
             }
           }
         },
+        "ru" : {
+          "variations" : {
+            "plural" : {
+              "few" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "many" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "needs_review",
+                  "value" : ""
+                }
+              }
+            }
+          }
+        },
         "zh-Hans" : {
           "variations" : {
             "plural" : {
@@ -7428,6 +9930,12 @@
             "value" : "Ceci réinitialisera les permissions pour tous les sites Web. Cette action ne pourra pas être annulée."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это действие сбросит разрешения для всех сайтов. Отменить его будет невозможно.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7448,6 +9956,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ceci réinitialisera les paramètres pour ce site Web. Cette action ne pourra pas être annulée."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это действие сбросит настройки для этого сайта. Отменить его будет невозможно.\n"
           }
         },
         "zh-Hans" : {
@@ -7472,6 +9986,12 @@
             "value" : "Titre"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Название\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7494,6 +10014,12 @@
             "value" : "Aujourd’hui"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сегодня\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7514,6 +10040,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Aujourd’hui et Hier"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сегодня и вчера\n"
           }
         },
         "zh-Hans" : {
@@ -7539,6 +10071,12 @@
             "value" : "Haut"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вверху\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7554,6 +10092,24 @@
             "state" : "translated",
             "value" : "Tracking Protection"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита от отслеживания\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "跟踪保护"
+          }
         }
       }
     },
@@ -7563,6 +10119,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Turning on tracking protection is recommended."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рекомендуется включить защиту от отслеживания.\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "建议您打开跟踪保护功能。"
           }
         }
       }
@@ -7579,6 +10153,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Impossible d'accéder au répertoire de support d'application pour l'app"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось получить доступ к папке «Application Support» приложения.\n"
           }
         },
         "zh-Hans" : {
@@ -7603,6 +10183,12 @@
             "value" : "Erreur inconnue."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неизвестная ошибка.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7623,6 +10209,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Taille inconnue"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неизвестный размер\n"
           }
         },
         "zh-Hans" : {
@@ -7647,6 +10239,12 @@
             "value" : "Non pris en charge"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не поддерживается\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7667,6 +10265,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Extensions non prises en charge"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неподдерживаемые дополнения\n"
           }
         },
         "zh-Hans" : {
@@ -7691,6 +10295,12 @@
             "value" : "Sans titre"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Без названия\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7711,6 +10321,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mettre à jour les permissions d'extension"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить разрешения дополнения\n"
           }
         },
         "zh-Hans" : {
@@ -7735,6 +10351,12 @@
             "value" : "Mettre à jour toutes les extensions"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить все дополнения\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7755,6 +10377,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mise à jour disponible"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступно обновление\n"
           }
         },
         "zh-Hans" : {
@@ -7779,6 +10407,12 @@
             "value" : "Échec de mise à jour"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось обновить\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7799,6 +10433,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mettre à jour maintenant"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновить сейчас\n"
           }
         },
         "zh-Hans" : {
@@ -7823,6 +10463,12 @@
             "value" : "Mise à jour indisponible"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновление недоступно\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7843,6 +10489,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mis à jour"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновлено\n"
           }
         },
         "zh-Hans" : {
@@ -7867,6 +10519,12 @@
             "value" : "Mise à jour des extensions…"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновление дополнений…\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7887,6 +10545,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mise à jour en cours…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обновление…\n"
           }
         },
         "zh-Hans" : {
@@ -7911,6 +10575,12 @@
             "value" : "Téléverser"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузить\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7931,6 +10601,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "URL"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL\n"
           }
         },
         "zh-Hans" : {
@@ -7956,6 +10632,12 @@
             "value" : "Utiliser %%s comme termes de recherche, par exemple : example.com/search?q=%%s"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Используйте %%s для поисковых запросов, например: example.com⁠/⁠search⁠?⁠q⁠=⁠%%s.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7976,6 +10658,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Utiliser un User Agent de compatibilité"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Использовать User-Agent для совместимости\n"
           }
         },
         "zh-Hans" : {
@@ -8001,6 +10689,12 @@
             "value" : "Utilisez l'User Agent %@ sur tous les sites Web pour améliorer la compatibilité"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Использовать юзер-агент %@ на всех сайтах, чтобы повысить совместимость.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8023,6 +10717,12 @@
             "value" : "User Agents forcés"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки подмены User-Agent\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8037,6 +10737,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "User Name"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Имя пользователя\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用户名"
           }
         }
       }
@@ -8053,6 +10771,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Version"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Версия\n"
           }
         },
         "zh-Hans" : {
@@ -8078,6 +10802,12 @@
             "value" : "Version %@"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Версия %@\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8098,6 +10828,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lire le code source"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просмотреть исходный код\n"
           }
         },
         "zh-Hans" : {
@@ -8122,6 +10858,12 @@
             "value" : "Langue du Site Web"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Язык сайта\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8142,6 +10884,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Permissions du Site Web"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешения для сайтов\n"
           }
         },
         "zh-Hans" : {
@@ -8166,6 +10914,12 @@
             "value" : "Paramètres du Site Web"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки сайта\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8186,6 +10940,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sites web"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сайты\n"
           }
         },
         "zh-Hans" : {
@@ -8210,6 +10970,12 @@
             "value" : "Sites Web avec des paramètres personnalisés"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сайты с индивидуальными настройками\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8226,6 +10992,24 @@
             "state" : "translated",
             "value" : "What %@ Protection Blocks"
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что блокирует защита «%@»\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
         }
       }
     },
@@ -8241,6 +11025,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A la fin du téléchargement, veuillez choisir l'application avec laquelle vous avez installé Reynard depuis la fiche de partage afin de terminer la mise à jour."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Когда загрузка завершится, выберите в меню «Поделиться» приложение, с помощью которого вы устанавливали Reynard, чтобы установить обновление.   \n"
           }
         },
         "zh-Hans" : {
@@ -8265,6 +11055,12 @@
             "value" : "Oui"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Да"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8285,6 +11081,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hier"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вчера\n"
           }
         },
         "zh-Hans" : {
@@ -8310,6 +11112,12 @@
             "value" : "Si la raison pour laquelle %@ a besoin de cette permission n'est pas claire, vous pouvez y bloquer l'accès."
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Возможно, стоит запретить доступ, если вам непонятно, зачем %@ нужны эти данные.\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8332,6 +11140,12 @@
             "value" : "Votre historique de navigation apparaît ici"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Здесь появится ваша история посещений\n"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8347,6 +11161,24 @@
             "state" : "translated",
             "value" : "Your login information will be sent securely."
           }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши данные для входа будут переданы по защищённому соединению.\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的登录信息将会被安全的发送"
+          }
         }
       }
     },
@@ -8356,6 +11188,24 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your login information will not be sent securely."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : ""
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши данные для входа будут переданы по незащищённому соединению.\n"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的登录信息将不会被安全发送"
           }
         }
       }
@@ -8372,6 +11222,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Niveau de Zoom"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Масштаб\n"
           }
         },
         "zh-Hans" : {

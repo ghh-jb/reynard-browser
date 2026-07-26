@@ -33,13 +33,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneDidDisconnect(_ scene: UIScene) {}
     
     func sceneDidBecomeActive(_ scene: UIScene) {
-        (window?.rootViewController as? BrowserViewController)?
-            .sessionManager.applicationDidBecomeActive()
+        guard let browserViewController = window?.rootViewController as? BrowserViewController else {
+            return
+        }
+        
+        browserViewController.sessionManager.applicationDidBecomeActive()
+        browserViewController.tabManager.applicationDidBecomeActive()
     }
     
     func sceneWillResignActive(_ scene: UIScene) {
-        (window?.rootViewController as? BrowserViewController)?
-            .sessionManager.applicationWillResignActive()
+        guard let browserViewController = window?.rootViewController as? BrowserViewController else {
+            return
+        }
+        
+        browserViewController.tabManager.applicationWillResignActive()
+        browserViewController.sessionManager.applicationWillResignActive()
     }
     
     func sceneWillEnterForeground(_ scene: UIScene) {

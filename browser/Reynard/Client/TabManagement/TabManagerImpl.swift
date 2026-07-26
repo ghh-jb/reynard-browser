@@ -54,6 +54,10 @@ final class TabManagerImplementation: NSObject, TabManager {
     private var faviconTasks: [UUID: Task<Void, Never>] = [:]
     private var selectionCounter = 0
     
+    // A background termination may be reported after the app becomes active.
+    // Keep the session eligible for silent recovery until a foreground composite confirms it survived.
+    private weak var sessionEligibleForSilentRecovery: GeckoSession?
+    
     private lazy var lenientURLExpression: NSRegularExpression = {
         let pattern = "^\\s*(\\w+-+)*[\\w\\[]+(://[/]*|:|\\.)(\\w+-+)*[\\w\\[:]+([\\S&&[^\\w-]]\\S*)?\\s*$"
         return try! NSRegularExpression(pattern: pattern)
@@ -72,22 +76,15 @@ final class TabManagerImplementation: NSObject, TabManager {
         self.faviconStore = faviconStore
         self.historyStore = historyStore
         super.init()
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(applicationDidBecomeActive),
-            name: UIApplication.didBecomeActiveNotification,
-            object: nil
-        )
-    }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Application Lifecycle
     
-    @objc private func applicationDidBecomeActive() {
+    func applicationWillResignActive() {
+        sessionEligibleForSilentRecovery = selectedTab?.session
+    }
+    
+    func applicationDidBecomeActive() {
         guard selectedTab?.session.isOpen() == false else {
             return
         }
@@ -496,6 +493,12 @@ final class TabManagerImplementation: NSObject, TabManager {
             return
         }
         
+        let wasAwaitingForegroundComposite =
+        sessionEligibleForSilentRecovery === session
+        if wasAwaitingForegroundComposite {
+            sessionEligibleForSilentRecovery = nil
+        }
+        
         let didTerminateSelectedTab = selectedTab?.session === session
         let tab = tabs(for: location.mode)[location.index]
         sessionManager.close(session)
@@ -504,7 +507,14 @@ final class TabManagerImplementation: NSObject, TabManager {
         notifyUpdate(at: location.index, mode: location.mode, reason: .loading)
         persistState()
         
-        if sessionManager.isForeground && didTerminateSelectedTab {
+        guard didTerminateSelectedTab,
+              sessionManager.isApplicationActive else {
+            return
+        }
+        
+        if wasAwaitingForegroundComposite {
+            selectTab(at: location.index, mode: location.mode)
+        } else {
             delegate?.tabManagerDidTerminateSelectedTab(self)
         }
     }
@@ -1009,7 +1019,14 @@ extension TabManagerImplementation: ContentDelegate {
         handleSessionTermination(session)
     }
     
-    func onFirstComposite(session: GeckoSession) {}
+    func onFirstComposite(session: GeckoSession) {
+        guard sessionManager.isApplicationActive,
+              sessionEligibleForSilentRecovery === session else {
+            return
+        }
+        
+        sessionEligibleForSilentRecovery = nil
+    }
     
     func onFirstContentfulPaint(session: GeckoSession) {}
     

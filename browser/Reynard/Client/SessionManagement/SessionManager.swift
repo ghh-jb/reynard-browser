@@ -26,6 +26,7 @@ final class SessionManager {
     
     private var sessionsRequestedActive: [ObjectIdentifier: GeckoSession] = [:]
     private var isApplicationForeground = true
+    private(set) var isApplicationActive = true
     private weak var pictureInPictureSession: GeckoSession?
     private var pendingCleanup: (
         session: GeckoSession,
@@ -144,10 +145,12 @@ final class SessionManager {
     }
     
     func applicationWillResignActive() {
+        isApplicationActive = false
         applicationStateObserver?.sessionManagerWillResignActive(self)
     }
     
     func applicationDidBecomeActive() {
+        isApplicationActive = true
         applicationStateObserver?.sessionManagerDidChangeApplicationState(self)
     }
     

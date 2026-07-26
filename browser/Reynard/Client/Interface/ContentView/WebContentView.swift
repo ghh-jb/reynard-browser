@@ -156,6 +156,10 @@ final class WebContentView: UIView, UIScrollViewDelegate {
     }
     
     func showPageError(for url: String?) {
+        guard UIApplication.shared.applicationState == .active else {
+            return
+        }
+        
         let page = url?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let page, !page.isEmpty {
             let format = NSLocalizedString("A problem occurred on “%@”.", comment: "Webpage URL")
